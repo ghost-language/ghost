@@ -8,6 +8,17 @@ import (
 	"ghostlang.org/ghost/token"
 )
 
+const (
+	_ int = iota
+	LOWEST
+	EQUALS
+	LESSGREATER
+	SUM
+	PRODUCT
+	PREFIX
+	CALL
+)
+
 type (
 	prefixParserFn func() ast.Expression
 	infixParseFn   func(ast.Expression) ast.Expression
@@ -32,6 +43,9 @@ func New(l *lexer.Lexer) *Parser {
 
 	p.nextToken()
 	p.nextToken()
+
+	p.prefixParseFns = make(map[token.TokenType]prefixParserFn)
+	p.registerPrefix(token.IDENTIFIER, p.parseIdentifier)
 
 	return p
 }
@@ -77,8 +91,20 @@ func (p *Parser) parseStatement() ast.Statement {
 	case token.RETURN:
 		return p.parseReturnStatement()
 	default:
+		return p.parseExpressionStatement()
+	}
+}
+
+func (p *Parser) parseExpression(precedence int) ast.Expression {
+	prefix := p.prefixParseFns[p.currentToken.Type]
+
+	if prefix == nil {
 		return nil
 	}
+
+	leftExpression := prefix()
+
+	return leftExpression
 }
 
 func (p *Parser) currentTokenIs(t token.TokenType) bool {
