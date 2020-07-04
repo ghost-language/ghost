@@ -6,19 +6,23 @@ import (
 	"io"
 
 	"ghostlang.org/ghost/lexer"
-	"ghostlang.org/ghost/token"
+	"ghostlang.org/ghost/parser"
 )
 
 // PROMPT designates the REPL prompt characters to accept
 // user input.
-const PROMPT = ">>> "
+const PROMPT = ">> "
+
+// OUTPUT designates the REPL output characters to display
+// program results.
+const OUTPUT = "   "
 
 // Start will initiate a new REPL session.
 func Start(in io.Reader, out io.Writer) {
 	scanner := bufio.NewScanner(in)
 
 	for {
-		fmt.Printf(PROMPT)
+		fmt.Fprint(out, PROMPT)
 		scanned := scanner.Scan()
 
 		if !scanned {
@@ -26,10 +30,25 @@ func Start(in io.Reader, out io.Writer) {
 		}
 
 		line := scanner.Text()
-		lexer := lexer.New(line)
+		l := lexer.New(line)
+		p := parser.New(l)
 
-		for currentToken := lexer.NextToken(); currentToken.Type != token.EOF; currentToken = lexer.NextToken() {
-			fmt.Printf("%+v\n", currentToken)
+		program := p.ParseProgram()
+
+		if len(p.Errors()) != 0 {
+			printParserErrors(out, p.Errors())
+			continue
 		}
+
+		io.WriteString(out, OUTPUT+program.String())
+		io.WriteString(out, "\n")
+	}
+}
+
+func printParserErrors(out io.Writer, errors []string) {
+	io.WriteString(out, "\tPARSE ERROR:\n")
+
+	for _, message := range errors {
+		io.WriteString(out, "\t"+message+"\n")
 	}
 }
