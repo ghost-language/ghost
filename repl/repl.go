@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 
+	"ghostlang.org/ghost/evaluator"
 	"ghostlang.org/ghost/lexer"
 	"ghostlang.org/ghost/parser"
 )
@@ -40,8 +41,12 @@ func Start(in io.Reader, out io.Writer) {
 			continue
 		}
 
-		io.WriteString(out, OUTPUT+program.String())
-		io.WriteString(out, "\n")
+		evaluated := evaluator.Eval(program)
+
+		if evaluated != nil {
+			io.WriteString(out, OUTPUT+evaluated.Inspect())
+			io.WriteString(out, "\n")
+		}
 	}
 }
 
