@@ -1,21 +1,33 @@
 package object
 
+// Environment is an object that holds a mapping of names to bound objects
+type Environment struct {
+	store map[string]Object
+	outer *Environment
+}
+
 // NewEnvironment constructs a new Environment object to hold bindings
 // of identifiers to their names
 func NewEnvironment() *Environment {
 	s := make(map[string]Object)
 
-	return &Environment{store: s}
+	return &Environment{store: s, outer: nil}
 }
 
-// Environment is an object that holds a mapping of names to bound objects
-type Environment struct {
-	store map[string]Object
+func NewEnclosedEnvironment(outer *Environment) *Environment {
+	env := NewEnvironment()
+	env.outer = outer
+
+	return env
 }
 
 // Get returns the object bound by name
 func (e *Environment) Get(name string) (Object, bool) {
 	obj, ok := e.store[name]
+
+	if !ok && e.outer != nil {
+		obj, ok = e.outer.Get(name)
+	}
 
 	return obj, ok
 }
