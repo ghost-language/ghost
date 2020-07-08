@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"ghostlang.org/ghost/evaluator"
 	"ghostlang.org/ghost/lexer"
@@ -50,6 +51,7 @@ func (r *REPL) Run() {
 	}
 
 	if len(r.args) > 0 {
+		start := time.Now()
 		f, err := os.Open(r.args[0])
 
 		if err != nil {
@@ -57,8 +59,10 @@ func (r *REPL) Run() {
 		}
 
 		env := r.Eval(f)
+		elapsed := time.Since(start)
 
 		if r.opts.Interactive {
+			fmt.Printf(OUTPUT+"(executed in: %s)\n", elapsed)
 			r.StartEvalLoop(os.Stdin, os.Stdout, env)
 		}
 	}
