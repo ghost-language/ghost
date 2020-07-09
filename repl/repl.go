@@ -88,16 +88,7 @@ func (r *REPL) Eval(f io.Reader) (env *object.Environment) {
 		return
 	}
 
-	obj := evaluator.Eval(program, env)
-
-	// We'll print values out for now since we don't have
-	// any native functions to produce output yet.
-	if obj != nil {
-		if _, ok := obj.(*object.Null); !ok {
-			io.WriteString(os.Stdout, OUTPUT+obj.Inspect())
-			io.WriteString(os.Stdout, "\n")
-		}
-	}
+	evaluator.Eval(program, env)
 
 	return
 }
