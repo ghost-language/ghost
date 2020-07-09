@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"ghostlang.org/ghost/ast"
+	"ghostlang.org/ghost/builtins"
 	"ghostlang.org/ghost/object"
 )
 
@@ -269,26 +270,33 @@ func evalIfExpression(ie *ast.IfExpression, env *object.Environment) object.Obje
 }
 
 func evalIdentifier(node *ast.Identifier, env *object.Environment) object.Object {
-	value, ok := env.Get(node.Value)
-
-	if !ok {
-		return newError("identifier not found: " + node.Value)
+	if value, ok := env.Get(node.Value); ok {
+		return value
 	}
 
-	return value
+	if builtin, ok := builtins.Builtins[node.Value]; ok {
+		return builtin
+	}
+
+	return newError("identifier not found: " + node.Value)
 }
 
 func applyFunction(fn object.Object, arguments []object.Object) object.Object {
-	function, ok := fn.(*object.Function)
+	switch fn := fn.(type) {
+	case *object.Function:
+		extendedEnv := extendFunctionEnv(fn, arguments)
+		evaluated := Eval(fn.Body, extendedEnv)
 
-	if !ok {
+		return unwrapReturnValue(evaluated)
+	case *object.Builtin:
+		if result := fn.Fn(arguments...); result != nil {
+			return result
+		}
+
+		return NULL
+	default:
 		return newError("not a function: %s", fn.Type())
 	}
-
-	extendedEnv := extendFunctionEnv(function, arguments)
-	evaluated := Eval(function.Body, extendedEnv)
-
-	return unwrapReturnValue(evaluated)
 }
 
 func extendFunctionEnv(fn *object.Function, arguments []object.Object) *object.Environment {
