@@ -9,6 +9,7 @@ const (
 	INTEGER_OBJ      = "INTEGER"
 	NULL_OBJ         = "NULL"
 	RETURN_VALUE_OBJ = "RETURN_VALUE"
+	STRING_OBJ       = "STRING"
 )
 
 type Object interface {
