@@ -73,9 +73,12 @@ func (lexer *Lexer) NextToken() token.Token {
 		currentToken = newToken(token.LBRACE, lexer.character)
 	case '}':
 		currentToken = newToken(token.RBRACE, lexer.character)
+	case '"':
+		currentToken.Type = token.STRING
+		currentToken.Literal = lexer.readString()
 	case 0:
-		currentToken.Literal = ""
 		currentToken.Type = token.EOF
+		currentToken.Literal = ""
 	default:
 		if isLetter(lexer.character) {
 			currentToken.Literal = lexer.readIdentifier()
@@ -107,6 +110,19 @@ func isLetter(character byte) bool {
 
 func isDigit(character byte) bool {
 	return '0' <= character && character <= '9'
+}
+
+func (lexer *Lexer) readString() string {
+	position := lexer.position + 1
+
+	for {
+		lexer.readCharacter()
+		if lexer.character == '"' || lexer.character == 0 {
+			break
+		}
+	}
+
+	return lexer.input[position:lexer.position]
 }
 
 func (lexer *Lexer) readNumber() string {
