@@ -3,10 +3,14 @@ Ghost is a small, object-oriented, embeddable toy scripting language. While obje
 
 Ghost is dynamically typed, runs by a tree-walking interpreter, and has automatic memory management thanks to its implementation through the Go programming language. Ghost's implementation in Go has no dependencies.
 
-Unless otherwise noted, the Ghost source files are distributed under the **MIT license** found in the [LICENSE](LICENSE) file.
-
 ## Status
 > Currently in active development. Not feature complete.
+
+## Documentation
+You will find robust, user friendly, and updated documentation on our [website](https://ghostlang.org/docs).
+
+## Versioning
+We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/ghost-language/ghost/tags).
 
 ## Development
 - To build and execute Ghost, run `make`.
@@ -56,3 +60,6 @@ $  ghost -i examples/fibtc.ghost
    9227465
 >>
 ```
+
+## License
+Ghost is open-sourced software licensed under the MIT license. See the [LICENSE](LICENSE) file for complete details.
