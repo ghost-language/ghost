@@ -10,4 +10,6 @@ let fib = function(n, a, b) {
     return fib(n - 1, b, a + b)
 }
 
-let y = fib(35, 0, 1)
+let x = fib(35, 0, 1)
+
+print("You may access the result through the variable 'x'.")

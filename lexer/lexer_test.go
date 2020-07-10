@@ -15,7 +15,7 @@ let add = function(x, y) {
 };
 
 let result = add(five, ten);
-!-/*5;
+!*-/5;
 5 < 10 > 5;
 
 if (5 < 10) {
@@ -26,9 +26,15 @@ if (5 < 10) {
 
 10 == 10;
 10 != 9;
+
+/*
+This is a multiline comment
+*/
+
 "foobar"
 "foo bar"
 [1, 2]
+// This is a single line comment
 `
 
 	tests := []struct {
@@ -72,9 +78,9 @@ if (5 < 10) {
 		{token.RPAREN, ")"},
 		{token.SEMICOLON, ";"},
 		{token.BANG, "!"},
+		{token.ASTERISK, "*"},
 		{token.MINUS, "-"},
 		{token.SLASH, "/"},
-		{token.ASTERISK, "*"},
 		{token.INT, "5"},
 		{token.SEMICOLON, ";"},
 		{token.INT, "5"},
