@@ -54,6 +54,18 @@ func (lexer *Lexer) NextToken() token.Token {
 			currentToken = newToken(token.BANG, lexer.character)
 		}
 	case '/':
+		if lexer.peekCharacter() == '/' {
+			lexer.skipMultiLineComment()
+
+			return lexer.NextToken()
+		}
+
+		if lexer.peekCharacter() == '*' {
+			lexer.skipMultiLineComment()
+
+			return lexer.NextToken()
+		}
+
 		currentToken = newToken(token.SLASH, lexer.character)
 	case '*':
 		currentToken = newToken(token.ASTERISK, lexer.character)
@@ -106,6 +118,33 @@ func (lexer *Lexer) skipWhitespace() {
 	for lexer.character == ' ' || lexer.character == '\t' || lexer.character == '\n' || lexer.character == '\r' {
 		lexer.readCharacter()
 	}
+}
+
+func (lexer *Lexer) skipSingleLineComment() {
+	for lexer.character != '\n' && lexer.character != 0 {
+		lexer.readCharacter()
+	}
+
+	lexer.skipWhitespace()
+}
+
+func (lexer *Lexer) skipMultiLineComment() {
+	endOfComment := false
+
+	for !endOfComment {
+		if lexer.character == 0 {
+			endOfComment = true
+		}
+
+		if lexer.character == '*' && lexer.peekCharacter() == '/' {
+			endOfComment = true
+			lexer.readCharacter()
+		}
+
+		lexer.readCharacter()
+	}
+
+	lexer.skipWhitespace()
 }
 
 func isLetter(character byte) bool {
