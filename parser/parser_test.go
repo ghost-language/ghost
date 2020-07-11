@@ -512,6 +512,10 @@ func TestOperatorPrecedenceParsing(t *testing.T) {
 			"add(a * b[2], b[1], 2 * [1, 2][1])",
 			"add((a * (b[2])), (b[1]), (2 * ([1, 2][1])))",
 		},
+		{
+			"a % 2",
+			"(a % 2)",
+		},
 	}
 
 	for _, tt := range tests {

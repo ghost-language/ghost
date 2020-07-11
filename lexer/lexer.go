@@ -69,6 +69,8 @@ func (lexer *Lexer) NextToken() token.Token {
 		currentToken = newToken(token.SLASH, lexer.character)
 	case '*':
 		currentToken = newToken(token.ASTERISK, lexer.character)
+	case '%':
+		currentToken = newToken(token.PERCENT, lexer.character)
 	case '<':
 		currentToken = newToken(token.LT, lexer.character)
 	case '>':
