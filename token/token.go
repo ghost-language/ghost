@@ -24,6 +24,7 @@ const (
 	ASTERISK = "*"
 	SLASH    = "/"
 	PERCENT  = "%"
+	DOT      = "."
 
 	LT = "<"
 	GT = ">"
