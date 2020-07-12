@@ -61,5 +61,10 @@ $  ghost -i examples/fibtc.ghost
 >>
 ```
 
+## Credits
+- [Crafting Interpreters](https://craftinginterpreters.com/)
+- [Writing An Interpreter In Go](https://interpreterbook.com/)
+- [Writing A Compiler In Go](https://compilerbook.com/)
+
 ## License
 Ghost is open-sourced software licensed under the MIT license. See the [LICENSE](LICENSE) file for complete details.
