@@ -8,7 +8,7 @@ import (
 	"ghostlang.org/ghost/parser"
 )
 
-func TestEvalIntegerExpression(t *testing.T) {
+func TestEvalNumberExpression(t *testing.T) {
 	tests := []struct {
 		input    string
 		expected int64
@@ -32,7 +32,7 @@ func TestEvalIntegerExpression(t *testing.T) {
 
 	for _, tt := range tests {
 		evaluated := testEval(tt.input)
-		testIntegerObject(t, evaluated, tt.expected)
+		testNumberObject(t, evaluated, tt.expected)
 	}
 }
 
@@ -103,10 +103,10 @@ func TestIfElseExpressions(t *testing.T) {
 
 	for _, tt := range tests {
 		evaluated := testEval(tt.input)
-		integer, ok := tt.expected.(int)
+		number, ok := tt.expected.(int)
 
 		if ok {
-			testIntegerObject(t, evaluated, int64(integer))
+			testNumberObject(t, evaluated, int64(number))
 		} else {
 			testNullObject(t, evaluated)
 		}
@@ -127,7 +127,7 @@ func TestReturnStatements(t *testing.T) {
 
 	for _, tt := range tests {
 		evaluated := testEval(tt.input)
-		testIntegerObject(t, evaluated, tt.expected)
+		testNumberObject(t, evaluated, tt.expected)
 	}
 }
 
@@ -143,7 +143,7 @@ func TestLetStatements(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		testIntegerObject(t, testEval(tt.input), tt.expected)
+		testNumberObject(t, testEval(tt.input), tt.expected)
 	}
 }
 
@@ -187,7 +187,7 @@ func TestFunctionApplication(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		testIntegerObject(t, testEval(tt.input), tt.expected)
+		testNumberObject(t, testEval(tt.input), tt.expected)
 	}
 }
 
@@ -235,9 +235,9 @@ func TestArrayLiterals(t *testing.T) {
 		t.Fatalf("array has wrong number of elements. got=%d, expected=3", len(result.Elements))
 	}
 
-	testIntegerObject(t, result.Elements[0], 1)
-	testIntegerObject(t, result.Elements[1], 4)
-	testIntegerObject(t, result.Elements[2], 6)
+	testNumberObject(t, result.Elements[0], 1)
+	testNumberObject(t, result.Elements[1], 4)
+	testNumberObject(t, result.Elements[2], 6)
 }
 
 func TestArrayIndexExpressions(t *testing.T) {
@@ -289,10 +289,10 @@ func TestArrayIndexExpressions(t *testing.T) {
 
 	for _, tt := range tests {
 		evaluated := testEval(tt.input)
-		integer, ok := tt.expected.(int)
+		number, ok := tt.expected.(int)
 
 		if ok {
-			testIntegerObject(t, evaluated, int64(integer))
+			testNumberObject(t, evaluated, int64(number))
 		} else {
 			testNullObject(t, evaluated)
 		}
@@ -307,7 +307,7 @@ func TestBuiltinFunctions(t *testing.T) {
 		{`len("")`, 0},
 		{`len("four")`, 4},
 		{`len("hello world")`, 11},
-		{`len(1)`, "argument to `len` not supported, got INTEGER"},
+		{`len(1)`, "argument to `len` not supported, got NUMBER"},
 		{`len("one", "two")`, "wrong number of arguments. got=2, expected=1"},
 	}
 
@@ -315,8 +315,8 @@ func TestBuiltinFunctions(t *testing.T) {
 		evaluated := testEval(tt.input)
 
 		switch expected := tt.expected.(type) {
-		case int:
-			testIntegerObject(t, evaluated, int64(expected))
+		case int64:
+			testNumberObject(t, evaluated, expected)
 		case string:
 			errObj, ok := evaluated.(*object.Error)
 
@@ -337,8 +337,8 @@ func TestErrorHandling(t *testing.T) {
 		input           string
 		expectedMessage string
 	}{
-		{"5 + true;", "type mismatch: INTEGER + BOOLEAN"},
-		{"5 + true; 5;", "type mismatch: INTEGER + BOOLEAN"},
+		{"5 + true;", "type mismatch: NUMBER + BOOLEAN"},
+		{"5 + true; 5;", "type mismatch: NUMBER + BOOLEAN"},
 		{"-true", "unknown operator: -BOOLEAN"},
 		{"true + false;", "unknown operator: BOOLEAN + BOOLEAN"},
 		{"5; true + false; 5", "unknown operator: BOOLEAN + BOOLEAN"},
@@ -372,16 +372,16 @@ func testEval(input string) object.Object {
 	return Eval(program, env)
 }
 
-func testIntegerObject(t *testing.T, obj object.Object, expected int64) bool {
-	result, ok := obj.(*object.Integer)
+func testNumberObject(t *testing.T, obj object.Object, expected int64) bool {
+	result, ok := obj.(*object.Number)
 
 	if !ok {
-		t.Errorf("object is not Integer. got=%T (%+v)", obj, obj)
+		t.Errorf("object is not Number. got=%T (%+v)", obj, obj)
 		return false
 	}
 
-	if result.Value != expected {
-		t.Errorf("object has wrong value. got=%d, expected=%d", result.Value, expected)
+	if result.Value.IntPart() != expected {
+		t.Errorf("object has wrong value. got=%d, expected=%d", result.Value.IntPart(), expected)
 		return false
 	}
 

@@ -14,7 +14,7 @@ const (
 	EOF     = "EOF"
 
 	IDENTIFIER = "IDENTIFIER"
-	INT        = "INT"
+	NUMBER     = "NUMBER"
 	STRING     = "STRING"
 
 	ASSIGN   = "="
@@ -24,6 +24,7 @@ const (
 	ASTERISK = "*"
 	SLASH    = "/"
 	PERCENT  = "%"
+	DOT      = "."
 
 	LT = "<"
 	GT = ">"

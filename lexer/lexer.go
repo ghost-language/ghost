@@ -94,6 +94,8 @@ func (lexer *Lexer) NextToken() token.Token {
 	case '"':
 		currentToken.Type = token.STRING
 		currentToken.Literal = lexer.readString()
+	case '.':
+		currentToken = newToken(token.DOT, lexer.character)
 	case 0:
 		currentToken.Type = token.EOF
 		currentToken.Literal = ""
@@ -103,7 +105,7 @@ func (lexer *Lexer) NextToken() token.Token {
 			currentToken.Type = token.LookupIdentifier(currentToken.Literal)
 			return currentToken
 		} else if isDigit(lexer.character) {
-			currentToken.Type = token.INT
+			currentToken.Type = token.NUMBER
 			currentToken.Literal = lexer.readNumber()
 			return currentToken
 		} else {
@@ -173,7 +175,7 @@ func (lexer *Lexer) readString() string {
 func (lexer *Lexer) readNumber() string {
 	position := lexer.position
 
-	for isDigit(lexer.character) {
+	for isDigit(lexer.character) || lexer.character == '.' {
 		lexer.readCharacter()
 	}
 

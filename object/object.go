@@ -8,8 +8,8 @@ const (
 	BUILTIN_OBJ      = "BUILTIN"
 	ERROR_OBJ        = "ERROR"
 	FUNCTION_OBJ     = "FUNCTION"
-	INTEGER_OBJ      = "INTEGER"
 	NULL_OBJ         = "NULL"
+	NUMBER_OBJ       = "NUMBER"
 	RETURN_VALUE_OBJ = "RETURN_VALUE"
 	STRING_OBJ       = "STRING"
 )

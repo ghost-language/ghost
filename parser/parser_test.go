@@ -116,7 +116,7 @@ func TestIdentifierExpression(t *testing.T) {
 	}
 }
 
-func TestIntegerLiteralExpression(t *testing.T) {
+func TestNumberLiteralExpression(t *testing.T) {
 	input := "5;"
 
 	l := lexer.New(input)
@@ -135,14 +135,14 @@ func TestIntegerLiteralExpression(t *testing.T) {
 		t.Fatalf("program.Statements[0] is not ast.ExpressionStatement. got=%T", statement.Expression)
 	}
 
-	literal, ok := statement.Expression.(*ast.IntegerLiteral)
+	literal, ok := statement.Expression.(*ast.NumberLiteral)
 
 	if !ok {
-		t.Fatalf("expression not *ast.IntegerLiteral. got=%T", statement.Expression)
+		t.Fatalf("expression not *ast.NumberLiteral. got=%T", statement.Expression)
 	}
 
-	if literal.Value != 5 {
-		t.Errorf("literal.Value not %d. got=%d", 5, literal.Value)
+	if literal.Value.IntPart() != 5 {
+		t.Errorf("literal.Value not 5. got=%d", literal.Value)
 	}
 
 	if literal.TokenLiteral() != "5" {
@@ -672,21 +672,21 @@ func testLetStatement(t *testing.T, s ast.Statement, name string) bool {
 	return true
 }
 
-func testIntegerLiteral(t *testing.T, il ast.Expression, value int64) bool {
-	integer, ok := il.(*ast.IntegerLiteral)
+func testNumberLiteral(t *testing.T, il ast.Expression, value int64) bool {
+	number, ok := il.(*ast.NumberLiteral)
 
 	if !ok {
-		t.Errorf("il not *ast.IntegerLiteral. got=%T", il)
+		t.Errorf("il not *ast.NumberLiteral. got=%T", il)
 		return false
 	}
 
-	if integer.Value != value {
-		t.Errorf("integer.Value not %d. got=%d", value, integer.Value)
+	if number.Value.IntPart() != value {
+		t.Errorf("number.Value not %d. got=%d", value, number.Value)
 		return false
 	}
 
-	if integer.TokenLiteral() != fmt.Sprintf("%d", value) {
-		t.Errorf("integer.TokenLiteral not %d. got=%s", value, integer.TokenLiteral())
+	if number.TokenLiteral() != fmt.Sprintf("%d", value) {
+		t.Errorf("number.TokenLiteral not %d. got=%s", value, number.TokenLiteral())
 		return false
 	}
 
@@ -734,7 +734,7 @@ func TestParsingArrayLiterals(t *testing.T) {
 		t.Fatalf("len(array.Elements) not 3. got=%d", len(array.Elements))
 	}
 
-	testIntegerLiteral(t, array.Elements[0], 1)
+	testNumberLiteral(t, array.Elements[0], 1)
 	testInfixExpression(t, array.Elements[1], 2, "*", 2)
 	testInfixExpression(t, array.Elements[2], 3, "+", 3)
 }
@@ -782,9 +782,11 @@ func testIdentifier(t *testing.T, expression ast.Expression, value string) bool 
 func testLiteralExpression(t *testing.T, expression ast.Expression, expected interface{}) bool {
 	switch v := expected.(type) {
 	case int:
-		return testIntegerLiteral(t, expression, int64(v))
+		return testNumberLiteral(t, expression, int64(v))
 	case int64:
-		return testIntegerLiteral(t, expression, v)
+		return testNumberLiteral(t, expression, int64(v))
+	case float64:
+		return testNumberLiteral(t, expression, int64(v))
 	case string:
 		return testIdentifier(t, expression, v)
 	case bool:
