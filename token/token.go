@@ -14,7 +14,7 @@ const (
 	EOF     = "EOF"
 
 	IDENTIFIER = "IDENTIFIER"
-	INT        = "INT"
+	NUMBER     = "NUMBER"
 	STRING     = "STRING"
 
 	ASSIGN   = "="

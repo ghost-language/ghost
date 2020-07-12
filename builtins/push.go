@@ -1,6 +1,7 @@
 package builtins
 
 import (
+	"ghostlang.org/ghost/decimal"
 	"ghostlang.org/ghost/object"
 )
 
@@ -22,5 +23,5 @@ func Push(args ...object.Object) object.Object {
 
 	arr.Elements = newElements
 
-	return &object.Integer{Value: int64(len(arr.Elements))}
+	return &object.Number{Value: decimal.NewFromInt(int64(len(arr.Elements)))}
 }

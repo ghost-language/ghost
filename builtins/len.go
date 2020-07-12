@@ -3,6 +3,7 @@ package builtins
 import (
 	"unicode/utf8"
 
+	"ghostlang.org/ghost/decimal"
 	"ghostlang.org/ghost/object"
 )
 
@@ -13,9 +14,9 @@ func Len(args ...object.Object) object.Object {
 
 	switch arg := args[0].(type) {
 	case *object.Array:
-		return &object.Integer{Value: int64(len(arg.Elements))}
+		return &object.Number{Value: decimal.NewFromInt(int64(len(arg.Elements)))}
 	case *object.String:
-		return &object.Integer{Value: int64(utf8.RuneCountInString(arg.Value))}
+		return &object.Number{Value: decimal.NewFromInt(int64(utf8.RuneCountInString(arg.Value)))}
 	default:
 		return newError("argument to `len` not supported, got %s", args[0].Type())
 	}

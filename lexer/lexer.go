@@ -103,7 +103,7 @@ func (lexer *Lexer) NextToken() token.Token {
 			currentToken.Type = token.LookupIdentifier(currentToken.Literal)
 			return currentToken
 		} else if isDigit(lexer.character) {
-			currentToken.Type = token.INT
+			currentToken.Type = token.NUMBER
 			currentToken.Literal = lexer.readNumber()
 			return currentToken
 		} else {

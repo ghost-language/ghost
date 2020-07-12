@@ -1,0 +1,3 @@
+/* len returns the length of the array. */
+let myArray = ["a", "b", "c"]
+print(len(myArray))

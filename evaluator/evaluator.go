@@ -45,8 +45,8 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 	// Expressions
 	case *ast.IfExpression:
 		return evalIfExpression(node, env)
-	case *ast.IntegerLiteral:
-		return &object.Integer{Value: node.Value}
+	case *ast.NumberLiteral:
+		return &object.Number{Value: node.Value}
 	case *ast.StringLiteral:
 		return &object.String{Value: node.Value}
 	case *ast.Boolean:
@@ -208,18 +208,19 @@ func evalBangOperatorExpression(right object.Object) object.Object {
 }
 
 func evalMinusPrefixOperatorExpression(right object.Object) object.Object {
-	if right.Type() != object.INTEGER_OBJ {
+	if right.Type() != object.NUMBER_OBJ {
 		return newError("unknown operator: -%s", right.Type())
 	}
 
-	value := right.(*object.Integer).Value
-	return &object.Integer{Value: -value}
+	value := right.(*object.Number).Value.Neg()
+
+	return &object.Number{Value: value}
 }
 
 func evalInfixExpression(operator string, left object.Object, right object.Object) object.Object {
 	switch {
-	case left.Type() == object.INTEGER_OBJ && right.Type() == object.INTEGER_OBJ:
-		return evalIntegerInfixExpression(operator, left, right)
+	case left.Type() == object.NUMBER_OBJ && right.Type() == object.NUMBER_OBJ:
+		return evalNumberInfixExpression(operator, left, right)
 	case left.Type() == object.STRING_OBJ && right.Type() == object.STRING_OBJ:
 		return evalStringInfixExpression(operator, left, right)
 	case operator == "==":
@@ -233,29 +234,29 @@ func evalInfixExpression(operator string, left object.Object, right object.Objec
 	}
 }
 
-func evalIntegerInfixExpression(operator string, left object.Object, right object.Object) object.Object {
-	leftValue := left.(*object.Integer).Value
-	rightValue := right.(*object.Integer).Value
+func evalNumberInfixExpression(operator string, left object.Object, right object.Object) object.Object {
+	leftValue := left.(*object.Number).Value
+	rightValue := right.(*object.Number).Value
 
 	switch operator {
 	case "+":
-		return &object.Integer{Value: leftValue + rightValue}
+		return &object.Number{Value: leftValue.Add(rightValue)}
 	case "-":
-		return &object.Integer{Value: leftValue - rightValue}
+		return &object.Number{Value: leftValue.Sub(rightValue)}
 	case "*":
-		return &object.Integer{Value: leftValue * rightValue}
+		return &object.Number{Value: leftValue.Mul(rightValue)}
 	case "/":
-		return &object.Integer{Value: leftValue / rightValue}
+		return &object.Number{Value: leftValue.Div(rightValue)}
 	case "%":
-		return &object.Integer{Value: leftValue % rightValue}
+		return &object.Number{Value: leftValue.Mod(rightValue)}
 	case "<":
-		return nativeBoolToBooleanObject(leftValue < rightValue)
+		return nativeBoolToBooleanObject(leftValue.LessThan(rightValue))
 	case ">":
-		return nativeBoolToBooleanObject(leftValue > rightValue)
+		return nativeBoolToBooleanObject(leftValue.GreaterThan(rightValue))
 	case "==":
-		return nativeBoolToBooleanObject(leftValue == rightValue)
+		return nativeBoolToBooleanObject(leftValue.Equal(rightValue))
 	case "!=":
-		return nativeBoolToBooleanObject(leftValue != rightValue)
+		return nativeBoolToBooleanObject(!leftValue.Equal(rightValue))
 	default:
 		return newError("unknown operator: %s %s %s", left.Type(), operator, right.Type())
 	}
@@ -307,7 +308,7 @@ func evalIdentifier(node *ast.Identifier, env *object.Environment) object.Object
 
 func evalIndexExpression(left object.Object, index object.Object) object.Object {
 	switch {
-	case left.Type() == object.ARRAY_OBJ && index.Type() == object.INTEGER_OBJ:
+	case left.Type() == object.ARRAY_OBJ && index.Type() == object.NUMBER_OBJ:
 		return evalArrayIndexExpression(left, index)
 	default:
 		return newError("index operator not supported: %s", left.Type())
@@ -316,7 +317,7 @@ func evalIndexExpression(left object.Object, index object.Object) object.Object 
 
 func evalArrayIndexExpression(array object.Object, index object.Object) object.Object {
 	arrayObject := array.(*object.Array)
-	idx := index.(*object.Integer).Value
+	idx := index.(*object.Number).Value.IntPart()
 	max := int64(len(arrayObject.Elements) - 1)
 
 	if idx < 0 || idx > max {
