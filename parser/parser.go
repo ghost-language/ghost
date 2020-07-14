@@ -126,6 +126,10 @@ func (p *Parser) ParseProgram() *ast.Program {
 }
 
 func (p *Parser) parseStatement() ast.Statement {
+	if p.peekToken.Type == token.ASSIGN {
+		return p.parseAssignmentStatement()
+	}
+
 	switch p.currentToken.Type {
 	case token.LET:
 		return p.parseLetStatement()

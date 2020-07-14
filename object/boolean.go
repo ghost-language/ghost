@@ -13,3 +13,7 @@ func (b *Boolean) Type() ObjectType {
 func (b *Boolean) Inspect() string {
 	return fmt.Sprintf("%t", b.Value)
 }
+
+func (b *Boolean) Set(obj Object) {
+	b.Value = obj.(*Boolean).Value
+}

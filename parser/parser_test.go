@@ -8,6 +8,40 @@ import (
 	"ghostlang.org/ghost/lexer"
 )
 
+func TestAssignmentStatements(t *testing.T) {
+	tests := []struct {
+		input              string
+		expectedIdentifier string
+		exptectedValue     interface{}
+	}{
+		{"x = 5", "x", 5},
+		{"y = true", "y", true},
+		{"foobar = y", "foobar", "y"},
+	}
+
+	for _, tt := range tests {
+		l := lexer.New(tt.input)
+		p := New(l)
+		program := p.ParseProgram()
+
+		if len(program.Statements) != 1 {
+			t.Fatalf("program.Statements does not contain 1 statement. got=%d", len(program.Statements))
+		}
+
+		statement := program.Statements[0]
+
+		if !testAssignmentStatement(t, statement, tt.expectedIdentifier) {
+			return
+		}
+
+		value := statement.(*ast.AssignmentStatement).Value
+
+		if !testLiteralExpression(t, value, tt.exptectedValue) {
+			return
+		}
+	}
+}
+
 func TestLetStatements(t *testing.T) {
 	tests := []struct {
 		input              string
@@ -666,6 +700,32 @@ func testLetStatement(t *testing.T, s ast.Statement, name string) bool {
 
 	if letStatement.Name.TokenLiteral() != name {
 		t.Errorf("letStatement.Name.TokenLiteral() not '%s'. got=%s", name, letStatement.Name.TokenLiteral())
+		return false
+	}
+
+	return true
+}
+
+func testAssignmentStatement(t *testing.T, s ast.Statement, name string) bool {
+	if s.TokenLiteral() != "=" {
+		t.Errorf("s.TokenLiteral not '='. got=%q", s.TokenLiteral())
+		return false
+	}
+
+	assignStatement, ok := s.(*ast.AssignmentStatement)
+
+	if !ok {
+		t.Errorf("s not *ast.AssignmentStatement. got=%T", s)
+		return false
+	}
+
+	if assignStatement.Name.Value != name {
+		t.Errorf("assignStatement.Name.Value not '%s'. got=%s", name, assignStatement.Name.Value)
+		return false
+	}
+
+	if assignStatement.Name.TokenLiteral() != name {
+		t.Errorf("assignStatement.Name.TokenLiteral() not '%s'. got=%s", name, assignStatement.Name.TokenLiteral())
 		return false
 	}
 
