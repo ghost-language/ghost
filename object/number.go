@@ -15,3 +15,7 @@ func (n *Number) Inspect() string {
 func (n *Number) Type() ObjectType {
 	return NUMBER_OBJ
 }
+
+func (n *Number) Set(obj Object) {
+	n.Value = obj.(*Number).Value
+}

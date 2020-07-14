@@ -28,3 +28,7 @@ func (ao *Array) Inspect() string {
 
 	return out.String()
 }
+
+func (ao *Array) Set(obj Object) {
+	ao.Elements = obj.(*Array).Elements
+}

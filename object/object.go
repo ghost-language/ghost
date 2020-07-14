@@ -18,3 +18,7 @@ type Object interface {
 	Type() ObjectType
 	Inspect() string
 }
+
+type Mutable interface {
+	Set(obj Object)
+}

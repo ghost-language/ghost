@@ -11,3 +11,7 @@ func (s *String) Type() ObjectType {
 func (s *String) Inspect() string {
 	return s.Value
 }
+
+func (s *String) Set(obj Object) {
+	s.Value = obj.(*String).Value
+}

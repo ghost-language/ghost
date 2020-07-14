@@ -33,6 +33,28 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 		}
 
 		return &object.ReturnValue{Value: value}
+	case *ast.AssignmentStatement:
+		identifier := evalIdentifier(node.Name, env)
+
+		if isError(identifier) {
+			return identifier
+		}
+
+		value := Eval(node.Value, env)
+
+		if isError(value) {
+			return value
+		}
+
+		object, ok := identifier.(object.Mutable)
+
+		if !ok {
+			return newError("cannot assign to %s", identifier.Type())
+		}
+
+		object.Set(value)
+
+		return value
 	case *ast.LetStatement:
 		value := Eval(node.Value, env)
 
