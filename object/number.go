@@ -1,6 +1,8 @@
 package object
 
 import (
+	"strconv"
+
 	"ghostlang.org/ghost/decimal"
 )
 
@@ -18,4 +20,10 @@ func (n *Number) Type() ObjectType {
 
 func (n *Number) Set(obj Object) {
 	n.Value = obj.(*Number).Value
+}
+
+func (n *Number) MapKey() MapKey {
+	value, _ := strconv.ParseUint(n.Value.String(), 10, 64)
+
+	return MapKey{Type: n.Type(), Value: value}
 }

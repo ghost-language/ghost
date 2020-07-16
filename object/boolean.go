@@ -17,3 +17,15 @@ func (b *Boolean) Inspect() string {
 func (b *Boolean) Set(obj Object) {
 	b.Value = obj.(*Boolean).Value
 }
+
+func (b *Boolean) MapKey() MapKey {
+	var value uint64
+
+	if b.Value {
+		value = 1
+	} else {
+		value = 0
+	}
+
+	return MapKey{Type: b.Type(), Value: value}
+}

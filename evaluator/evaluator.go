@@ -71,6 +71,8 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 		return &object.Number{Value: node.Value}
 	case *ast.StringLiteral:
 		return &object.String{Value: node.Value}
+	case *ast.MapLiteral:
+		return evalMapLiteral(node, env)
 	case *ast.Boolean:
 		return nativeBoolToBooleanObject(node.Value)
 	case *ast.PrefixExpression:
@@ -332,6 +334,8 @@ func evalIndexExpression(left object.Object, index object.Object) object.Object 
 	switch {
 	case left.Type() == object.LIST_OBJ && index.Type() == object.NUMBER_OBJ:
 		return evalListIndexExpression(left, index)
+	case left.Type() == object.MAP_OBJ:
+		return evalMapIndexExpression(left, index)
 	default:
 		return newError("index operator not supported: %s", left.Type())
 	}
@@ -347,6 +351,53 @@ func evalListIndexExpression(list object.Object, index object.Object) object.Obj
 	}
 
 	return listObject.Elements[idx]
+}
+
+func evalMapLiteral(node *ast.MapLiteral, env *object.Environment) object.Object {
+	pairs := make(map[object.MapKey]object.MapPair)
+
+	for keyNode, valueNode := range node.Pairs {
+		key := Eval(keyNode, env)
+
+		if isError(key) {
+			return key
+		}
+
+		mapKey, ok := key.(object.Mappable)
+
+		if !ok {
+			return newError("unusable as map key: %s", key.Type())
+		}
+
+		value := Eval(valueNode, env)
+
+		if isError(value) {
+			return value
+		}
+
+		mapped := mapKey.MapKey()
+		pairs[mapped] = object.MapPair{Key: key, Value: value}
+	}
+
+	return &object.Map{Pairs: pairs}
+}
+
+func evalMapIndexExpression(m object.Object, index object.Object) object.Object {
+	mapObject := m.(*object.Map)
+
+	key, ok := index.(object.Mappable)
+
+	if !ok {
+		return newError("unusable as map key: %s", index.Type())
+	}
+
+	pair, ok := mapObject.Pairs[key.MapKey()]
+
+	if !ok {
+		return NULL
+	}
+
+	return pair.Value
 }
 
 func applyFunction(fn object.Object, arguments []object.Object) object.Object {
