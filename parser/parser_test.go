@@ -774,7 +774,7 @@ func testBooleanLiteral(t *testing.T, expression ast.Expression, value bool) boo
 	return true
 }
 
-func TestParsingArrayLiterals(t *testing.T) {
+func TestParsingListLiterals(t *testing.T) {
 	input := "[1, 2 * 2, 3 + 3]"
 
 	l := lexer.New(input)
@@ -784,23 +784,23 @@ func TestParsingArrayLiterals(t *testing.T) {
 	checkParserErrors(t, p)
 
 	statement, _ := program.Statements[0].(*ast.ExpressionStatement)
-	array, ok := statement.Expression.(*ast.ArrayLiteral)
+	list, ok := statement.Expression.(*ast.ListLiteral)
 
 	if !ok {
-		t.Fatalf("expression not *ast.ArrayLiteral. got=%T", statement.Expression)
+		t.Fatalf("expression not *ast.ListLiteral. got=%T", statement.Expression)
 	}
 
-	if len(array.Elements) != 3 {
-		t.Fatalf("len(array.Elements) not 3. got=%d", len(array.Elements))
+	if len(list.Elements) != 3 {
+		t.Fatalf("len(list.Elements) not 3. got=%d", len(list.Elements))
 	}
 
-	testNumberLiteral(t, array.Elements[0], 1)
-	testInfixExpression(t, array.Elements[1], 2, "*", 2)
-	testInfixExpression(t, array.Elements[2], 3, "+", 3)
+	testNumberLiteral(t, list.Elements[0], 1)
+	testInfixExpression(t, list.Elements[1], 2, "*", 2)
+	testInfixExpression(t, list.Elements[2], 3, "+", 3)
 }
 
 func TestParsingIndexExpressions(t *testing.T) {
-	input := "myArray[1 + 1]"
+	input := "myList[1 + 1]"
 
 	l := lexer.New(input)
 	p := New(l)
@@ -815,7 +815,7 @@ func TestParsingIndexExpressions(t *testing.T) {
 		t.Fatalf("expression not *ast.IndexExpression. got=%T", statement.Expression)
 	}
 
-	if !testIdentifier(t, indexExpression.Left, "myArray") {
+	if !testIdentifier(t, indexExpression.Left, "myList") {
 		return
 	}
 

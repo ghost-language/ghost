@@ -1,0 +1,4 @@
+/* len returns the length of the list. */
+
+let myList = ["a", "b", "c"]
+print(len(myList))

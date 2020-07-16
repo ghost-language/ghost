@@ -13,7 +13,7 @@ func Len(args ...object.Object) object.Object {
 	}
 
 	switch arg := args[0].(type) {
-	case *object.Array:
+	case *object.List:
 		return &object.Number{Value: decimal.NewFromInt(int64(len(arg.Elements)))}
 	case *object.String:
 		return &object.Number{Value: decimal.NewFromInt(int64(utf8.RuneCountInString(arg.Value)))}

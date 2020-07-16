@@ -7,23 +7,23 @@ import (
 	"ghostlang.org/ghost/token"
 )
 
-type ArrayLiteral struct {
+type ListLiteral struct {
 	Token    token.Token
 	Elements []Expression
 }
 
-func (al *ArrayLiteral) expressionNode() {}
+func (ll *ListLiteral) expressionNode() {}
 
-func (al *ArrayLiteral) TokenLiteral() string {
-	return al.Token.Literal
+func (ll *ListLiteral) TokenLiteral() string {
+	return ll.Token.Literal
 }
 
-func (al *ArrayLiteral) String() string {
+func (ll *ListLiteral) String() string {
 	var out bytes.Buffer
 
 	elements := []string{}
 
-	for _, el := range al.Elements {
+	for _, el := range ll.Elements {
 		elements = append(elements, el.String())
 	}
 
