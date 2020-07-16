@@ -13,8 +13,8 @@ func Last(args ...object.Object) object.Object {
 		return newError("argument to `last` must be LIST, got %s", args[0].Type())
 	}
 
-	arr := args[0].(*object.List)
-	length := len(arr.Elements)
+	list := args[0].(*object.List)
+	length := len(list.Elements)
 
-	return arr.Elements[length-1]
+	return list.Elements[length-1]
 }

@@ -13,7 +13,7 @@ func First(args ...object.Object) object.Object {
 		return newError("argument to `first` must be LIST, got %s", args[0].Type())
 	}
 
-	arr := args[0].(*object.List)
+	list := args[0].(*object.List)
 
-	return arr.Elements[0]
+	return list.Elements[0]
 }
