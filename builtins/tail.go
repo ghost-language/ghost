@@ -9,18 +9,18 @@ func Tail(args ...object.Object) object.Object {
 		return newError("wrong number of arguments. got=%d, expected=1", len(args))
 	}
 
-	if args[0].Type() != object.ARRAY_OBJ {
-		return newError("argument to `tail` must be ARRAY, got %s", args[0].Type())
+	if args[0].Type() != object.LIST_OBJ {
+		return newError("argument to `tail` must be LIST, got %s", args[0].Type())
 	}
 
-	arr := args[0].(*object.Array)
-	length := len(arr.Elements)
+	list := args[0].(*object.List)
+	length := len(list.Elements)
 
 	if length > 0 {
 		newElements := make([]object.Object, length-1, length-1)
-		copy(newElements, arr.Elements[1:length])
+		copy(newElements, list.Elements[1:length])
 
-		return &object.Array{Elements: newElements}
+		return &object.List{Elements: newElements}
 	}
 
 	return NULL

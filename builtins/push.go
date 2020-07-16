@@ -10,18 +10,18 @@ func Push(args ...object.Object) object.Object {
 		return newError("wrong number of arguments. got=%d, expected=2", len(args))
 	}
 
-	if args[0].Type() != object.ARRAY_OBJ {
-		return newError("argument to `push` must be ARRAY, got %s", args[0].Type())
+	if args[0].Type() != object.LIST_OBJ {
+		return newError("argument to `push` must be LIST, got %s", args[0].Type())
 	}
 
-	arr := args[0].(*object.Array)
-	length := len(arr.Elements)
+	list := args[0].(*object.List)
+	length := len(list.Elements)
 
 	newElements := make([]object.Object, length+1, length+1)
-	copy(newElements, arr.Elements)
+	copy(newElements, list.Elements)
 	newElements[length] = args[1]
 
-	arr.Elements = newElements
+	list.Elements = newElements
 
-	return &object.Number{Value: decimal.NewFromInt(int64(len(arr.Elements)))}
+	return &object.Number{Value: decimal.NewFromInt(int64(len(list.Elements)))}
 }

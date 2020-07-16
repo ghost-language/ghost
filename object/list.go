@@ -5,15 +5,15 @@ import (
 	"strings"
 )
 
-type Array struct {
+type List struct {
 	Elements []Object
 }
 
-func (ao *Array) Type() ObjectType {
-	return ARRAY_OBJ
+func (ao *List) Type() ObjectType {
+	return LIST_OBJ
 }
 
-func (ao *Array) Inspect() string {
+func (ao *List) Inspect() string {
 	var out bytes.Buffer
 
 	elements := []string{}
@@ -29,6 +29,6 @@ func (ao *Array) Inspect() string {
 	return out.String()
 }
 
-func (ao *Array) Set(obj Object) {
-	ao.Elements = obj.(*Array).Elements
+func (ao *List) Set(obj Object) {
+	ao.Elements = obj.(*List).Elements
 }

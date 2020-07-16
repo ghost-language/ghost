@@ -3,11 +3,11 @@ package object
 type ObjectType string
 
 const (
-	ARRAY_OBJ        = "ARRAY"
 	BOOLEAN_OBJ      = "BOOLEAN"
 	BUILTIN_OBJ      = "BUILTIN"
 	ERROR_OBJ        = "ERROR"
 	FUNCTION_OBJ     = "FUNCTION"
+	LIST_OBJ         = "LIST"
 	NULL_OBJ         = "NULL"
 	NUMBER_OBJ       = "NUMBER"
 	RETURN_VALUE_OBJ = "RETURN_VALUE"

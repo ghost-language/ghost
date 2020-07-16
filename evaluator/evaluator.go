@@ -97,14 +97,14 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 		return evalInfixExpression(node.Operator, left, right)
 	case *ast.Identifier:
 		return evalIdentifier(node, env)
-	case *ast.ArrayLiteral:
+	case *ast.ListLiteral:
 		elements := evalExpressions(node.Elements, env)
 
 		if len(elements) == 1 && isError(elements[0]) {
 			return elements[0]
 		}
 
-		return &object.Array{Elements: elements}
+		return &object.List{Elements: elements}
 	case *ast.IndexExpression:
 		left := Eval(node.Left, env)
 
@@ -330,23 +330,23 @@ func evalIdentifier(node *ast.Identifier, env *object.Environment) object.Object
 
 func evalIndexExpression(left object.Object, index object.Object) object.Object {
 	switch {
-	case left.Type() == object.ARRAY_OBJ && index.Type() == object.NUMBER_OBJ:
-		return evalArrayIndexExpression(left, index)
+	case left.Type() == object.LIST_OBJ && index.Type() == object.NUMBER_OBJ:
+		return evalListIndexExpression(left, index)
 	default:
 		return newError("index operator not supported: %s", left.Type())
 	}
 }
 
-func evalArrayIndexExpression(array object.Object, index object.Object) object.Object {
-	arrayObject := array.(*object.Array)
+func evalListIndexExpression(list object.Object, index object.Object) object.Object {
+	listObject := list.(*object.List)
 	idx := index.(*object.Number).Value.IntPart()
-	max := int64(len(arrayObject.Elements) - 1)
+	max := int64(len(listObject.Elements) - 1)
 
 	if idx < 0 || idx > max {
 		return NULL
 	}
 
-	return arrayObject.Elements[idx]
+	return listObject.Elements[idx]
 }
 
 func applyFunction(fn object.Object, arguments []object.Object) object.Object {

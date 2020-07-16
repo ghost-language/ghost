@@ -222,18 +222,18 @@ func TestStringConcatenation(t *testing.T) {
 	}
 }
 
-func TestArrayLiterals(t *testing.T) {
+func TestListLiterals(t *testing.T) {
 	input := "[1, 2 * 2, 3 + 3]"
 
 	evaluated := testEval(input)
-	result, ok := evaluated.(*object.Array)
+	result, ok := evaluated.(*object.List)
 
 	if !ok {
-		t.Fatalf("object is not Array. got=%T (%+v)", evaluated, evaluated)
+		t.Fatalf("object is not List. got=%T (%+v)", evaluated, evaluated)
 	}
 
 	if len(result.Elements) != 3 {
-		t.Fatalf("array has wrong number of elements. got=%d, expected=3", len(result.Elements))
+		t.Fatalf("list has wrong number of elements. got=%d, expected=3", len(result.Elements))
 	}
 
 	testNumberObject(t, result.Elements[0], 1)
@@ -241,7 +241,7 @@ func TestArrayLiterals(t *testing.T) {
 	testNumberObject(t, result.Elements[2], 6)
 }
 
-func TestArrayIndexExpressions(t *testing.T) {
+func TestListIndexExpressions(t *testing.T) {
 	tests := []struct {
 		input    string
 		expected interface{}
@@ -267,15 +267,15 @@ func TestArrayIndexExpressions(t *testing.T) {
 			3,
 		},
 		{
-			"let myArray = [1, 2, 3]; myArray[2];",
+			"let myList = [1, 2, 3]; myList[2];",
 			3,
 		},
 		{
-			"let myArray = [1, 2, 3]; myArray[0] + myArray[1] + myArray[2];",
+			"let myList = [1, 2, 3]; myList[0] + myList[1] + myList[2];",
 			6,
 		},
 		{
-			"let myArray = [1, 2, 3]; let i = myArray[0]; myArray[i]",
+			"let myList = [1, 2, 3]; let i = myList[0]; myList[i]",
 			2,
 		},
 		{
