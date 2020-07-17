@@ -126,6 +126,8 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 		body := node.Body
 
 		return &object.Function{Parameters: parameters, Env: env, Body: body}
+	case *ast.WhileExpression:
+		return evalWhileExpression(node, env)
 	case *ast.CallExpression:
 		function := Eval(node.Function, env)
 
@@ -398,6 +400,24 @@ func evalMapIndexExpression(m object.Object, index object.Object) object.Object 
 	}
 
 	return pair.Value
+}
+
+func evalWhileExpression(we *ast.WhileExpression, env *object.Environment) object.Object {
+	for {
+		condition := Eval(we.Condition, env)
+
+		if isError(condition) {
+			return condition
+		}
+
+		if isTruthy(condition) {
+			Eval(we.Consequence, env)
+		} else {
+			break
+		}
+	}
+
+	return NULL
 }
 
 func applyFunction(fn object.Object, arguments []object.Object) object.Object {

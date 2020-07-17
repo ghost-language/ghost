@@ -37,6 +37,7 @@ This is a multiline comment
 %5
 0.123
 {"foo": "bar"}
+while {}
 // This is a single line comment
 `
 
@@ -131,6 +132,9 @@ This is a multiline comment
 		{token.STRING, "foo"},
 		{token.COLON, ":"},
 		{token.STRING, "bar"},
+		{token.RBRACE, "}"},
+		{token.WHILE, "while"},
+		{token.LBRACE, "{"},
 		{token.RBRACE, "}"},
 		{token.EOF, ""},
 	}

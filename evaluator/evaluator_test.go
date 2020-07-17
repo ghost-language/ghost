@@ -390,6 +390,30 @@ func TestMapIndexExpressions(t *testing.T) {
 	}
 }
 
+func TestWhileExpressions(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected interface{}
+	}{
+		{"while (false) { }", nil},
+		{"let n = 0; while (n < 10) { n = n + 1 }; n", 10},
+		{"let n = 10; while (n > 0) { n = n - 1 }; n", 0},
+		{"let n = 0; while (n < 10) { n = n + 1 }", nil},
+		{"let n = 10; while (n > 0) { n = n - 1 }", nil},
+	}
+
+	for _, tt := range tests {
+		evaluated := testEval(tt.input)
+		number, ok := tt.expected.(int)
+
+		if ok {
+			testNumberObject(t, evaluated, int64(number))
+		} else {
+			testNullObject(t, evaluated)
+		}
+	}
+}
+
 func TestBuiltinFunctions(t *testing.T) {
 	tests := []struct {
 		input    string
