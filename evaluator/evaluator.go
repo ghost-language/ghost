@@ -245,6 +245,8 @@ func evalMinusPrefixOperatorExpression(right object.Object) object.Object {
 
 func evalInfixExpression(operator string, left object.Object, right object.Object) object.Object {
 	switch {
+	case left.Type() == object.BOOLEAN_OBJ && right.Type() == object.BOOLEAN_OBJ:
+		return evalBooleanInfixExpression(operator, left, right)
 	case left.Type() == object.NUMBER_OBJ && right.Type() == object.NUMBER_OBJ:
 		return evalNumberInfixExpression(operator, left, right)
 	case left.Type() == object.STRING_OBJ && right.Type() == object.STRING_OBJ:
@@ -255,6 +257,24 @@ func evalInfixExpression(operator string, left object.Object, right object.Objec
 		return nativeBoolToBooleanObject(left != right)
 	case left.Type() != right.Type():
 		return newError("type mismatch: %s %s %s", left.Type(), operator, right.Type())
+	default:
+		return newError("unknown operator: %s %s %s", left.Type(), operator, right.Type())
+	}
+}
+
+func evalBooleanInfixExpression(operator string, left object.Object, right object.Object) object.Object {
+	leftValue := left.(*object.Boolean).Value
+	rightValue := right.(*object.Boolean).Value
+
+	switch operator {
+	case "and":
+		return nativeBoolToBooleanObject(leftValue && rightValue)
+	case "or":
+		return nativeBoolToBooleanObject(leftValue || rightValue)
+	case "==":
+		return nativeBoolToBooleanObject(leftValue == rightValue)
+	case "!=":
+		return nativeBoolToBooleanObject(leftValue != rightValue)
 	default:
 		return newError("unknown operator: %s %s %s", left.Type(), operator, right.Type())
 	}
