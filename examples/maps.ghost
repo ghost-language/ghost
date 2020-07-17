@@ -6,7 +6,6 @@ let people = [
     }
 ]
 
-
 print(myMap)
 print(people)
 print(people[0]["name"])
