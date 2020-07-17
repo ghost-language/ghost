@@ -8,6 +8,7 @@ const (
 	ERROR_OBJ        = "ERROR"
 	FUNCTION_OBJ     = "FUNCTION"
 	LIST_OBJ         = "LIST"
+	MAP_OBJ          = "MAP"
 	NULL_OBJ         = "NULL"
 	NUMBER_OBJ       = "NUMBER"
 	RETURN_VALUE_OBJ = "RETURN_VALUE"

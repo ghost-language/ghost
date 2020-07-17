@@ -3,6 +3,7 @@ package evaluator
 import (
 	"testing"
 
+	"ghostlang.org/ghost/decimal"
 	"ghostlang.org/ghost/lexer"
 	"ghostlang.org/ghost/object"
 	"ghostlang.org/ghost/parser"
@@ -300,6 +301,95 @@ func TestListIndexExpressions(t *testing.T) {
 	}
 }
 
+func TestMapLiterals(t *testing.T) {
+	input := `let two = "two";
+	{
+		"one": 10 - 9,
+		two: 1 + 1,
+		"thr" + "ee": 6 / 2,
+		4: 4,
+		true: 5,
+		false: 6
+	}`
+
+	evaluated := testEval(input)
+	result, ok := evaluated.(*object.Map)
+
+	if !ok {
+		t.Fatalf("object is not Map. got=%T (%+v)", evaluated, evaluated)
+	}
+
+	expected := map[object.MapKey]int64{
+		(&object.String{Value: "one"}).MapKey():             1,
+		(&object.String{Value: "two"}).MapKey():             2,
+		(&object.String{Value: "three"}).MapKey():           3,
+		(&object.Number{Value: decimal.New(4, 0)}).MapKey(): 4,
+		TRUE.MapKey():  5,
+		FALSE.MapKey(): 6,
+	}
+
+	if len(result.Pairs) != len(expected) {
+		t.Fatalf("map has wrong number of pairs. got=%d", len(result.Pairs))
+	}
+
+	for expectedKey, expectedValue := range expected {
+		pair, ok := result.Pairs[expectedKey]
+
+		if !ok {
+			t.Errorf("no pair for given key in Pairs")
+		}
+
+		testNumberObject(t, pair.Value, expectedValue)
+	}
+}
+
+func TestMapIndexExpressions(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected interface{}
+	}{
+		{
+			`{"foo": 5}["foo"]`,
+			5,
+		},
+		{
+			`{"foo": 5}["bar"]`,
+			nil,
+		},
+		{
+			`let key = "foo"; {"foo": 5}[key]`,
+			5,
+		},
+		{
+			`{}["foo"]`,
+			nil,
+		},
+		{
+			`{5: 5}[5]`,
+			5,
+		},
+		{
+			`{true: 5}[true]`,
+			5,
+		},
+		{
+			`{false: 5}[false]`,
+			5,
+		},
+	}
+
+	for _, tt := range tests {
+		evaluated := testEval(tt.input)
+		integer, ok := tt.expected.(int)
+
+		if ok {
+			testNumberObject(t, evaluated, int64(integer))
+		} else {
+			testNullObject(t, evaluated)
+		}
+	}
+}
+
 func TestBuiltinFunctions(t *testing.T) {
 	tests := []struct {
 		input    string
@@ -347,6 +437,7 @@ func TestErrorHandling(t *testing.T) {
 		{"if (10 > 1) { if (10 > 1) { return true + false; } return 1; }", "unknown operator: BOOLEAN + BOOLEAN"},
 		{"foobar", "identifier not found: foobar"},
 		{`"Hello" - "World"`, "unknown operator: STRING - STRING"},
+		{`{"name": "Ghost"}[function(x) { x }]`, "unusable as map key: FUNCTION"},
 	}
 
 	for _, tt := range tests {

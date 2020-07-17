@@ -36,6 +36,7 @@ This is a multiline comment
 [1, 2]
 %5
 0.123
+{"foo": "bar"}
 // This is a single line comment
 `
 
@@ -126,6 +127,11 @@ This is a multiline comment
 		{token.PERCENT, "%"},
 		{token.NUMBER, "5"},
 		{token.NUMBER, "0.123"},
+		{token.LBRACE, "{"},
+		{token.STRING, "foo"},
+		{token.COLON, ":"},
+		{token.STRING, "bar"},
+		{token.RBRACE, "}"},
 		{token.EOF, ""},
 	}
 
