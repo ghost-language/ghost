@@ -1012,7 +1012,7 @@ func TestParsingIndexExpressions(t *testing.T) {
 	}
 }
 
-func TestWhileStatement(t *testing.T) {
+func TestWhileExpression(t *testing.T) {
 	input := `while (x < y) { x }`
 
 	l := lexer.New(input)
