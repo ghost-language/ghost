@@ -48,6 +48,8 @@ const (
 	ELSE     = "ELSE"
 	RETURN   = "RETURN"
 	WHILE    = "WHILE"
+	AND      = "AND"
+	OR       = "OR"
 
 	EQ     = "=="
 	NOT_EQ = "!="
@@ -62,6 +64,8 @@ var keywords = map[string]TokenType{
 	"else":     ELSE,
 	"return":   RETURN,
 	"while":    WHILE,
+	"and":      AND,
+	"or":       OR,
 }
 
 // LookupIdentifier checks the `keywords` table to see whether

@@ -38,6 +38,8 @@ This is a multiline comment
 0.123
 {"foo": "bar"}
 while {}
+true and true
+true or false
 // This is a single line comment
 `
 
@@ -136,6 +138,12 @@ while {}
 		{token.WHILE, "while"},
 		{token.LBRACE, "{"},
 		{token.RBRACE, "}"},
+		{token.TRUE, "true"},
+		{token.AND, "and"},
+		{token.TRUE, "true"},
+		{token.TRUE, "true"},
+		{token.OR, "or"},
+		{token.FALSE, "false"},
 		{token.EOF, ""},
 	}
 
