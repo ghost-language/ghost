@@ -1,1 +1,12 @@
-let people = [{"name": "Alice", "age": 24}, {"name": "Anna", "age": 28}];
+let myMap  = {"one": 1}
+let people = [
+    {
+        "name": "Turing",
+        "age": 31,
+    }
+]
+
+
+print(myMap)
+print(people)
+print(people[0]["name"])
