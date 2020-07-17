@@ -2,9 +2,6 @@ let i = 0
 
 while (i < 20) {
     if ((i % 3 == 0) and (i % 5 == 0)) {
-        print(i)
-        print(i % 3)
-        print(i % 5)
         print("FizzBuzz")
     } else if (i % 3 == 0) {
         print("Fizz")

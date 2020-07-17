@@ -9,8 +9,8 @@ import (
 )
 
 var precedences = map[token.TokenType]int{
-	token.AND:      LOGICAL,
-	token.OR:       LOGICAL,
+	token.OR:       OR,
+	token.AND:      AND,
 	token.EQ:       EQUALS,
 	token.NOT_EQ:   EQUALS,
 	token.LT:       LESSGREATER,
@@ -27,7 +27,8 @@ var precedences = map[token.TokenType]int{
 const (
 	_ int = iota
 	LOWEST
-	LOGICAL
+	OR
+	AND
 	EQUALS
 	LESSGREATER
 	SUM

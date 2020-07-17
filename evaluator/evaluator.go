@@ -268,13 +268,13 @@ func evalBooleanInfixExpression(operator string, left object.Object, right objec
 
 	switch operator {
 	case "and":
-		return &object.Boolean{Value: leftValue && rightValue}
+		return nativeBoolToBooleanObject(leftValue && rightValue)
 	case "or":
-		return &object.Boolean{Value: leftValue || rightValue}
+		return nativeBoolToBooleanObject(leftValue || rightValue)
 	case "==":
-		return &object.Boolean{Value: leftValue == rightValue}
+		return nativeBoolToBooleanObject(leftValue == rightValue)
 	case "!=":
-		return &object.Boolean{Value: leftValue != rightValue}
+		return nativeBoolToBooleanObject(leftValue != rightValue)
 	default:
 		return newError("unknown operator: %s %s %s", left.Type(), operator, right.Type())
 	}
