@@ -37,6 +37,29 @@ func TestEvalNumberExpression(t *testing.T) {
 	}
 }
 
+func TestLogicalOperators(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected interface{}
+	}{
+		{"true and true", true},
+		{"true and false", false},
+		{"true or false", true},
+		{"false or true", true},
+	}
+
+	for _, tt := range tests {
+		evaluated := testEval(tt.input)
+		boolean, ok := tt.expected.(bool)
+
+		if ok {
+			testBooleanObject(t, evaluated, boolean)
+		} else {
+			testNullObject(t, evaluated)
+		}
+	}
+}
+
 func TestEvalBooleanExpression(t *testing.T) {
 	tests := []struct {
 		input    string

@@ -412,6 +412,8 @@ func TestParsingInfixExpressions(t *testing.T) {
 		{"true == true", true, "==", true},
 		{"true != false", true, "!=", false},
 		{"false == false", false, "==", false},
+		{"true and true", true, "and", true},
+		{"true or false", true, "or", false},
 	}
 
 	for _, tt := range infixTests {
