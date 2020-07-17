@@ -1012,6 +1012,50 @@ func TestParsingIndexExpressions(t *testing.T) {
 	}
 }
 
+func TestWhileStatement(t *testing.T) {
+	input := `while (x < y) { x }`
+
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("program.Statements does not contain 1 statement. got=%d", len(program.Statements))
+	}
+
+	statement, ok := program.Statements[0].(*ast.ExpressionStatement)
+
+	if !ok {
+		t.Fatalf("program.Statements[0] is not ast.ExpressionStatement. got=%T", program.Statements[0])
+	}
+
+	expression, ok := statement.Expression.(*ast.WhileExpression)
+
+	if !ok {
+		t.Fatalf("statement.Expression is not ast.WhileExpression. got=%T", statement.Expression)
+	}
+
+	if !testInfixExpression(t, expression.Condition, "x", "<", "y") {
+		return
+	}
+
+	if len(expression.Consequence.Statements) != 1 {
+		t.Errorf("while consequence is not 1 statement. got=%d", len(expression.Consequence.Statements))
+	}
+
+	consequence, ok := expression.Consequence.Statements[0].(*ast.ExpressionStatement)
+
+	if !ok {
+		t.Fatalf("Consequence.Statements[0] is not ast.ExpressionStatement. got=%T", expression.Consequence.Statements[0])
+	}
+
+	if !testIdentifier(t, consequence.Expression, "x") {
+		return
+	}
+}
+
 func testIdentifier(t *testing.T, expression ast.Expression, value string) bool {
 	identifier, ok := expression.(*ast.Identifier)
 	if !ok {

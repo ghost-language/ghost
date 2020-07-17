@@ -1,0 +1,15 @@
+let glossary = [
+    "abductive reasoning",
+    "algorithm",
+    "approximation error",
+    "artificial neural network",
+    "autonomous robot"
+]
+
+let index = 0
+
+while (index < len(glossary)) {
+    print(glossary[index])
+
+    index = index + 1
+}
