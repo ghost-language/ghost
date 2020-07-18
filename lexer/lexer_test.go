@@ -40,6 +40,8 @@ This is a multiline comment
 while {}
 true and true
 true or false
+1 >= 1
+1 <= 1
 // This is a single line comment
 `
 
@@ -144,6 +146,12 @@ true or false
 		{token.TRUE, "true"},
 		{token.OR, "or"},
 		{token.FALSE, "false"},
+		{token.NUMBER, "1"},
+		{token.GTE, ">="},
+		{token.NUMBER, "1"},
+		{token.NUMBER, "1"},
+		{token.LTE, "<="},
+		{token.NUMBER, "1"},
 		{token.EOF, ""},
 	}
 

@@ -72,9 +72,23 @@ func (lexer *Lexer) NextToken() token.Token {
 	case '%':
 		currentToken = newToken(token.PERCENT, lexer.character)
 	case '<':
-		currentToken = newToken(token.LT, lexer.character)
+		if lexer.peekCharacter() == '=' {
+			character := lexer.character
+			lexer.readCharacter()
+			literal := string(character) + string(lexer.character)
+			currentToken = token.Token{Type: token.LTE, Literal: literal}
+		} else {
+			currentToken = newToken(token.LT, lexer.character)
+		}
 	case '>':
-		currentToken = newToken(token.GT, lexer.character)
+		if lexer.peekCharacter() == '=' {
+			character := lexer.character
+			lexer.readCharacter()
+			literal := string(character) + string(lexer.character)
+			currentToken = token.Token{Type: token.GTE, Literal: literal}
+		} else {
+			currentToken = newToken(token.GT, lexer.character)
+		}
 	case ';':
 		currentToken = newToken(token.SEMICOLON, lexer.character)
 	case ',':

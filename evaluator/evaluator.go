@@ -299,6 +299,10 @@ func evalNumberInfixExpression(operator string, left object.Object, right object
 		return nativeBoolToBooleanObject(leftValue.LessThan(rightValue))
 	case ">":
 		return nativeBoolToBooleanObject(leftValue.GreaterThan(rightValue))
+	case "<=":
+		return nativeBoolToBooleanObject(leftValue.LessThanOrEqual(rightValue))
+	case ">=":
+		return nativeBoolToBooleanObject(leftValue.GreaterThanOrEqual(rightValue))
 	case "==":
 		return nativeBoolToBooleanObject(leftValue.Equal(rightValue))
 	case "!=":
