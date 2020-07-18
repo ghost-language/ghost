@@ -26,8 +26,10 @@ const (
 	PERCENT  = "%"
 	DOT      = "."
 
-	LT = "<"
-	GT = ">"
+	LT  = "<"
+	GT  = ">"
+	LTE = "<="
+	GTE = ">="
 
 	COMMA     = ","
 	SEMICOLON = ";"
