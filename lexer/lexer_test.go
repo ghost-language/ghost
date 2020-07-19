@@ -34,6 +34,7 @@ This is a multiline comment
 
 "foobar"
 "foo bar"
+'hello world'
 [1, 2]
 %5
 0.123
@@ -126,6 +127,7 @@ foo.bar
 		{token.SEMICOLON, ";"},
 		{token.STRING, "foobar"},
 		{token.STRING, "foo bar"},
+		{token.STRING, "hello world"},
 		{token.LBRACKET, "["},
 		{token.NUMBER, "1"},
 		{token.COMMA, ","},
