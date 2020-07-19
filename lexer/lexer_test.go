@@ -24,6 +24,7 @@ if (5 < 10) {
 	return false;
 }
 
+#! \usr\bin\ghost
 10 == 10;
 10 != 9;
 
@@ -42,8 +43,8 @@ true and true
 true or false
 1 >= 1
 1 <= 1
-foo.bar
 // This is a single line comment
+foo.bar
 `
 
 	tests := []struct {

@@ -53,9 +53,13 @@ func (lexer *Lexer) NextToken() token.Token {
 		} else {
 			currentToken = newToken(token.BANG, lexer.character)
 		}
+	case '#':
+		lexer.skipSingleLineComment()
+
+		return lexer.NextToken()
 	case '/':
 		if lexer.peekCharacter() == '/' {
-			lexer.skipMultiLineComment()
+			lexer.skipSingleLineComment()
 
 			return lexer.NextToken()
 		}
