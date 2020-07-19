@@ -431,6 +431,37 @@ func TestMapIndexExpressions(t *testing.T) {
 	}
 }
 
+func TestMapDotNotationExpressions(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected interface{}
+	}{
+		{
+			`{"foo": 5}.foo`,
+			5,
+		},
+		{
+			`{"foo": 5}.bar`,
+			nil,
+		},
+		{
+			`{}.foo`,
+			nil,
+		},
+	}
+
+	for _, tt := range tests {
+		evaluated := testEval(tt.input)
+		number, ok := tt.expected.(int)
+
+		if ok {
+			testNumberObject(t, evaluated, int64(number))
+		} else {
+			testNullObject(t, evaluated)
+		}
+	}
+}
+
 func TestWhileExpressions(t *testing.T) {
 	tests := []struct {
 		input    string

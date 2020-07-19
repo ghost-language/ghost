@@ -24,6 +24,7 @@ var precedences = map[token.TokenType]int{
 	token.PERCENT:  MODULO,
 	token.LPAREN:   CALL,
 	token.LBRACKET: INDEX,
+	token.DOT:      INDEX,
 }
 
 const (
@@ -99,6 +100,7 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerInfix(token.OR, p.parseInfixExpression)
 	p.registerInfix(token.LPAREN, p.parseCallExpression)
 	p.registerInfix(token.LBRACKET, p.parseIndexExpression)
+	p.registerInfix(token.DOT, p.parseDotNotationExpression)
 
 	return p
 }

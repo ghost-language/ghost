@@ -42,6 +42,7 @@ true and true
 true or false
 1 >= 1
 1 <= 1
+foo.bar
 // This is a single line comment
 `
 
@@ -152,6 +153,9 @@ true or false
 		{token.NUMBER, "1"},
 		{token.LTE, "<="},
 		{token.NUMBER, "1"},
+		{token.IDENTIFIER, "foo"},
+		{token.DOT, "."},
+		{token.IDENTIFIER, "bar"},
 		{token.EOF, ""},
 	}
 
