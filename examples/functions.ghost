@@ -1,0 +1,15 @@
+function hello(closure) {
+    print("Hello world!")
+
+    closure()
+}
+
+let foobar = function() {
+    print("foobar")
+}
+
+hello(function() {
+    print("I'm an anonymous function being passed through another function!")
+})
+
+foobar()

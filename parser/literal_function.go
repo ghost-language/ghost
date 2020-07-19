@@ -5,8 +5,16 @@ import (
 	"ghostlang.org/ghost/token"
 )
 
+// Anonymous function:  function() { ... }
+// Named function:      function test() { ... }
 func (p *Parser) parseFunctionLiteral() ast.Expression {
 	literal := &ast.FunctionLiteral{Token: p.currentToken}
+
+	if !p.peekTokenIs(token.LPAREN) {
+		p.nextToken()
+
+		literal.Name = p.currentToken.Literal
+	}
 
 	if !p.expectPeek(token.LPAREN) {
 		return nil

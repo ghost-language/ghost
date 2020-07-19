@@ -124,12 +124,18 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 	case *ast.FunctionLiteral:
 		parameters := node.Parameters
 		body := node.Body
+		name := node.Name
+		function := &object.Function{Parameters: parameters, Env: env, Body: body}
 
-		return &object.Function{Parameters: parameters, Env: env, Body: body}
+		if name != "" {
+			env.Set(name, function)
+		}
+
+		return function
 	case *ast.WhileExpression:
 		return evalWhileExpression(node, env)
 	case *ast.CallExpression:
-		function := Eval(node.Function, env)
+		function := Eval(node.Callable, env)
 
 		if isError(function) {
 			return function

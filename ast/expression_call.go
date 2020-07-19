@@ -9,7 +9,7 @@ import (
 
 type CallExpression struct {
 	Token     token.Token
-	Function  Expression
+	Callable  Expression
 	Arguments []Expression
 }
 
@@ -28,7 +28,7 @@ func (ce *CallExpression) String() string {
 		args = append(args, a.String())
 	}
 
-	out.WriteString(ce.Function.String())
+	out.WriteString(ce.Callable.String())
 	out.WriteString("(")
 	out.WriteString(strings.Join(args, ", "))
 	out.WriteString(")")
