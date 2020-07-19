@@ -276,14 +276,18 @@ func (p *Parser) parseIndexExpression(left ast.Expression) ast.Expression {
 	return expression
 }
 
+// currentTokenIs determines if the current token is of the type specified.
 func (p *Parser) currentTokenIs(t token.TokenType) bool {
 	return p.currentToken.Type == t
 }
 
+// peekTokenIs determines if the next token is of the type specified.
 func (p *Parser) peekTokenIs(t token.TokenType) bool {
 	return p.peekToken.Type == t
 }
 
+// expectPeek determines if the next token is of the type specified.
+// If not, an error will be thrown.
 func (p *Parser) expectPeek(t token.TokenType) bool {
 	if p.peekTokenIs(t) {
 		p.nextToken()

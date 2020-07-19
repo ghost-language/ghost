@@ -9,6 +9,7 @@ import (
 
 type FunctionLiteral struct {
 	Token      token.Token
+	Name       string
 	Parameters []*Identifier
 	Body       *BlockStatement
 }

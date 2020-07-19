@@ -175,6 +175,21 @@ func TestLetStatements(t *testing.T) {
 	}
 }
 
+func TestNamedFunctionStatements(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected int64
+	}{
+		{"function five() { return 5 } five()", 5},
+		{"function ten() { return 10 } ten()", 10},
+		{"function fifteen() { return 15 } fifteen()", 15},
+	}
+
+	for _, tt := range tests {
+		testNumberObject(t, testEval(tt.input), tt.expected)
+	}
+}
+
 func TestFunctionObject(t *testing.T) {
 	input := "function(x) { x + 2; };"
 
