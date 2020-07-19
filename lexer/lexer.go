@@ -113,7 +113,10 @@ func (lexer *Lexer) NextToken() token.Token {
 		currentToken = newToken(token.RBRACKET, lexer.character)
 	case '"':
 		currentToken.Type = token.STRING
-		currentToken.Literal = lexer.readString()
+		currentToken.Literal = lexer.readString('"')
+	case '\'':
+		currentToken.Type = token.STRING
+		currentToken.Literal = lexer.readString('\'')
 	case '.':
 		currentToken = newToken(token.DOT, lexer.character)
 	case 0:
@@ -179,12 +182,12 @@ func isDigit(character byte) bool {
 	return '0' <= character && character <= '9'
 }
 
-func (lexer *Lexer) readString() string {
+func (lexer *Lexer) readString(end byte) string {
 	position := lexer.position + 1
 
 	for {
 		lexer.readCharacter()
-		if lexer.character == '"' || lexer.character == 0 {
+		if lexer.character == end || lexer.character == 0 {
 			break
 		}
 	}
