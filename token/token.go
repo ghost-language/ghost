@@ -25,6 +25,7 @@ const (
 	SLASH    = "/"
 	PERCENT  = "%"
 	DOT      = "."
+	HASH     = "#"
 
 	LT  = "<"
 	GT  = ">"
