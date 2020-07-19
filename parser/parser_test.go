@@ -552,6 +552,10 @@ func TestOperatorPrecedenceParsing(t *testing.T) {
 			"a % 2",
 			"(a % 2)",
 		},
+		{
+			"foo.bar * foo.baz",
+			"((foo[bar]) * (foo[baz]))",
+		},
 	}
 
 	for _, tt := range tests {
@@ -1060,6 +1064,43 @@ func TestParsingIndexExpressions(t *testing.T) {
 
 	if !testInfixExpression(t, indexExpression.Index, 1, "+", 1) {
 		return
+	}
+}
+
+func TestParsingDotNotationExpressions(t *testing.T) {
+	input := "foo.bar"
+
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+
+	checkParserErrors(t, p)
+
+	statement, _ := program.Statements[0].(*ast.ExpressionStatement)
+	expression, ok := statement.Expression.(*ast.IndexExpression)
+
+	if !ok {
+		t.Fatalf("expression not *ast.IndexExpression. got=%T", statement.Expression)
+	}
+
+	identifier, ok := expression.Left.(*ast.Identifier)
+
+	if !ok {
+		t.Fatalf("expression.Left not *ast.Identifier. got=%T", statement.Expression)
+	}
+
+	if !testIdentifier(t, identifier, "foo") {
+		return
+	}
+
+	index, ok := expression.Index.(*ast.StringLiteral)
+
+	if !ok {
+		t.Fatalf("expression.Index not *ast.StringLiteral. got=%T", expression.Index)
+	}
+
+	if index.Value != "bar" {
+		t.Fatalf("index.Value not 'bar'. got=%T", index.Value)
 	}
 }
 
