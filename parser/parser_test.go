@@ -474,10 +474,6 @@ func TestParsingPostfixExpressions(t *testing.T) {
 		if expression.Operator != tt.operator {
 			t.Fatalf("expression.Operator is not '%s'. got=%s", tt.operator, expression.Operator)
 		}
-
-		// if !testLiteralExpression(t, left, tt.value) {
-		// 	return
-		// }
 	}
 }
 
