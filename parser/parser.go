@@ -45,17 +45,20 @@ const (
 type (
 	prefixParserFn func() ast.Expression
 	infixParseFn   func(ast.Expression) ast.Expression
+	postfixParseFn func() ast.Expression
 )
 
 type Parser struct {
 	l      *lexer.Lexer
 	errors []string
 
-	currentToken token.Token
-	peekToken    token.Token
+	previousToken token.Token
+	currentToken  token.Token
+	peekToken     token.Token
 
-	prefixParseFns map[token.TokenType]prefixParserFn
-	infixParseFns  map[token.TokenType]infixParseFn
+	prefixParseFns  map[token.TokenType]prefixParserFn
+	infixParseFns   map[token.TokenType]infixParseFn
+	postfixParseFns map[token.TokenType]postfixParseFn
 }
 
 func New(l *lexer.Lexer) *Parser {
@@ -102,6 +105,10 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerInfix(token.LBRACKET, p.parseIndexExpression)
 	p.registerInfix(token.DOT, p.parseDotNotationExpression)
 
+	p.postfixParseFns = make(map[token.TokenType]postfixParseFn)
+	p.registerPostfix(token.PLUSPLUS, p.parsePostfixExpression)
+	p.registerPostfix(token.MINUSMINUS, p.parsePostfixExpression)
+
 	return p
 }
 
@@ -113,11 +120,16 @@ func (p *Parser) registerInfix(tokenType token.TokenType, fn infixParseFn) {
 	p.infixParseFns[tokenType] = fn
 }
 
+func (p *Parser) registerPostfix(tokenType token.TokenType, fn postfixParseFn) {
+	p.postfixParseFns[tokenType] = fn
+}
+
 func (p *Parser) Errors() []string {
 	return p.errors
 }
 
 func (p *Parser) nextToken() {
+	p.previousToken = p.currentToken
 	p.currentToken = p.peekToken
 	p.peekToken = p.l.NextToken()
 }
@@ -155,6 +167,12 @@ func (p *Parser) parseStatement() ast.Statement {
 }
 
 func (p *Parser) parseExpression(precedence int) ast.Expression {
+	postfix := p.postfixParseFns[p.currentToken.Type]
+
+	if postfix != nil {
+		return postfix()
+	}
+
 	prefix := p.prefixParseFns[p.currentToken.Type]
 
 	if prefix == nil {
@@ -204,6 +222,13 @@ func (p *Parser) parseInfixExpression(left ast.Expression) ast.Expression {
 	expression.Right = p.parseExpression(precedence)
 
 	return expression
+}
+
+func (p *Parser) parsePostfixExpression() ast.Expression {
+	return &ast.PostfixExpression{
+		Token:    p.previousToken,
+		Operator: p.currentToken.Literal,
+	}
 }
 
 func (p *Parser) parseBoolean() ast.Expression {

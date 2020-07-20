@@ -439,6 +439,44 @@ func TestParsingInfixExpressions(t *testing.T) {
 	}
 }
 
+func TestParsingPostfixExpressions(t *testing.T) {
+	postfixTests := []struct {
+		input    string
+		operator string
+	}{
+		{"index++", "++"},
+		{"index--", "--"},
+	}
+
+	for _, tt := range postfixTests {
+		l := lexer.New(tt.input)
+		p := New(l)
+		program := p.ParseProgram()
+
+		checkParserErrors(t, p)
+
+		if len(program.Statements) != 2 {
+			t.Fatalf("program.Statements does not contain 2 statements. got=%d\n", len(program.Statements))
+		}
+
+		statement, ok := program.Statements[1].(*ast.ExpressionStatement)
+
+		if !ok {
+			t.Fatalf("program.Statements[1] is not ast.ExpressionStatement. got=%T", program.Statements[1])
+		}
+
+		expression, ok := statement.Expression.(*ast.PostfixExpression)
+
+		if !ok {
+			t.Fatalf("statement is not ast.PostfixExpression. got=%T", statement.Expression)
+		}
+
+		if expression.Operator != tt.operator {
+			t.Fatalf("expression.Operator is not '%s'. got=%s", tt.operator, expression.Operator)
+		}
+	}
+}
+
 func TestOperatorPrecedenceParsing(t *testing.T) {
 	tests := []struct {
 		input    string

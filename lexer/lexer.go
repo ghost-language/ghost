@@ -41,9 +41,21 @@ func (lexer *Lexer) NextToken() token.Token {
 			currentToken = newToken(token.ASSIGN, lexer.character)
 		}
 	case '+':
-		currentToken = newToken(token.PLUS, lexer.character)
+		if lexer.peekCharacter() == '+' {
+			character := lexer.character
+			lexer.readCharacter()
+			currentToken = token.Token{Type: token.PLUSPLUS, Literal: string(character) + string(lexer.character)}
+		} else {
+			currentToken = newToken(token.PLUS, lexer.character)
+		}
 	case '-':
-		currentToken = newToken(token.MINUS, lexer.character)
+		if lexer.peekCharacter() == '-' {
+			character := lexer.character
+			lexer.readCharacter()
+			currentToken = token.Token{Type: token.MINUSMINUS, Literal: string(character) + string(lexer.character)}
+		} else {
+			currentToken = newToken(token.MINUS, lexer.character)
+		}
 	case '!':
 		if lexer.peekCharacter() == '=' {
 			character := lexer.character

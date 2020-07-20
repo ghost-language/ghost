@@ -46,6 +46,8 @@ true or false
 1 <= 1
 // This is a single line comment
 foo.bar
+index++
+index--
 `
 
 	tests := []struct {
@@ -159,6 +161,10 @@ foo.bar
 		{token.IDENTIFIER, "foo"},
 		{token.DOT, "."},
 		{token.IDENTIFIER, "bar"},
+		{token.IDENTIFIER, "index"},
+		{token.PLUSPLUS, "++"},
+		{token.IDENTIFIER, "index"},
+		{token.MINUSMINUS, "--"},
 		{token.EOF, ""},
 	}
 
