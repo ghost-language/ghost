@@ -48,6 +48,10 @@ true or false
 foo.bar
 index++
 index--
+index += 10
+index -= 10
+index *= 10
+index /= 10
 `
 
 	tests := []struct {
@@ -124,7 +128,7 @@ index--
 		{token.NUMBER, "10"},
 		{token.SEMICOLON, ";"},
 		{token.NUMBER, "10"},
-		{token.NOT_EQ, "!="},
+		{token.NOTEQ, "!="},
 		{token.NUMBER, "9"},
 		{token.SEMICOLON, ";"},
 		{token.STRING, "foobar"},
@@ -165,6 +169,18 @@ index--
 		{token.PLUSPLUS, "++"},
 		{token.IDENTIFIER, "index"},
 		{token.MINUSMINUS, "--"},
+		{token.IDENTIFIER, "index"},
+		{token.PLUSASSIGN, "+="},
+		{token.NUMBER, "10"},
+		{token.IDENTIFIER, "index"},
+		{token.MINUSASSIGN, "-="},
+		{token.NUMBER, "10"},
+		{token.IDENTIFIER, "index"},
+		{token.ASTERISKASSIGN, "*="},
+		{token.NUMBER, "10"},
+		{token.IDENTIFIER, "index"},
+		{token.SLASHASSIGN, "/="},
+		{token.NUMBER, "10"},
 		{token.EOF, ""},
 	}
 

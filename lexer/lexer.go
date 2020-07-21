@@ -45,6 +45,10 @@ func (lexer *Lexer) NextToken() token.Token {
 			character := lexer.character
 			lexer.readCharacter()
 			currentToken = token.Token{Type: token.PLUSPLUS, Literal: string(character) + string(lexer.character)}
+		} else if lexer.peekCharacter() == '=' {
+			character := lexer.character
+			lexer.readCharacter()
+			currentToken = token.Token{Type: token.PLUSASSIGN, Literal: string(character) + string(lexer.character)}
 		} else {
 			currentToken = newToken(token.PLUS, lexer.character)
 		}
@@ -53,6 +57,10 @@ func (lexer *Lexer) NextToken() token.Token {
 			character := lexer.character
 			lexer.readCharacter()
 			currentToken = token.Token{Type: token.MINUSMINUS, Literal: string(character) + string(lexer.character)}
+		} else if lexer.peekCharacter() == '=' {
+			character := lexer.character
+			lexer.readCharacter()
+			currentToken = token.Token{Type: token.MINUSASSIGN, Literal: string(character) + string(lexer.character)}
 		} else {
 			currentToken = newToken(token.MINUS, lexer.character)
 		}
@@ -61,7 +69,7 @@ func (lexer *Lexer) NextToken() token.Token {
 			character := lexer.character
 			lexer.readCharacter()
 			literal := string(character) + string(lexer.character)
-			currentToken = token.Token{Type: token.NOT_EQ, Literal: literal}
+			currentToken = token.Token{Type: token.NOTEQ, Literal: literal}
 		} else {
 			currentToken = newToken(token.BANG, lexer.character)
 		}
@@ -74,17 +82,25 @@ func (lexer *Lexer) NextToken() token.Token {
 			lexer.skipSingleLineComment()
 
 			return lexer.NextToken()
-		}
-
-		if lexer.peekCharacter() == '*' {
+		} else if lexer.peekCharacter() == '*' {
 			lexer.skipMultiLineComment()
 
 			return lexer.NextToken()
+		} else if lexer.peekCharacter() == '=' {
+			character := lexer.character
+			lexer.readCharacter()
+			currentToken = token.Token{Type: token.SLASHASSIGN, Literal: string(character) + string(lexer.character)}
+		} else {
+			currentToken = newToken(token.SLASH, lexer.character)
 		}
-
-		currentToken = newToken(token.SLASH, lexer.character)
 	case '*':
-		currentToken = newToken(token.ASTERISK, lexer.character)
+		if lexer.peekCharacter() == '=' {
+			character := lexer.character
+			lexer.readCharacter()
+			currentToken = token.Token{Type: token.ASTERISKASSIGN, Literal: string(character) + string(lexer.character)}
+		} else {
+			currentToken = newToken(token.ASTERISK, lexer.character)
+		}
 	case '%':
 		currentToken = newToken(token.PERCENT, lexer.character)
 	case '<':

@@ -31,6 +31,10 @@ func TestEvalNumberExpression(t *testing.T) {
 		{"(5 + 10 * 2 + 15 / 3) * 2 + -10", 50},
 		{"let index = 0; index++; index", 1},
 		{"let index = 6; index--; index", 5},
+		{"let index = 0; index += 10; index", 10},
+		{"let index = 12; index -= 2; index", 10},
+		{"let index = 2; index *= 5; index", 10},
+		{"let index = 100; index /= 10; index", 10},
 	}
 
 	for _, tt := range tests {

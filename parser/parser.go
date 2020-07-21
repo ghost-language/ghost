@@ -9,22 +9,26 @@ import (
 )
 
 var precedences = map[token.TokenType]int{
-	token.OR:       OR,
-	token.AND:      AND,
-	token.EQ:       EQUALS,
-	token.NOT_EQ:   EQUALS,
-	token.LT:       LESSGREATER,
-	token.GT:       LESSGREATER,
-	token.LTE:      LESSGREATER,
-	token.GTE:      LESSGREATER,
-	token.PLUS:     SUM,
-	token.MINUS:    SUM,
-	token.SLASH:    PRODUCT,
-	token.ASTERISK: PRODUCT,
-	token.PERCENT:  MODULO,
-	token.LPAREN:   CALL,
-	token.LBRACKET: INDEX,
-	token.DOT:      INDEX,
+	token.OR:             OR,
+	token.AND:            AND,
+	token.EQ:             EQUALS,
+	token.NOTEQ:          EQUALS,
+	token.LT:             LESSGREATER,
+	token.GT:             LESSGREATER,
+	token.LTE:            LESSGREATER,
+	token.GTE:            LESSGREATER,
+	token.PLUS:           SUM,
+	token.MINUS:          SUM,
+	token.PLUSASSIGN:     SUM,
+	token.MINUSASSIGN:    SUM,
+	token.SLASH:          PRODUCT,
+	token.ASTERISK:       PRODUCT,
+	token.SLASHASSIGN:    PRODUCT,
+	token.ASTERISKASSIGN: PRODUCT,
+	token.PERCENT:        MODULO,
+	token.LPAREN:         CALL,
+	token.LBRACKET:       INDEX,
+	token.DOT:            INDEX,
 }
 
 const (
@@ -94,7 +98,11 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerInfix(token.ASTERISK, p.parseInfixExpression)
 	p.registerInfix(token.PERCENT, p.parseInfixExpression)
 	p.registerInfix(token.EQ, p.parseInfixExpression)
-	p.registerInfix(token.NOT_EQ, p.parseInfixExpression)
+	p.registerInfix(token.NOTEQ, p.parseInfixExpression)
+	p.registerInfix(token.PLUSASSIGN, p.parseInfixExpression)
+	p.registerInfix(token.MINUSASSIGN, p.parseInfixExpression)
+	p.registerInfix(token.ASTERISKASSIGN, p.parseInfixExpression)
+	p.registerInfix(token.SLASHASSIGN, p.parseInfixExpression)
 	p.registerInfix(token.LT, p.parseInfixExpression)
 	p.registerInfix(token.LTE, p.parseInfixExpression)
 	p.registerInfix(token.GT, p.parseInfixExpression)
