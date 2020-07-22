@@ -9,6 +9,8 @@ import (
 )
 
 var precedences = map[token.TokenType]int{
+	token.BIND:           ASSIGN,
+	token.ASSIGN:         ASSIGN,
 	token.OR:             OR,
 	token.AND:            AND,
 	token.EQ:             EQUALS,
@@ -34,6 +36,7 @@ var precedences = map[token.TokenType]int{
 const (
 	_ int = iota
 	LOWEST
+	ASSIGN
 	OR
 	AND
 	EQUALS
@@ -92,6 +95,7 @@ func New(l *lexer.Lexer) *Parser {
 
 	p.infixParseFns = make(map[token.TokenType]infixParseFn)
 
+	p.registerInfix(token.BIND, p.parseBindExpression)
 	p.registerInfix(token.PLUS, p.parseInfixExpression)
 	p.registerInfix(token.MINUS, p.parseInfixExpression)
 	p.registerInfix(token.SLASH, p.parseInfixExpression)
@@ -165,8 +169,6 @@ func (p *Parser) parseStatement() ast.Statement {
 	}
 
 	switch p.currentToken.Type {
-	case token.LET:
-		return p.parseLetStatement()
 	case token.RETURN:
 		return p.parseReturnStatement()
 	default:

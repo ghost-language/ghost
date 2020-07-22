@@ -4,7 +4,7 @@ This is also a multiline comment that Ghost
 will completely ignore during execution.
 */
 
-let count = function(n) {
+function count(n) {
     if (n > 1) {
         count(n - 1)
     }

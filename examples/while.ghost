@@ -1,4 +1,4 @@
-let glossary = [
+glossary := [
     "abductive reasoning",
     "algorithm",
     "approximation error",
@@ -6,10 +6,10 @@ let glossary = [
     "autonomous robot"
 ]
 
-let index = 0
+index := 0
 
 while (index < len(glossary)) {
     print(glossary[index])
 
-    index = index + 1
+    index++
 }

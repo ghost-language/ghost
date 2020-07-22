@@ -56,16 +56,20 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 		object.Set(value)
 
 		return value
-	case *ast.LetStatement:
+
+	// Expressions
+	case *ast.BindExpression:
 		value := Eval(node.Value, env)
 
 		if isError(value) {
 			return value
 		}
 
-		env.Set(node.Name.Value, value)
+		if identifier, ok := node.Left.(*ast.Identifier); ok {
+			env.Set(identifier.Value, value)
+		}
 
-	// Expressions
+		return NULL
 	case *ast.IfExpression:
 		return evalIfExpression(node, env)
 	case *ast.NumberLiteral:

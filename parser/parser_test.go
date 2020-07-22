@@ -42,42 +42,6 @@ func TestAssignmentStatements(t *testing.T) {
 	}
 }
 
-func TestLetStatements(t *testing.T) {
-	tests := []struct {
-		input              string
-		expectedIdentifier string
-		expectedValue      int
-	}{
-		{"let x = 5;", "x", 5},
-		{"let y = 10;", "y", 10},
-		{"let foobar = 838383;", "foobar", 838383},
-	}
-
-	for _, tt := range tests {
-		l := lexer.New(tt.input)
-		p := New(l)
-		program := p.ParseProgram()
-
-		checkParserErrors(t, p)
-
-		if len(program.Statements) != 1 {
-			t.Fatalf("program.Statements does not contain 1 statement. got=%d", len(program.Statements))
-		}
-
-		statement := program.Statements[0]
-
-		if !testLetStatement(t, statement, tt.expectedIdentifier) {
-			return
-		}
-
-		value := statement.(*ast.LetStatement).Value
-
-		if !testLiteralExpression(t, value, tt.expectedValue) {
-			return
-		}
-	}
-}
-
 func TestReturnStatements(t *testing.T) {
 	tests := []struct {
 		input         string
@@ -773,30 +737,26 @@ func TestCallExpressionParsing(t *testing.T) {
 	testInfixExpression(t, expression.Arguments[2], 4, "+", 5)
 }
 
-func testLetStatement(t *testing.T, s ast.Statement, name string) bool {
-	if s.TokenLiteral() != "let" {
-		t.Errorf("s.TokenLiteral not 'let'. got=%q", s.TokenLiteral())
-		return false
+func TestBindExpression(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected string
+	}{
+		{"x := 5", "x := 5"},
+		{"y := true", "y := true"},
+		{"foobar := x", "foobar := x"},
 	}
 
-	letStatement, ok := s.(*ast.LetStatement)
+	for _, tt := range tests {
+		l := lexer.New(tt.input)
+		p := New(l)
+		program := p.ParseProgram()
+		checkParserErrors(t, p)
 
-	if !ok {
-		t.Errorf("s not *ast.LetStatement. got=%T", s)
-		return false
+		if program.String() != tt.expected {
+			t.Fatalf("bind expression evaluated incorrectly. got=%s, expected=%s", program.String(), tt.expected)
+		}
 	}
-
-	if letStatement.Name.Value != name {
-		t.Errorf("letStatement.Name.Value not '%s'. got=%s", name, letStatement.Name.Value)
-		return false
-	}
-
-	if letStatement.Name.TokenLiteral() != name {
-		t.Errorf("letStatement.Name.TokenLiteral() not '%s'. got=%s", name, letStatement.Name.TokenLiteral())
-		return false
-	}
-
-	return true
 }
 
 func testAssignmentStatement(t *testing.T, s ast.Statement, name string) bool {

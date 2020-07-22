@@ -1,7 +1,7 @@
 print("Hello and welcome to the user greeting program.")
 print()
 
-let name = input("Please enter your name:")
+name := input("Please enter your name:")
 
 print()
 print("Nice to meet you, " + name + "!")

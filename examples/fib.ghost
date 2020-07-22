@@ -1,4 +1,4 @@
-let fib = function(n) {
+function fib(n) {
     if (n < 2) {
         return n
     }

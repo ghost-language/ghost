@@ -1,4 +1,4 @@
-let ready = true
+ready := true
 
 if (ready) {
     print("let's go!")
