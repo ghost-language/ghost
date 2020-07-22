@@ -29,12 +29,12 @@ func TestEvalNumberExpression(t *testing.T) {
 		{"3 * 3 * 3 + 10", 37},
 		{"3 * (3 * 3) + 10", 37},
 		{"(5 + 10 * 2 + 15 / 3) * 2 + -10", 50},
-		{"let index = 0; index++; index", 1},
-		{"let index = 6; index--; index", 5},
-		{"let index = 0; index += 10; index", 10},
-		{"let index = 12; index -= 2; index", 10},
-		{"let index = 2; index *= 5; index", 10},
-		{"let index = 100; index /= 10; index", 10},
+		{"index := 0; index++; index", 1},
+		{"index := 6; index--; index", 5},
+		{"index := 0; index += 10; index", 10},
+		{"index := 12; index -= 2; index", 10},
+		{"index := 2; index *= 5; index", 10},
+		{"index := 100; index /= 10; index", 10},
 	}
 
 	for _, tt := range tests {
@@ -169,11 +169,11 @@ func TestLetStatements(t *testing.T) {
 		input    string
 		expected int64
 	}{
-		{"let a = 5; a;", 5},
-		{"let a = 5 * 5; a;", 25},
-		{"let a = 5; let b = a; b;", 5},
-		{"let a = 5; let b = a; let c = a + b + 5; c;", 15},
-		{"let a = 5; a = 10; a;", 10},
+		{"a := 5; a;", 5},
+		{"a := 5 * 5; a;", 25},
+		{"a := 5; b := a; b;", 5},
+		{"a := 5; b := a; c := a + b + 5; c;", 15},
+		{"a := 5; a = 10; a;", 10},
 	}
 
 	for _, tt := range tests {
@@ -227,11 +227,11 @@ func TestFunctionApplication(t *testing.T) {
 		input    string
 		expected int64
 	}{
-		{"let identity = function(x) { x; }; identity(5);", 5},
-		{"let identity = function(x) { return x; }; identity(5);", 5},
-		{"let double = function(x) { x * 2; }; double(5);", 10},
-		{"let add = function(x, y) { x + y; }; add(5, 5);", 10},
-		{"let add = function(x, y) { x + y; }; add(5 + 5, add(5, 5));", 20},
+		{"identity := function(x) { x; }; identity(5);", 5},
+		{"identity := function(x) { return x; }; identity(5);", 5},
+		{"double := function(x) { x * 2; }; double(5);", 10},
+		{"add := function(x, y) { x + y; }; add(5, 5);", 10},
+		{"add := function(x, y) { x + y; }; add(5 + 5, add(5, 5));", 20},
 		{"function(x) { x; }(5)", 5},
 	}
 
@@ -307,7 +307,7 @@ func TestListIndexExpressions(t *testing.T) {
 			3,
 		},
 		{
-			"let i = 0; [1][i];",
+			"i := 0; [1][i];",
 			1,
 		},
 		{
@@ -315,15 +315,15 @@ func TestListIndexExpressions(t *testing.T) {
 			3,
 		},
 		{
-			"let myList = [1, 2, 3]; myList[2];",
+			"myList := [1, 2, 3]; myList[2];",
 			3,
 		},
 		{
-			"let myList = [1, 2, 3]; myList[0] + myList[1] + myList[2];",
+			"myList := [1, 2, 3]; myList[0] + myList[1] + myList[2];",
 			6,
 		},
 		{
-			"let myList = [1, 2, 3]; let i = myList[0]; myList[i]",
+			"myList := [1, 2, 3]; i := myList[0]; myList[i]",
 			2,
 		},
 		{
@@ -349,7 +349,7 @@ func TestListIndexExpressions(t *testing.T) {
 }
 
 func TestMapLiterals(t *testing.T) {
-	input := `let two = "two";
+	input := `two := "two";
 	{
 		"one": 10 - 9,
 		two: 1 + 1,
@@ -404,7 +404,7 @@ func TestMapIndexExpressions(t *testing.T) {
 			nil,
 		},
 		{
-			`let key = "foo"; {"foo": 5}[key]`,
+			`key := "foo"; {"foo": 5}[key]`,
 			5,
 		},
 		{
@@ -474,10 +474,10 @@ func TestWhileExpressions(t *testing.T) {
 		expected interface{}
 	}{
 		{"while (false) { }", nil},
-		{"let n = 0; while (n < 10) { n = n + 1 }; n", 10},
-		{"let n = 10; while (n > 0) { n = n - 1 }; n", 0},
-		{"let n = 0; while (n < 10) { n = n + 1 }", nil},
-		{"let n = 10; while (n > 0) { n = n - 1 }", nil},
+		{"n := 0; while (n < 10) { n = n + 1 }; n", 10},
+		{"n := 10; while (n > 0) { n = n - 1 }; n", 0},
+		{"n := 0; while (n < 10) { n = n + 1 }", nil},
+		{"n := 10; while (n > 0) { n = n - 1 }", nil},
 	}
 
 	for _, tt := range tests {

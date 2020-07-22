@@ -4,7 +4,7 @@ function hello(closure) {
     closure()
 }
 
-let foobar = function() {
+foobar := function() {
     print("foobar")
 }
 

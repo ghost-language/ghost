@@ -1,4 +1,4 @@
-let fib = function(n, a, b) {
+function fib(n, a, b) {
     if (n == 0) {
         return a
     }
@@ -10,6 +10,6 @@ let fib = function(n, a, b) {
     return fib(n - 1, b, a + b)
 }
 
-let x = fib(35, 0, 1)
+x := fib(35, 0, 1)
 
 print("You may access the result through the variable 'x'.")

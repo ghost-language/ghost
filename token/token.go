@@ -44,7 +44,6 @@ const (
 	RBRACKET = "]"
 
 	FUNCTION = "FUNCTION"
-	LET      = "LET"
 	TRUE     = "TRUE"
 	FALSE    = "FALSE"
 	IF       = "IF"
@@ -57,6 +56,7 @@ const (
 	EQ    = "=="
 	NOTEQ = "!="
 
+	BIND           = ":="
 	PLUSASSIGN     = "+="
 	MINUSASSIGN    = "-="
 	ASTERISKASSIGN = "*="
@@ -68,7 +68,6 @@ const (
 
 var keywords = map[string]TokenType{
 	"function": FUNCTION,
-	"let":      LET,
 	"true":     TRUE,
 	"false":    FALSE,
 	"if":       IF,

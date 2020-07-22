@@ -126,7 +126,14 @@ func (lexer *Lexer) NextToken() token.Token {
 	case ',':
 		currentToken = newToken(token.COMMA, lexer.character)
 	case ':':
-		currentToken = newToken(token.COLON, lexer.character)
+		if lexer.peekCharacter() == '=' {
+			character := lexer.character
+			lexer.readCharacter()
+			literal := string(character) + string(lexer.character)
+			currentToken = token.Token{Type: token.BIND, Literal: literal}
+		} else {
+			currentToken = newToken(token.COLON, lexer.character)
+		}
 	case '(':
 		currentToken = newToken(token.LPAREN, lexer.character)
 	case ')':

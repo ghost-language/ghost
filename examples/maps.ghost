@@ -1,5 +1,5 @@
-let myMap  = {"one": 1}
-let people = [
+myMap := {"one": 1}
+people := [
     {
         "name": "Turing",
         "age": 31,
