@@ -131,8 +131,9 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 	case *ast.FunctionLiteral:
 		parameters := node.Parameters
 		body := node.Body
+		defaults := node.Defaults
 		name := node.Name
-		function := &object.Function{Parameters: parameters, Env: env, Body: body}
+		function := &object.Function{Parameters: parameters, Env: env, Body: body, Defaults: defaults}
 
 		if name != "" {
 			env.Set(name, function)
@@ -565,8 +566,14 @@ func applyFunction(fn object.Object, arguments []object.Object) object.Object {
 func extendFunctionEnv(fn *object.Function, arguments []object.Object) *object.Environment {
 	env := object.NewEnclosedEnvironment(fn.Env)
 
+	for key, value := range fn.Defaults {
+		env.Set(key, Eval(value, env))
+	}
+
 	for index, parameter := range fn.Parameters {
-		env.Set(parameter.Value, arguments[index])
+		if index < len(arguments) {
+			env.Set(parameter.Value, arguments[index])
+		}
 	}
 
 	return env

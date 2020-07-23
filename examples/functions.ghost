@@ -4,8 +4,9 @@ function hello(closure) {
     closure()
 }
 
-foobar := function() {
-    print("foobar")
+foobar := function(name = 'world', bool = false) {
+    print('Hello, ' + name + '!')
+    print(bool)
 }
 
 hello(function() {
