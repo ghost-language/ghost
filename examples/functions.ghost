@@ -4,8 +4,13 @@ function hello(closure) {
     closure()
 }
 
-foobar := function() {
-    print("foobar")
+foobar := function(name = 'world', bool = false) {
+    print('Hello, ' + name + '!')
+    print(bool)
+}
+
+function makeCoffee(type = 'cappuccino') {
+    print('Making a cup of ' + type)
 }
 
 hello(function() {
@@ -13,3 +18,6 @@ hello(function() {
 })
 
 foobar()
+makeCoffee()
+makeCoffee('coffee')
+makeCoffee('espresso')

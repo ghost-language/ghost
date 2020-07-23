@@ -20,7 +20,7 @@ func (p *Parser) parseFunctionLiteral() ast.Expression {
 		return nil
 	}
 
-	literal.Parameters = p.parseFunctionParameters()
+	literal.Defaults, literal.Parameters = p.parseFunctionParameters()
 
 	if !p.expectPeek(token.LBRACE) {
 		return nil
@@ -31,31 +31,34 @@ func (p *Parser) parseFunctionLiteral() ast.Expression {
 	return literal
 }
 
-func (p *Parser) parseFunctionParameters() []*ast.Identifier {
+func (p *Parser) parseFunctionParameters() (map[string]ast.Expression, []*ast.Identifier) {
+	defaults := make(map[string]ast.Expression)
 	identifiers := []*ast.Identifier{}
 
 	if p.peekTokenIs(token.RPAREN) {
 		p.nextToken()
 
-		return identifiers
+		return defaults, identifiers
 	}
 
 	p.nextToken()
 
-	identifier := &ast.Identifier{Token: p.currentToken, Value: p.currentToken.Literal}
-	identifiers = append(identifiers, identifier)
-
-	for p.peekTokenIs(token.COMMA) {
-		p.nextToken()
-		p.nextToken()
-
+	for !p.currentTokenIs(token.RPAREN) {
 		identifier := &ast.Identifier{Token: p.currentToken, Value: p.currentToken.Literal}
 		identifiers = append(identifiers, identifier)
+
+		p.nextToken()
+
+		if p.currentTokenIs(token.ASSIGN) {
+			p.nextToken()
+			defaults[identifier.Value] = p.parseExpressionStatement().Expression
+			p.nextToken()
+		}
+
+		if p.currentTokenIs(token.COMMA) {
+			p.nextToken()
+		}
 	}
 
-	if !p.expectPeek(token.RPAREN) {
-		return nil
-	}
-
-	return identifiers
+	return defaults, identifiers
 }
