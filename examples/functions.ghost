@@ -9,8 +9,15 @@ foobar := function(name = 'world', bool = false) {
     print(bool)
 }
 
+function makeCoffee(type = 'cappuccino') {
+    print('Making a cup of ' + type)
+}
+
 hello(function() {
     print("I'm an anonymous function being passed through another function!")
 })
 
 foobar()
+makeCoffee()
+makeCoffee('coffee')
+makeCoffee('espresso')
