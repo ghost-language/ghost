@@ -4,9 +4,9 @@ import (
 	"fmt"
 
 	"ghostlang.org/ghost/ast"
-	"ghostlang.org/ghost/builtins"
 	"ghostlang.org/ghost/decimal"
 	"ghostlang.org/ghost/object"
+	"ghostlang.org/ghost/standard"
 )
 
 var (
@@ -450,7 +450,7 @@ func evalIdentifier(node *ast.Identifier, env *object.Environment) object.Object
 		return value
 	}
 
-	if builtin, ok := builtins.Builtins[node.Value]; ok {
+	if builtin, ok := standard.Builtins[node.Value]; ok {
 		return builtin
 	}
 
