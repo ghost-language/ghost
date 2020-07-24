@@ -1,7 +1,7 @@
 package ast
 
 import (
-	"ghostlang.org/ghost/token"
+	"ghostlang.org/x/ghost/token"
 )
 
 type Identifier struct {

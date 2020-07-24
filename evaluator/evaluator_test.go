@@ -3,10 +3,10 @@ package evaluator
 import (
 	"testing"
 
-	"ghostlang.org/ghost/decimal"
-	"ghostlang.org/ghost/lexer"
-	"ghostlang.org/ghost/object"
-	"ghostlang.org/ghost/parser"
+	"ghostlang.org/x/ghost/decimal"
+	"ghostlang.org/x/ghost/lexer"
+	"ghostlang.org/x/ghost/object"
+	"ghostlang.org/x/ghost/parser"
 )
 
 func TestEvalNumberExpression(t *testing.T) {

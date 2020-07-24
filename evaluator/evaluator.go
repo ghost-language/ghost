@@ -3,10 +3,10 @@ package evaluator
 import (
 	"fmt"
 
-	"ghostlang.org/ghost/ast"
-	"ghostlang.org/ghost/decimal"
-	"ghostlang.org/ghost/object"
-	"ghostlang.org/ghost/standard"
+	"ghostlang.org/x/ghost/ast"
+	"ghostlang.org/x/ghost/decimal"
+	"ghostlang.org/x/ghost/object"
+	"ghostlang.org/x/ghost/standard"
 )
 
 var (

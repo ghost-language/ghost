@@ -3,7 +3,7 @@ package lexer
 import (
 	"testing"
 
-	"ghostlang.org/ghost/token"
+	"ghostlang.org/x/ghost/token"
 )
 
 func TestNextToken(t *testing.T) {

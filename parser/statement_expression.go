@@ -1,8 +1,8 @@
 package parser
 
 import (
-	"ghostlang.org/ghost/ast"
-	"ghostlang.org/ghost/token"
+	"ghostlang.org/x/ghost/ast"
+	"ghostlang.org/x/ghost/token"
 )
 
 func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {

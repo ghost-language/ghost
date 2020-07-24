@@ -3,9 +3,9 @@ package parser
 import (
 	"fmt"
 
-	"ghostlang.org/ghost/ast"
-	"ghostlang.org/ghost/lexer"
-	"ghostlang.org/ghost/token"
+	"ghostlang.org/x/ghost/ast"
+	"ghostlang.org/x/ghost/lexer"
+	"ghostlang.org/x/ghost/token"
 )
 
 var precedences = map[token.TokenType]int{

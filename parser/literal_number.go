@@ -3,8 +3,8 @@ package parser
 import (
 	"fmt"
 
-	"ghostlang.org/ghost/ast"
-	"ghostlang.org/ghost/decimal"
+	"ghostlang.org/x/ghost/ast"
+	"ghostlang.org/x/ghost/decimal"
 )
 
 func (p *Parser) parseNumberLiteral() ast.Expression {

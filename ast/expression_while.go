@@ -3,7 +3,7 @@ package ast
 import (
 	"bytes"
 
-	"ghostlang.org/ghost/token"
+	"ghostlang.org/x/ghost/token"
 )
 
 type WhileExpression struct {
