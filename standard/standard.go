@@ -3,7 +3,7 @@ package standard
 import (
 	"fmt"
 
-	"ghostlang.org/ghost/object"
+	"ghostlang.org/x/ghost/object"
 )
 
 var Builtins = map[string]*object.Builtin{}

@@ -11,11 +11,11 @@ import (
 	"syscall"
 	"time"
 
-	"ghostlang.org/ghost/evaluator"
-	"ghostlang.org/ghost/lexer"
-	"ghostlang.org/ghost/object"
-	"ghostlang.org/ghost/parser"
-	"ghostlang.org/ghost/version"
+	"ghostlang.org/x/ghost/evaluator"
+	"ghostlang.org/x/ghost/lexer"
+	"ghostlang.org/x/ghost/object"
+	"ghostlang.org/x/ghost/parser"
+	"ghostlang.org/x/ghost/version"
 )
 
 // PROMPT designates the REPL prompt characters to accept

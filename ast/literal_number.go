@@ -1,8 +1,8 @@
 package ast
 
 import (
-	"ghostlang.org/ghost/decimal"
-	"ghostlang.org/ghost/token"
+	"ghostlang.org/x/ghost/decimal"
+	"ghostlang.org/x/ghost/token"
 )
 
 type NumberLiteral struct {

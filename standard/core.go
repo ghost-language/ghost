@@ -7,8 +7,8 @@ import (
 	"os"
 	"unicode/utf8"
 
-	"ghostlang.org/ghost/decimal"
-	"ghostlang.org/ghost/object"
+	"ghostlang.org/x/ghost/decimal"
+	"ghostlang.org/x/ghost/object"
 )
 
 func init() {

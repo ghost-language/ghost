@@ -1,6 +1,6 @@
 package lexer
 
-import "ghostlang.org/ghost/token"
+import "ghostlang.org/x/ghost/token"
 
 // Lexer takes source code as input and outputs the resulting tokens.
 type Lexer struct {

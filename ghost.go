@@ -6,8 +6,8 @@ import (
 	"os"
 	"path"
 
-	"ghostlang.org/ghost/repl"
-	"ghostlang.org/ghost/version"
+	"ghostlang.org/x/ghost/repl"
+	"ghostlang.org/x/ghost/version"
 )
 
 var (

@@ -3,7 +3,7 @@ package object
 import (
 	"strconv"
 
-	"ghostlang.org/ghost/decimal"
+	"ghostlang.org/x/ghost/decimal"
 )
 
 type Number struct {

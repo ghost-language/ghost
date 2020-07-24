@@ -3,7 +3,7 @@ package ast
 import (
 	"testing"
 
-	"ghostlang.org/ghost/token"
+	"ghostlang.org/x/ghost/token"
 )
 
 func TestString(t *testing.T) {

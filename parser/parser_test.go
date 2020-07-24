@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"testing"
 
-	"ghostlang.org/ghost/ast"
-	"ghostlang.org/ghost/lexer"
+	"ghostlang.org/x/ghost/ast"
+	"ghostlang.org/x/ghost/lexer"
 )
 
 func TestAssignmentStatements(t *testing.T) {

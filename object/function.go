@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"strings"
 
-	"ghostlang.org/ghost/ast"
+	"ghostlang.org/x/ghost/ast"
 )
 
 type Function struct {

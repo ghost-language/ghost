@@ -3,7 +3,7 @@ package parser
 import (
 	"fmt"
 
-	"ghostlang.org/ghost/ast"
+	"ghostlang.org/x/ghost/ast"
 )
 
 func (p *Parser) parseBindExpression(expression ast.Expression) ast.Expression {

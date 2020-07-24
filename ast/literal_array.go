@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"strings"
 
-	"ghostlang.org/ghost/token"
+	"ghostlang.org/x/ghost/token"
 )
 
 type ListLiteral struct {

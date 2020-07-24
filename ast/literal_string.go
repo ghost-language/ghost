@@ -1,6 +1,6 @@
 package ast
 
-import "ghostlang.org/ghost/token"
+import "ghostlang.org/x/ghost/token"
 
 type StringLiteral struct {
 	Token token.Token
