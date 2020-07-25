@@ -1,4 +1,4 @@
-package standard
+package builtins
 
 import (
 	"bufio"
