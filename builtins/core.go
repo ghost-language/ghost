@@ -19,9 +19,22 @@ func init() {
 	RegisterFunction("print", printFunction)
 	RegisterFunction("push", pushFunction)
 	RegisterFunction("tail", tailFunction)
+	RegisterFunction("identifiers", identifiersFunction)
 }
 
-func firstFunction(args ...object.Object) object.Object {
+func identifiersFunction(env *object.Environment, args ...object.Object) object.Object {
+	identifiers := []object.Object{}
+
+	store := env.All()
+
+	for identifier := range store {
+		identifiers = append(identifiers, &object.String{Value: identifier})
+	}
+
+	return &object.List{Elements: identifiers}
+}
+
+func firstFunction(env *object.Environment, args ...object.Object) object.Object {
 	if len(args) != 1 {
 		return newError("wrong number of arguments. got=%d, expected=1", len(args))
 	}
@@ -35,7 +48,7 @@ func firstFunction(args ...object.Object) object.Object {
 	return list.Elements[0]
 }
 
-func inputFunction(args ...object.Object) object.Object {
+func inputFunction(env *object.Environment, args ...object.Object) object.Object {
 	if len(args) == 1 {
 		prompt := args[0].(*object.String).Value + " "
 		fmt.Fprintf(os.Stdout, prompt)
@@ -51,7 +64,7 @@ func inputFunction(args ...object.Object) object.Object {
 	return &object.String{Value: string(line)}
 }
 
-func lastFunction(args ...object.Object) object.Object {
+func lastFunction(env *object.Environment, args ...object.Object) object.Object {
 	if len(args) != 1 {
 		return newError("wrong number of arguments. got=%d, expected=1", len(args))
 	}
@@ -66,7 +79,7 @@ func lastFunction(args ...object.Object) object.Object {
 	return list.Elements[length-1]
 }
 
-func lenFunction(args ...object.Object) object.Object {
+func lenFunction(env *object.Environment, args ...object.Object) object.Object {
 	if len(args) != 1 {
 		return newError("wrong number of arguments. got=%d, expected=1", len(args))
 	}
@@ -81,7 +94,7 @@ func lenFunction(args ...object.Object) object.Object {
 	}
 }
 
-func printFunction(args ...object.Object) object.Object {
+func printFunction(env *object.Environment, args ...object.Object) object.Object {
 	if len(args) > 0 {
 		fmt.Println(args[0].Inspect())
 	} else {
@@ -91,7 +104,7 @@ func printFunction(args ...object.Object) object.Object {
 	return nil
 }
 
-func pushFunction(args ...object.Object) object.Object {
+func pushFunction(env *object.Environment, args ...object.Object) object.Object {
 	if len(args) != 2 {
 		return newError("wrong number of arguments. got=%d, expected=2", len(args))
 	}
@@ -112,7 +125,7 @@ func pushFunction(args ...object.Object) object.Object {
 	return &object.Number{Value: decimal.NewFromInt(int64(len(list.Elements)))}
 }
 
-func tailFunction(args ...object.Object) object.Object {
+func tailFunction(env *object.Environment, args ...object.Object) object.Object {
 	if len(args) != 1 {
 		return newError("wrong number of arguments. got=%d, expected=1", len(args))
 	}

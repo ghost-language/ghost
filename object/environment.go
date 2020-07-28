@@ -21,6 +21,11 @@ func NewEnclosedEnvironment(outer *Environment) *Environment {
 	return env
 }
 
+// All returns all stored identifiers.
+func (e *Environment) All() map[string]Object {
+	return e.store
+}
+
 // Get returns the object bound by name
 func (e *Environment) Get(name string) (Object, bool) {
 	obj, ok := e.store[name]

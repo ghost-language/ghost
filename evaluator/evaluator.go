@@ -132,10 +132,10 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 		parameters := node.Parameters
 		body := node.Body
 		defaults := node.Defaults
-		name := node.Name
+		name := "__function_" + node.Name
 		function := &object.Function{Parameters: parameters, Env: env, Body: body, Defaults: defaults}
 
-		if name != "" {
+		if node.Name != "" {
 			env.Set(name, function)
 		}
 
@@ -155,7 +155,7 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 			return arguments[0]
 		}
 
-		return applyFunction(function, arguments)
+		return applyFunction(function, env, arguments)
 	}
 
 	return nil
@@ -454,6 +454,10 @@ func evalIdentifier(node *ast.Identifier, env *object.Environment) object.Object
 		return builtin
 	}
 
+	if function, ok := env.Get("__function_" + node.Value); ok {
+		return function
+	}
+
 	return newError("identifier not found: " + node.Value)
 }
 
@@ -545,7 +549,7 @@ func evalWhileExpression(we *ast.WhileExpression, env *object.Environment) objec
 	return NULL
 }
 
-func applyFunction(fn object.Object, arguments []object.Object) object.Object {
+func applyFunction(fn object.Object, env *object.Environment, arguments []object.Object) object.Object {
 	switch fn := fn.(type) {
 	case *object.Function:
 		extendedEnv := extendFunctionEnv(fn, arguments)
@@ -553,7 +557,7 @@ func applyFunction(fn object.Object, arguments []object.Object) object.Object {
 
 		return unwrapReturnValue(evaluated)
 	case *object.Builtin:
-		if result := fn.Fn(arguments...); result != nil {
+		if result := fn.Fn(env, arguments...); result != nil {
 			return result
 		}
 

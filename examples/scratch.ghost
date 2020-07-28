@@ -1,0 +1,17 @@
+function foo() {
+    print('foo()')
+
+    function bar() {
+        print('bar()')
+    }
+
+    print(identifiers())
+
+    bar()
+}
+
+// foo := true
+test := true
+
+print(identifiers())
+foo()
