@@ -2,11 +2,15 @@ package evaluator
 
 import (
 	"fmt"
+	"io/ioutil"
 
 	"ghostlang.org/x/ghost/ast"
 	"ghostlang.org/x/ghost/builtins"
 	"ghostlang.org/x/ghost/decimal"
+	"ghostlang.org/x/ghost/lexer"
 	"ghostlang.org/x/ghost/object"
+	"ghostlang.org/x/ghost/parser"
+	"ghostlang.org/x/ghost/utilities"
 )
 
 var (
@@ -142,6 +146,8 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 		return function
 	case *ast.WhileExpression:
 		return evalWhileExpression(node, env)
+	case *ast.ImportExpression:
+		return evalImportExpression(node, env)
 	case *ast.CallExpression:
 		function := Eval(node.Callable, env)
 
@@ -159,6 +165,34 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 	}
 
 	return nil
+}
+
+func EvalModule(name string) object.Object {
+	filename := utilities.FindModule(name)
+
+	if filename == "" {
+		return newError("Import Error: no module named '%s' found", name)
+	}
+
+	b, err := ioutil.ReadFile(filename)
+
+	if err != nil {
+		return newError("IO Error: error reading module '%s': %s", name, err)
+	}
+
+	l := lexer.New(string(b))
+	p := parser.New(l)
+
+	module := p.ParseProgram()
+
+	if len(p.Errors()) != 0 {
+		return newError("Parse Error: %s", p.Errors())
+	}
+
+	env := object.NewEnvironment()
+	Eval(module, env)
+
+	return env.Exported()
 }
 
 func newError(format string, a ...interface{}) *object.Error {
@@ -467,6 +501,8 @@ func evalIndexExpression(left object.Object, index object.Object) object.Object 
 		return evalListIndexExpression(left, index)
 	case left.Type() == object.MAP_OBJ:
 		return evalMapIndexExpression(left, index)
+	case left.Type() == object.MODULE_OBJ:
+		return evalModuleIndexExpression(left, index)
 	default:
 		return newError("index operator not supported: %s", left.Type())
 	}
@@ -531,6 +567,12 @@ func evalMapIndexExpression(m object.Object, index object.Object) object.Object 
 	return pair.Value
 }
 
+func evalModuleIndexExpression(module, index object.Object) object.Object {
+	moduleObject := module.(*object.Module)
+
+	return evalMapIndexExpression(moduleObject.Attributes, index)
+}
+
 func evalWhileExpression(we *ast.WhileExpression, env *object.Environment) object.Object {
 	for {
 		condition := Eval(we.Condition, env)
@@ -547,6 +589,26 @@ func evalWhileExpression(we *ast.WhileExpression, env *object.Environment) objec
 	}
 
 	return NULL
+}
+
+func evalImportExpression(ie *ast.ImportExpression, env *object.Environment) object.Object {
+	name := Eval(ie.Name, env)
+
+	if isError(name) {
+		return name
+	}
+
+	if s, ok := name.(*object.String); ok {
+		attributes := EvalModule(s.Value)
+
+		if isError(attributes) {
+			return attributes
+		}
+
+		return &object.Module{Name: s.Value, Attributes: attributes}
+	}
+
+	return newError("Import Error: invalid import path '%s'", name)
 }
 
 func applyFunction(fn object.Object, env *object.Environment, arguments []object.Object) object.Object {
