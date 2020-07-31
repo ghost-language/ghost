@@ -136,7 +136,7 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 		parameters := node.Parameters
 		body := node.Body
 		defaults := node.Defaults
-		name := "__function_" + node.Name
+		name := node.Name
 		function := &object.Function{Parameters: parameters, Env: env, Body: body, Defaults: defaults}
 
 		if node.Name != "" {
@@ -486,10 +486,6 @@ func evalIdentifier(node *ast.Identifier, env *object.Environment) object.Object
 
 	if builtin, ok := builtins.Builtins[node.Value]; ok {
 		return builtin
-	}
-
-	if function, ok := env.Get("__function_" + node.Value); ok {
-		return function
 	}
 
 	return newError("identifier not found: " + node.Value)
