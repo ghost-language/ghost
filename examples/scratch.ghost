@@ -1,17 +1,11 @@
-function foo() {
-    print('foo()')
+math := import("examples/math")
+functions := import("examples/functions")
 
-    function bar() {
-        print('bar()')
-    }
+print(math.Add(1, 2))
+print(math.Subtract(14, 4))
+print(math.Multiply(41.2, 5.32))
+print(math.Divide(933.2, 41.2))
 
-    print(identifiers())
-
-    bar()
-}
-
-// foo := true
-test := true
-
-print(identifiers())
-foo()
+functions.Hello(function() {
+    print("Ghost")
+})

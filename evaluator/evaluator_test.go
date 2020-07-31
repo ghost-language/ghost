@@ -7,6 +7,7 @@ import (
 	"ghostlang.org/x/ghost/lexer"
 	"ghostlang.org/x/ghost/object"
 	"ghostlang.org/x/ghost/parser"
+	"ghostlang.org/x/ghost/utilities"
 )
 
 func TestEvalNumberExpression(t *testing.T) {
@@ -522,6 +523,58 @@ func TestBuiltinFunctions(t *testing.T) {
 				t.Errorf("wrong error message. expected=%q, got=%q", expected, errObj.Message)
 			}
 		}
+	}
+}
+
+func TestImportExpression(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected interface{}
+	}{
+		{
+			`module := import("../stubs/module"); module.A`,
+			5,
+		},
+		{
+			`module := import("../stubs/module"); module.Sum(2, 3)`,
+			5,
+		},
+		{
+			`module := import("../stubs/module"); module.a`,
+			nil,
+		},
+	}
+
+	for _, tt := range tests {
+		evaluated := testEval(tt.input)
+		number, ok := tt.expected.(int)
+
+		if ok {
+			testNumberObject(t, evaluated, int64(number))
+		} else {
+			testNullObject(t, evaluated)
+		}
+	}
+}
+
+func TestImportSearchPaths(t *testing.T) {
+	utilities.AddPath("../stubs")
+
+	tests := []struct {
+		input    string
+		expected interface{}
+	}{
+		{
+			`module := import("../stubs/module"); module.A`,
+			5,
+		},
+	}
+
+	for _, tt := range tests {
+		evaluated := testEval(tt.input)
+		number, _ := tt.expected.(int)
+
+		testNumberObject(t, evaluated, int64(number))
 	}
 }
 

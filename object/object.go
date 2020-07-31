@@ -13,6 +13,7 @@ const (
 	NUMBER_OBJ       = "NUMBER"
 	RETURN_VALUE_OBJ = "RETURN_VALUE"
 	STRING_OBJ       = "STRING"
+	MODULE_OBJ       = "MODULE"
 )
 
 type Object interface {

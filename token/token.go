@@ -52,6 +52,8 @@ const (
 	WHILE    = "WHILE"
 	AND      = "AND"
 	OR       = "OR"
+	EXPORT   = "EXPORT"
+	IMPORT   = "IMPORT"
 
 	EQ    = "=="
 	NOTEQ = "!="
@@ -76,6 +78,8 @@ var keywords = map[string]TokenType{
 	"while":    WHILE,
 	"and":      AND,
 	"or":       OR,
+	"export":   EXPORT,
+	"import":   IMPORT,
 }
 
 // LookupIdentifier checks the `keywords` table to see whether

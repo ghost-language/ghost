@@ -1,4 +1,4 @@
-function hello(closure) {
+function Hello(closure) {
     print("Hello world!")
 
     closure()
