@@ -12,6 +12,23 @@ You will find robust, user friendly, and updated documentation on our [website](
 ## Versioning
 We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/ghost-language/ghost/tags).
 
+## Installation
+### Brew
+If you're on mac, you may use `homebrew`:
+```
+$ brew tap ghost-language/ghost
+$ brew install ghost-language/ghost/ghost
+```
+
+### Go Install
+If you have Go installed, you may use `go install`:
+```
+go install github.com/ghost-language/ghost
+```
+
+### Direct Download
+You may download the compiled binaries for your platform from our GitHub [releases](https://github.com/ghost-language/ghost/releases) page.
+
 ## Development
 - To build and execute Ghost, run `make`.
 - To build Ghost, run `make build`.
