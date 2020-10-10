@@ -78,6 +78,23 @@ $  ghost -i examples/fibtc.ghost
 >>
 ```
 
+## Releasing
+Ghost is hosted and distributed through GitHub. We utilize GoReleaser to automate the release process. GoRelease will build all the necessary binaries, publish the release and publish the brew tap formula. The following steps are only viable for maintainers of Ghost.
+
+1. Ensure you have a GitHub token with `repo` access saved to your environment:
+  ```
+  export GITHUB_TOKEN="YOUR_GH_TOKEN"
+  ```
+2. Create a new tag:
+  ```
+  $ git tag -a vx.y.z -m "Release description"
+  $ git push origin vx.y.z
+  ```
+3. Run GoReleaser:
+  ```
+  $ goreleaser
+  ```
+
 ## Credits
 - [Crafting Interpreters](https://craftinginterpreters.com/)
 - [Writing An Interpreter In Go](https://interpreterbook.com/)
