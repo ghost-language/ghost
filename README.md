@@ -79,7 +79,7 @@ $  ghost -i examples/fibtc.ghost
 ```
 
 ## Releasing
-Ghost is hosted and distributed through GitHub. We utilize GoReleaser to automate the release process. GoRelease will build all the necessary binaries, publish the release and publish the brew tap formula. The following steps are only viable for maintainers of Ghost.
+Ghost is hosted and distributed through GitHub. We utilize [GoReleaser](https://goreleaser.com) to automate the release process. GoReleaser will build all the necessary binaries, publish the release and publish the brew tap formula. The following steps outline the process for maintainers of Ghost:
 
 1. Ensure you have a GitHub token with `repo` access saved to your environment:
   ```
