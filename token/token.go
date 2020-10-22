@@ -1,3 +1,5 @@
+// Package token defines constants representing the lexical tokens of the Ghost
+// programming language and basic operations on tokens.
 package token
 
 // TokenType represents the type of token.
@@ -9,14 +11,18 @@ type Token struct {
 	Literal string
 }
 
+// The list of tokens.
 const (
+	// Special tokens
 	ILLEGAL = "ILLEGAL"
 	EOF     = "EOF"
 
+	// Basic type literals
 	IDENTIFIER = "IDENTIFIER"
 	NUMBER     = "NUMBER"
 	STRING     = "STRING"
 
+	// Operators and delimiters
 	ASSIGN   = "="
 	PLUS     = "+"
 	MINUS    = "-"
@@ -43,6 +49,7 @@ const (
 	LBRACKET = "["
 	RBRACKET = "]"
 
+	// Keywords
 	FUNCTION = "FUNCTION"
 	TRUE     = "TRUE"
 	FALSE    = "FALSE"

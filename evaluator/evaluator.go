@@ -39,7 +39,7 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 
 		return &object.ReturnValue{Value: value}
 	case *ast.AssignmentStatement:
-		identifier := evalIdentifier(node.Name, env)
+		identifier := evalIdentifierLiteral(node.Name, env)
 
 		if isError(identifier) {
 			return identifier
@@ -69,7 +69,7 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 			return value
 		}
 
-		if identifier, ok := node.Left.(*ast.Identifier); ok {
+		if identifier, ok := node.Left.(*ast.IdentifierLiteral); ok {
 			env.Set(identifier.Value, value)
 		}
 
@@ -82,7 +82,7 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 		return &object.String{Value: node.Value}
 	case *ast.MapLiteral:
 		return evalMapLiteral(node, env)
-	case *ast.Boolean:
+	case *ast.BooleanLiteral:
 		return nativeBoolToBooleanObject(node.Value)
 	case *ast.PrefixExpression:
 		right := Eval(node.Right, env)
@@ -108,8 +108,8 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 		return evalInfixExpression(node, node.Operator, left, right, env)
 	case *ast.PostfixExpression:
 		return evalPostfixExpression(node, node.Operator, env)
-	case *ast.Identifier:
-		return evalIdentifier(node, env)
+	case *ast.IdentifierLiteral:
+		return evalIdentifierLiteral(node, env)
 	case *ast.ListLiteral:
 		elements := evalExpressions(node.Elements, env)
 
@@ -479,7 +479,7 @@ func evalIfExpression(ie *ast.IfExpression, env *object.Environment) object.Obje
 	}
 }
 
-func evalIdentifier(node *ast.Identifier, env *object.Environment) object.Object {
+func evalIdentifierLiteral(node *ast.IdentifierLiteral, env *object.Environment) object.Object {
 	if value, ok := env.Get(node.Value); ok {
 		return value
 	}

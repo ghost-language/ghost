@@ -13,11 +13,11 @@ func TestString(t *testing.T) {
 				Token: token.Token{Type: token.IDENTIFIER, Literal: "myVar"},
 				Expression: &BindExpression{
 					Token: token.Token{Type: token.BIND, Literal: ":="},
-					Left: &Identifier{
+					Left: &IdentifierLiteral{
 						Token: token.Token{Type: token.IDENTIFIER, Literal: "myVar"},
 						Value: "myVar",
 					},
-					Value: &Identifier{
+					Value: &IdentifierLiteral{
 						Token: token.Token{Type: token.IDENTIFIER, Literal: "anotherVar"},
 						Value: "anotherVar",
 					},

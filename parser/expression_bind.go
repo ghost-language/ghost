@@ -8,7 +8,7 @@ import (
 
 func (p *Parser) parseBindExpression(expression ast.Expression) ast.Expression {
 	switch node := expression.(type) {
-	case *ast.Identifier:
+	case *ast.IdentifierLiteral:
 	default:
 		message := fmt.Sprintf("expected identifier expression on left but got %T (%+v)", node, expression)
 		p.errors = append(p.errors, message)
@@ -22,7 +22,7 @@ func (p *Parser) parseBindExpression(expression ast.Expression) ast.Expression {
 	be.Value = p.parseExpression(LOWEST)
 
 	if fl, ok := be.Value.(*ast.FunctionLiteral); ok {
-		identifier := be.Left.(*ast.Identifier)
+		identifier := be.Left.(*ast.IdentifierLiteral)
 		fl.Name = identifier.Value
 	}
 

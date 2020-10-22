@@ -99,7 +99,7 @@ func TestIdentifierExpression(t *testing.T) {
 		t.Fatalf("program.Statements[0] is not ast.ExpressionStatement. got=%T", program.Statements[0])
 	}
 
-	identifier, ok := statement.Expression.(*ast.Identifier)
+	identifier, ok := statement.Expression.(*ast.IdentifierLiteral)
 
 	if !ok {
 		t.Fatalf("expression not *ast.Identifier. got=%T", statement.Expression)
@@ -195,7 +195,7 @@ func TestBooleanExpression(t *testing.T) {
 			t.Fatalf("program.Statements[0] is not ast.ExpressionStatement. got=%T", program.Statements[0])
 		}
 
-		boolean, ok := statement.Expression.(*ast.Boolean)
+		boolean, ok := statement.Expression.(*ast.BooleanLiteral)
 
 		if !ok {
 			t.Fatalf("statement is not ast.Boolean. got=%T", statement.Expression)
@@ -246,7 +246,7 @@ func TestIfExpression(t *testing.T) {
 		t.Fatalf("Statements[0] is not ast.ExpressionStatement. got=%T", expression.Consequence.Statements[0])
 	}
 
-	if !testIdentifier(t, consequence.Expression, "x") {
+	if !testIdentifierLiteral(t, consequence.Expression, "x") {
 		return
 	}
 
@@ -294,7 +294,7 @@ func TestIfElseExpression(t *testing.T) {
 		t.Fatalf("Statements[0] is not ast.ExpressionStatement. got=%T", expression.Consequence.Statements[0])
 	}
 
-	if !testIdentifier(t, consequence.Expression, "x") {
+	if !testIdentifierLiteral(t, consequence.Expression, "x") {
 		return
 	}
 
@@ -308,7 +308,7 @@ func TestIfElseExpression(t *testing.T) {
 		t.Fatalf("Statements[0] is not ast.ExpressionStatement. got=%T", expression.Alternative.Statements[0])
 	}
 
-	if !testIdentifier(t, alternative.Expression, "y") {
+	if !testIdentifierLiteral(t, alternative.Expression, "y") {
 		return
 	}
 }
@@ -750,7 +750,7 @@ func TestCallExpressionParsing(t *testing.T) {
 		t.Fatalf("statement.Expression is not ast.CallExpression. got=%T", statement.Expression)
 	}
 
-	if !testIdentifier(t, expression.Callable, "add") {
+	if !testIdentifierLiteral(t, expression.Callable, "add") {
 		return
 	}
 
@@ -833,7 +833,7 @@ func testNumberLiteral(t *testing.T, il ast.Expression, value int64) bool {
 }
 
 func testBooleanLiteral(t *testing.T, expression ast.Expression, value bool) bool {
-	boolean, ok := expression.(*ast.Boolean)
+	boolean, ok := expression.(*ast.BooleanLiteral)
 
 	if !ok {
 		t.Errorf("expression not *ast.Boolean. got=%T", expression)
@@ -982,7 +982,7 @@ func TestParsingMapLiteralBooleanKeys(t *testing.T) {
 	}
 
 	for key, value := range mapLiteral.Pairs {
-		boolean, ok := key.(*ast.Boolean)
+		boolean, ok := key.(*ast.BooleanLiteral)
 
 		if !ok {
 			t.Errorf("key is not ast.Boolean. got=%T", key)
@@ -1082,7 +1082,7 @@ func TestParsingIndexExpressions(t *testing.T) {
 		t.Fatalf("expression not *ast.IndexExpression. got=%T", statement.Expression)
 	}
 
-	if !testIdentifier(t, indexExpression.Left, "myList") {
+	if !testIdentifierLiteral(t, indexExpression.Left, "myList") {
 		return
 	}
 
@@ -1107,13 +1107,13 @@ func TestParsingDotNotationExpressions(t *testing.T) {
 		t.Fatalf("expression not *ast.IndexExpression. got=%T", statement.Expression)
 	}
 
-	identifier, ok := expression.Left.(*ast.Identifier)
+	identifier, ok := expression.Left.(*ast.IdentifierLiteral)
 
 	if !ok {
 		t.Fatalf("expression.Left not *ast.Identifier. got=%T", statement.Expression)
 	}
 
-	if !testIdentifier(t, identifier, "foo") {
+	if !testIdentifierLiteral(t, identifier, "foo") {
 		return
 	}
 
@@ -1167,13 +1167,13 @@ func TestWhileExpression(t *testing.T) {
 		t.Fatalf("Consequence.Statements[0] is not ast.ExpressionStatement. got=%T", expression.Consequence.Statements[0])
 	}
 
-	if !testIdentifier(t, consequence.Expression, "x") {
+	if !testIdentifierLiteral(t, consequence.Expression, "x") {
 		return
 	}
 }
 
-func testIdentifier(t *testing.T, expression ast.Expression, value string) bool {
-	identifier, ok := expression.(*ast.Identifier)
+func testIdentifierLiteral(t *testing.T, expression ast.Expression, value string) bool {
+	identifier, ok := expression.(*ast.IdentifierLiteral)
 	if !ok {
 		t.Errorf("expression not *ast.Identifier. got=%T", expression)
 		return false
@@ -1196,7 +1196,7 @@ func testLiteralExpression(t *testing.T, expression ast.Expression, expected int
 	case float64:
 		return testNumberLiteral(t, expression, int64(v))
 	case string:
-		return testIdentifier(t, expression, v)
+		return testIdentifierLiteral(t, expression, v)
 	case bool:
 		return testBooleanLiteral(t, expression, v)
 	}

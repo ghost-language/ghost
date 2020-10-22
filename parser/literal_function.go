@@ -31,9 +31,9 @@ func (p *Parser) parseFunctionLiteral() ast.Expression {
 	return literal
 }
 
-func (p *Parser) parseFunctionParameters() (map[string]ast.Expression, []*ast.Identifier) {
+func (p *Parser) parseFunctionParameters() (map[string]ast.Expression, []*ast.IdentifierLiteral) {
 	defaults := make(map[string]ast.Expression)
-	identifiers := []*ast.Identifier{}
+	identifiers := []*ast.IdentifierLiteral{}
 
 	if p.peekTokenIs(token.RPAREN) {
 		p.nextToken()
@@ -44,7 +44,7 @@ func (p *Parser) parseFunctionParameters() (map[string]ast.Expression, []*ast.Id
 	p.nextToken()
 
 	for !p.currentTokenIs(token.RPAREN) {
-		identifier := &ast.Identifier{Token: p.currentToken, Value: p.currentToken.Literal}
+		identifier := &ast.IdentifierLiteral{Token: p.currentToken, Value: p.currentToken.Literal}
 		identifiers = append(identifiers, identifier)
 
 		p.nextToken()
