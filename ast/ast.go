@@ -194,7 +194,7 @@ func (pe *PostfixExpression) expressionNode() {}
 func (pe *PrefixExpression) expressionNode()  {}
 func (we *WhileExpression) expressionNode()   {}
 
-func (b *BooleanLiteral) expressionNode()     {}
+func (bl *BooleanLiteral) expressionNode()    {}
 func (fl *FunctionLiteral) expressionNode()   {}
 func (il *IdentifierLiteral) expressionNode() {}
 func (ll *ListLiteral) expressionNode()       {}
@@ -214,7 +214,7 @@ func (pe *PostfixExpression) TokenLiteral() string { return pe.Token.Literal }
 func (pe *PrefixExpression) TokenLiteral() string  { return pe.Token.Literal }
 func (we *WhileExpression) TokenLiteral() string   { return we.Token.Literal }
 
-func (b *BooleanLiteral) TokenLiteral() string     { return b.Token.Literal }
+func (bl *BooleanLiteral) TokenLiteral() string    { return bl.Token.Literal }
 func (fl *FunctionLiteral) TokenLiteral() string   { return fl.Token.Literal }
 func (il *IdentifierLiteral) TokenLiteral() string { return il.Token.Literal }
 func (ll *ListLiteral) TokenLiteral() string       { return ll.Token.Literal }
@@ -333,7 +333,7 @@ func (we *WhileExpression) String() string {
 	return out.String()
 }
 
-func (b *BooleanLiteral) String() string { return b.Token.Literal }
+func (bl *BooleanLiteral) String() string { return bl.Token.Literal }
 
 func (fl *FunctionLiteral) String() string {
 	var out bytes.Buffer
