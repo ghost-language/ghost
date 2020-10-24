@@ -10,6 +10,7 @@ import (
 	"ghostlang.org/x/ghost/decimal"
 	"ghostlang.org/x/ghost/object"
 	"ghostlang.org/x/ghost/utilities"
+	"ghostlang.org/x/ghost/value"
 )
 
 func init() {
@@ -145,5 +146,5 @@ func tailFunction(env *object.Environment, args ...object.Object) object.Object 
 		return &object.List{Elements: newElements}
 	}
 
-	return NULL
+	return value.NULL
 }

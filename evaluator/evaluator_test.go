@@ -8,6 +8,7 @@ import (
 	"ghostlang.org/x/ghost/object"
 	"ghostlang.org/x/ghost/parser"
 	"ghostlang.org/x/ghost/utilities"
+	"ghostlang.org/x/ghost/value"
 )
 
 func TestEvalNumberExpression(t *testing.T) {
@@ -372,8 +373,8 @@ func TestMapLiterals(t *testing.T) {
 		(&object.String{Value: "two"}).MapKey():             2,
 		(&object.String{Value: "three"}).MapKey():           3,
 		(&object.Number{Value: decimal.New(4, 0)}).MapKey(): 4,
-		TRUE.MapKey():  5,
-		FALSE.MapKey(): 6,
+		value.TRUE.MapKey():                                 5,
+		value.FALSE.MapKey():                                6,
 	}
 
 	if len(result.Pairs) != len(expected) {
@@ -652,7 +653,7 @@ func testBooleanObject(t *testing.T, obj object.Object, expected bool) bool {
 }
 
 func testNullObject(t *testing.T, obj object.Object) bool {
-	if obj != NULL {
+	if obj != value.NULL {
 		t.Errorf("object is not NULL. got=%T (%+v)", obj, obj)
 		return false
 	}

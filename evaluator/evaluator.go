@@ -10,12 +10,7 @@ import (
 	"ghostlang.org/x/ghost/object"
 	"ghostlang.org/x/ghost/parser"
 	"ghostlang.org/x/ghost/utilities"
-)
-
-var (
-	NULL  = &object.Null{}
-	TRUE  = &object.Boolean{Value: true}
-	FALSE = &object.Boolean{Value: false}
+	"ghostlang.org/x/ghost/value"
 )
 
 // Eval evaluates the node and returns an object
@@ -30,13 +25,13 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 	case *ast.BlockStatement:
 		return evalBlockStatement(node, env)
 	case *ast.ReturnStatement:
-		value := Eval(node.ReturnValue, env)
+		val := Eval(node.ReturnValue, env)
 
-		if isError(value) {
-			return value
+		if isError(val) {
+			return val
 		}
 
-		return &object.ReturnValue{Value: value}
+		return &object.ReturnValue{Value: val}
 	case *ast.AssignmentStatement:
 		identifier := evalIdentifierLiteral(node.Name, env)
 
@@ -44,10 +39,10 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 			return identifier
 		}
 
-		value := Eval(node.Value, env)
+		val := Eval(node.Value, env)
 
-		if isError(value) {
-			return value
+		if isError(val) {
+			return val
 		}
 
 		object, ok := identifier.(object.Mutable)
@@ -56,23 +51,23 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 			return utilities.NewError("cannot assign to %s", identifier.Type())
 		}
 
-		object.Set(value)
+		object.Set(val)
 
-		return value
+		return val
 
 	// Expressions
 	case *ast.BindExpression:
-		value := Eval(node.Value, env)
+		val := Eval(node.Value, env)
 
-		if isError(value) {
-			return value
+		if isError(val) {
+			return val
 		}
 
 		if identifier, ok := node.Left.(*ast.IdentifierLiteral); ok {
-			env.Set(identifier.Value, value)
+			env.Set(identifier.Value, val)
 		}
 
-		return NULL
+		return value.NULL
 	case *ast.IfExpression:
 		return evalIfExpression(node, env)
 	case *ast.NumberLiteral:
@@ -265,14 +260,14 @@ func evalPrefixExpression(operator string, right object.Object) object.Object {
 
 func evalBangOperatorExpression(right object.Object) object.Object {
 	switch right {
-	case TRUE:
-		return FALSE
-	case FALSE:
-		return TRUE
-	case NULL:
-		return TRUE
+	case value.TRUE:
+		return value.FALSE
+	case value.FALSE:
+		return value.TRUE
+	case value.NULL:
+		return value.TRUE
 	default:
-		return FALSE
+		return value.FALSE
 	}
 }
 
@@ -281,9 +276,9 @@ func evalMinusPrefixOperatorExpression(right object.Object) object.Object {
 		return utilities.NewError("unknown operator: -%s", right.Type())
 	}
 
-	value := right.(*object.Number).Value.Neg()
+	val := right.(*object.Number).Value.Neg()
 
-	return &object.Number{Value: value}
+	return &object.Number{Value: val}
 }
 
 func evalInfixExpression(node *ast.InfixExpression, operator string, left object.Object, right object.Object, env *object.Environment) object.Object {
@@ -308,13 +303,13 @@ func evalInfixExpression(node *ast.InfixExpression, operator string, left object
 func evalPostfixExpression(node *ast.PostfixExpression, operator string, env *object.Environment) object.Object {
 	switch operator {
 	case "++":
-		value, ok := env.Get(node.Token.Literal)
+		val, ok := env.Get(node.Token.Literal)
 
 		if !ok {
 			return utilities.NewError("Token literal %s is unknown", node.Token.Literal)
 		}
 
-		expression, ok := value.(*object.Number)
+		expression, ok := val.(*object.Number)
 
 		if !ok {
 			return utilities.NewError("Invalid left-hand side expression in postfix operation")
@@ -326,13 +321,13 @@ func evalPostfixExpression(node *ast.PostfixExpression, operator string, env *ob
 
 		return decimal
 	case "--":
-		value, ok := env.Get(node.Token.Literal)
+		val, ok := env.Get(node.Token.Literal)
 
 		if !ok {
 			return utilities.NewError("Token literal %s is unknown", node.Token.Literal)
 		}
 
-		expression, ok := value.(*object.Number)
+		expression, ok := val.(*object.Number)
 
 		if !ok {
 			return utilities.NewError("Invalid left-hand side expression in postfix operation")
@@ -403,7 +398,7 @@ func evalNumberInfixExpression(node *ast.InfixExpression, operator string, left 
 		decimal := &object.Number{Value: leftValue.Add(rightValue)}
 		env.Set(node.Left.String(), decimal)
 
-		return NULL
+		return value.NULL
 	case "-=":
 		_, ok := env.Get(node.Left.String())
 
@@ -414,7 +409,7 @@ func evalNumberInfixExpression(node *ast.InfixExpression, operator string, left 
 		decimal := &object.Number{Value: leftValue.Sub(rightValue)}
 		env.Set(node.Left.String(), decimal)
 
-		return NULL
+		return value.NULL
 	case "*=":
 		_, ok := env.Get(node.Left.String())
 
@@ -425,7 +420,7 @@ func evalNumberInfixExpression(node *ast.InfixExpression, operator string, left 
 		decimal := &object.Number{Value: leftValue.Mul(rightValue)}
 		env.Set(node.Left.String(), decimal)
 
-		return NULL
+		return value.NULL
 	case "/=":
 		_, ok := env.Get(node.Left.String())
 
@@ -436,7 +431,7 @@ func evalNumberInfixExpression(node *ast.InfixExpression, operator string, left 
 		decimal := &object.Number{Value: leftValue.Div(rightValue)}
 		env.Set(node.Left.String(), decimal)
 
-		return NULL
+		return value.NULL
 	default:
 		return utilities.NewError("unknown operator: %s %s %s", left.Type(), operator, right.Type())
 	}
@@ -470,13 +465,13 @@ func evalIfExpression(ie *ast.IfExpression, env *object.Environment) object.Obje
 	} else if ie.Alternative != nil {
 		return Eval(ie.Alternative, env)
 	} else {
-		return NULL
+		return value.NULL
 	}
 }
 
 func evalIdentifierLiteral(node *ast.IdentifierLiteral, env *object.Environment) object.Object {
-	if value, ok := env.Get(node.Value); ok {
-		return value
+	if val, ok := env.Get(node.Value); ok {
+		return val
 	}
 
 	if builtin, ok := builtins.Builtins[node.Value]; ok {
@@ -505,7 +500,7 @@ func evalListIndexExpression(list object.Object, index object.Object) object.Obj
 	max := int64(len(listObject.Elements) - 1)
 
 	if idx < 0 || idx > max {
-		return NULL
+		return value.NULL
 	}
 
 	return listObject.Elements[idx]
@@ -527,14 +522,14 @@ func evalMapLiteral(node *ast.MapLiteral, env *object.Environment) object.Object
 			return utilities.NewError("unusable as map key: %s", key.Type())
 		}
 
-		value := Eval(valueNode, env)
+		val := Eval(valueNode, env)
 
-		if isError(value) {
-			return value
+		if isError(val) {
+			return val
 		}
 
 		mapped := mapKey.MapKey()
-		pairs[mapped] = object.MapPair{Key: key, Value: value}
+		pairs[mapped] = object.MapPair{Key: key, Value: val}
 	}
 
 	return &object.Map{Pairs: pairs}
@@ -552,7 +547,7 @@ func evalMapIndexExpression(m object.Object, index object.Object) object.Object 
 	pair, ok := mapObject.Pairs[key.MapKey()]
 
 	if !ok {
-		return NULL
+		return value.NULL
 	}
 
 	return pair.Value
@@ -579,7 +574,7 @@ func evalWhileExpression(we *ast.WhileExpression, env *object.Environment) objec
 		}
 	}
 
-	return NULL
+	return value.NULL
 }
 
 func evalImportExpression(ie *ast.ImportExpression, env *object.Environment) object.Object {
@@ -614,7 +609,7 @@ func applyFunction(fn object.Object, env *object.Environment, arguments []object
 			return result
 		}
 
-		return NULL
+		return value.NULL
 	default:
 		return utilities.NewError("not a function: %s", fn.Type())
 	}
@@ -623,8 +618,8 @@ func applyFunction(fn object.Object, env *object.Environment, arguments []object
 func extendFunctionEnv(fn *object.Function, arguments []object.Object) *object.Environment {
 	env := object.NewEnclosedEnvironment(fn.Env)
 
-	for key, value := range fn.Defaults {
-		env.Set(key, Eval(value, env))
+	for key, val := range fn.Defaults {
+		env.Set(key, Eval(val, env))
 	}
 
 	for index, parameter := range fn.Parameters {
@@ -646,11 +641,11 @@ func unwrapReturnValue(obj object.Object) object.Object {
 
 func isTruthy(obj object.Object) bool {
 	switch obj {
-	case NULL:
+	case value.NULL:
 		return false
-	case TRUE:
+	case value.TRUE:
 		return true
-	case FALSE:
+	case value.FALSE:
 		return false
 	default:
 		return true
@@ -659,8 +654,8 @@ func isTruthy(obj object.Object) bool {
 
 func nativeBoolToBooleanObject(input bool) *object.Boolean {
 	if input {
-		return TRUE
+		return value.TRUE
 	}
 
-	return FALSE
+	return value.FALSE
 }

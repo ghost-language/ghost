@@ -7,6 +7,7 @@ import (
 	"ghostlang.org/x/ghost/object"
 	"ghostlang.org/x/ghost/parser"
 	"ghostlang.org/x/ghost/utilities"
+	"ghostlang.org/x/ghost/value"
 )
 
 var script = Script{}
@@ -16,10 +17,16 @@ type Script struct {
 	source string
 }
 
+// Global values
 var (
-	NULL  = &object.Null{}
-	TRUE  = &object.Boolean{Value: true}
-	FALSE = &object.Boolean{Value: false}
+	// NULL represents a null value.
+	NULL = value.NULL
+
+	// TRUE represents a true value.
+	TRUE = value.TRUE
+
+	// FALSE represents a false value.
+	FALSE = value.FALSE
 )
 
 // NewScript registers a new Ghost script to be evaluated.
