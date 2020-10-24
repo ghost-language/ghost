@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"ghostlang.org/x/ghost/object"
+	"ghostlang.org/x/ghost/value"
 )
 
 var SearchPaths []string
@@ -66,4 +67,37 @@ func FindModule(name string) string {
 // NewError returns a new error object used during runtime.
 func NewError(format string, a ...interface{}) *object.Error {
 	return &object.Error{Message: fmt.Sprintf(format, a...)}
+}
+
+// IsError determines if the passed object is an error object.
+func IsError(obj object.Object) bool {
+	if obj != nil {
+		return obj.Type() == object.ERROR_OBJ
+	}
+
+	return false
+}
+
+// NativeBoolToBooleanObject converts a native
+// Go boolean to a Ghost boolean value.
+func NativeBoolToBooleanObject(input bool) *object.Boolean {
+	if input {
+		return value.TRUE
+	}
+
+	return value.FALSE
+}
+
+// IsTruthy returns the truthy value of the passed object.
+func IsTruthy(obj object.Object) bool {
+	switch obj {
+	case value.NULL:
+		return false
+	case value.TRUE:
+		return true
+	case value.FALSE:
+		return false
+	default:
+		return true
+	}
 }
