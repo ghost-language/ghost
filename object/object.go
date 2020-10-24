@@ -120,7 +120,7 @@ func (b *Boolean) Type() ObjectType      { return BOOLEAN_OBJ }
 func (b *Builtin) Type() ObjectType      { return BUILTIN_OBJ }
 func (e *Error) Type() ObjectType        { return ERROR_OBJ }
 func (f *Function) Type() ObjectType     { return FUNCTION_OBJ }
-func (ao *List) Type() ObjectType        { return LIST_OBJ }
+func (l *List) Type() ObjectType         { return LIST_OBJ }
 func (m *Map) Type() ObjectType          { return MAP_OBJ }
 func (m *Module) Type() ObjectType       { return MODULE_OBJ }
 func (n *Null) Type() ObjectType         { return NULL_OBJ }
