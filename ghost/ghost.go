@@ -1,13 +1,12 @@
 package ghost
 
 import (
-	"fmt"
-
 	"ghostlang.org/x/ghost/builtins"
 	"ghostlang.org/x/ghost/evaluator"
 	"ghostlang.org/x/ghost/lexer"
 	"ghostlang.org/x/ghost/object"
 	"ghostlang.org/x/ghost/parser"
+	"ghostlang.org/x/ghost/utilities"
 )
 
 var script = Script{}
@@ -45,5 +44,5 @@ func Evaluate() {
 
 // NewError returns a new error object used during runtime.
 func NewError(format string, a ...interface{}) *object.Error {
-	return &object.Error{Message: fmt.Sprintf(format, a...)}
+	return utilities.NewError(format, a)
 }
