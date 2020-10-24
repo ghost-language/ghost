@@ -1,7 +1,6 @@
 package evaluator
 
 import (
-	"fmt"
 	"io/ioutil"
 
 	"ghostlang.org/x/ghost/ast"
@@ -54,7 +53,7 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 		object, ok := identifier.(object.Mutable)
 
 		if !ok {
-			return newError("cannot assign to %s", identifier.Type())
+			return utilities.NewError("cannot assign to %s", identifier.Type())
 		}
 
 		object.Set(value)
@@ -171,13 +170,13 @@ func EvalModule(name string) object.Object {
 	filename := utilities.FindModule(name)
 
 	if filename == "" {
-		return newError("Import Error: no module named '%s' found", name)
+		return utilities.NewError("Import Error: no module named '%s' found", name)
 	}
 
 	b, err := ioutil.ReadFile(filename)
 
 	if err != nil {
-		return newError("IO Error: error reading module '%s': %s", name, err)
+		return utilities.NewError("IO Error: error reading module '%s': %s", name, err)
 	}
 
 	l := lexer.New(string(b))
@@ -186,17 +185,13 @@ func EvalModule(name string) object.Object {
 	module := p.ParseProgram()
 
 	if len(p.Errors()) != 0 {
-		return newError("Parse Error: %s", p.Errors())
+		return utilities.NewError("Parse Error: %s", p.Errors())
 	}
 
 	env := object.NewEnvironment()
 	Eval(module, env)
 
 	return env.Exported()
-}
-
-func newError(format string, a ...interface{}) *object.Error {
-	return &object.Error{Message: fmt.Sprintf(format, a...)}
 }
 
 func isError(obj object.Object) bool {
@@ -264,7 +259,7 @@ func evalPrefixExpression(operator string, right object.Object) object.Object {
 	case "-":
 		return evalMinusPrefixOperatorExpression(right)
 	default:
-		return newError("unknown operator: %s%s", operator, right.Type())
+		return utilities.NewError("unknown operator: %s%s", operator, right.Type())
 	}
 }
 
@@ -283,7 +278,7 @@ func evalBangOperatorExpression(right object.Object) object.Object {
 
 func evalMinusPrefixOperatorExpression(right object.Object) object.Object {
 	if right.Type() != object.NUMBER_OBJ {
-		return newError("unknown operator: -%s", right.Type())
+		return utilities.NewError("unknown operator: -%s", right.Type())
 	}
 
 	value := right.(*object.Number).Value.Neg()
@@ -304,9 +299,9 @@ func evalInfixExpression(node *ast.InfixExpression, operator string, left object
 	case operator == "!=":
 		return nativeBoolToBooleanObject(left != right)
 	case left.Type() != right.Type():
-		return newError("type mismatch: %s %s %s", left.Type(), operator, right.Type())
+		return utilities.NewError("type mismatch: %s %s %s", left.Type(), operator, right.Type())
 	default:
-		return newError("unknown operator: %s %s %s", left.Type(), operator, right.Type())
+		return utilities.NewError("unknown operator: %s %s %s", left.Type(), operator, right.Type())
 	}
 }
 
@@ -316,13 +311,13 @@ func evalPostfixExpression(node *ast.PostfixExpression, operator string, env *ob
 		value, ok := env.Get(node.Token.Literal)
 
 		if !ok {
-			return newError("Token literal %s is unknown", node.Token.Literal)
+			return utilities.NewError("Token literal %s is unknown", node.Token.Literal)
 		}
 
 		expression, ok := value.(*object.Number)
 
 		if !ok {
-			return newError("Invalid left-hand side expression in postfix operation")
+			return utilities.NewError("Invalid left-hand side expression in postfix operation")
 		}
 
 		one := decimal.NewFromInt(1)
@@ -334,13 +329,13 @@ func evalPostfixExpression(node *ast.PostfixExpression, operator string, env *ob
 		value, ok := env.Get(node.Token.Literal)
 
 		if !ok {
-			return newError("Token literal %s is unknown", node.Token.Literal)
+			return utilities.NewError("Token literal %s is unknown", node.Token.Literal)
 		}
 
 		expression, ok := value.(*object.Number)
 
 		if !ok {
-			return newError("Invalid left-hand side expression in postfix operation")
+			return utilities.NewError("Invalid left-hand side expression in postfix operation")
 		}
 
 		one := decimal.NewFromInt(1)
@@ -349,7 +344,7 @@ func evalPostfixExpression(node *ast.PostfixExpression, operator string, env *ob
 
 		return decimal
 	default:
-		return newError("unknown operator: %s", operator)
+		return utilities.NewError("unknown operator: %s", operator)
 	}
 }
 
@@ -367,7 +362,7 @@ func evalBooleanInfixExpression(operator string, left object.Object, right objec
 	case "!=":
 		return nativeBoolToBooleanObject(leftValue != rightValue)
 	default:
-		return newError("unknown operator: %s %s %s", left.Type(), operator, right.Type())
+		return utilities.NewError("unknown operator: %s %s %s", left.Type(), operator, right.Type())
 	}
 }
 
@@ -402,7 +397,7 @@ func evalNumberInfixExpression(node *ast.InfixExpression, operator string, left 
 		_, ok := env.Get(node.Left.String())
 
 		if !ok {
-			return newError("Variable %s is unknown", node.Left.String())
+			return utilities.NewError("Variable %s is unknown", node.Left.String())
 		}
 
 		decimal := &object.Number{Value: leftValue.Add(rightValue)}
@@ -413,7 +408,7 @@ func evalNumberInfixExpression(node *ast.InfixExpression, operator string, left 
 		_, ok := env.Get(node.Left.String())
 
 		if !ok {
-			return newError("Variable %s is unknown", node.Left.String())
+			return utilities.NewError("Variable %s is unknown", node.Left.String())
 		}
 
 		decimal := &object.Number{Value: leftValue.Sub(rightValue)}
@@ -424,7 +419,7 @@ func evalNumberInfixExpression(node *ast.InfixExpression, operator string, left 
 		_, ok := env.Get(node.Left.String())
 
 		if !ok {
-			return newError("Variable %s is unknown", node.Left.String())
+			return utilities.NewError("Variable %s is unknown", node.Left.String())
 		}
 
 		decimal := &object.Number{Value: leftValue.Mul(rightValue)}
@@ -435,7 +430,7 @@ func evalNumberInfixExpression(node *ast.InfixExpression, operator string, left 
 		_, ok := env.Get(node.Left.String())
 
 		if !ok {
-			return newError("Variable %s is unknown", node.Left.String())
+			return utilities.NewError("Variable %s is unknown", node.Left.String())
 		}
 
 		decimal := &object.Number{Value: leftValue.Div(rightValue)}
@@ -443,7 +438,7 @@ func evalNumberInfixExpression(node *ast.InfixExpression, operator string, left 
 
 		return NULL
 	default:
-		return newError("unknown operator: %s %s %s", left.Type(), operator, right.Type())
+		return utilities.NewError("unknown operator: %s %s %s", left.Type(), operator, right.Type())
 	}
 }
 
@@ -459,7 +454,7 @@ func evalStringInfixExpression(operator string, left object.Object, right object
 	case "!=":
 		return nativeBoolToBooleanObject(leftValue != rightValue)
 	default:
-		return newError("unknown operator: %s %s %s", left.Type(), operator, right.Type())
+		return utilities.NewError("unknown operator: %s %s %s", left.Type(), operator, right.Type())
 	}
 }
 
@@ -488,7 +483,7 @@ func evalIdentifierLiteral(node *ast.IdentifierLiteral, env *object.Environment)
 		return builtin
 	}
 
-	return newError("identifier not found: " + node.Value)
+	return utilities.NewError("identifier not found: " + node.Value)
 }
 
 func evalIndexExpression(left object.Object, index object.Object) object.Object {
@@ -500,7 +495,7 @@ func evalIndexExpression(left object.Object, index object.Object) object.Object 
 	case left.Type() == object.MODULE_OBJ:
 		return evalModuleIndexExpression(left, index)
 	default:
-		return newError("index operator not supported: %s", left.Type())
+		return utilities.NewError("index operator not supported: %s", left.Type())
 	}
 }
 
@@ -529,7 +524,7 @@ func evalMapLiteral(node *ast.MapLiteral, env *object.Environment) object.Object
 		mapKey, ok := key.(object.Mappable)
 
 		if !ok {
-			return newError("unusable as map key: %s", key.Type())
+			return utilities.NewError("unusable as map key: %s", key.Type())
 		}
 
 		value := Eval(valueNode, env)
@@ -551,7 +546,7 @@ func evalMapIndexExpression(m object.Object, index object.Object) object.Object 
 	key, ok := index.(object.Mappable)
 
 	if !ok {
-		return newError("unusable as map key: %s", index.Type())
+		return utilities.NewError("unusable as map key: %s", index.Type())
 	}
 
 	pair, ok := mapObject.Pairs[key.MapKey()]
@@ -604,7 +599,7 @@ func evalImportExpression(ie *ast.ImportExpression, env *object.Environment) obj
 		return &object.Module{Name: s.Value, Attributes: attributes}
 	}
 
-	return newError("Import Error: invalid import path '%s'", name)
+	return utilities.NewError("Import Error: invalid import path '%s'", name)
 }
 
 func applyFunction(fn object.Object, env *object.Environment, arguments []object.Object) object.Object {
@@ -621,7 +616,7 @@ func applyFunction(fn object.Object, env *object.Environment, arguments []object
 
 		return NULL
 	default:
-		return newError("not a function: %s", fn.Type())
+		return utilities.NewError("not a function: %s", fn.Type())
 	}
 }
 

@@ -9,6 +9,7 @@ import (
 
 	"ghostlang.org/x/ghost/decimal"
 	"ghostlang.org/x/ghost/object"
+	"ghostlang.org/x/ghost/utilities"
 )
 
 func init() {
@@ -36,11 +37,11 @@ func identifiersFunction(env *object.Environment, args ...object.Object) object.
 
 func firstFunction(env *object.Environment, args ...object.Object) object.Object {
 	if len(args) != 1 {
-		return newError("wrong number of arguments. got=%d, expected=1", len(args))
+		return utilities.NewError("wrong number of arguments. got=%d, expected=1", len(args))
 	}
 
 	if args[0].Type() != object.LIST_OBJ {
-		return newError("argument to `first` must be LIST, got %s", args[0].Type())
+		return utilities.NewError("argument to `first` must be LIST, got %s", args[0].Type())
 	}
 
 	list := args[0].(*object.List)
@@ -59,18 +60,18 @@ func inputFunction(env *object.Environment, args ...object.Object) object.Object
 	line, _, err := buffer.ReadLine()
 
 	if err != nil && err != io.EOF {
-		return newError(fmt.Sprintf("error reading input: %s", err))
+		return utilities.NewError(fmt.Sprintf("error reading input: %s", err))
 	}
 	return &object.String{Value: string(line)}
 }
 
 func lastFunction(env *object.Environment, args ...object.Object) object.Object {
 	if len(args) != 1 {
-		return newError("wrong number of arguments. got=%d, expected=1", len(args))
+		return utilities.NewError("wrong number of arguments. got=%d, expected=1", len(args))
 	}
 
 	if args[0].Type() != object.LIST_OBJ {
-		return newError("argument to `last` must be LIST, got %s", args[0].Type())
+		return utilities.NewError("argument to `last` must be LIST, got %s", args[0].Type())
 	}
 
 	list := args[0].(*object.List)
@@ -81,7 +82,7 @@ func lastFunction(env *object.Environment, args ...object.Object) object.Object 
 
 func lenFunction(env *object.Environment, args ...object.Object) object.Object {
 	if len(args) != 1 {
-		return newError("wrong number of arguments. got=%d, expected=1", len(args))
+		return utilities.NewError("wrong number of arguments. got=%d, expected=1", len(args))
 	}
 
 	switch arg := args[0].(type) {
@@ -90,7 +91,7 @@ func lenFunction(env *object.Environment, args ...object.Object) object.Object {
 	case *object.String:
 		return &object.Number{Value: decimal.NewFromInt(int64(utf8.RuneCountInString(arg.Value)))}
 	default:
-		return newError("argument to `len` not supported, got %s", args[0].Type())
+		return utilities.NewError("argument to `len` not supported, got %s", args[0].Type())
 	}
 }
 
@@ -106,11 +107,11 @@ func printFunction(env *object.Environment, args ...object.Object) object.Object
 
 func pushFunction(env *object.Environment, args ...object.Object) object.Object {
 	if len(args) != 2 {
-		return newError("wrong number of arguments. got=%d, expected=2", len(args))
+		return utilities.NewError("wrong number of arguments. got=%d, expected=2", len(args))
 	}
 
 	if args[0].Type() != object.LIST_OBJ {
-		return newError("argument to `push` must be LIST, got %s", args[0].Type())
+		return utilities.NewError("argument to `push` must be LIST, got %s", args[0].Type())
 	}
 
 	list := args[0].(*object.List)
@@ -127,11 +128,11 @@ func pushFunction(env *object.Environment, args ...object.Object) object.Object 
 
 func tailFunction(env *object.Environment, args ...object.Object) object.Object {
 	if len(args) != 1 {
-		return newError("wrong number of arguments. got=%d, expected=1", len(args))
+		return utilities.NewError("wrong number of arguments. got=%d, expected=1", len(args))
 	}
 
 	if args[0].Type() != object.LIST_OBJ {
-		return newError("argument to `tail` must be LIST, got %s", args[0].Type())
+		return utilities.NewError("argument to `tail` must be LIST, got %s", args[0].Type())
 	}
 
 	list := args[0].(*object.List)

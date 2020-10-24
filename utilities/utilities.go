@@ -6,6 +6,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"ghostlang.org/x/ghost/object"
 )
 
 var SearchPaths []string
@@ -59,4 +61,9 @@ func FindModule(name string) string {
 	}
 
 	return ""
+}
+
+// NewError returns a new error object used during runtime.
+func NewError(format string, a ...interface{}) *object.Error {
+	return &object.Error{Message: fmt.Sprintf(format, a...)}
 }
