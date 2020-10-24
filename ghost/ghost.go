@@ -8,6 +8,7 @@ import (
 	"ghostlang.org/x/ghost/parser"
 	"ghostlang.org/x/ghost/utilities"
 	"ghostlang.org/x/ghost/value"
+	"ghostlang.org/x/ghost/version"
 )
 
 var script = Script{}
@@ -19,6 +20,9 @@ type Script struct {
 
 // Global values
 var (
+	// Version returns the current version of Ghost.
+	Version = version.String()
+
 	// NULL represents a null value.
 	NULL = value.NULL
 
