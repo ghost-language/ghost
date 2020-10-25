@@ -85,6 +85,16 @@ type (
 		Arguments []Expression
 	}
 
+	// ForExpression
+	ForExpression struct {
+		Token      token.Token
+		Identifier string
+		Starter    Statement
+		Closer     Statement
+		Condition  Expression
+		Block      *BlockStatement
+	}
+
 	// IfExpression defines a new expression type for defining if expressions.
 	IfExpression struct {
 		Token       token.Token
@@ -186,6 +196,7 @@ type (
 //
 func (be *BindExpression) expressionNode()    {}
 func (ce *CallExpression) expressionNode()    {}
+func (fe *ForExpression) expressionNode()     {}
 func (ie *IfExpression) expressionNode()      {}
 func (ie *ImportExpression) expressionNode()  {}
 func (ie *IndexExpression) expressionNode()   {}
@@ -206,6 +217,7 @@ func (sl *StringLiteral) expressionNode()     {}
 //
 func (be *BindExpression) TokenLiteral() string    { return be.Token.Literal }
 func (ce *CallExpression) TokenLiteral() string    { return ce.Token.Literal }
+func (fe *ForExpression) TokenLiteral() string     { return fe.Token.Literal }
 func (ie *IfExpression) TokenLiteral() string      { return ie.Token.Literal }
 func (ie *ImportExpression) TokenLiteral() string  { return ie.Token.Literal }
 func (ie *IndexExpression) TokenLiteral() string   { return ie.Token.Literal }
@@ -245,6 +257,22 @@ func (ce *CallExpression) String() string {
 	out.WriteString("(")
 	out.WriteString(strings.Join(args, ", "))
 	out.WriteString(")")
+
+	return out.String()
+}
+
+func (fe *ForExpression) String() string {
+	var out bytes.Buffer
+
+	out.WriteString("for ")
+
+	out.WriteString(fe.Starter.String())
+	out.WriteString(";")
+	out.WriteString(fe.Condition.String())
+	out.WriteString(";")
+	out.WriteString(fe.Closer.String())
+	out.WriteString(";")
+	out.WriteString(fe.Block.String())
 
 	return out.String()
 }

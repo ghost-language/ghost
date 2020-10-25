@@ -1229,6 +1229,58 @@ func testInfixExpression(t *testing.T, expression ast.Expression, left interface
 	return true
 }
 
+func TestForExpression(t *testing.T) {
+	input := `for (x := 0; x < 10; x += 1) { x }`
+
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("program.Statements does not contain %d statements. got=%d\n", 1, len(program.Statements))
+	}
+
+	statement, ok := program.Statements[0].(*ast.ExpressionStatement)
+
+	if !ok {
+		t.Fatalf("program.Statements[0] is not ast.ExpressionStatement. got=%T", program.Statements[0])
+	}
+
+	expression, ok := statement.Expression.(*ast.ForExpression)
+
+	if !ok {
+		t.Fatalf("statement.Expression is not ast.ForExpression. got=%T", statement.Expression)
+	}
+
+	if expression.Identifier != "x" {
+		t.Errorf("wrong identifier in for loop. got=%s\n", expression.Identifier)
+	}
+
+	_, ok = expression.Starter.(*ast.AssignmentStatement)
+
+	if !ok {
+		t.Fatalf("Starter is not ast.AssignmentStatement. got=%T", expression.Starter)
+	}
+
+	// if !testInfixExpression(t, expression.Condition, "x", "<", "10") {
+	// 	continue
+	// }
+
+	_, ok = expression.Closer.(*ast.AssignmentStatement)
+
+	if !ok {
+		t.Fatalf("Closer is not ast.AssignmentStatement. got=%T", expression.Closer)
+	}
+
+	_, ok = expression.Block.Statements[0].(*ast.ExpressionStatement)
+
+	if !ok {
+		t.Fatalf("Statements[0] is not ast.ExpressionStatement, got=%T", expression.Block.Statements[0])
+	}
+}
+
 func checkParserErrors(t *testing.T, p *Parser) {
 	errors := p.Errors()
 
