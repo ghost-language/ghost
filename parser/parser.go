@@ -92,6 +92,7 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.LBRACKET, p.parseListLiteral)
 	p.registerPrefix(token.LBRACE, p.parseMapLiteral)
 	p.registerPrefix(token.WHILE, p.parseWhileExpression)
+	p.registerPrefix(token.FOR, p.parseForExpression)
 	p.registerPrefix(token.IMPORT, p.parseImportExpression)
 
 	p.infixParseFns = make(map[token.TokenType]infixParseFn)
@@ -361,4 +362,54 @@ func (p *Parser) currentPrecendence() int {
 	}
 
 	return LOWEST
+}
+
+func (p *Parser) parseForExpression() ast.Expression {
+	expression := &ast.ForExpression{Token: p.currentToken}
+
+	if !p.expectPeek(token.LPAREN) {
+		return nil
+	}
+
+	p.nextToken()
+
+	if !p.currentTokenIs(token.IDENTIFIER) {
+		return nil
+	}
+
+	expression.Identifier = p.currentToken.Literal
+	expression.Initializer = p.parseAssignmentStatement()
+
+	if expression.Initializer == nil {
+		return nil
+	}
+
+	p.nextToken()
+
+	expression.Condition = p.parseExpression(LOWEST)
+
+	if expression.Condition == nil {
+		return nil
+	}
+
+	p.nextToken()
+	p.nextToken()
+
+	expression.Increment = p.parseAssignmentStatement()
+
+	if expression.Increment == nil {
+		return nil
+	}
+
+	if !p.expectPeek(token.RPAREN) {
+		return nil
+	}
+
+	if !p.expectPeek(token.LBRACE) {
+		return nil
+	}
+
+	expression.Block = p.parseBlockStatement()
+
+	return expression
 }

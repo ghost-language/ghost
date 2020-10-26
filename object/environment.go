@@ -51,6 +51,11 @@ func (e *Environment) Set(name string, value Object) Object {
 	return value
 }
 
+// Delete removes the object with the given name
+func (e *Environment) Delete(name string) {
+	delete(e.store, name)
+}
+
 func (e *Environment) Exported() *Map {
 	pairs := make(map[MapKey]MapPair)
 
