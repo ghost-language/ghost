@@ -494,6 +494,26 @@ func TestWhileExpressions(t *testing.T) {
 	}
 }
 
+func TestForExpressions(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected interface{}
+	}{
+		{`i := 100; for (i := 0; i < 10; i := i + 1) { i }; i;`, 100},
+	}
+
+	for _, tt := range tests {
+		evaluated := testEval(tt.input)
+		number, ok := tt.expected.(int)
+
+		if ok {
+			testNumberObject(t, evaluated, int64(number))
+		} else {
+			testNullObject(t, evaluated)
+		}
+	}
+}
+
 func TestBuiltinFunctions(t *testing.T) {
 	tests := []struct {
 		input    string

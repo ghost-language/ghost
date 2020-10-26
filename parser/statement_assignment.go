@@ -10,6 +10,7 @@ func (p *Parser) parseAssignmentStatement() *ast.AssignmentStatement {
 	statement.Name = &ast.IdentifierLiteral{Token: p.currentToken, Value: p.currentToken.Literal}
 
 	p.nextToken()
+	statement.Token = p.currentToken
 	p.nextToken()
 
 	statement.Value = p.parseExpression(LOWEST)

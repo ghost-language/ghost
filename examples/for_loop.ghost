@@ -1,0 +1,10 @@
+sum := 0
+// i := 100
+
+for (i := 0; i <= 10; i := i + 1) {
+    print(i)
+    sum := i
+}
+
+print("Sum: " + string(sum))
+// print(i)

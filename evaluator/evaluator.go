@@ -33,27 +33,34 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 
 		return &object.ReturnValue{Value: val}
 	case *ast.AssignmentStatement:
-		identifier := evalIdentifierLiteral(node.Name, env)
+		assignment := evalAssignmentStatement(node, env)
 
-		if utilities.IsError(identifier) {
-			return identifier
+		if utilities.IsError(assignment) {
+			return assignment
 		}
 
-		val := Eval(node.Value, env)
+		return value.NULL
+		// identifier := evalIdentifierLiteral(node.Name, env)
 
-		if utilities.IsError(val) {
-			return val
-		}
+		// if utilities.IsError(identifier) {
+		// 	return identifier
+		// }
 
-		object, ok := identifier.(object.Mutable)
+		// val := Eval(node.Value, env)
 
-		if !ok {
-			return utilities.NewError("cannot assign to %s", identifier.Type())
-		}
+		// if utilities.IsError(val) {
+		// 	return val
+		// }
 
-		object.Set(val)
+		// object, ok := identifier.(object.Mutable)
 
-		return val
+		// if !ok {
+		// 	return utilities.NewError("cannot assign to %s", identifier.Type())
+		// }
+
+		// object.Set(val)
+
+		// return val
 
 	// Expressions
 	case *ast.BindExpression:
@@ -140,6 +147,8 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 		return function
 	case *ast.WhileExpression:
 		return evalWhileExpression(node, env)
+	case *ast.ForExpression:
+		return evalForExpression(node, env)
 	case *ast.ImportExpression:
 		return evalImportExpression(node, env)
 	case *ast.CallExpression:
@@ -569,6 +578,46 @@ func evalWhileExpression(we *ast.WhileExpression, env *object.Environment) objec
 	return value.NULL
 }
 
+func evalForExpression(fe *ast.ForExpression, env *object.Environment) object.Object {
+	extendedEnv := object.NewEnclosedEnvironment(env)
+
+	initializer := Eval(fe.Initializer, extendedEnv)
+
+	if utilities.IsError(initializer) {
+		return initializer
+	}
+
+	loop := true
+
+	for loop {
+		condition := Eval(fe.Condition, extendedEnv)
+
+		if utilities.IsError(condition) {
+			return condition
+		}
+
+		if utilities.IsTruthy(condition) {
+			err := Eval(fe.Block, extendedEnv)
+
+			if utilities.IsError(err) {
+				return err
+			}
+
+			err = Eval(fe.Increment, extendedEnv)
+
+			if utilities.IsError(err) {
+				return err
+			}
+
+			continue
+		}
+
+		loop = false
+	}
+
+	return value.NULL
+}
+
 func evalImportExpression(ie *ast.ImportExpression, env *object.Environment) object.Object {
 	name := Eval(ie.Name, env)
 
@@ -629,4 +678,15 @@ func unwrapReturnValue(obj object.Object) object.Object {
 	}
 
 	return obj
+}
+
+func evalAssignmentStatement(as *ast.AssignmentStatement, env *object.Environment) object.Object {
+	val := Eval(as.Value, env)
+
+	if utilities.IsError(val) {
+		return val
+	}
+
+	env.Set(as.Name.Value, val)
+	return nil
 }

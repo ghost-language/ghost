@@ -1258,20 +1258,20 @@ func TestForExpression(t *testing.T) {
 		t.Errorf("wrong identifier in for loop. got=%s\n", expression.Identifier)
 	}
 
-	_, ok = expression.Starter.(*ast.AssignmentStatement)
+	_, ok = expression.Initializer.(*ast.AssignmentStatement)
 
 	if !ok {
-		t.Fatalf("Starter is not ast.AssignmentStatement. got=%T", expression.Starter)
+		t.Fatalf("Initializer is not ast.AssignmentStatement. got=%T", expression.Initializer)
 	}
 
 	// if !testInfixExpression(t, expression.Condition, "x", "<", "10") {
 	// 	continue
 	// }
 
-	_, ok = expression.Closer.(*ast.AssignmentStatement)
+	_, ok = expression.Increment.(*ast.AssignmentStatement)
 
 	if !ok {
-		t.Fatalf("Closer is not ast.AssignmentStatement. got=%T", expression.Closer)
+		t.Fatalf("Increment is not ast.AssignmentStatement. got=%T", expression.Increment)
 	}
 
 	_, ok = expression.Block.Statements[0].(*ast.ExpressionStatement)

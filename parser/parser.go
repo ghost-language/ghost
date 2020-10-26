@@ -378,9 +378,9 @@ func (p *Parser) parseForExpression() ast.Expression {
 	}
 
 	expression.Identifier = p.currentToken.Literal
-	expression.Starter = p.parseAssignmentStatement()
+	expression.Initializer = p.parseAssignmentStatement()
 
-	if expression.Starter == nil {
+	if expression.Initializer == nil {
 		return nil
 	}
 
@@ -395,9 +395,9 @@ func (p *Parser) parseForExpression() ast.Expression {
 	p.nextToken()
 	p.nextToken()
 
-	expression.Closer = p.parseAssignmentStatement()
+	expression.Increment = p.parseAssignmentStatement()
 
-	if expression.Closer == nil {
+	if expression.Increment == nil {
 		return nil
 	}
 

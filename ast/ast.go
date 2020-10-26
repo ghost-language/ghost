@@ -85,14 +85,15 @@ type (
 		Arguments []Expression
 	}
 
-	// ForExpression
+	// ForExpression defines a new expression type for defining for expressions.
+	// for (x := 0; x <= 10; x += 1) { ... }
 	ForExpression struct {
-		Token      token.Token
-		Identifier string
-		Starter    Statement
-		Closer     Statement
-		Condition  Expression
-		Block      *BlockStatement
+		Token       token.Token
+		Identifier  string          // x
+		Initializer Statement       // x := 0
+		Condition   Expression      // x <= 10
+		Increment   Statement       // x += 1
+		Block       *BlockStatement // { ... }
 	}
 
 	// IfExpression defines a new expression type for defining if expressions.
@@ -266,11 +267,11 @@ func (fe *ForExpression) String() string {
 
 	out.WriteString("for ")
 
-	out.WriteString(fe.Starter.String())
+	out.WriteString(fe.Initializer.String())
 	out.WriteString(";")
 	out.WriteString(fe.Condition.String())
 	out.WriteString(";")
-	out.WriteString(fe.Closer.String())
+	out.WriteString(fe.Increment.String())
 	out.WriteString(";")
 	out.WriteString(fe.Block.String())
 
