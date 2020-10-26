@@ -1,10 +1,11 @@
 sum := 0
-// i := 100
+counter := 100
 
-for (i := 0; i <= 10; i := i + 1) {
-    print(i)
-    sum := i
+for (counter := 0; counter < 10; counter := counter + 1) {
+    sleep(25)
+    print(counter)
+    sum += 2
 }
 
 print("Sum: " + string(sum))
-// print(i)
+print("Counter: " + string(counter))

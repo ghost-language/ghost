@@ -579,9 +579,9 @@ func evalWhileExpression(we *ast.WhileExpression, env *object.Environment) objec
 }
 
 func evalForExpression(fe *ast.ForExpression, env *object.Environment) object.Object {
-	extendedEnv := object.NewEnclosedEnvironment(env)
+	existingIdentifier, identifierExisted := env.Get(fe.Identifier)
 
-	initializer := Eval(fe.Initializer, extendedEnv)
+	initializer := Eval(fe.Initializer, env)
 
 	if utilities.IsError(initializer) {
 		return initializer
@@ -589,21 +589,29 @@ func evalForExpression(fe *ast.ForExpression, env *object.Environment) object.Ob
 
 	loop := true
 
+	defer func() {
+		if identifierExisted {
+			env.Set(fe.Identifier, existingIdentifier)
+		} else {
+			env.Delete(fe.Identifier)
+		}
+	}()
+
 	for loop {
-		condition := Eval(fe.Condition, extendedEnv)
+		condition := Eval(fe.Condition, env)
 
 		if utilities.IsError(condition) {
 			return condition
 		}
 
 		if utilities.IsTruthy(condition) {
-			err := Eval(fe.Block, extendedEnv)
+			err := Eval(fe.Block, env)
 
 			if utilities.IsError(err) {
 				return err
 			}
 
-			err = Eval(fe.Increment, extendedEnv)
+			err = Eval(fe.Increment, env)
 
 			if utilities.IsError(err) {
 				return err

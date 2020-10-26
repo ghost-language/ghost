@@ -500,6 +500,7 @@ func TestForExpressions(t *testing.T) {
 		expected interface{}
 	}{
 		{`i := 100; for (i := 0; i < 10; i := i + 1) { i }; i;`, 100},
+		{`for (i := 0; i < 10; i := i + 1) { i };`, nil},
 	}
 
 	for _, tt := range tests {
