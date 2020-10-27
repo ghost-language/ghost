@@ -52,6 +52,7 @@ index += 10
 index -= 10
 index *= 10
 index /= 10
+1 .. 10
 `
 
 	tests := []struct {
@@ -176,6 +177,9 @@ index /= 10
 		{token.NUMBER, "10"},
 		{token.IDENTIFIER, "index"},
 		{token.SLASHASSIGN, "/="},
+		{token.NUMBER, "10"},
+		{token.NUMBER, "1"},
+		{token.RANGE, ".."},
 		{token.NUMBER, "10"},
 		{token.EOF, ""},
 	}

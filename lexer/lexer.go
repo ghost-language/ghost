@@ -153,7 +153,14 @@ func (lexer *Lexer) NextToken() token.Token {
 		currentToken.Type = token.STRING
 		currentToken.Literal = lexer.readString('\'')
 	case '.':
-		currentToken = newToken(token.DOT, lexer.character)
+		if lexer.peekCharacter() == '.' {
+			character := lexer.character
+			lexer.readCharacter()
+			literal := string(character) + string(lexer.character)
+			currentToken = token.Token{Type: token.RANGE, Literal: literal}
+		} else {
+			currentToken = newToken(token.DOT, lexer.character)
+		}
 	case 0:
 		currentToken.Type = token.EOF
 		currentToken.Literal = ""

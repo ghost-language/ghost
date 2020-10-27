@@ -396,8 +396,8 @@ func evalNumberInfixExpression(node *ast.InfixExpression, operator string, left 
 			return utilities.NewError("Variable %s is unknown", node.Left.String())
 		}
 
-		decimal := &object.Number{Value: leftValue.Add(rightValue)}
-		env.Set(node.Left.String(), decimal)
+		dec := &object.Number{Value: leftValue.Add(rightValue)}
+		env.Set(node.Left.String(), dec)
 
 		return value.NULL
 	case "-=":
@@ -407,8 +407,8 @@ func evalNumberInfixExpression(node *ast.InfixExpression, operator string, left 
 			return utilities.NewError("Variable %s is unknown", node.Left.String())
 		}
 
-		decimal := &object.Number{Value: leftValue.Sub(rightValue)}
-		env.Set(node.Left.String(), decimal)
+		dec := &object.Number{Value: leftValue.Sub(rightValue)}
+		env.Set(node.Left.String(), dec)
 
 		return value.NULL
 	case "*=":
@@ -418,8 +418,8 @@ func evalNumberInfixExpression(node *ast.InfixExpression, operator string, left 
 			return utilities.NewError("Variable %s is unknown", node.Left.String())
 		}
 
-		decimal := &object.Number{Value: leftValue.Mul(rightValue)}
-		env.Set(node.Left.String(), decimal)
+		dec := &object.Number{Value: leftValue.Mul(rightValue)}
+		env.Set(node.Left.String(), dec)
 
 		return value.NULL
 	case "/=":
@@ -429,10 +429,26 @@ func evalNumberInfixExpression(node *ast.InfixExpression, operator string, left 
 			return utilities.NewError("Variable %s is unknown", node.Left.String())
 		}
 
-		decimal := &object.Number{Value: leftValue.Div(rightValue)}
-		env.Set(node.Left.String(), decimal)
+		dec := &object.Number{Value: leftValue.Div(rightValue)}
+		env.Set(node.Left.String(), dec)
 
 		return value.NULL
+	case "..":
+		numbers := make([]object.Object, 0)
+		one := decimal.NewFromInt(1)
+		num := leftValue
+
+		for {
+			numbers = append(numbers, &object.Number{Value: num})
+
+			if num.GreaterThanOrEqual(rightValue) {
+				break
+			}
+
+			num = num.Add(one)
+		}
+
+		return &object.List{Elements: numbers}
 	default:
 		return utilities.NewError("unknown operator: %s %s %s", left.Type(), operator, right.Type())
 	}
