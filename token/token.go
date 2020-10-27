@@ -74,6 +74,8 @@ const (
 
 	PLUSPLUS   = "++"
 	MINUSMINUS = "--"
+
+	RANGE = ".."
 )
 
 var keywords = map[string]TokenType{

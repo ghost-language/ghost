@@ -68,6 +68,44 @@ func TestLogicalOperators(t *testing.T) {
 	}
 }
 
+func TestDecimal(t *testing.T) {
+	dec1 := decimal.NewFromInt(1)
+	dec2 := decimal.NewFromInt(1)
+
+	t.Logf("%v", dec1.LessThanOrEqual(dec2))
+}
+
+func TestRangeOperators(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected interface{}
+	}{
+		// {`1 .. 0`, []int{}},
+		// {`-1 .. 0`, []int{-1, 0}},
+		// {`1 .. 1`, []int{1}},
+		{`1 .. 5`, []int{1, 2, 3, 4, 5}},
+	}
+
+	for _, tt := range tests {
+		evaluated := testEval(tt.input)
+
+		switch expected := tt.expected.(type) {
+		case []int:
+			list, ok := evaluated.(*object.List)
+
+			if !ok {
+				t.Errorf("object not List. got=%T (%+v)", evaluated, evaluated)
+				continue
+			}
+
+			if len(list.Elements) != len(expected) {
+				t.Errorf("wrong number of elements. want=%d, got=%d", len(expected), len(list.Elements))
+				continue
+			}
+		}
+	}
+}
+
 func TestEvalBooleanExpression(t *testing.T) {
 	tests := []struct {
 		input    string
