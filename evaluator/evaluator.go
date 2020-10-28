@@ -1,7 +1,6 @@
 package evaluator
 
 import (
-	"fmt"
 	"io/ioutil"
 
 	"ghostlang.org/x/ghost/ast"
@@ -601,8 +600,6 @@ func evalForExpression(fe *ast.ForExpression, env *object.Environment) object.Ob
 	existingIdentifier, identifierExisted := env.Get(fe.Identifier)
 
 	defer func() {
-		fmt.Errorf("deferred %v", true)
-
 		if identifierExisted {
 			env.Set(fe.Identifier, existingIdentifier)
 		} else {
