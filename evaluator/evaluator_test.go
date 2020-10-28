@@ -537,8 +537,9 @@ func TestForExpressions(t *testing.T) {
 		input    string
 		expected interface{}
 	}{
-		{`i := 100; for (i := 0; i < 10; i := i + 1) { i }; i;`, 100},
+		{`i := 100; for (i := 0; i < 10; i = i + 1) { i }; i;`, 100},
 		{`for (i := 0; i < 10; i := i + 1) { i };`, nil},
+		{`y := []; for (x in 1 .. 10) { push(y, x) }; length(y)`, 10},
 	}
 
 	for _, tt := range tests {
