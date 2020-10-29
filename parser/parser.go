@@ -383,7 +383,7 @@ func (p *Parser) parseForExpression() ast.Expression {
 		return nil
 	}
 
-	if !p.peekTokenIs(token.ASSIGN) {
+	if !p.peekTokenIs(token.BIND) {
 		return p.parseForInExpression(expression)
 	}
 

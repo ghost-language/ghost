@@ -613,8 +613,6 @@ func evalForExpression(fe *ast.ForExpression, env *object.Environment) object.Ob
 		return initializer
 	}
 
-	env.Set(fe.Identifier, initializer)
-
 	loop := true
 
 	for loop {
@@ -734,6 +732,14 @@ func extendFunctionEnv(fn *object.Function, arguments []object.Object) *object.E
 			env.Set(parameter.Value, arguments[index])
 		}
 	}
+
+	return env
+}
+
+func extendForEnv(fe *ast.ForExpression, forEnv *object.Environment) *object.Environment {
+	env := object.NewEnclosedEnvironment(forEnv)
+
+	env.Set(fe.Identifier, Eval(fe.Initializer, env))
 
 	return env
 }
