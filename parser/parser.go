@@ -15,6 +15,8 @@ var precedences = map[token.TokenType]int{
 	token.AND:            AND,
 	token.EQ:             EQUALS,
 	token.NOTEQ:          EQUALS,
+	token.IN:             EQUALS,
+	token.COMMA:          EQUALS,
 	token.LT:             LESSGREATER,
 	token.GT:             LESSGREATER,
 	token.LTE:            LESSGREATER,
@@ -107,6 +109,7 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerInfix(token.PERCENT, p.parseInfixExpression)
 	p.registerInfix(token.EQ, p.parseInfixExpression)
 	p.registerInfix(token.NOTEQ, p.parseInfixExpression)
+	p.registerInfix(token.IN, p.parseInfixExpression)
 	p.registerInfix(token.PLUSASSIGN, p.parseInfixExpression)
 	p.registerInfix(token.MINUSASSIGN, p.parseInfixExpression)
 	p.registerInfix(token.ASTERISKASSIGN, p.parseInfixExpression)
@@ -380,6 +383,10 @@ func (p *Parser) parseForExpression() ast.Expression {
 		return nil
 	}
 
+	if !p.peekTokenIs(token.BIND) {
+		return p.parseForInExpression(expression)
+	}
+
 	expression.Identifier = p.currentToken.Literal
 	expression.Initializer = p.parseAssignmentStatement()
 
@@ -403,6 +410,53 @@ func (p *Parser) parseForExpression() ast.Expression {
 	if expression.Increment == nil {
 		return nil
 	}
+
+	if !p.expectPeek(token.RPAREN) {
+		return nil
+	}
+
+	if !p.expectPeek(token.LBRACE) {
+		return nil
+	}
+
+	expression.Block = p.parseBlockStatement()
+
+	return expression
+}
+
+func (p *Parser) parseForInExpression(parentExpression *ast.ForExpression) ast.Expression {
+	expression := &ast.ForInExpression{Token: parentExpression.Token}
+
+	if !p.currentTokenIs(token.IDENTIFIER) {
+		return nil
+	}
+
+	value := p.currentToken.Literal
+	var key string
+	p.nextToken()
+
+	if p.currentTokenIs(token.COMMA) {
+		p.nextToken()
+
+		if !p.currentTokenIs(token.IDENTIFIER) {
+			return nil
+		}
+
+		key = value
+		value = p.currentToken.Literal
+		p.nextToken()
+	}
+
+	expression.Key = key
+	expression.Value = value
+
+	if !p.currentTokenIs(token.IN) {
+		return nil
+	}
+
+	p.nextToken()
+
+	expression.Iterable = p.parseExpression(LOWEST)
 
 	if !p.expectPeek(token.RPAREN) {
 		return nil

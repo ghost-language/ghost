@@ -88,12 +88,21 @@ type (
 	// ForExpression defines a new expression type for defining for expressions.
 	// for (x := 0; x <= 10; x += 1) { ... }
 	ForExpression struct {
-		Token       token.Token
+		Token       token.Token     // for
 		Identifier  string          // x
 		Initializer Statement       // x := 0
 		Condition   Expression      // x <= 10
 		Increment   Statement       // x += 1
 		Block       *BlockStatement // { ... }
+	}
+
+	// ForInExpression defines a new expression type for defining for in expressions.
+	ForInExpression struct {
+		Token    token.Token     // for
+		Key      string          // key
+		Value    string          // value
+		Iterable Expression      // [1, 2, 3] | 1 .. 10
+		Block    *BlockStatement // { ... }
 	}
 
 	// IfExpression defines a new expression type for defining if expressions.
@@ -198,6 +207,7 @@ type (
 func (be *BindExpression) expressionNode()    {}
 func (ce *CallExpression) expressionNode()    {}
 func (fe *ForExpression) expressionNode()     {}
+func (fie *ForInExpression) expressionNode()  {}
 func (ie *IfExpression) expressionNode()      {}
 func (ie *ImportExpression) expressionNode()  {}
 func (ie *IndexExpression) expressionNode()   {}
@@ -219,6 +229,7 @@ func (sl *StringLiteral) expressionNode()     {}
 func (be *BindExpression) TokenLiteral() string    { return be.Token.Literal }
 func (ce *CallExpression) TokenLiteral() string    { return ce.Token.Literal }
 func (fe *ForExpression) TokenLiteral() string     { return fe.Token.Literal }
+func (fie *ForInExpression) TokenLiteral() string  { return fie.Token.Literal }
 func (ie *IfExpression) TokenLiteral() string      { return ie.Token.Literal }
 func (ie *ImportExpression) TokenLiteral() string  { return ie.Token.Literal }
 func (ie *IndexExpression) TokenLiteral() string   { return ie.Token.Literal }
@@ -274,6 +285,23 @@ func (fe *ForExpression) String() string {
 	out.WriteString(fe.Increment.String())
 	out.WriteString(";")
 	out.WriteString(fe.Block.String())
+
+	return out.String()
+}
+
+func (fie *ForInExpression) String() string {
+	var out bytes.Buffer
+
+	out.WriteString("for ")
+
+	if fie.Key != "" {
+		out.WriteString(fie.Key + ", ")
+	}
+
+	out.WriteString(fie.Value)
+	out.WriteString(" in ")
+	out.WriteString(fie.Iterable.String())
+	out.WriteString(fie.Block.String())
 
 	return out.String()
 }

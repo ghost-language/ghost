@@ -149,6 +149,8 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 		return evalWhileExpression(node, env)
 	case *ast.ForExpression:
 		return evalForExpression(node, env)
+	case *ast.ForInExpression:
+		return evalForInExpression(node, env)
 	case *ast.ImportExpression:
 		return evalImportExpression(node, env)
 	case *ast.CallExpression:
@@ -597,14 +599,6 @@ func evalWhileExpression(we *ast.WhileExpression, env *object.Environment) objec
 func evalForExpression(fe *ast.ForExpression, env *object.Environment) object.Object {
 	existingIdentifier, identifierExisted := env.Get(fe.Identifier)
 
-	initializer := Eval(fe.Initializer, env)
-
-	if utilities.IsError(initializer) {
-		return initializer
-	}
-
-	loop := true
-
 	defer func() {
 		if identifierExisted {
 			env.Set(fe.Identifier, existingIdentifier)
@@ -612,6 +606,14 @@ func evalForExpression(fe *ast.ForExpression, env *object.Environment) object.Ob
 			env.Delete(fe.Identifier)
 		}
 	}()
+
+	initializer := Eval(fe.Initializer, env)
+
+	if utilities.IsError(initializer) {
+		return initializer
+	}
+
+	loop := true
 
 	for loop {
 		condition := Eval(fe.Condition, env)
@@ -640,6 +642,44 @@ func evalForExpression(fe *ast.ForExpression, env *object.Environment) object.Ob
 	}
 
 	return value.NULL
+}
+
+func evalForInExpression(fie *ast.ForInExpression, env *object.Environment) object.Object {
+	iterable := Eval(fie.Iterable, env)
+
+	existingKey, keyExisted := env.Get(fie.Key)
+	existingValue, valueExisted := env.Get(fie.Value)
+
+	defer func() {
+		if keyExisted {
+			env.Set(fie.Key, existingKey)
+		} else {
+			env.Delete(fie.Key)
+		}
+
+		if valueExisted {
+			env.Set(fie.Value, existingValue)
+		} else {
+			env.Delete(fie.Value)
+		}
+	}()
+
+	switch i := iterable.(type) {
+	case *object.List:
+		for k, v := range i.Elements {
+			env.Set(fie.Key, &object.Number{Value: decimal.NewFromInt(int64(k))})
+			env.Set(fie.Value, v)
+			block := Eval(fie.Block, env)
+
+			if utilities.IsError(block) {
+				return block
+			}
+		}
+
+		return value.NULL
+	default:
+		return utilities.NewError("'%s' is not a List, cannot be used in for loop", i.Inspect())
+	}
 }
 
 func evalImportExpression(ie *ast.ImportExpression, env *object.Environment) object.Object {
@@ -692,6 +732,14 @@ func extendFunctionEnv(fn *object.Function, arguments []object.Object) *object.E
 			env.Set(parameter.Value, arguments[index])
 		}
 	}
+
+	return env
+}
+
+func extendForEnv(fe *ast.ForExpression, forEnv *object.Environment) *object.Environment {
+	env := object.NewEnclosedEnvironment(forEnv)
+
+	env.Set(fe.Identifier, Eval(fe.Initializer, env))
 
 	return env
 }

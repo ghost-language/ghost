@@ -53,6 +53,9 @@ index -= 10
 index *= 10
 index /= 10
 1 .. 10
+for (key, value in data) {
+	key
+}
 `
 
 	tests := []struct {
@@ -181,6 +184,17 @@ index /= 10
 		{token.NUMBER, "1"},
 		{token.RANGE, ".."},
 		{token.NUMBER, "10"},
+		{token.FOR, "for"},
+		{token.LPAREN, "("},
+		{token.IDENTIFIER, "key"},
+		{token.COMMA, ","},
+		{token.IDENTIFIER, "value"},
+		{token.IN, "in"},
+		{token.IDENTIFIER, "data"},
+		{token.RPAREN, ")"},
+		{token.LBRACE, "{"},
+		{token.IDENTIFIER, "key"},
+		{token.RBRACE, "}"},
 		{token.EOF, ""},
 	}
 
