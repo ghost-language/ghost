@@ -593,10 +593,10 @@ func TestMathModule(t *testing.T) {
 		input    string
 		expected interface{}
 	}{
-		{`math.abs(123)`, 123},
-		{`math.abs(-123)`, 123},
-		{`math.abs("foo")`, "argument to `math.abs` must be NUMBER, got STRING"},
-		{`math.abs()`, "wrong number of arguments. got=0, expected=1"},
+		{`Math.abs(123)`, 123},
+		{`Math.abs(-123)`, 123},
+		{`Math.abs("foo")`, "argument to `Math.abs` must be NUMBER, got STRING"},
+		{`Math.abs()`, "wrong number of arguments. got=0, expected=1"},
 	}
 
 	for _, tt := range tests {
