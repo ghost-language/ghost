@@ -5,12 +5,12 @@ import (
 
 	"ghostlang.org/x/ghost/ast"
 	"ghostlang.org/x/ghost/builtins"
-	"ghostlang.org/x/ghost/decimal"
 	"ghostlang.org/x/ghost/lexer"
 	"ghostlang.org/x/ghost/object"
 	"ghostlang.org/x/ghost/parser"
 	"ghostlang.org/x/ghost/utilities"
 	"ghostlang.org/x/ghost/value"
+	"github.com/shopspring/decimal"
 )
 
 // Eval evaluates the node and returns an object
@@ -172,8 +172,8 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 	return nil
 }
 
-func EvalModule(name string) object.Object {
-	filename := utilities.FindModule(name)
+func EvalPackage(name string) object.Object {
+	filename := utilities.FindPackage(name)
 
 	if filename == "" {
 		return utilities.NewError("Import Error: no module named '%s' found", name)
@@ -493,7 +493,7 @@ func evalIdentifierLiteral(node *ast.IdentifierLiteral, env *object.Environment)
 		return val
 	}
 
-	if builtin, ok := builtins.Builtins[node.Value]; ok {
+	if builtin, ok := builtins.BuiltinFunctions[node.Value]; ok {
 		return builtin
 	}
 
@@ -506,8 +506,8 @@ func evalIndexExpression(left object.Object, index object.Object) object.Object 
 		return evalListIndexExpression(left, index)
 	case left.Type() == object.MAP_OBJ:
 		return evalMapIndexExpression(left, index)
-	case left.Type() == object.MODULE_OBJ:
-		return evalModuleIndexExpression(left, index)
+	case left.Type() == object.PACKAGE_OBJ:
+		return evalPackageIndexExpression(left, index)
 	default:
 		return utilities.NewError("index operator not supported: %s", left.Type())
 	}
@@ -572,10 +572,10 @@ func evalMapIndexExpression(m object.Object, index object.Object) object.Object 
 	return pair.Value
 }
 
-func evalModuleIndexExpression(module, index object.Object) object.Object {
-	moduleObject := module.(*object.Module)
+func evalPackageIndexExpression(pkg, index object.Object) object.Object {
+	packageObject := pkg.(*object.Package)
 
-	return evalMapIndexExpression(moduleObject.Attributes, index)
+	return evalMapIndexExpression(packageObject.Attributes, index)
 }
 
 func evalWhileExpression(we *ast.WhileExpression, env *object.Environment) object.Object {
@@ -690,13 +690,13 @@ func evalImportExpression(ie *ast.ImportExpression, env *object.Environment) obj
 	}
 
 	if s, ok := name.(*object.String); ok {
-		attributes := EvalModule(s.Value)
+		attributes := EvalPackage(s.Value)
 
 		if utilities.IsError(attributes) {
 			return attributes
 		}
 
-		return &object.Module{Name: s.Value, Attributes: attributes}
+		return &object.Package{Name: s.Value, Attributes: attributes}
 	}
 
 	return utilities.NewError("Import Error: invalid import path '%s'", name)

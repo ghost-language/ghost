@@ -3,12 +3,12 @@ package evaluator
 import (
 	"testing"
 
-	"ghostlang.org/x/ghost/decimal"
 	"ghostlang.org/x/ghost/lexer"
 	"ghostlang.org/x/ghost/object"
 	"ghostlang.org/x/ghost/parser"
 	"ghostlang.org/x/ghost/utilities"
 	"ghostlang.org/x/ghost/value"
+	"github.com/shopspring/decimal"
 )
 
 func TestEvalNumberExpression(t *testing.T) {
@@ -565,6 +565,38 @@ func TestBuiltinFunctions(t *testing.T) {
 		{`length("hello world")`, 11},
 		{`length(1)`, "argument to `length` not supported, got NUMBER"},
 		{`length("one", "two")`, "wrong number of arguments. got=2, expected=1"},
+	}
+
+	for _, tt := range tests {
+		evaluated := testEval(tt.input)
+
+		switch expected := tt.expected.(type) {
+		case int64:
+			testNumberObject(t, evaluated, expected)
+		case string:
+			errObj, ok := evaluated.(*object.Error)
+
+			if !ok {
+				t.Errorf("object is not Error. got=%T (%+v)", evaluated, evaluated)
+				continue
+			}
+
+			if errObj.Message != expected {
+				t.Errorf("wrong error message. expected=%q, got=%q", expected, errObj.Message)
+			}
+		}
+	}
+}
+
+func TestMathModule(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected interface{}
+	}{
+		{`Math.abs(123)`, 123},
+		{`Math.abs(-123)`, 123},
+		{`Math.abs("foo")`, "argument to `Math.abs` must be NUMBER, got STRING"},
+		{`Math.abs()`, "wrong number of arguments. got=0, expected=1"},
 	}
 
 	for _, tt := range tests {

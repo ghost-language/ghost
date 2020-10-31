@@ -88,8 +88,8 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.STRING, p.parseStringLiteral)
 	p.registerPrefix(token.BANG, p.parsePrefixExpression)
 	p.registerPrefix(token.MINUS, p.parsePrefixExpression)
-	p.registerPrefix(token.TRUE, p.parseBoolean)
-	p.registerPrefix(token.FALSE, p.parseBoolean)
+	p.registerPrefix(token.TRUE, p.parseBooleanLiteral)
+	p.registerPrefix(token.FALSE, p.parseBooleanLiteral)
 	p.registerPrefix(token.LPAREN, p.parseGroupedExpression)
 	p.registerPrefix(token.IF, p.parseIfExpression)
 	p.registerPrefix(token.FUNCTION, p.parseFunctionLiteral)
@@ -249,78 +249,6 @@ func (p *Parser) parsePostfixExpression() ast.Expression {
 	}
 }
 
-func (p *Parser) parseBoolean() ast.Expression {
-	return &ast.BooleanLiteral{Token: p.currentToken, Value: p.currentTokenIs(token.TRUE)}
-}
-
-func (p *Parser) parseGroupedExpression() ast.Expression {
-	p.nextToken()
-
-	expression := p.parseExpression(LOWEST)
-
-	if !p.expectPeek(token.RPAREN) {
-		return nil
-	}
-
-	return expression
-}
-
-func (p *Parser) parseBlockStatement() *ast.BlockStatement {
-	block := &ast.BlockStatement{Token: p.currentToken}
-	block.Statements = []ast.Statement{}
-
-	p.nextToken()
-
-	for !p.currentTokenIs(token.RBRACE) && !p.currentTokenIs(token.EOF) {
-		statement := p.parseStatement()
-
-		if statement != nil {
-			block.Statements = append(block.Statements, statement)
-		}
-
-		p.nextToken()
-	}
-
-	return block
-}
-
-func (p *Parser) parseExpressionList(end token.TokenType) []ast.Expression {
-	list := []ast.Expression{}
-
-	if p.peekTokenIs(end) {
-		p.nextToken()
-		return list
-	}
-
-	p.nextToken()
-	list = append(list, p.parseExpression(LOWEST))
-
-	for p.peekTokenIs(token.COMMA) {
-		p.nextToken()
-		p.nextToken()
-		list = append(list, p.parseExpression(LOWEST))
-	}
-
-	if !p.expectPeek(end) {
-		return nil
-	}
-
-	return list
-}
-
-func (p *Parser) parseIndexExpression(left ast.Expression) ast.Expression {
-	expression := &ast.IndexExpression{Token: p.currentToken, Left: left}
-
-	p.nextToken()
-	expression.Index = p.parseExpression(LOWEST)
-
-	if !p.expectPeek(token.RBRACKET) {
-		return nil
-	}
-
-	return expression
-}
-
 // currentTokenIs determines if the current token is of the type specified.
 func (p *Parser) currentTokenIs(t token.TokenType) bool {
 	return p.currentToken.Type == t
@@ -368,105 +296,4 @@ func (p *Parser) currentPrecendence() int {
 	}
 
 	return LOWEST
-}
-
-func (p *Parser) parseForExpression() ast.Expression {
-	expression := &ast.ForExpression{Token: p.currentToken}
-
-	if !p.expectPeek(token.LPAREN) {
-		return nil
-	}
-
-	p.nextToken()
-
-	if !p.currentTokenIs(token.IDENTIFIER) {
-		return nil
-	}
-
-	if !p.peekTokenIs(token.BIND) {
-		return p.parseForInExpression(expression)
-	}
-
-	expression.Identifier = p.currentToken.Literal
-	expression.Initializer = p.parseAssignmentStatement()
-
-	if expression.Initializer == nil {
-		return nil
-	}
-
-	p.nextToken()
-
-	expression.Condition = p.parseExpression(LOWEST)
-
-	if expression.Condition == nil {
-		return nil
-	}
-
-	p.nextToken()
-	p.nextToken()
-
-	expression.Increment = p.parseAssignmentStatement()
-
-	if expression.Increment == nil {
-		return nil
-	}
-
-	if !p.expectPeek(token.RPAREN) {
-		return nil
-	}
-
-	if !p.expectPeek(token.LBRACE) {
-		return nil
-	}
-
-	expression.Block = p.parseBlockStatement()
-
-	return expression
-}
-
-func (p *Parser) parseForInExpression(parentExpression *ast.ForExpression) ast.Expression {
-	expression := &ast.ForInExpression{Token: parentExpression.Token}
-
-	if !p.currentTokenIs(token.IDENTIFIER) {
-		return nil
-	}
-
-	value := p.currentToken.Literal
-	var key string
-	p.nextToken()
-
-	if p.currentTokenIs(token.COMMA) {
-		p.nextToken()
-
-		if !p.currentTokenIs(token.IDENTIFIER) {
-			return nil
-		}
-
-		key = value
-		value = p.currentToken.Literal
-		p.nextToken()
-	}
-
-	expression.Key = key
-	expression.Value = value
-
-	if !p.currentTokenIs(token.IN) {
-		return nil
-	}
-
-	p.nextToken()
-
-	expression.Iterable = p.parseExpression(LOWEST)
-
-	if !p.expectPeek(token.RPAREN) {
-		return nil
-	}
-
-	if !p.expectPeek(token.LBRACE) {
-		return nil
-	}
-
-	expression.Block = p.parseBlockStatement()
-
-	return expression
 }
