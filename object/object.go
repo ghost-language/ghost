@@ -24,11 +24,12 @@ const (
 	FUNCTION_OBJ     = "FUNCTION"
 	LIST_OBJ         = "LIST"
 	MAP_OBJ          = "MAP"
+	MODULE_OBJ       = "MODULE"
 	NULL_OBJ         = "NULL"
 	NUMBER_OBJ       = "NUMBER"
+	PACKAGE_OBJ      = "PACKAGE"
 	RETURN_VALUE_OBJ = "RETURN_VALUE"
 	STRING_OBJ       = "STRING"
-	MODULE_OBJ       = "MODULE"
 )
 
 // ----------------------------------------------------------------------------
@@ -58,6 +59,11 @@ type (
 	}
 
 	BuiltinFunction func(env *Environment, args ...Object) Object
+
+	Module struct {
+		Name      string
+		Functions []BuiltinFunction
+	}
 
 	Error struct {
 		Message string
@@ -93,15 +99,15 @@ type (
 		Value Object
 	}
 
-	Module struct {
-		Name       string
-		Attributes Object
-	}
-
 	Null struct{}
 
 	Number struct {
 		Value decimal.Decimal
+	}
+
+	Package struct {
+		Name       string
+		Attributes Object
 	}
 
 	ReturnValue struct {
@@ -125,6 +131,7 @@ func (m *Map) Type() ObjectType          { return MAP_OBJ }
 func (m *Module) Type() ObjectType       { return MODULE_OBJ }
 func (n *Null) Type() ObjectType         { return NULL_OBJ }
 func (n *Number) Type() ObjectType       { return NUMBER_OBJ }
+func (m *Package) Type() ObjectType      { return PACKAGE_OBJ }
 func (rv *ReturnValue) Type() ObjectType { return RETURN_VALUE_OBJ }
 func (s *String) Type() ObjectType       { return STRING_OBJ }
 
@@ -189,6 +196,7 @@ func (m *Map) Inspect() string {
 func (m *Module) Inspect() string       { return fmt.Sprintf("module(%s)", m.Name) }
 func (n *Null) Inspect() string         { return "null" }
 func (n *Number) Inspect() string       { return n.Value.String() }
+func (m *Package) Inspect() string      { return fmt.Sprintf("package(%s)", m.Name) }
 func (rv *ReturnValue) Inspect() string { return rv.Value.Inspect() }
 func (s *String) Inspect() string       { return s.Value }
 

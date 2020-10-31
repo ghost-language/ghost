@@ -50,7 +50,7 @@ func Exists(path string) bool {
 	return err == nil
 }
 
-func FindModule(name string) string {
+func FindPackage(name string) string {
 	basename := fmt.Sprintf("%s.ghost", name)
 
 	for _, p := range SearchPaths {

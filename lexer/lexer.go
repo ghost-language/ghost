@@ -1,6 +1,11 @@
 package lexer
 
-import "ghostlang.org/x/ghost/token"
+import (
+	"strings"
+
+	"ghostlang.org/x/ghost/builtins"
+	"ghostlang.org/x/ghost/token"
+)
 
 // Lexer takes source code as input and outputs the resulting tokens.
 type Lexer struct {
@@ -224,6 +229,10 @@ func isDigit(character byte) bool {
 	return '0' <= character && character <= '9'
 }
 
+func isIdentifier(character byte) bool {
+	return 'a' <= character && character <= 'z' || 'A' <= character && character <= 'Z' || character == '_' || character == '.'
+}
+
 func (lexer *Lexer) readString(end byte) string {
 	position := lexer.position + 1
 
@@ -248,13 +257,25 @@ func (lexer *Lexer) readNumber() string {
 }
 
 func (lexer *Lexer) readIdentifier() string {
-	position := lexer.position
+	identifier := ""
 
-	for isLetter(lexer.character) {
+	for isIdentifier(lexer.character) {
+		identifier += string(lexer.character)
+
 		lexer.readCharacter()
 	}
 
-	return lexer.input[position:lexer.position]
+	if strings.Contains(identifier, ".") {
+		if _, ok := builtins.BuiltinFunctions[identifier]; ok {
+			return identifier
+		}
+
+		identifiers := strings.Split(identifier, ".")
+
+		return identifiers[0]
+	}
+
+	return identifier
 }
 
 func (lexer *Lexer) readCharacter() {
