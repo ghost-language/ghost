@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"ghostlang.org/x/ghost/ast"
-	"ghostlang.org/x/ghost/decimal"
 	"ghostlang.org/x/ghost/token"
+	"github.com/shopspring/decimal"
 )
 
 func (p *Parser) parseBooleanLiteral() ast.Expression {

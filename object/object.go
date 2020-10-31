@@ -11,7 +11,7 @@ import (
 	"strings"
 
 	"ghostlang.org/x/ghost/ast"
-	"ghostlang.org/x/ghost/decimal"
+	"github.com/shopspring/decimal"
 )
 
 // ----------------------------------------------------------------------------

@@ -3,12 +3,12 @@ package evaluator
 import (
 	"testing"
 
-	"ghostlang.org/x/ghost/decimal"
 	"ghostlang.org/x/ghost/lexer"
 	"ghostlang.org/x/ghost/object"
 	"ghostlang.org/x/ghost/parser"
 	"ghostlang.org/x/ghost/utilities"
 	"ghostlang.org/x/ghost/value"
+	"github.com/shopspring/decimal"
 )
 
 func TestEvalNumberExpression(t *testing.T) {

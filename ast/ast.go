@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"strings"
 
-	"ghostlang.org/x/ghost/decimal"
 	"ghostlang.org/x/ghost/token"
+	"github.com/shopspring/decimal"
 )
 
 // ----------------------------------------------------------------------------
