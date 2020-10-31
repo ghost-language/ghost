@@ -588,6 +588,38 @@ func TestBuiltinFunctions(t *testing.T) {
 	}
 }
 
+func TestMathModule(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected interface{}
+	}{
+		{`math.abs(123)`, 123},
+		{`math.abs(-123)`, 123},
+		{`math.abs("foo")`, "argument to `math.abs` must be NUMBER, got STRING"},
+		{`math.abs()`, "wrong number of arguments. got=0, expected=1"},
+	}
+
+	for _, tt := range tests {
+		evaluated := testEval(tt.input)
+
+		switch expected := tt.expected.(type) {
+		case int64:
+			testNumberObject(t, evaluated, expected)
+		case string:
+			errObj, ok := evaluated.(*object.Error)
+
+			if !ok {
+				t.Errorf("object is not Error. got=%T (%+v)", evaluated, evaluated)
+				continue
+			}
+
+			if errObj.Message != expected {
+				t.Errorf("wrong error message. expected=%q, got=%q", expected, errObj.Message)
+			}
+		}
+	}
+}
+
 func TestImportExpression(t *testing.T) {
 	tests := []struct {
 		input    string

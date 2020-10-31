@@ -257,6 +257,8 @@ func (lexer *Lexer) readNumber() string {
 }
 
 func (lexer *Lexer) readIdentifier() string {
+	position := lexer.position
+	readPosition := lexer.readPosition
 	identifier := ""
 
 	for isIdentifier(lexer.character) {
@@ -270,9 +272,16 @@ func (lexer *Lexer) readIdentifier() string {
 			return identifier
 		}
 
-		identifiers := strings.Split(identifier, ".")
+		index := strings.Index(identifier, ".")
+		identifier = identifier[:index]
 
-		return identifiers[0]
+		lexer.position = position
+		lexer.readPosition = readPosition
+
+		for index > 0 {
+			lexer.readCharacter()
+			index--
+		}
 	}
 
 	return identifier
