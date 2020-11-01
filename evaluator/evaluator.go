@@ -40,27 +40,6 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 		}
 
 		return value.NULL
-		// identifier := evalIdentifierLiteral(node.Name, env)
-
-		// if utilities.IsError(identifier) {
-		// 	return identifier
-		// }
-
-		// val := Eval(node.Value, env)
-
-		// if utilities.IsError(val) {
-		// 	return val
-		// }
-
-		// object, ok := identifier.(object.Mutable)
-
-		// if !ok {
-		// 	return utilities.NewError("cannot assign to %s", identifier.Type())
-		// }
-
-		// object.Set(val)
-
-		// return val
 
 	// Expressions
 	case *ast.BindExpression:
@@ -166,7 +145,7 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 			return arguments[0]
 		}
 
-		return applyFunction(function, env, arguments)
+		return ApplyFunction(function, env, arguments)
 	}
 
 	return nil
@@ -702,7 +681,7 @@ func evalImportExpression(ie *ast.ImportExpression, env *object.Environment) obj
 	return utilities.NewError("Import Error: invalid import path '%s'", name)
 }
 
-func applyFunction(fn object.Object, env *object.Environment, arguments []object.Object) object.Object {
+func ApplyFunction(fn object.Object, env *object.Environment, arguments []object.Object) object.Object {
 	switch fn := fn.(type) {
 	case *object.Function:
 		extendedEnv := extendFunctionEnv(fn, arguments)

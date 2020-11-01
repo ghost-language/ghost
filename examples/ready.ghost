@@ -1,7 +1,0 @@
-ready := true
-
-if (ready) {
-    print("let's go!")
-} else {
-    print("not ready!")
-}

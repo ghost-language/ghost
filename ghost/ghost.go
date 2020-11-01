@@ -20,6 +20,8 @@ type Script struct {
 
 // Global values
 var (
+	Env = object.NewEnvironment()
+
 	// Version returns the current version of Ghost.
 	Version = version.String()
 
@@ -45,12 +47,19 @@ func RegisterFunction(name string, function object.BuiltinFunction) {
 
 // Evaluate runs the registered script through the Ghost evaluator.
 func Evaluate() {
-	env := object.NewEnvironment()
 	l := lexer.New(script.source)
 	p := parser.New(l)
 	program := p.ParseProgram()
 
-	evaluator.Eval(program, env)
+	evaluator.Eval(program, Env)
+}
+
+func Call(source string) {
+	l := lexer.New(source)
+	p := parser.New(l)
+	program := p.ParseProgram()
+
+	evaluator.Eval(program, Env)
 }
 
 // NewError returns a new error object used during runtime.

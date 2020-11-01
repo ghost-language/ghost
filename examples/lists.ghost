@@ -1,4 +1,0 @@
-/* len returns the length of the list. */
-
-myList := ["a", "b", "c"]
-print(len(myList))
