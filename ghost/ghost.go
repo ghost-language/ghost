@@ -50,20 +50,24 @@ func NewEnvironment() *object.Environment {
 }
 
 // Evaluate runs the registered script through the Ghost evaluator.
-func Evaluate(env *object.Environment) {
+func Evaluate(env *object.Environment) *object.Environment {
 	l := lexer.New(script.source)
 	p := parser.New(l)
 	program := p.ParseProgram()
 
 	evaluator.Eval(program, env)
+
+	return env
 }
 
-func Call(source string, env *object.Environment) {
+func Call(source string, env *object.Environment) *object.Environment {
 	l := lexer.New(source)
 	p := parser.New(l)
 	program := p.ParseProgram()
 
 	evaluator.Eval(program, env)
+
+	return env
 }
 
 // NewError returns a new error object used during runtime.
