@@ -85,12 +85,20 @@ Ghost is hosted and distributed through GitHub. We utilize [GoReleaser](https://
   ```
   export GITHUB_TOKEN="YOUR_GH_TOKEN"
   ```
-2. Create a new tag:
+2. Ensure the internal version reference is updated:
+   ```go
+   // version/version.go
+   
+   var (
+      Version = "x.y.z"
+   )
+   ```
+3. Create a new tag:
   ```
   $ git tag -a vx.y.z -m "Release description"
   $ git push origin vx.y.z
   ```
-3. Run GoReleaser:
+4. Run GoReleaser:
   ```
   $ goreleaser
   ```
