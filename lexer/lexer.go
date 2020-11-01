@@ -135,7 +135,7 @@ func (lexer *Lexer) NextToken() token.Token {
 			character := lexer.character
 			lexer.readCharacter()
 			literal := string(character) + string(lexer.character)
-			currentToken = token.Token{Type: token.BIND, Literal: literal}
+			currentToken = token.Token{Type: token.ASSIGN, Literal: literal}
 		} else {
 			currentToken = newToken(token.COLON, lexer.character)
 		}

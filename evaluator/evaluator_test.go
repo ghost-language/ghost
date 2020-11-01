@@ -81,8 +81,8 @@ func TestRangeOperators(t *testing.T) {
 		expected interface{}
 	}{
 		// {`1 .. 0`, []int{}},
-		// {`-1 .. 0`, []int{-1, 0}},
-		// {`1 .. 1`, []int{1}},
+		{`-1 .. 0`, []int{-1, 0}},
+		{`1 .. 1`, []int{1}},
 		{`1 .. 5`, []int{1, 2, 3, 4, 5}},
 	}
 
@@ -101,6 +101,36 @@ func TestRangeOperators(t *testing.T) {
 			if len(list.Elements) != len(expected) {
 				t.Errorf("wrong number of elements. want=%d, got=%d", len(expected), len(list.Elements))
 				continue
+			}
+		}
+	}
+}
+
+func TestAssignStatements(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected interface{}
+	}{
+		{"x := 10; x", 10},
+		{"x := 10; x := 20; x", 20},
+	}
+
+	for _, tt := range tests {
+		evaluated := testEval(tt.input)
+
+		switch expected := tt.expected.(type) {
+		case int64:
+			testNumberObject(t, evaluated, expected)
+		case string:
+			errObj, ok := evaluated.(*object.Error)
+
+			if !ok {
+				t.Errorf("object is not Error. got=%T (%+v)", evaluated, evaluated)
+				continue
+			}
+
+			if errObj.Message != expected {
+				t.Errorf("wrong error message. expected=%q, got=%q", expected, errObj.Message)
 			}
 		}
 	}
@@ -537,10 +567,10 @@ func TestForExpressions(t *testing.T) {
 		input    string
 		expected interface{}
 	}{
-		{`x := 1; for (x := 0; x < 10; x = x + 1) { x }; x;`, 1},
+		{`x := 1; for (x := 0; x < 10; x := x + 1) { x }; x;`, 1},
 		{`for (i := 0; i < 10; i := i + 1) { i };`, nil},
 		{`y := []; for (x in 1 .. 10) { push(y, x) }; length(y)`, 10},
-		{`y := []; x := 100 for (x in 1 .. 10) { x = x + 1 }; x`, 100},
+		{`y := []; x := 100 for (x in 1 .. 10) { x := x + 1 }; x`, 100},
 	}
 
 	for _, tt := range tests {

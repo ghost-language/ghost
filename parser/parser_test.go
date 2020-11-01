@@ -8,7 +8,7 @@ import (
 	"ghostlang.org/x/ghost/lexer"
 )
 
-func TestAssignmentStatements(t *testing.T) {
+func TestAssignStatements(t *testing.T) {
 	tests := []struct {
 		input              string
 		expectedIdentifier string
@@ -30,11 +30,11 @@ func TestAssignmentStatements(t *testing.T) {
 
 		statement := program.Statements[0]
 
-		if !testAssignmentStatement(t, statement, tt.expectedIdentifier) {
+		if !testAssignStatement(t, statement, tt.expectedIdentifier) {
 			return
 		}
 
-		value := statement.(*ast.AssignmentStatement).Value
+		value := statement.(*ast.AssignStatement).Value
 
 		if !testLiteralExpression(t, value, tt.exptectedValue) {
 			return
@@ -786,16 +786,16 @@ func TestBindExpression(t *testing.T) {
 	}
 }
 
-func testAssignmentStatement(t *testing.T, s ast.Statement, name string) bool {
+func testAssignStatement(t *testing.T, s ast.Statement, name string) bool {
 	if s.TokenLiteral() != "=" {
 		t.Errorf("s.TokenLiteral not '='. got=%q", s.TokenLiteral())
 		return false
 	}
 
-	assignStatement, ok := s.(*ast.AssignmentStatement)
+	assignStatement, ok := s.(*ast.AssignStatement)
 
 	if !ok {
-		t.Errorf("s not *ast.AssignmentStatement. got=%T", s)
+		t.Errorf("s not *ast.AssignStatement. got=%T", s)
 		return false
 	}
 
@@ -1231,7 +1231,7 @@ func testInfixExpression(t *testing.T, expression ast.Expression, left interface
 }
 
 func TestForExpression(t *testing.T) {
-	input := `for (x := 0; x < 10; x += 1) { x }`
+	input := `for (x := 0; x < 10; x := x + 1) { x }`
 
 	l := lexer.New(input)
 	p := New(l)
@@ -1259,20 +1259,16 @@ func TestForExpression(t *testing.T) {
 		t.Errorf("wrong identifier in for loop. got=%s\n", expression.Identifier)
 	}
 
-	_, ok = expression.Initializer.(*ast.AssignmentStatement)
+	_, ok = expression.Initializer.(*ast.AssignStatement)
 
 	if !ok {
-		t.Fatalf("Initializer is not ast.AssignmentStatement. got=%T", expression.Initializer)
+		t.Fatalf("Initializer is not ast.AssignStatement. got=%T", expression.Initializer)
 	}
 
-	// if !testInfixExpression(t, expression.Condition, "x", "<", "10") {
-	// 	continue
-	// }
-
-	_, ok = expression.Increment.(*ast.AssignmentStatement)
+	_, ok = expression.Increment.(*ast.AssignStatement)
 
 	if !ok {
-		t.Fatalf("Increment is not ast.AssignmentStatement. got=%T", expression.Increment)
+		t.Fatalf("Increment is not ast.AssignStatement. got=%T", expression.Increment)
 	}
 
 	_, ok = expression.Block.Statements[0].(*ast.ExpressionStatement)

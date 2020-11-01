@@ -9,18 +9,15 @@ import (
 func TestString(t *testing.T) {
 	program := &Program{
 		Statements: []Statement{
-			&ExpressionStatement{
-				Token: token.Token{Type: token.IDENTIFIER, Literal: "myVar"},
-				Expression: &BindExpression{
-					Token: token.Token{Type: token.BIND, Literal: ":="},
-					Left: &IdentifierLiteral{
-						Token: token.Token{Type: token.IDENTIFIER, Literal: "myVar"},
-						Value: "myVar",
-					},
-					Value: &IdentifierLiteral{
-						Token: token.Token{Type: token.IDENTIFIER, Literal: "anotherVar"},
-						Value: "anotherVar",
-					},
+			&AssignStatement{
+				Token: token.Token{Type: token.ASSIGN, Literal: ":="},
+				Name: &IdentifierLiteral{
+					Token: token.Token{Type: token.IDENTIFIER, Literal: "myVar"},
+					Value: "myVar",
+				},
+				Value: &IdentifierLiteral{
+					Token: token.Token{Type: token.IDENTIFIER, Literal: "anotherVar"},
+					Value: "anotherVar",
 				},
 			},
 		},

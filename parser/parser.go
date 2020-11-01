@@ -9,7 +9,6 @@ import (
 )
 
 var precedences = map[token.TokenType]int{
-	token.BIND:           ASSIGN,
 	token.ASSIGN:         ASSIGN,
 	token.OR:             OR,
 	token.AND:            AND,
@@ -101,7 +100,6 @@ func New(l *lexer.Lexer) *Parser {
 
 	p.infixParseFns = make(map[token.TokenType]infixParseFn)
 
-	p.registerInfix(token.BIND, p.parseBindExpression)
 	p.registerInfix(token.PLUS, p.parseInfixExpression)
 	p.registerInfix(token.MINUS, p.parseInfixExpression)
 	p.registerInfix(token.SLASH, p.parseInfixExpression)
@@ -173,7 +171,7 @@ func (p *Parser) ParseProgram() *ast.Program {
 
 func (p *Parser) parseStatement() ast.Statement {
 	if p.peekToken.Type == token.ASSIGN {
-		return p.parseAssignmentStatement()
+		return p.parseAssignStatement()
 	}
 
 	switch p.currentToken.Type {

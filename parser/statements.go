@@ -5,21 +5,32 @@ import (
 	"ghostlang.org/x/ghost/token"
 )
 
-func (p *Parser) parseAssignmentStatement() *ast.AssignmentStatement {
-	statement := &ast.AssignmentStatement{Token: p.peekToken}
-	statement.Name = &ast.IdentifierLiteral{Token: p.currentToken, Value: p.currentToken.Literal}
+func (p *Parser) parseAssignStatement() ast.Statement {
+	assignment := &ast.AssignStatement{}
+
+	if p.currentTokenIs(token.IDENTIFIER) {
+		assignment.Name = &ast.IdentifierLiteral{Token: p.currentToken, Value: p.currentToken.Literal}
+	}
+
+	if !p.peekTokenIs(token.ASSIGN) {
+		return nil
+	}
 
 	p.nextToken()
-	statement.Token = p.currentToken
+	assignment.Token = p.currentToken
 	p.nextToken()
 
-	statement.Value = p.parseExpression(LOWEST)
+	assignment.Value = p.parseExpression(LOWEST)
 
 	if p.peekTokenIs(token.SEMICOLON) {
 		p.nextToken()
 	}
 
-	return statement
+	if fl, ok := assignment.Value.(*ast.FunctionLiteral); ok {
+		fl.Name = assignment.Name.Value
+	}
+
+	return assignment
 }
 
 func (p *Parser) parseBlockStatement() *ast.BlockStatement {

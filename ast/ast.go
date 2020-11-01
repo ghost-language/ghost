@@ -71,13 +71,6 @@ type Expression interface {
 // or more of the following concrete expression nodes.
 
 type (
-	// BindExpression defines a new expression type for defining bind expressions.
-	BindExpression struct {
-		Token token.Token
-		Left  Expression
-		Value Expression
-	}
-
 	// CallExpression defines a new expression type for defining call expressions.
 	CallExpression struct {
 		Token     token.Token
@@ -204,7 +197,6 @@ type (
 // expressionNode() ensures that only expression/literal nodes
 // can be assigned to an Expression.
 //
-func (be *BindExpression) expressionNode()    {}
 func (ce *CallExpression) expressionNode()    {}
 func (fe *ForExpression) expressionNode()     {}
 func (fie *ForInExpression) expressionNode()  {}
@@ -226,7 +218,6 @@ func (sl *StringLiteral) expressionNode()     {}
 
 // TokenLiteral and String implementations for expression/literal nodes.
 //
-func (be *BindExpression) TokenLiteral() string    { return be.Token.Literal }
 func (ce *CallExpression) TokenLiteral() string    { return ce.Token.Literal }
 func (fe *ForExpression) TokenLiteral() string     { return fe.Token.Literal }
 func (fie *ForInExpression) TokenLiteral() string  { return fie.Token.Literal }
@@ -245,16 +236,6 @@ func (ll *ListLiteral) TokenLiteral() string       { return ll.Token.Literal }
 func (ml *MapLiteral) TokenLiteral() string        { return ml.Token.Literal }
 func (nl *NumberLiteral) TokenLiteral() string     { return nl.Token.Literal }
 func (sl *StringLiteral) TokenLiteral() string     { return sl.Token.Literal }
-
-func (be *BindExpression) String() string {
-	var out bytes.Buffer
-
-	out.WriteString(be.Left.String())
-	out.WriteString(" " + be.TokenLiteral() + " ")
-	out.WriteString(be.Value.String())
-
-	return out.String()
-}
 
 func (ce *CallExpression) String() string {
 	var out bytes.Buffer
@@ -454,8 +435,8 @@ func (sl *StringLiteral) String() string { return sl.Token.Literal }
 // or more of the following concrete statement nodes.
 
 type (
-	// AssignmentStatement defines a new statement type for defining assignments.
-	AssignmentStatement struct {
+	// AssignStatement defines a new statement type for defining assignments.
+	AssignStatement struct {
 		Token token.Token
 		Name  *IdentifierLiteral
 		Value Expression
@@ -483,23 +464,23 @@ type (
 // statementNode() ensures that only statement nodes
 // can be assigned to a Statement.
 //
-func (as *AssignmentStatement) statementNode() {}
+func (as *AssignStatement) statementNode()     {}
 func (bs *BlockStatement) statementNode()      {}
 func (es *ExpressionStatement) statementNode() {}
 func (rs *ReturnStatement) statementNode()     {}
 
 // TokenLiteral and String implementations for statement nodes.
 //
-func (as *AssignmentStatement) TokenLiteral() string { return as.Token.Literal }
+func (as *AssignStatement) TokenLiteral() string     { return as.Token.Literal }
 func (bs *BlockStatement) TokenLiteral() string      { return bs.Token.Literal }
 func (es *ExpressionStatement) TokenLiteral() string { return es.Token.Literal }
 func (rs *ReturnStatement) TokenLiteral() string     { return rs.Token.Literal }
 
-func (as *AssignmentStatement) String() string {
+func (as *AssignStatement) String() string {
 	var out bytes.Buffer
 
 	out.WriteString(as.Name.String())
-	out.WriteString(as.TokenLiteral() + " ")
+	out.WriteString(" " + as.TokenLiteral() + " ")
 	out.WriteString(as.Value.String())
 
 	return out.String()

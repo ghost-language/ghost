@@ -1,34 +1,9 @@
 package parser
 
 import (
-	"fmt"
-
 	"ghostlang.org/x/ghost/ast"
 	"ghostlang.org/x/ghost/token"
 )
-
-func (p *Parser) parseBindExpression(expression ast.Expression) ast.Expression {
-	switch node := expression.(type) {
-	case *ast.IdentifierLiteral:
-	default:
-		message := fmt.Sprintf("expected identifier expression on left but got %T (%+v)", node, expression)
-		p.errors = append(p.errors, message)
-		return nil
-	}
-
-	be := &ast.BindExpression{Token: p.currentToken, Left: expression}
-
-	p.nextToken()
-
-	be.Value = p.parseExpression(LOWEST)
-
-	if fl, ok := be.Value.(*ast.FunctionLiteral); ok {
-		identifier := be.Left.(*ast.IdentifierLiteral)
-		fl.Name = identifier.Value
-	}
-
-	return be
-}
 
 func (p *Parser) parseCallExpression(callable ast.Expression) ast.Expression {
 	expression := &ast.CallExpression{Token: p.currentToken, Callable: callable}
@@ -82,12 +57,12 @@ func (p *Parser) parseForExpression() ast.Expression {
 		return nil
 	}
 
-	if !p.peekTokenIs(token.BIND) {
+	if !p.peekTokenIs(token.ASSIGN) {
 		return p.parseForInExpression(expression)
 	}
 
 	expression.Identifier = p.currentToken.Literal
-	expression.Initializer = p.parseAssignmentStatement()
+	expression.Initializer = p.parseAssignStatement()
 
 	if expression.Initializer == nil {
 		return nil
@@ -104,7 +79,7 @@ func (p *Parser) parseForExpression() ast.Expression {
 	p.nextToken()
 	p.nextToken()
 
-	expression.Increment = p.parseAssignmentStatement()
+	expression.Increment = p.parseAssignStatement()
 
 	if expression.Increment == nil {
 		return nil

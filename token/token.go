@@ -23,7 +23,6 @@ const (
 	STRING     = "STRING"
 
 	// Operators and delimiters
-	ASSIGN   = "="
 	PLUS     = "+"
 	MINUS    = "-"
 	BANG     = "!"
@@ -67,7 +66,7 @@ const (
 	EQ    = "=="
 	NOTEQ = "!="
 
-	BIND           = ":="
+	ASSIGN         = ":="
 	PLUSASSIGN     = "+="
 	MINUSASSIGN    = "-="
 	ASTERISKASSIGN = "*="

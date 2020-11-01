@@ -32,8 +32,8 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 		}
 
 		return &object.ReturnValue{Value: val}
-	case *ast.AssignmentStatement:
-		assignment := evalAssignmentStatement(node, env)
+	case *ast.AssignStatement:
+		assignment := evalAssignStatement(node, env)
 
 		if utilities.IsError(assignment) {
 			return assignment
@@ -42,18 +42,6 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 		return value.NULL
 
 	// Expressions
-	case *ast.BindExpression:
-		val := Eval(node.Value, env)
-
-		if utilities.IsError(val) {
-			return val
-		}
-
-		if identifier, ok := node.Left.(*ast.IdentifierLiteral); ok {
-			env.Set(identifier.Value, val)
-		}
-
-		return value.NULL
 	case *ast.IfExpression:
 		return evalIfExpression(node, env)
 	case *ast.NumberLiteral:
@@ -451,6 +439,18 @@ func evalStringInfixExpression(operator string, left object.Object, right object
 	}
 }
 
+func evalAssignStatement(as *ast.AssignStatement, env *object.Environment) object.Object {
+	value := Eval(as.Value, env)
+
+	if utilities.IsError(value) {
+		return value
+	}
+
+	env.Set(as.Name.Value, value)
+
+	return nil
+}
+
 func evalIfExpression(ie *ast.IfExpression, env *object.Environment) object.Object {
 	condition := Eval(ie.Condition, env)
 
@@ -729,15 +729,4 @@ func unwrapReturnValue(obj object.Object) object.Object {
 	}
 
 	return obj
-}
-
-func evalAssignmentStatement(as *ast.AssignmentStatement, env *object.Environment) object.Object {
-	val := Eval(as.Value, env)
-
-	if utilities.IsError(val) {
-		return val
-	}
-
-	env.Set(as.Name.Value, val)
-	return nil
 }
