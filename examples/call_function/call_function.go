@@ -12,9 +12,10 @@ func main() {
 
 	ghost.NewScript(`write("this is a custom function."); foobar := "example string"`)
 
-	ghost.Evaluate()
+	env := ghost.Evaluate()
 
-	ghost.Call(`write("this was called separately."); write(foobar)`)
+	ghost.Call(`write("this was called separately."); write(foobar); foobar = "crash override"`, env)
+	ghost.Call(`write(foobar)`, env)
 }
 
 func writeFunction(env *object.Environment, args ...object.Object) object.Object {

@@ -45,29 +45,25 @@ func RegisterFunction(name string, function object.BuiltinFunction) {
 	builtins.RegisterFunction(name, function)
 }
 
-func NewEnvironment() *object.Environment {
-	return object.NewEnvironment()
-}
-
 // Evaluate runs the registered script through the Ghost evaluator.
-func Evaluate(env *object.Environment) *object.Environment {
+func Evaluate() (env *object.Environment) {
+	env = object.NewEnvironment()
+
 	l := lexer.New(script.source)
 	p := parser.New(l)
 	program := p.ParseProgram()
 
 	evaluator.Eval(program, env)
 
-	return env
+	return
 }
 
-func Call(source string, env *object.Environment) *object.Environment {
+func Call(source string, env *object.Environment) {
 	l := lexer.New(source)
 	p := parser.New(l)
 	program := p.ParseProgram()
 
 	evaluator.Eval(program, env)
-
-	return env
 }
 
 // NewError returns a new error object used during runtime.
