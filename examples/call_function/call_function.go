@@ -14,7 +14,7 @@ func main() {
 
 	env := ghost.Evaluate()
 
-	ghost.Call(`write("this was called separately."); write(foobar); foobar = "crash override"`, env)
+	ghost.Call(`write("this was called separately."); write(foobar); foobar := "crash override"`, env)
 	ghost.Call(`write(foobar)`, env)
 }
 
