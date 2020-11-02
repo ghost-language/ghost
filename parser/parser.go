@@ -9,7 +9,6 @@ import (
 )
 
 var precedences = map[token.TokenType]int{
-	token.ASSIGN:         ASSIGN,
 	token.OR:             OR,
 	token.AND:            AND,
 	token.EQ:             EQUALS,
@@ -38,7 +37,6 @@ var precedences = map[token.TokenType]int{
 const (
 	_ int = iota
 	LOWEST
-	ASSIGN
 	OR
 	AND
 	RANGE
@@ -69,6 +67,9 @@ type Parser struct {
 	prefixParseFns  map[token.TokenType]prefixParserFn
 	infixParseFns   map[token.TokenType]infixParseFn
 	postfixParseFns map[token.TokenType]postfixParseFn
+
+	previousIndexExpression    *ast.IndexExpression
+	previousPropertyExpression *ast.PropertyExpression
 }
 
 func New(l *lexer.Lexer) *Parser {
@@ -120,7 +121,7 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerInfix(token.OR, p.parseInfixExpression)
 	p.registerInfix(token.LPAREN, p.parseCallExpression)
 	p.registerInfix(token.LBRACKET, p.parseIndexExpression)
-	p.registerInfix(token.DOT, p.parseDotNotationExpression)
+	p.registerInfix(token.DOT, p.parseDotExpression)
 	p.registerInfix(token.RANGE, p.parseInfixExpression)
 
 	p.postfixParseFns = make(map[token.TokenType]postfixParseFn)
@@ -170,16 +171,17 @@ func (p *Parser) ParseProgram() *ast.Program {
 }
 
 func (p *Parser) parseStatement() ast.Statement {
-	if p.peekToken.Type == token.ASSIGN {
-		return p.parseAssignStatement()
+	if p.currentToken.Type == token.RETURN {
+		return p.parseReturnStatement()
 	}
 
-	switch p.currentToken.Type {
-	case token.RETURN:
-		return p.parseReturnStatement()
-	default:
-		return p.parseExpressionStatement()
+	statement := p.parseAssignStatement()
+
+	if statement != nil {
+		return statement
 	}
+
+	return p.parseExpressionStatement()
 }
 
 func (p *Parser) parseExpression(precedence int) ast.Expression {

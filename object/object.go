@@ -241,3 +241,22 @@ func (s *String) MapKey() MapKey {
 
 	return MapKey{Type: s.Type(), Value: hash.Sum64()}
 }
+
+func (m *Map) GetPair(key string) (MapPair, bool) {
+	hash := fnv.New64a()
+	hash.Write([]byte(key))
+
+	record, ok := m.Pairs[MapKey{Type: "STRING", Value: hash.Sum64()}]
+
+	return record, ok
+}
+
+func (m *Map) GetKeyType(key string) ObjectType {
+	pair, ok := m.GetPair(key)
+
+	if !ok {
+		return NULL_OBJ
+	}
+
+	return pair.Value.Type()
+}

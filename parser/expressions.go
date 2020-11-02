@@ -12,12 +12,30 @@ func (p *Parser) parseCallExpression(callable ast.Expression) ast.Expression {
 	return expression
 }
 
-func (p *Parser) parseDotNotationExpression(expression ast.Expression) ast.Expression {
-	p.expectPeek(token.IDENTIFIER)
+func (p *Parser) parseDotExpression(object ast.Expression) ast.Expression {
+	tok := p.currentToken
 
-	index := &ast.StringLiteral{Token: p.currentToken, Value: p.currentToken.Literal}
+	precedence := p.currentPrecendence()
+	p.nextToken()
 
-	return &ast.IndexExpression{Left: expression, Index: index}
+	if p.peekTokenIs(token.LPAREN) {
+		// method
+		exp := &ast.MethodExpression{Token: tok, Object: object}
+		exp.Method = p.parseExpression(precedence)
+		p.nextToken()
+		exp.Arguments = p.parseExpressionList(token.RPAREN)
+
+		return exp
+	}
+
+	// property
+	exp := &ast.PropertyExpression{Token: tok, Object: object}
+	exp.Property = p.parseIdentifierLiteral()
+
+	p.previousPropertyExpression = exp
+	p.previousIndexExpression = nil
+
+	return exp
 }
 
 func (p *Parser) parseExpressionList(end token.TokenType) []ast.Expression {
@@ -233,6 +251,9 @@ func (p *Parser) parseIndexExpression(left ast.Expression) ast.Expression {
 	if !p.expectPeek(token.RBRACKET) {
 		return nil
 	}
+
+	p.previousIndexExpression = expression
+	p.previousPropertyExpression = nil
 
 	return expression
 }

@@ -583,7 +583,7 @@ func TestOperatorPrecedenceParsing(t *testing.T) {
 		},
 		{
 			"foo.bar * foo.baz",
-			"((foo[bar]) * (foo[baz]))",
+			"((foo.bar) * (foo.baz))",
 		},
 	}
 
@@ -1092,7 +1092,7 @@ func TestParsingIndexExpressions(t *testing.T) {
 	}
 }
 
-func TestParsingDotNotationExpressions(t *testing.T) {
+func TestParsingProperties(t *testing.T) {
 	input := "foo.bar"
 
 	l := lexer.New(input)
@@ -1101,31 +1101,19 @@ func TestParsingDotNotationExpressions(t *testing.T) {
 
 	checkParserErrors(t, p)
 
-	statement, _ := program.Statements[0].(*ast.ExpressionStatement)
-	expression, ok := statement.Expression.(*ast.IndexExpression)
+	statement, ok := program.Statements[0].(*ast.ExpressionStatement)
+	propertyExpression, ok := statement.Expression.(*ast.PropertyExpression)
 
 	if !ok {
-		t.Fatalf("expression not *ast.IndexExpression. got=%T", statement.Expression)
+		t.Fatalf("expression not *ast.PropertyExpression. got=%T", statement.Expression)
 	}
 
-	identifier, ok := expression.Left.(*ast.IdentifierLiteral)
-
-	if !ok {
-		t.Fatalf("expression.Left not *ast.Identifier. got=%T", statement.Expression)
-	}
-
-	if !testIdentifierLiteral(t, identifier, "foo") {
+	if !testIdentifierLiteral(t, propertyExpression.Object, "foo") {
 		return
 	}
 
-	index, ok := expression.Index.(*ast.StringLiteral)
-
-	if !ok {
-		t.Fatalf("expression.Index not *ast.StringLiteral. got=%T", expression.Index)
-	}
-
-	if index.Value != "bar" {
-		t.Fatalf("index.Value not 'bar'. got=%T", index.Value)
+	if !testIdentifierLiteral(t, propertyExpression.Property, "bar") {
+		return
 	}
 }
 

@@ -6,10 +6,46 @@ import (
 )
 
 func (p *Parser) parseAssignStatement() ast.Statement {
-	assignment := &ast.AssignStatement{}
+	statement := &ast.AssignStatement{}
 
 	if p.currentTokenIs(token.IDENTIFIER) {
-		assignment.Name = &ast.IdentifierLiteral{Token: p.currentToken, Value: p.currentToken.Literal}
+		statement.Name = &ast.IdentifierLiteral{Token: p.currentToken, Value: p.currentToken.Literal}
+	} else if p.currentTokenIs(token.ASSIGN) {
+		statement.Token = p.currentToken
+
+		if p.previousIndexExpression != nil {
+			statement.Index = p.previousIndexExpression
+			p.nextToken()
+			statement.Value = p.parseExpression(LOWEST)
+			p.previousIndexExpression = nil
+
+			if p.peekTokenIs(token.SEMICOLON) {
+				p.nextToken()
+			}
+
+			if fl, ok := statement.Value.(*ast.FunctionLiteral); ok {
+				fl.Name = statement.Name.Value
+			}
+
+			return statement
+		}
+
+		if p.previousPropertyExpression != nil {
+			statement.Property = p.previousPropertyExpression
+			p.nextToken()
+			statement.Value = p.parseExpression(LOWEST)
+			p.previousPropertyExpression = nil
+
+			if p.peekTokenIs(token.SEMICOLON) {
+				p.nextToken()
+			}
+
+			if fl, ok := statement.Value.(*ast.FunctionLiteral); ok {
+				fl.Name = statement.Name.Value
+			}
+
+			return statement
+		}
 	}
 
 	if !p.peekTokenIs(token.ASSIGN) {
@@ -17,20 +53,20 @@ func (p *Parser) parseAssignStatement() ast.Statement {
 	}
 
 	p.nextToken()
-	assignment.Token = p.currentToken
+	statement.Token = p.currentToken
 	p.nextToken()
 
-	assignment.Value = p.parseExpression(LOWEST)
+	statement.Value = p.parseExpression(LOWEST)
 
 	if p.peekTokenIs(token.SEMICOLON) {
 		p.nextToken()
 	}
 
-	if fl, ok := assignment.Value.(*ast.FunctionLiteral); ok {
-		fl.Name = assignment.Name.Value
+	if fl, ok := statement.Value.(*ast.FunctionLiteral); ok {
+		fl.Name = statement.Name.Value
 	}
 
-	return assignment
+	return statement
 }
 
 func (p *Parser) parseBlockStatement() *ast.BlockStatement {

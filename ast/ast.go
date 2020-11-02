@@ -127,6 +127,14 @@ type (
 		Right    Expression
 	}
 
+	// MethodExpression defines a new expression type for defining method expressions.
+	MethodExpression struct {
+		Token     token.Token
+		Object    Expression
+		Method    Expression
+		Arguments []Expression
+	}
+
 	// PostfixExpression defines a new expression type for defining postfix expressions.
 	PostfixExpression struct {
 		Token    token.Token
@@ -138,6 +146,13 @@ type (
 		Token    token.Token
 		Operator string
 		Right    Expression
+	}
+
+	// PropertyExpression defines a new expression type for defining property expressions.
+	PropertyExpression struct {
+		Token    token.Token
+		Object   Expression
+		Property Expression
 	}
 
 	// WhileExpression defines a new expression type for defining while expressions.
@@ -197,16 +212,18 @@ type (
 // expressionNode() ensures that only expression/literal nodes
 // can be assigned to an Expression.
 //
-func (ce *CallExpression) expressionNode()    {}
-func (fe *ForExpression) expressionNode()     {}
-func (fie *ForInExpression) expressionNode()  {}
-func (ie *IfExpression) expressionNode()      {}
-func (ie *ImportExpression) expressionNode()  {}
-func (ie *IndexExpression) expressionNode()   {}
-func (ie *InfixExpression) expressionNode()   {}
-func (pe *PostfixExpression) expressionNode() {}
-func (pe *PrefixExpression) expressionNode()  {}
-func (we *WhileExpression) expressionNode()   {}
+func (ce *CallExpression) expressionNode()     {}
+func (fe *ForExpression) expressionNode()      {}
+func (fie *ForInExpression) expressionNode()   {}
+func (ie *IfExpression) expressionNode()       {}
+func (ie *ImportExpression) expressionNode()   {}
+func (ie *IndexExpression) expressionNode()    {}
+func (ie *InfixExpression) expressionNode()    {}
+func (me *MethodExpression) expressionNode()   {}
+func (pe *PostfixExpression) expressionNode()  {}
+func (pe *PrefixExpression) expressionNode()   {}
+func (pe *PropertyExpression) expressionNode() {}
+func (we *WhileExpression) expressionNode()    {}
 
 func (bl *BooleanLiteral) expressionNode()    {}
 func (fl *FunctionLiteral) expressionNode()   {}
@@ -218,16 +235,18 @@ func (sl *StringLiteral) expressionNode()     {}
 
 // TokenLiteral and String implementations for expression/literal nodes.
 //
-func (ce *CallExpression) TokenLiteral() string    { return ce.Token.Literal }
-func (fe *ForExpression) TokenLiteral() string     { return fe.Token.Literal }
-func (fie *ForInExpression) TokenLiteral() string  { return fie.Token.Literal }
-func (ie *IfExpression) TokenLiteral() string      { return ie.Token.Literal }
-func (ie *ImportExpression) TokenLiteral() string  { return ie.Token.Literal }
-func (ie *IndexExpression) TokenLiteral() string   { return ie.Token.Literal }
-func (ie *InfixExpression) TokenLiteral() string   { return ie.Token.Literal }
-func (pe *PostfixExpression) TokenLiteral() string { return pe.Token.Literal }
-func (pe *PrefixExpression) TokenLiteral() string  { return pe.Token.Literal }
-func (we *WhileExpression) TokenLiteral() string   { return we.Token.Literal }
+func (ce *CallExpression) TokenLiteral() string     { return ce.Token.Literal }
+func (fe *ForExpression) TokenLiteral() string      { return fe.Token.Literal }
+func (fie *ForInExpression) TokenLiteral() string   { return fie.Token.Literal }
+func (ie *IfExpression) TokenLiteral() string       { return ie.Token.Literal }
+func (ie *ImportExpression) TokenLiteral() string   { return ie.Token.Literal }
+func (ie *IndexExpression) TokenLiteral() string    { return ie.Token.Literal }
+func (ie *InfixExpression) TokenLiteral() string    { return ie.Token.Literal }
+func (me *MethodExpression) TokenLiteral() string   { return me.Token.Literal }
+func (pe *PostfixExpression) TokenLiteral() string  { return pe.Token.Literal }
+func (pe *PrefixExpression) TokenLiteral() string   { return pe.Token.Literal }
+func (pe *PropertyExpression) TokenLiteral() string { return pe.Token.Literal }
+func (we *WhileExpression) TokenLiteral() string    { return we.Token.Literal }
 
 func (bl *BooleanLiteral) TokenLiteral() string    { return bl.Token.Literal }
 func (fl *FunctionLiteral) TokenLiteral() string   { return fl.Token.Literal }
@@ -338,6 +357,25 @@ func (ie *InfixExpression) String() string {
 	return out.String()
 }
 
+func (me *MethodExpression) String() string {
+	var out bytes.Buffer
+
+	args := []string{}
+
+	for _, arg := range me.Arguments {
+		args = append(args, arg.String())
+	}
+
+	out.WriteString(me.Object.String())
+	out.WriteString(".")
+	out.WriteString(me.Method.String())
+	out.WriteString("(")
+	out.WriteString(strings.Join(args, ", "))
+	out.WriteString(")")
+
+	return out.String()
+}
+
 func (pe *PostfixExpression) String() string {
 	var out bytes.Buffer
 
@@ -355,6 +393,18 @@ func (pe *PrefixExpression) String() string {
 	out.WriteString("(")
 	out.WriteString(pe.Operator)
 	out.WriteString(pe.Right.String())
+	out.WriteString(")")
+
+	return out.String()
+}
+
+func (pe *PropertyExpression) String() string {
+	var out bytes.Buffer
+
+	out.WriteString("(")
+	out.WriteString(pe.Object.String())
+	out.WriteString(".")
+	out.WriteString(pe.Property.String())
 	out.WriteString(")")
 
 	return out.String()
@@ -437,9 +487,11 @@ func (sl *StringLiteral) String() string { return sl.Token.Literal }
 type (
 	// AssignStatement defines a new statement type for defining assignments.
 	AssignStatement struct {
-		Token token.Token
-		Name  *IdentifierLiteral
-		Value Expression
+		Token    token.Token
+		Name     *IdentifierLiteral
+		Index    *IndexExpression
+		Property *PropertyExpression
+		Value    Expression
 	}
 
 	// BlockStatement defines a new statement type for defining blocks.

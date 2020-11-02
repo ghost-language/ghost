@@ -8,6 +8,7 @@ import (
 	"ghostlang.org/x/ghost/lexer"
 	"ghostlang.org/x/ghost/object"
 	"ghostlang.org/x/ghost/parser"
+	"ghostlang.org/x/ghost/token"
 	"ghostlang.org/x/ghost/utilities"
 	"ghostlang.org/x/ghost/value"
 	"github.com/shopspring/decimal"
@@ -40,8 +41,22 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 		}
 
 		return value.NULL
+	case *ast.MethodExpression:
+		obj := Eval(node.Object, env)
 
-	// Expressions
+		if utilities.IsError(obj) {
+			return obj
+		}
+
+		args := evalExpressions(node.Arguments, env)
+
+		if len(args) == 1 && utilities.IsError(args[0]) {
+			return args[0]
+		}
+
+		return applyMethod(node.Token, obj, node, env, args)
+	case *ast.PropertyExpression:
+		return evalPropertyExpression(node, env)
 	case *ast.IfExpression:
 		return evalIfExpression(node, env)
 	case *ast.NumberLiteral:
@@ -133,7 +148,7 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 			return arguments[0]
 		}
 
-		return ApplyFunction(function, env, arguments)
+		return applyFunction(function, env, arguments)
 	}
 
 	return nil
@@ -440,15 +455,41 @@ func evalStringInfixExpression(operator string, left object.Object, right object
 }
 
 func evalAssignStatement(as *ast.AssignStatement, env *object.Environment) object.Object {
-	value := Eval(as.Value, env)
+	val := Eval(as.Value, env)
 
-	if utilities.IsError(value) {
-		return value
+	if utilities.IsError(val) {
+		return val
 	}
 
-	env.Set(as.Name.Value, value)
+	if as.Name != nil {
+		env.Set(as.Name.Value, val)
+		return nil
+	}
+
+	if as.Index != nil {
+		return evalIndexAssignment(as.Index, val, env)
+	}
+
+	if as.Property != nil {
+		return evalPropertyAssignment(as.Property, val, env)
+	}
 
 	return nil
+}
+
+func evalPropertyExpression(pe *ast.PropertyExpression, env *object.Environment) object.Object {
+	o := Eval(pe.Object, env)
+
+	if utilities.IsError(o) {
+		return o
+	}
+
+	switch obj := o.(type) {
+	case *object.Map:
+		return evalMapIndexExpression(obj, &object.String{Value: pe.Property.String()})
+	}
+
+	return utilities.NewError("invalid property '%s' on type %s", pe.Property.String(), o.Type())
 }
 
 func evalIfExpression(ie *ast.IfExpression, env *object.Environment) object.Object {
@@ -681,7 +722,68 @@ func evalImportExpression(ie *ast.ImportExpression, env *object.Environment) obj
 	return utilities.NewError("Import Error: invalid import path '%s'", name)
 }
 
-func ApplyFunction(fn object.Object, env *object.Environment, arguments []object.Object) object.Object {
+func evalIndexAssignment(ie *ast.IndexExpression, expression object.Object, env *object.Environment) object.Object {
+	leftObj := Eval(ie.Left, env)
+	index := Eval(ie.Index, env)
+
+	if leftObj.Type() == object.LIST_OBJ {
+		listObject := leftObj.(*object.List)
+		idx := int(index.(*object.Number).Value.IntPart())
+		elements := listObject.Elements
+
+		if idx < 0 {
+			return utilities.NewError("index out of range: %d", idx)
+		}
+
+		if idx >= len(elements) {
+			for i := len(elements); i <= idx; i++ {
+				elements = append(elements, value.NULL)
+			}
+
+			listObject.Elements = elements
+		}
+
+		elements[idx] = expression
+		return value.NULL
+	}
+
+	if leftObj.Type() == object.MAP_OBJ {
+		mapObject := leftObj.(*object.Map)
+		key, ok := index.(object.Mappable)
+
+		if !ok {
+			return utilities.NewError("unusable as map key: %s", index.Type())
+		}
+
+		mapped := key.MapKey()
+		pair := object.MapPair{Key: index, Value: expression}
+		mapObject.Pairs[mapped] = pair
+
+		return value.NULL
+	}
+
+	return value.NULL
+}
+
+func evalPropertyAssignment(pe *ast.PropertyExpression, val object.Object, env *object.Environment) object.Object {
+	leftObj := Eval(pe.Object, env)
+
+	if leftObj.Type() == object.MAP_OBJ {
+		mapObject := leftObj.(*object.Map)
+		property := &object.String{Value: pe.Property.String()}
+		mapped := property.MapKey()
+
+		pair := object.MapPair{Key: property, Value: val}
+
+		mapObject.Pairs[mapped] = pair
+
+		return value.NULL
+	}
+
+	return utilities.NewError("can only assign to map property, got %s", leftObj.Type())
+}
+
+func applyFunction(fn object.Object, env *object.Environment, arguments []object.Object) object.Object {
 	switch fn := fn.(type) {
 	case *object.Function:
 		extendedEnv := extendFunctionEnv(fn, arguments)
@@ -697,6 +799,18 @@ func ApplyFunction(fn object.Object, env *object.Environment, arguments []object
 	default:
 		return utilities.NewError("not a function: %s", fn.Type())
 	}
+}
+
+func applyMethod(tok token.Token, obj object.Object, me *ast.MethodExpression, env *object.Environment, args []object.Object) object.Object {
+	method := me.Method.String()
+
+	mapObject, _ := obj.(*object.Map)
+
+	// if isMapObject && mapObject.GetKeyType(method) == object.FUNCTION_OBJ {
+	pair, _ := mapObject.GetPair(method)
+
+	return applyFunction(pair.Value.(*object.Function), env, args)
+	// }
 }
 
 func extendFunctionEnv(fn *object.Function, arguments []object.Object) *object.Environment {

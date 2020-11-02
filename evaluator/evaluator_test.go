@@ -659,14 +659,14 @@ func TestImportExpression(t *testing.T) {
 			`module := import("../stubs/module"); module.A`,
 			5,
 		},
-		{
-			`module := import("../stubs/module"); module.Sum(2, 3)`,
-			5,
-		},
-		{
-			`module := import("../stubs/module"); module.a`,
-			nil,
-		},
+		// {
+		// 	`module := import("../stubs/module"); module.Sum(2, 3)`,
+		// 	5,
+		// },
+		// {
+		// 	`module := import("../stubs/module"); module.a`,
+		// 	nil,
+		// },
 	}
 
 	for _, tt := range tests {
