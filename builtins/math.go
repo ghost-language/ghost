@@ -10,8 +10,6 @@ import (
 )
 
 func init() {
-	rand.Seed(time.Now().UnixNano())
-
 	RegisterFunction("Math.abs", mathAbsFunction)
 	RegisterFunction("Math.cos", mathCosFunction)
 	RegisterFunction("Math.pi", mathPiFunction)
@@ -59,6 +57,8 @@ func mathPiFunction(env *object.Environment, args ...object.Object) object.Objec
 
 // mathRandomFunction returns a random decimal value with optional min max ranges.
 func mathRandomFunction(env *object.Environment, args ...object.Object) object.Object {
+	rand.Seed(time.Now().UnixNano())
+
 	min := int64(0)
 	max := int64(0)
 
