@@ -404,6 +404,14 @@ func TestListIndexExpressions(t *testing.T) {
 			"[1, 2, 3][-1]",
 			nil,
 		},
+		{
+			"myList := []; myList[0] := 5; myList[0]",
+			5,
+		},
+		{
+			"grid := []; grid[0] := []; grid[0][0] := 10; grid[0][0]",
+			10,
+		},
 	}
 
 	for _, tt := range tests {

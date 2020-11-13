@@ -487,6 +487,8 @@ func evalPropertyExpression(pe *ast.PropertyExpression, env *object.Environment)
 	switch obj := o.(type) {
 	case *object.Map:
 		return evalMapIndexExpression(obj, &object.String{Value: pe.Property.String()})
+	case *object.Package:
+		return evalPackageIndexExpression(obj, &object.String{Value: pe.Property.String()})
 	}
 
 	return utilities.NewError("invalid property '%s' on type %s", pe.Property.String(), o.Type())
