@@ -56,6 +56,8 @@ index /= 10
 for (key, value in data) {
 	key
 }
+こんにちは
+世界
 `
 
 	tests := []struct {
@@ -195,6 +197,8 @@ for (key, value in data) {
 		{token.LBRACE, "{"},
 		{token.IDENTIFIER, "key"},
 		{token.RBRACE, "}"},
+		{token.IDENTIFIER, "こんにちは"},
+		{token.IDENTIFIER, "世界"},
 		{token.EOF, ""},
 	}
 
