@@ -1,6 +1,9 @@
 package lexer
 
 import (
+	"fmt"
+
+	"ghostlang.org/x/ghost/builtins"
 	"ghostlang.org/x/ghost/token"
 )
 
@@ -299,34 +302,45 @@ func (lexer *Lexer) readNumber() string {
 
 func (lexer *Lexer) readIdentifier() string {
 	position := lexer.position
-	// readPosition := lexer.readPosition
+	readPosition := lexer.readPosition
+	identifier := []rune{}
+	hasDotNotation := false
 
-	for isIdentifier(lexer.character) {
+	for isIdentifier(lexer.character) || lexer.character == rune('.') {
+		identifier = append(identifier, lexer.character)
+
+		if lexer.character == rune('.') {
+			hasDotNotation = true
+		}
+
 		lexer.readCharacter()
 	}
 
-	// for isIdentifier(lexer.character) {
-	// 	identifier += lexer.character
+	if hasDotNotation {
+		if _, ok := builtins.BuiltinFunctions[string(identifier)]; ok {
+			return fmt.Sprintf("%s", string(identifier))
+		}
 
-	// 	lexer.readCharacter()
-	// }
+		index := 0
+		dotIndex := 0
 
-	// if strings.Contains(identifier, ".") {
-	// 	if _, ok := builtins.BuiltinFunctions[identifier]; ok {
-	// 		return identifier
-	// 	}
+		// Calculate index of dot
+		for index < len(identifier) {
+			if identifier[index] == rune('.') {
+				dotIndex = index
+			}
+			index++
+		}
 
-	// 	index := strings.Index(identifier, ".")
-	// 	identifier = identifier[:index]
+		identifier = identifier[:dotIndex]
+		lexer.position = position
+		lexer.readPosition = readPosition
 
-	// 	lexer.position = position
-	// 	lexer.readPosition = readPosition
-
-	// 	for index > 0 {
-	// 		lexer.readCharacter()
-	// 		index--
-	// 	}
-	// }
+		for dotIndex > 0 {
+			lexer.readCharacter()
+			dotIndex--
+		}
+	}
 
 	return string(lexer.input[position:lexer.position])
 }
