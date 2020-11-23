@@ -180,18 +180,6 @@ func (lexer *Lexer) NextToken() token.Token {
 		currentToken.Type = token.LookupIdentifier(currentToken.Literal)
 
 		return currentToken
-
-		// if isIdentifier(lexer.character) {
-		// 	currentToken.Literal = lexer.readIdentifier()
-		// 	currentToken.Type = token.LookupIdentifier(currentToken.Literal)
-		// 	return currentToken
-		// } else if isDigit(lexer.character) {
-		// 	currentToken.Type = token.NUMBER
-		// 	currentToken.Literal = lexer.readNumber()
-		// 	return currentToken
-		// }
-
-		currentToken = newToken(token.ILLEGAL, lexer.character)
 	}
 
 	lexer.readCharacter()
