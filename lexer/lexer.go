@@ -1,30 +1,27 @@
 package lexer
 
 import (
-	"strings"
-
-	"ghostlang.org/x/ghost/builtins"
 	"ghostlang.org/x/ghost/token"
 )
 
 // Lexer takes source code as input and outputs the resulting tokens.
 type Lexer struct {
-	input        string
+	input        []rune
+	character    rune
 	position     int
 	readPosition int
-	character    byte
 }
 
 // New creates a new Lexer instance
 func New(input string) *Lexer {
-	lexer := &Lexer{input: input}
+	lexer := &Lexer{input: []rune(input)}
 
 	lexer.readCharacter()
 
 	return lexer
 }
 
-func newToken(tokenType token.TokenType, character byte) token.Token {
+func newToken(tokenType token.TokenType, character rune) token.Token {
 	return token.Token{Type: tokenType, Literal: string(character)}
 }
 
@@ -36,8 +33,8 @@ func (lexer *Lexer) NextToken() token.Token {
 	lexer.skipWhitespace()
 
 	switch lexer.character {
-	case '=':
-		if lexer.peekCharacter() == '=' {
+	case rune('='):
+		if lexer.peekCharacter() == rune('=') {
 			character := lexer.character
 			lexer.readCharacter()
 			literal := string(character) + string(lexer.character)
@@ -45,32 +42,32 @@ func (lexer *Lexer) NextToken() token.Token {
 		} else {
 			currentToken = newToken(token.ASSIGN, lexer.character)
 		}
-	case '+':
-		if lexer.peekCharacter() == '+' {
+	case rune('+'):
+		if lexer.peekCharacter() == rune('+') {
 			character := lexer.character
 			lexer.readCharacter()
 			currentToken = token.Token{Type: token.PLUSPLUS, Literal: string(character) + string(lexer.character)}
-		} else if lexer.peekCharacter() == '=' {
+		} else if lexer.peekCharacter() == rune('=') {
 			character := lexer.character
 			lexer.readCharacter()
 			currentToken = token.Token{Type: token.PLUSASSIGN, Literal: string(character) + string(lexer.character)}
 		} else {
 			currentToken = newToken(token.PLUS, lexer.character)
 		}
-	case '-':
-		if lexer.peekCharacter() == '-' {
+	case rune('-'):
+		if lexer.peekCharacter() == rune('-') {
 			character := lexer.character
 			lexer.readCharacter()
 			currentToken = token.Token{Type: token.MINUSMINUS, Literal: string(character) + string(lexer.character)}
-		} else if lexer.peekCharacter() == '=' {
+		} else if lexer.peekCharacter() == rune('=') {
 			character := lexer.character
 			lexer.readCharacter()
 			currentToken = token.Token{Type: token.MINUSASSIGN, Literal: string(character) + string(lexer.character)}
 		} else {
 			currentToken = newToken(token.MINUS, lexer.character)
 		}
-	case '!':
-		if lexer.peekCharacter() == '=' {
+	case rune('!'):
+		if lexer.peekCharacter() == rune('=') {
 			character := lexer.character
 			lexer.readCharacter()
 			literal := string(character) + string(lexer.character)
@@ -78,38 +75,38 @@ func (lexer *Lexer) NextToken() token.Token {
 		} else {
 			currentToken = newToken(token.BANG, lexer.character)
 		}
-	case '#':
+	case rune('#'):
 		lexer.skipSingleLineComment()
 
 		return lexer.NextToken()
-	case '/':
-		if lexer.peekCharacter() == '/' {
+	case rune('/'):
+		if lexer.peekCharacter() == rune('/') {
 			lexer.skipSingleLineComment()
 
 			return lexer.NextToken()
-		} else if lexer.peekCharacter() == '*' {
+		} else if lexer.peekCharacter() == rune('*') {
 			lexer.skipMultiLineComment()
 
 			return lexer.NextToken()
-		} else if lexer.peekCharacter() == '=' {
+		} else if lexer.peekCharacter() == rune('=') {
 			character := lexer.character
 			lexer.readCharacter()
 			currentToken = token.Token{Type: token.SLASHASSIGN, Literal: string(character) + string(lexer.character)}
 		} else {
 			currentToken = newToken(token.SLASH, lexer.character)
 		}
-	case '*':
-		if lexer.peekCharacter() == '=' {
+	case rune('*'):
+		if lexer.peekCharacter() == rune('=') {
 			character := lexer.character
 			lexer.readCharacter()
 			currentToken = token.Token{Type: token.ASTERISKASSIGN, Literal: string(character) + string(lexer.character)}
 		} else {
 			currentToken = newToken(token.ASTERISK, lexer.character)
 		}
-	case '%':
+	case rune('%'):
 		currentToken = newToken(token.PERCENT, lexer.character)
-	case '<':
-		if lexer.peekCharacter() == '=' {
+	case rune('<'):
+		if lexer.peekCharacter() == rune('=') {
 			character := lexer.character
 			lexer.readCharacter()
 			literal := string(character) + string(lexer.character)
@@ -117,8 +114,8 @@ func (lexer *Lexer) NextToken() token.Token {
 		} else {
 			currentToken = newToken(token.LT, lexer.character)
 		}
-	case '>':
-		if lexer.peekCharacter() == '=' {
+	case rune('>'):
+		if lexer.peekCharacter() == rune('=') {
 			character := lexer.character
 			lexer.readCharacter()
 			literal := string(character) + string(lexer.character)
@@ -126,12 +123,12 @@ func (lexer *Lexer) NextToken() token.Token {
 		} else {
 			currentToken = newToken(token.GT, lexer.character)
 		}
-	case ';':
+	case rune(';'):
 		currentToken = newToken(token.SEMICOLON, lexer.character)
-	case ',':
+	case rune(','):
 		currentToken = newToken(token.COMMA, lexer.character)
-	case ':':
-		if lexer.peekCharacter() == '=' {
+	case rune(':'):
+		if lexer.peekCharacter() == rune('=') {
 			character := lexer.character
 			lexer.readCharacter()
 			literal := string(character) + string(lexer.character)
@@ -139,26 +136,26 @@ func (lexer *Lexer) NextToken() token.Token {
 		} else {
 			currentToken = newToken(token.COLON, lexer.character)
 		}
-	case '(':
+	case rune('('):
 		currentToken = newToken(token.LPAREN, lexer.character)
-	case ')':
+	case rune(')'):
 		currentToken = newToken(token.RPAREN, lexer.character)
-	case '{':
+	case rune('{'):
 		currentToken = newToken(token.LBRACE, lexer.character)
-	case '}':
+	case rune('}'):
 		currentToken = newToken(token.RBRACE, lexer.character)
-	case '[':
+	case rune('['):
 		currentToken = newToken(token.LBRACKET, lexer.character)
-	case ']':
+	case rune(']'):
 		currentToken = newToken(token.RBRACKET, lexer.character)
-	case '"':
+	case rune('"'):
 		currentToken.Type = token.STRING
 		currentToken.Literal = lexer.readString('"')
-	case '\'':
+	case rune('\''):
 		currentToken.Type = token.STRING
 		currentToken.Literal = lexer.readString('\'')
-	case '.':
-		if lexer.peekCharacter() == '.' {
+	case rune('.'):
+		if lexer.peekCharacter() == rune('.') {
 			character := lexer.character
 			lexer.readCharacter()
 			literal := string(character) + string(lexer.character)
@@ -170,17 +167,28 @@ func (lexer *Lexer) NextToken() token.Token {
 		currentToken.Type = token.EOF
 		currentToken.Literal = ""
 	default:
-		if isLetter(lexer.character) {
-			currentToken.Literal = lexer.readIdentifier()
-			currentToken.Type = token.LookupIdentifier(currentToken.Literal)
-			return currentToken
-		} else if isDigit(lexer.character) {
+		if isDigit(lexer.character) {
 			currentToken.Type = token.NUMBER
 			currentToken.Literal = lexer.readNumber()
 			return currentToken
-		} else {
-			currentToken = newToken(token.ILLEGAL, lexer.character)
 		}
+
+		currentToken.Literal = lexer.readIdentifier()
+		currentToken.Type = token.LookupIdentifier(currentToken.Literal)
+
+		return currentToken
+
+		// if isIdentifier(lexer.character) {
+		// 	currentToken.Literal = lexer.readIdentifier()
+		// 	currentToken.Type = token.LookupIdentifier(currentToken.Literal)
+		// 	return currentToken
+		// } else if isDigit(lexer.character) {
+		// 	currentToken.Type = token.NUMBER
+		// 	currentToken.Literal = lexer.readNumber()
+		// 	return currentToken
+		// }
+
+		currentToken = newToken(token.ILLEGAL, lexer.character)
 	}
 
 	lexer.readCharacter()
@@ -189,7 +197,7 @@ func (lexer *Lexer) NextToken() token.Token {
 }
 
 func (lexer *Lexer) skipWhitespace() {
-	for lexer.character == ' ' || lexer.character == '\t' || lexer.character == '\n' || lexer.character == '\r' {
+	for isWhitespace(lexer.character) {
 		lexer.readCharacter()
 	}
 }
@@ -210,7 +218,7 @@ func (lexer *Lexer) skipMultiLineComment() {
 			endOfComment = true
 		}
 
-		if lexer.character == '*' && lexer.peekCharacter() == '/' {
+		if lexer.character == rune('*') && lexer.peekCharacter() == rune('/') {
 			endOfComment = true
 			lexer.readCharacter()
 		}
@@ -221,75 +229,111 @@ func (lexer *Lexer) skipMultiLineComment() {
 	lexer.skipWhitespace()
 }
 
-func isLetter(character byte) bool {
-	return 'a' <= character && character <= 'z' || 'A' <= character && character <= 'Z' || character == '_'
+func isLetter(character rune) bool {
+	return rune('a') <= character && character <= rune('z') || rune('A') <= character && character <= rune('Z') || character == rune('_')
 }
 
-func isDigit(character byte) bool {
-	return '0' <= character && character <= '9'
+func isDigit(character rune) bool {
+	return rune('0') <= character && character <= rune('9')
 }
 
-func isIdentifier(character byte) bool {
-	return 'a' <= character && character <= 'z' || 'A' <= character && character <= 'Z' || character == '_' || character == '.'
+func isWhitespace(character rune) bool {
+	return character == rune(' ') || character == rune('\t') || character == rune('\n') || character == rune('\r')
 }
 
-func (lexer *Lexer) readString(end byte) string {
+func isOperator(character rune) bool {
+	return character == rune('+') || character == rune('-') || character == rune('*') || character == rune('/') || character == rune('%')
+}
+
+func isComparison(character rune) bool {
+	return character == rune('=') || character == rune('!') || character == rune('>') || character == rune('<')
+}
+
+func isCompound(character rune) bool {
+	return character == rune('.') || character == rune(',') || character == rune('\'') || character == rune('"') || character == rune(';') || character == rune(':')
+}
+
+func isBrace(character rune) bool {
+	return character == rune('{') || character == rune('}')
+}
+
+func isBracket(character rune) bool {
+	return character == rune('[') || character == rune(']')
+}
+
+func isParenthesis(character rune) bool {
+	return character == rune('(') || character == rune(')')
+}
+
+func isEmpty(character rune) bool {
+	return character == rune(0)
+}
+
+func isIdentifier(character rune) bool {
+	return !isDigit(character) && !isWhitespace(character) && !isBrace(character) && !isBracket(character) && !isParenthesis(character) && !isOperator(character) && !isCompound(character) && !isComparison(character) && !isEmpty(character)
+}
+
+func (lexer *Lexer) readString(end rune) string {
 	position := lexer.position + 1
 
 	for {
 		lexer.readCharacter()
-		if lexer.character == end || lexer.character == 0 {
+
+		if lexer.character == end || lexer.character == rune(0) {
 			break
 		}
 	}
 
-	return lexer.input[position:lexer.position]
+	return string(lexer.input[position:lexer.position])
 }
 
 func (lexer *Lexer) readNumber() string {
 	position := lexer.position
 
-	for isDigit(lexer.character) || lexer.character == '.' {
+	for isDigit(lexer.character) || lexer.character == rune('.') {
 		lexer.readCharacter()
 	}
 
-	return lexer.input[position:lexer.position]
+	return string(lexer.input[position:lexer.position])
 }
 
 func (lexer *Lexer) readIdentifier() string {
 	position := lexer.position
-	readPosition := lexer.readPosition
-	identifier := ""
+	// readPosition := lexer.readPosition
 
 	for isIdentifier(lexer.character) {
-		identifier += string(lexer.character)
-
 		lexer.readCharacter()
 	}
 
-	if strings.Contains(identifier, ".") {
-		if _, ok := builtins.BuiltinFunctions[identifier]; ok {
-			return identifier
-		}
+	// for isIdentifier(lexer.character) {
+	// 	identifier += lexer.character
 
-		index := strings.Index(identifier, ".")
-		identifier = identifier[:index]
+	// 	lexer.readCharacter()
+	// }
 
-		lexer.position = position
-		lexer.readPosition = readPosition
+	// if strings.Contains(identifier, ".") {
+	// 	if _, ok := builtins.BuiltinFunctions[identifier]; ok {
+	// 		return identifier
+	// 	}
 
-		for index > 0 {
-			lexer.readCharacter()
-			index--
-		}
-	}
+	// 	index := strings.Index(identifier, ".")
+	// 	identifier = identifier[:index]
 
-	return identifier
+	// 	lexer.position = position
+	// 	lexer.readPosition = readPosition
+
+	// 	for index > 0 {
+	// 		lexer.readCharacter()
+	// 		index--
+	// 	}
+	// }
+
+	return string(lexer.input[position:lexer.position])
 }
 
 func (lexer *Lexer) readCharacter() {
 	if lexer.readPosition >= len(lexer.input) {
-		lexer.character = 0
+		lexer.character = rune(0)
 	} else {
 		lexer.character = lexer.input[lexer.readPosition]
 	}
@@ -299,9 +343,9 @@ func (lexer *Lexer) readCharacter() {
 	lexer.readPosition++
 }
 
-func (lexer *Lexer) peekCharacter() byte {
+func (lexer *Lexer) peekCharacter() rune {
 	if lexer.readPosition >= len(lexer.input) {
-		return 0
+		return rune(0)
 	}
 
 	return lexer.input[lexer.readPosition]
