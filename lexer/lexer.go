@@ -13,6 +13,7 @@ type Lexer struct {
 	character    rune
 	position     int
 	readPosition int
+	lines        int
 }
 
 // New creates a new Lexer instance
@@ -190,6 +191,10 @@ func (lexer *Lexer) NextToken() token.Token {
 func (lexer *Lexer) skipWhitespace() {
 	for isWhitespace(lexer.character) {
 		lexer.readCharacter()
+
+		if lexer.character == rune('\n') {
+			lexer.lines++
+		}
 	}
 }
 
