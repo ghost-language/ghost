@@ -18,7 +18,10 @@ type Lexer struct {
 
 // New creates a new Lexer instance
 func New(input string) *Lexer {
-	lexer := &Lexer{input: []rune(input)}
+	lexer := &Lexer{
+		input: []rune(input),
+		line:  1,
+	}
 
 	lexer.readCharacter()
 
