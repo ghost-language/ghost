@@ -46,16 +46,16 @@ func RegisterFunction(name string, function object.BuiltinFunction) {
 }
 
 // Evaluate runs the registered script through the Ghost evaluator.
-func Evaluate() (env *object.Environment) {
+func Evaluate() (env *object.Environment, obj object.Object) {
 	env = object.NewEnvironment()
 
 	l := lexer.New(script.source)
 	p := parser.New(l)
 	program := p.ParseProgram()
 
-	evaluator.Eval(program, env)
+	obj = evaluator.Eval(program, env)
 
-	return
+	return env, obj
 }
 
 func Call(source string, env *object.Environment) {
