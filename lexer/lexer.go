@@ -13,19 +13,53 @@ type Lexer struct {
 	character    rune
 	position     int
 	readPosition int
+	line         int
 }
 
 // New creates a new Lexer instance
 func New(input string) *Lexer {
-	lexer := &Lexer{input: []rune(input)}
+	lexer := &Lexer{
+		input: []rune(input),
+		line:  1,
+	}
 
 	lexer.readCharacter()
 
 	return lexer
 }
 
-func newToken(tokenType token.TokenType, character rune) token.Token {
-	return token.Token{Type: tokenType, Literal: string(character)}
+func (lexer *Lexer) newToken(tokenType token.TokenType) token.Token {
+	literal := string(lexer.character)
+	line := lexer.line
+
+	return token.Token{
+		Type:    tokenType,
+		Literal: literal,
+		Line:    line,
+	}
+}
+
+func (lexer *Lexer) newTokenWithLiteral(tokenType token.TokenType, literal string) token.Token {
+	line := lexer.line
+
+	return token.Token{
+		Type:    tokenType,
+		Literal: literal,
+		Line:    line,
+	}
+}
+
+func (lexer *Lexer) newTwoCharacterToken(tokenType token.TokenType) token.Token {
+	character := lexer.character
+	lexer.readCharacter()
+	literal := string(character) + string(lexer.character)
+	line := lexer.line
+
+	return token.Token{
+		Type:    tokenType,
+		Literal: literal,
+		Line:    line,
+	}
 }
 
 // NextToken looks at the current character, and returns
@@ -38,45 +72,31 @@ func (lexer *Lexer) NextToken() token.Token {
 	switch lexer.character {
 	case rune('='):
 		if lexer.peekCharacter() == rune('=') {
-			character := lexer.character
-			lexer.readCharacter()
-			literal := string(character) + string(lexer.character)
-			currentToken = token.Token{Type: token.EQ, Literal: literal}
+			currentToken = lexer.newTwoCharacterToken(token.EQ)
 		} else {
-			currentToken = newToken(token.ASSIGN, lexer.character)
+			currentToken = lexer.newToken(token.ASSIGN)
 		}
 	case rune('+'):
 		if lexer.peekCharacter() == rune('+') {
-			character := lexer.character
-			lexer.readCharacter()
-			currentToken = token.Token{Type: token.PLUSPLUS, Literal: string(character) + string(lexer.character)}
+			currentToken = lexer.newTwoCharacterToken(token.PLUSPLUS)
 		} else if lexer.peekCharacter() == rune('=') {
-			character := lexer.character
-			lexer.readCharacter()
-			currentToken = token.Token{Type: token.PLUSASSIGN, Literal: string(character) + string(lexer.character)}
+			currentToken = lexer.newTwoCharacterToken(token.PLUSASSIGN)
 		} else {
-			currentToken = newToken(token.PLUS, lexer.character)
+			currentToken = lexer.newToken(token.PLUS)
 		}
 	case rune('-'):
 		if lexer.peekCharacter() == rune('-') {
-			character := lexer.character
-			lexer.readCharacter()
-			currentToken = token.Token{Type: token.MINUSMINUS, Literal: string(character) + string(lexer.character)}
+			currentToken = lexer.newTwoCharacterToken(token.MINUSMINUS)
 		} else if lexer.peekCharacter() == rune('=') {
-			character := lexer.character
-			lexer.readCharacter()
-			currentToken = token.Token{Type: token.MINUSASSIGN, Literal: string(character) + string(lexer.character)}
+			currentToken = lexer.newTwoCharacterToken(token.MINUSASSIGN)
 		} else {
-			currentToken = newToken(token.MINUS, lexer.character)
+			currentToken = lexer.newToken(token.MINUS)
 		}
 	case rune('!'):
 		if lexer.peekCharacter() == rune('=') {
-			character := lexer.character
-			lexer.readCharacter()
-			literal := string(character) + string(lexer.character)
-			currentToken = token.Token{Type: token.NOTEQ, Literal: literal}
+			currentToken = lexer.newTwoCharacterToken(token.NOTEQ)
 		} else {
-			currentToken = newToken(token.BANG, lexer.character)
+			currentToken = lexer.newToken(token.BANG)
 		}
 	case rune('#'):
 		lexer.skipSingleLineComment()
@@ -92,94 +112,74 @@ func (lexer *Lexer) NextToken() token.Token {
 
 			return lexer.NextToken()
 		} else if lexer.peekCharacter() == rune('=') {
-			character := lexer.character
-			lexer.readCharacter()
-			currentToken = token.Token{Type: token.SLASHASSIGN, Literal: string(character) + string(lexer.character)}
+			currentToken = lexer.newTwoCharacterToken(token.SLASHASSIGN)
 		} else {
-			currentToken = newToken(token.SLASH, lexer.character)
+			currentToken = lexer.newToken(token.SLASH)
 		}
 	case rune('*'):
 		if lexer.peekCharacter() == rune('=') {
-			character := lexer.character
-			lexer.readCharacter()
-			currentToken = token.Token{Type: token.ASTERISKASSIGN, Literal: string(character) + string(lexer.character)}
+			currentToken = lexer.newTwoCharacterToken(token.ASTERISKASSIGN)
 		} else {
-			currentToken = newToken(token.ASTERISK, lexer.character)
+			currentToken = lexer.newToken(token.ASTERISK)
 		}
 	case rune('%'):
-		currentToken = newToken(token.PERCENT, lexer.character)
+		currentToken = lexer.newToken(token.PERCENT)
 	case rune('<'):
 		if lexer.peekCharacter() == rune('=') {
-			character := lexer.character
-			lexer.readCharacter()
-			literal := string(character) + string(lexer.character)
-			currentToken = token.Token{Type: token.LTE, Literal: literal}
+			currentToken = lexer.newTwoCharacterToken(token.LTE)
 		} else {
-			currentToken = newToken(token.LT, lexer.character)
+			currentToken = lexer.newToken(token.LT)
 		}
 	case rune('>'):
 		if lexer.peekCharacter() == rune('=') {
-			character := lexer.character
-			lexer.readCharacter()
-			literal := string(character) + string(lexer.character)
-			currentToken = token.Token{Type: token.GTE, Literal: literal}
+			currentToken = lexer.newTwoCharacterToken(token.GTE)
 		} else {
-			currentToken = newToken(token.GT, lexer.character)
+			currentToken = lexer.newToken(token.GT)
 		}
 	case rune(';'):
-		currentToken = newToken(token.SEMICOLON, lexer.character)
+		currentToken = lexer.newToken(token.SEMICOLON)
 	case rune(','):
-		currentToken = newToken(token.COMMA, lexer.character)
+		currentToken = lexer.newToken(token.COMMA)
 	case rune(':'):
 		if lexer.peekCharacter() == rune('=') {
-			character := lexer.character
-			lexer.readCharacter()
-			literal := string(character) + string(lexer.character)
-			currentToken = token.Token{Type: token.ASSIGN, Literal: literal}
+			currentToken = lexer.newTwoCharacterToken(token.ASSIGN)
 		} else {
-			currentToken = newToken(token.COLON, lexer.character)
+			currentToken = lexer.newToken(token.COLON)
 		}
 	case rune('('):
-		currentToken = newToken(token.LPAREN, lexer.character)
+		currentToken = lexer.newToken(token.LPAREN)
 	case rune(')'):
-		currentToken = newToken(token.RPAREN, lexer.character)
+		currentToken = lexer.newToken(token.RPAREN)
 	case rune('{'):
-		currentToken = newToken(token.LBRACE, lexer.character)
+		currentToken = lexer.newToken(token.LBRACE)
 	case rune('}'):
-		currentToken = newToken(token.RBRACE, lexer.character)
+		currentToken = lexer.newToken(token.RBRACE)
 	case rune('['):
-		currentToken = newToken(token.LBRACKET, lexer.character)
+		currentToken = lexer.newToken(token.LBRACKET)
 	case rune(']'):
-		currentToken = newToken(token.RBRACKET, lexer.character)
+		currentToken = lexer.newToken(token.RBRACKET)
 	case rune('"'):
-		currentToken.Type = token.STRING
-		currentToken.Literal = lexer.readString('"')
+		currentToken = lexer.newTokenWithLiteral(token.STRING, lexer.readString('"'))
 	case rune('\''):
-		currentToken.Type = token.STRING
-		currentToken.Literal = lexer.readString('\'')
+		currentToken = lexer.newTokenWithLiteral(token.STRING, lexer.readString('\''))
 	case rune('.'):
 		if lexer.peekCharacter() == rune('.') {
-			character := lexer.character
-			lexer.readCharacter()
-			literal := string(character) + string(lexer.character)
-			currentToken = token.Token{Type: token.RANGE, Literal: literal}
+			currentToken = lexer.newTwoCharacterToken(token.RANGE)
 		} else {
-			currentToken = newToken(token.DOT, lexer.character)
+			currentToken = lexer.newToken(token.DOT)
 		}
 	case 0:
 		currentToken.Type = token.EOF
 		currentToken.Literal = ""
 	default:
 		if isDigit(lexer.character) {
-			currentToken.Type = token.NUMBER
-			currentToken.Literal = lexer.readNumber()
-			return currentToken
+			return lexer.newTokenWithLiteral(token.NUMBER, lexer.readNumber())
 		}
 
-		currentToken.Literal = lexer.readIdentifier()
-		currentToken.Type = token.LookupIdentifier(currentToken.Literal)
+		literal := lexer.readIdentifier()
+		tokenType := token.LookupIdentifier(literal)
 
-		return currentToken
+		return lexer.newTokenWithLiteral(tokenType, literal)
 	}
 
 	lexer.readCharacter()
@@ -189,6 +189,10 @@ func (lexer *Lexer) NextToken() token.Token {
 
 func (lexer *Lexer) skipWhitespace() {
 	for isWhitespace(lexer.character) {
+		if lexer.character == rune('\n') {
+			lexer.line++
+		}
+
 		lexer.readCharacter()
 	}
 }
@@ -205,7 +209,11 @@ func (lexer *Lexer) skipMultiLineComment() {
 	endOfComment := false
 
 	for !endOfComment {
-		if lexer.character == 0 {
+		if lexer.character == rune('\n') {
+			lexer.line++
+		}
+
+		if lexer.character == rune(0) {
 			endOfComment = true
 		}
 

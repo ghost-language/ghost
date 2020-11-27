@@ -55,8 +55,10 @@ func (r *REPL) Run() {
 		f, err := os.Open(r.args[0])
 
 		if err != nil {
-			log.Fatalf("could not open source file %s: %s", r.args[0], err)
+			log.Fatalf("Could not open source file %s: %s", r.args[0], err)
 		}
+
+		defer f.Close()
 
 		env := r.Eval(f)
 		elapsed := time.Since(start)
@@ -74,7 +76,7 @@ func (r *REPL) Eval(f io.Reader) (env *object.Environment) {
 	b, err := ioutil.ReadAll(f)
 
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error reading source file: %s", err)
+		fmt.Fprintf(os.Stderr, "Error reading source file: %s", err)
 		return
 	}
 
@@ -88,7 +90,14 @@ func (r *REPL) Eval(f io.Reader) (env *object.Environment) {
 		return
 	}
 
-	evaluator.Eval(program, env)
+	obj := evaluator.Eval(program, env)
+
+	if obj != nil {
+		if _, ok := obj.(*object.Error); ok {
+			io.WriteString(os.Stdout, OUTPUT+obj.Inspect())
+			io.WriteString(os.Stdout, "\n")
+		}
+	}
 
 	return
 }

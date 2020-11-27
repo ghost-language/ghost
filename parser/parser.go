@@ -78,11 +78,7 @@ func New(l *lexer.Lexer) *Parser {
 		errors: []string{},
 	}
 
-	p.nextToken()
-	p.nextToken()
-
 	p.prefixParseFns = make(map[token.TokenType]prefixParserFn)
-
 	p.registerPrefix(token.IDENTIFIER, p.parseIdentifierLiteral)
 	p.registerPrefix(token.NUMBER, p.parseNumberLiteral)
 	p.registerPrefix(token.STRING, p.parseStringLiteral)
@@ -100,7 +96,6 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.IMPORT, p.parseImportExpression)
 
 	p.infixParseFns = make(map[token.TokenType]infixParseFn)
-
 	p.registerInfix(token.PLUS, p.parseInfixExpression)
 	p.registerInfix(token.MINUS, p.parseInfixExpression)
 	p.registerInfix(token.SLASH, p.parseInfixExpression)
@@ -127,6 +122,10 @@ func New(l *lexer.Lexer) *Parser {
 	p.postfixParseFns = make(map[token.TokenType]postfixParseFn)
 	p.registerPostfix(token.PLUSPLUS, p.parsePostfixExpression)
 	p.registerPostfix(token.MINUSMINUS, p.parsePostfixExpression)
+
+	// Read two tokens, so currentToken and peekToken are both set.
+	p.nextToken()
+	p.nextToken()
 
 	return p
 }

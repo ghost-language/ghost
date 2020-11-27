@@ -140,7 +140,7 @@ func (s *String) Type() ObjectType       { return STRING_OBJ }
 
 func (b *Boolean) Inspect() string { return fmt.Sprintf("%t", b.Value) }
 func (b *Builtin) Inspect() string { return fmt.Sprintf("builtin function: %s", b.Name) }
-func (e *Error) Inspect() string   { return "ERROR: " + e.Message }
+func (e *Error) Inspect() string   { return "RUNTIME ERROR: " + e.Message }
 
 func (f *Function) Inspect() string {
 	var out bytes.Buffer

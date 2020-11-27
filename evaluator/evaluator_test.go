@@ -715,16 +715,16 @@ func TestErrorHandling(t *testing.T) {
 		input           string
 		expectedMessage string
 	}{
-		{"5 + true;", "type mismatch: NUMBER + BOOLEAN"},
-		{"5 + true; 5;", "type mismatch: NUMBER + BOOLEAN"},
-		{"-true", "unknown operator: -BOOLEAN"},
-		{"true + false;", "unknown operator: BOOLEAN + BOOLEAN"},
-		{"5; true + false; 5", "unknown operator: BOOLEAN + BOOLEAN"},
-		{"if (10 > 1) { true + false; }", "unknown operator: BOOLEAN + BOOLEAN"},
-		{"if (10 > 1) { if (10 > 1) { return true + false; } return 1; }", "unknown operator: BOOLEAN + BOOLEAN"},
-		{"foobar", "identifier not found: foobar"},
-		{`"Hello" - "World"`, "unknown operator: STRING - STRING"},
-		{`{"name": "Ghost"}[function(x) { x }]`, "unusable as map key: FUNCTION"},
+		{"5 + true;", "[1] Type mismatch: NUMBER + BOOLEAN"},
+		{"5 + true; 5;", "[1] Type mismatch: NUMBER + BOOLEAN"},
+		{"-true", "[1] Unknown operator: -BOOLEAN"},
+		{"true + false;", "[1] Unknown operator: BOOLEAN + BOOLEAN"},
+		{"5; true + false; 5", "[1] Unknown operator: BOOLEAN + BOOLEAN"},
+		{"if (10 > 1) { true + false; }", "[1] Unknown operator: BOOLEAN + BOOLEAN"},
+		{"if (10 > 1) { if (10 > 1) { return true + false; } return 1; }", "[1] Unknown operator: BOOLEAN + BOOLEAN"},
+		{"foobar", "[1] Identifier not found: foobar"},
+		{`"Hello" - "World"`, "[1] Unknown operator: STRING - STRING"},
+		{`{"name": "Ghost"}[function(x) { x }]`, "[1] Unusable as map key: FUNCTION"},
 	}
 
 	for _, tt := range tests {
