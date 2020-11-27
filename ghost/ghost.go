@@ -69,12 +69,12 @@ func Call(source string, env *object.Environment) (_env *object.Environment, obj
 	program := p.ParseProgram()
 
 	if len(p.Errors()) == 0 {
-		obj = evaluator.Eval(program, _env)
+		obj = evaluator.Eval(program, env)
 	} else {
 		obj = value.NULL
 	}
 
-	return _env, obj, p.Errors()
+	return env, obj, p.Errors()
 }
 
 // NewError returns a new error object used during runtime.
