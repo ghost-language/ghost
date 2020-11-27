@@ -62,12 +62,19 @@ func Evaluate() (env *object.Environment, obj object.Object, errors []string) {
 	return env, obj, p.Errors()
 }
 
-func Call(source string, env *object.Environment) {
+// Call evaluates the specified code directly with the passed environment.
+func Call(source string, env *object.Environment) (_env *object.Environment, obj object.Object, errors []string) {
 	l := lexer.New(source)
 	p := parser.New(l)
 	program := p.ParseProgram()
 
-	evaluator.Eval(program, env)
+	if len(p.Errors()) == 0 {
+		obj = evaluator.Eval(program, _env)
+	} else {
+		obj = value.NULL
+	}
+
+	return _env, obj, p.Errors()
 }
 
 // NewError returns a new error object used during runtime.
