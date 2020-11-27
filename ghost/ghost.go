@@ -68,5 +68,5 @@ func Call(source string, env *object.Environment) {
 
 // NewError returns a new error object used during runtime.
 func NewError(format string, a ...interface{}) *object.Error {
-	return utilities.NewError(format, a)
+	return utilities.NewError(format, a...)
 }
