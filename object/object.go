@@ -58,7 +58,7 @@ type (
 		Fn   BuiltinFunction
 	}
 
-	BuiltinFunction func(env *Environment, args ...Object) Object
+	BuiltinFunction func(env *Environment, line int, args ...Object) Object
 
 	Module struct {
 		Name      string

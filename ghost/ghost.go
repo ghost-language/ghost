@@ -2,11 +2,11 @@ package ghost
 
 import (
 	"ghostlang.org/x/ghost/builtins"
+	"ghostlang.org/x/ghost/error"
 	"ghostlang.org/x/ghost/evaluator"
 	"ghostlang.org/x/ghost/lexer"
 	"ghostlang.org/x/ghost/object"
 	"ghostlang.org/x/ghost/parser"
-	"ghostlang.org/x/ghost/utilities"
 	"ghostlang.org/x/ghost/value"
 	"ghostlang.org/x/ghost/version"
 )
@@ -78,6 +78,6 @@ func Call(source string, env *object.Environment) (_env *object.Environment, obj
 }
 
 // NewError returns a new error object used during runtime.
-func NewError(format string, a ...interface{}) *object.Error {
-	return utilities.NewError(format, a...)
+func NewError(line int, index int, args ...interface{}) *object.Error {
+	return error.NewError(line, index, args...)
 }

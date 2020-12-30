@@ -10,7 +10,7 @@ func init() {
 }
 
 // ghostVersionFunction returns the current version of Ghost.
-func ghostVersionFunction(env *object.Environment, args ...object.Object) object.Object {
+func ghostVersionFunction(env *object.Environment, line int, args ...object.Object) object.Object {
 	v := version.Version
 
 	return &object.String{Value: v}
