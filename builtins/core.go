@@ -37,22 +37,18 @@ func exitFunction(env *object.Environment, line int, args ...object.Object) obje
 
 	if len(args) == 2 {
 		if args[0].Type() != object.NUMBER_OBJ {
-			err = error.NewError(line, error.Placeholder)
-			// err = utilities.NewError("first argument to `exit` must be NUMBER, got %s", args[0].Type())
+			err = error.NewError(line, error.ArgumentMustBe, "first", "exit", "NUMBER", args[0].Type())
 		} else if args[1].Type() != object.STRING_OBJ {
-			err = error.NewError(line, error.Placeholder)
-			// err = utilities.NewError("second argument to `exit` must be STRING, got %s", args[1].Type())
+			err = error.NewError(line, error.ArgumentMustBe, "second", "exit", "STRING", args[1].Type())
 		}
 
 		message = args[1].(*object.String).Value
 	} else if len(args) == 1 {
 		if args[0].Type() != object.NUMBER_OBJ {
-			err = error.NewError(line, error.Placeholder)
-			// err = utilities.NewError("first argument to `exit` must be NUMBER, got %s", args[0].Type())
+			err = error.NewError(line, error.ArgumentMustBe, "first", "exit", "NUMBER", args[0].Type())
 		}
 	} else {
-		err = error.NewError(line, error.Placeholder)
-		// err = utilities.NewError("wrong number of arguments. got=%d, expected=~2", len(args))
+		err = error.NewError(line, error.WrongNumberArguments, len(args), 2)
 	}
 
 	if err != nil {
@@ -83,13 +79,11 @@ func identifiersFunction(env *object.Environment, line int, args ...object.Objec
 
 func firstFunction(env *object.Environment, line int, args ...object.Object) object.Object {
 	if len(args) != 1 {
-		return error.NewError(line, error.Placeholder)
-		// return utilities.NewError("wrong number of arguments. got=%d, expected=1", len(args))
+		return error.NewError(line, error.WrongNumberArguments, len(args), 1)
 	}
 
 	if args[0].Type() != object.LIST_OBJ {
-		return error.NewError(line, error.Placeholder)
-		// return utilities.NewError("argument to `first` must be LIST, got %s", args[0].Type())
+		return error.NewError(line, error.ArgumentMustBe, "first", "first", "LIST", args[0].Type())
 	}
 
 	list := args[0].(*object.List)
@@ -108,21 +102,19 @@ func inputFunction(env *object.Environment, line int, args ...object.Object) obj
 	value, _, err := buffer.ReadLine()
 
 	if err != nil && err != io.EOF {
-		return error.NewError(line, error.Placeholder)
-		// return utilities.NewError(fmt.Sprintf("error reading input: %s", err))
+		return error.NewError(line, error.ErrorReadingInput, err)
 	}
+
 	return &object.String{Value: string(value)}
 }
 
 func lastFunction(env *object.Environment, line int, args ...object.Object) object.Object {
 	if len(args) != 1 {
-		return error.NewError(line, error.Placeholder)
-		// return utilities.NewError("wrong number of arguments. got=%d, expected=1", len(args))
+		return error.NewError(line, error.WrongNumberArguments, len(args), 1)
 	}
 
 	if args[0].Type() != object.LIST_OBJ {
-		return error.NewError(line, error.Placeholder)
-		// return utilities.NewError("argument to `last` must be LIST, got %s", args[0].Type())
+		return error.NewError(line, error.ArgumentMustBe, "first", "last", "LIST", args[0].Type())
 	}
 
 	list := args[0].(*object.List)
@@ -133,8 +125,7 @@ func lastFunction(env *object.Environment, line int, args ...object.Object) obje
 
 func lengthFunction(env *object.Environment, line int, args ...object.Object) object.Object {
 	if len(args) != 1 {
-		return error.NewError(line, error.Placeholder)
-		// return utilities.NewError("wrong number of arguments. got=%d, expected=1", len(args))
+		return error.NewError(line, error.WrongNumberArguments, len(args), 1)
 	}
 
 	switch arg := args[0].(type) {
@@ -143,15 +134,13 @@ func lengthFunction(env *object.Environment, line int, args ...object.Object) ob
 	case *object.String:
 		return &object.Number{Value: decimal.NewFromInt(int64(utf8.RuneCountInString(arg.Value)))}
 	default:
-		return error.NewError(line, error.Placeholder)
-		// return utilities.NewError("argument to `length` not supported, got %s", args[0].Type())
+		return error.NewError(line, error.ArgumentMustBe, "first", "length", "LIST or STRING", args[0].Type())
 	}
 }
 
 func numberFunction(env *object.Environment, line int, args ...object.Object) object.Object {
 	if len(args) != 1 {
-		return error.NewError(line, error.Placeholder)
-		// return utilities.NewError("wrong number of arguments. got=%d, expected=1", len(args))
+		return error.NewError(line, error.WrongNumberArguments, len(args), 1)
 	}
 
 	if args[0].Type() == object.STRING_OBJ {
@@ -159,8 +148,7 @@ func numberFunction(env *object.Environment, line int, args ...object.Object) ob
 		num, err := decimal.NewFromString(arg.Value)
 
 		if err != nil {
-			return error.NewError(line, error.Placeholder)
-			// return utilities.NewError("argument to `number` must be a STRING representation of a number, got %s", arg.Value)
+			return error.NewError(line, error.ArgumentMustBe, "first", "number", "a STRING representation of a number", arg.Value)
 		}
 
 		return &object.Number{Value: num}
@@ -170,8 +158,7 @@ func numberFunction(env *object.Environment, line int, args ...object.Object) ob
 		return args[0].(*object.Number)
 	}
 
-	return error.NewError(line, error.Placeholder)
-	// return utilities.NewError("argument to `number` must be STRING or NUMBER, got %s", args[0].Type())
+	return error.NewError(line, error.ArgumentMustBe, "first", "number", "a STRING or NUMBER", args[0].Type())
 }
 
 func printFunction(env *object.Environment, line int, args ...object.Object) object.Object {
@@ -186,13 +173,11 @@ func printFunction(env *object.Environment, line int, args ...object.Object) obj
 
 func pushFunction(env *object.Environment, line int, args ...object.Object) object.Object {
 	if len(args) != 2 {
-		return error.NewError(line, error.Placeholder)
-		// return utilities.NewError("wrong number of arguments. got=%d, expected=2", len(args))
+		return error.NewError(line, error.WrongNumberArguments, len(args), 2)
 	}
 
 	if args[0].Type() != object.LIST_OBJ {
-		return error.NewError(line, error.Placeholder)
-		// return utilities.NewError("argument to `push` must be LIST, got %s", args[0].Type())
+		return error.NewError(line, error.ArgumentMustBe, "first", "push", "LIST", args[0].Type())
 	}
 
 	list := args[0].(*object.List)
@@ -209,13 +194,11 @@ func pushFunction(env *object.Environment, line int, args ...object.Object) obje
 
 func sleepFunction(env *object.Environment, line int, args ...object.Object) object.Object {
 	if len(args) != 1 {
-		return error.NewError(line, error.Placeholder)
-		// return utilities.NewError("wrong number of arguments. got=%d, expected=1", len(args))
+		return error.NewError(line, error.WrongNumberArguments, len(args), 1)
 	}
 
 	if args[0].Type() != object.NUMBER_OBJ {
-		return error.NewError(line, error.Placeholder)
-		// return utilities.NewError("argument to `sleep` must be NUMBER, got %s", args[0].Type())
+		return error.NewError(line, error.ArgumentMustBe, "first", "sleep", "NUMBER", args[0].Type())
 	}
 
 	ms := args[0].(*object.Number)
@@ -226,8 +209,7 @@ func sleepFunction(env *object.Environment, line int, args ...object.Object) obj
 
 func stringFunction(env *object.Environment, line int, args ...object.Object) object.Object {
 	if len(args) != 1 {
-		return error.NewError(line, error.Placeholder)
-		// return utilities.NewError("wrong number of arguments. got=%d, expected=1", len(args))
+		return error.NewError(line, error.WrongNumberArguments, len(args), 1)
 	}
 
 	return &object.String{Value: args[0].Inspect()}
@@ -235,13 +217,11 @@ func stringFunction(env *object.Environment, line int, args ...object.Object) ob
 
 func tailFunction(env *object.Environment, line int, args ...object.Object) object.Object {
 	if len(args) != 1 {
-		return error.NewError(line, error.Placeholder)
-		// return utilities.NewError("wrong number of arguments. got=%d, expected=1", len(args))
+		return error.NewError(line, error.WrongNumberArguments, len(args), 1)
 	}
 
 	if args[0].Type() != object.LIST_OBJ {
-		return error.NewError(line, error.Placeholder)
-		// return utilities.NewError("argument to `tail` must be LIST, got %s", args[0].Type())
+		return error.NewError(line, error.ArgumentMustBe, "first", "tail", "LIST", args[0].Type())
 	}
 
 	list := args[0].(*object.List)
@@ -259,8 +239,7 @@ func tailFunction(env *object.Environment, line int, args ...object.Object) obje
 
 func typeFunction(env *object.Environment, line int, args ...object.Object) object.Object {
 	if len(args) != 1 {
-		return error.NewError(line, error.Placeholder)
-		// return utilities.NewError("wrong number of arguments. got=%d, expected=1", len(args))
+		return error.NewError(line, error.WrongNumberArguments, len(args), 1)
 	}
 
 	val := string(args[0].Type())

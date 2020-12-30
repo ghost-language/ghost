@@ -9,33 +9,51 @@ import (
 // Define all error constants later used to define error messages.
 const (
 	_ int = iota
-	Placeholder
 	ArgumentMustBe
+	ArgumentNotSupported
+	ErrorReadingInput
 	ErrorReadingModule
+	IndexOutOfRange
+	InvalidImportPath
+	InvalidPropertyType
+	InvalidPropertyAssignment
 	InfixTypeMismatch
 	NoModuleFound
+	NotAFunction
 	ParseError
 	UnknownOperator
 	UnknownIdentifier
 	UnknownInfixOperator
+	UnsupportedIndexExpression
 	UnsupportedPostfixOperator
 	UnsupportedPrefixOperator
+	UnusableForLoop
+	UnusableMapKey
 	WrongNumberArguments
 )
 
 var messageBag = map[int]string{
-	Placeholder:                "placeholder error message",
-	ArgumentMustBe:             "%s argument must be %s",
+	ArgumentMustBe:             "%s argument to '%s' must be %s, got %s",
+	ArgumentNotSupported:       "%s argument to '%s' is not supported, got %s",
+	ErrorReadingInput:          "error reading input: %s",
 	ErrorReadingModule:         "error reading module '%s': %s",
+	IndexOutOfRange:            "index out of range: %d",
+	InvalidImportPath:          "invalid import path: %s",
+	InvalidPropertyType:        "invalid property '%s' on type %s",
+	InvalidPropertyAssignment:  "invalid property assignment '%s' on type %s",
 	InfixTypeMismatch:          "type mismatch: %s %s %s",
 	NoModuleFound:              "no module named '%s' found",
+	NotAFunction:               "not a function: %s",
 	ParseError:                 "parse error: %s",
 	UnknownOperator:            "unknown operator: %s%s",
 	UnknownIdentifier:          "unknown identifier: %s",
 	UnknownInfixOperator:       "unknown operator: %s %s %s",
+	UnsupportedIndexExpression: "index expression not supported on type %s",
 	UnsupportedPostfixOperator: "unsupported operator for postfix expression: '%s' and type: %s",
 	UnsupportedPrefixOperator:  "unsupported operator for prefix expression: '%s' and type: %s",
-	WrongNumberArguments:       "wrong number of arguments: got=%d, expected=%d",
+	UnusableForLoop:            "unusable as for loop: %s",
+	UnusableMapKey:             "unusable as map key: %s",
+	WrongNumberArguments:       "wrong number of arguments: %d while expected: %d",
 }
 
 // NewError formats and returns a new Error object.

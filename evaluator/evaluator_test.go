@@ -601,8 +601,8 @@ func TestBuiltinFunctions(t *testing.T) {
 		{`length("")`, 0},
 		{`length("four")`, 4},
 		{`length("hello world")`, 11},
-		{`length(1)`, "argument to `length` not supported, got NUMBER"},
-		{`length("one", "two")`, "wrong number of arguments. got=2, expected=1"},
+		{`length(1)`, "first argument to 'length' must be LIST or STRING, got NUMBER on line 1"},
+		{`length("one", "two")`, "wrong number of arguments: 2 while expected: 1 on line 1"},
 	}
 
 	for _, tt := range tests {
@@ -633,8 +633,8 @@ func TestMathModule(t *testing.T) {
 	}{
 		{`Math.abs(123)`, 123},
 		{`Math.abs(-123)`, 123},
-		{`Math.abs("foo")`, "argument to `Math.abs` must be NUMBER, got STRING"},
-		{`Math.abs()`, "wrong number of arguments. got=0, expected=1"},
+		{`Math.abs("foo")`, "first argument to 'Math.abs' must be NUMBER, got STRING on line 1"},
+		{`Math.abs()`, "wrong number of arguments: 0 while expected: 1 on line 1"},
 	}
 
 	for _, tt := range tests {
@@ -715,16 +715,16 @@ func TestErrorHandling(t *testing.T) {
 		input           string
 		expectedMessage string
 	}{
-		{"5 + true;", "[1] Type mismatch: NUMBER + BOOLEAN"},
-		{"5 + true; 5;", "[1] Type mismatch: NUMBER + BOOLEAN"},
-		{"-true", "[1] Unknown operator: -BOOLEAN"},
-		{"true + false;", "[1] Unknown operator: BOOLEAN + BOOLEAN"},
-		{"5; true + false; 5", "[1] Unknown operator: BOOLEAN + BOOLEAN"},
-		{"if (10 > 1) { true + false; }", "[1] Unknown operator: BOOLEAN + BOOLEAN"},
-		{"if (10 > 1) { if (10 > 1) { return true + false; } return 1; }", "[1] Unknown operator: BOOLEAN + BOOLEAN"},
-		{"foobar", "[1] Identifier not found: foobar"},
-		{`"Hello" - "World"`, "[1] Unknown operator: STRING - STRING"},
-		{`{"name": "Ghost"}[function(x) { x }]`, "[1] Unusable as map key: FUNCTION"},
+		{"5 + true;", "type mismatch: NUMBER + BOOLEAN on line 1"},
+		{"5 + true; 5;", "type mismatch: NUMBER + BOOLEAN on line 1"},
+		{"-true", "unknown operator: -BOOLEAN on line 1"},
+		{"true + false;", "unknown operator: BOOLEAN + BOOLEAN on line 1"},
+		{"5; true + false; 5", "unknown operator: BOOLEAN + BOOLEAN on line 1"},
+		{"if (10 > 1) { true + false; }", "unknown operator: BOOLEAN + BOOLEAN on line 1"},
+		{"if (10 > 1) { if (10 > 1) { return true + false; } return 1; }", "unknown operator: BOOLEAN + BOOLEAN on line 1"},
+		{"foobar", "unknown identifier: foobar on line 1"},
+		{`"Hello" - "World"`, "unknown operator: STRING - STRING on line 1"},
+		{`{"name": "Ghost"}[function(x) { x }]`, "unusable as map key: FUNCTION on line 1"},
 	}
 
 	for _, tt := range tests {
