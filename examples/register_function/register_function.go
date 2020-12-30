@@ -15,9 +15,9 @@ func main() {
 	ghost.Evaluate()
 }
 
-func writeFunction(env *object.Environment, args ...object.Object) object.Object {
+func writeFunction(env *object.Environment, line int, args ...object.Object) object.Object {
 	if len(args) != 1 {
-		return ghost.NewError("wrong number of arguments. got=%d, expected=1", len(args))
+		return ghost.NewError(line, "wrong number of arguments. got=%d, expected=1", len(args))
 	}
 
 	fmt.Println(args[0].Inspect())
