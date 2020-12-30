@@ -5,6 +5,7 @@ import (
 
 	"ghostlang.org/x/ghost/ast"
 	"ghostlang.org/x/ghost/builtins"
+	"ghostlang.org/x/ghost/error"
 	"ghostlang.org/x/ghost/lexer"
 	"ghostlang.org/x/ghost/object"
 	"ghostlang.org/x/ghost/parser"
@@ -28,7 +29,7 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 	case *ast.ReturnStatement:
 		val := Eval(node.ReturnValue, env)
 
-		if utilities.IsError(val) {
+		if error.IsError(val) {
 			return val
 		}
 
@@ -36,7 +37,7 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 	case *ast.AssignStatement:
 		assignment := evalAssignStatement(node, env)
 
-		if utilities.IsError(assignment) {
+		if error.IsError(assignment) {
 			return assignment
 		}
 
@@ -44,13 +45,13 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 	case *ast.MethodExpression:
 		obj := Eval(node.Object, env)
 
-		if utilities.IsError(obj) {
+		if error.IsError(obj) {
 			return obj
 		}
 
 		args := evalExpressions(node.Arguments, env)
 
-		if len(args) == 1 && utilities.IsError(args[0]) {
+		if len(args) == 1 && error.IsError(args[0]) {
 			return args[0]
 		}
 
@@ -70,7 +71,7 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 	case *ast.PrefixExpression:
 		right := Eval(node.Right, env)
 
-		if utilities.IsError(right) {
+		if error.IsError(right) {
 			return right
 		}
 
@@ -78,13 +79,13 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 	case *ast.InfixExpression:
 		left := Eval(node.Left, env)
 
-		if utilities.IsError(left) {
+		if error.IsError(left) {
 			return left
 		}
 
 		right := Eval(node.Right, env)
 
-		if utilities.IsError(right) {
+		if error.IsError(right) {
 			return right
 		}
 
@@ -96,7 +97,7 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 	case *ast.ListLiteral:
 		elements := evalExpressions(node.Elements, env)
 
-		if len(elements) == 1 && utilities.IsError(elements[0]) {
+		if len(elements) == 1 && error.IsError(elements[0]) {
 			return elements[0]
 		}
 
@@ -104,13 +105,13 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 	case *ast.IndexExpression:
 		left := Eval(node.Left, env)
 
-		if utilities.IsError(left) {
+		if error.IsError(left) {
 			return left
 		}
 
 		index := Eval(node.Index, env)
 
-		if utilities.IsError(index) {
+		if error.IsError(index) {
 			return index
 		}
 
@@ -138,13 +139,13 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 	case *ast.CallExpression:
 		function := Eval(node.Callable, env)
 
-		if utilities.IsError(function) {
+		if error.IsError(function) {
 			return function
 		}
 
 		arguments := evalExpressions(node.Arguments, env)
 
-		if len(arguments) == 1 && utilities.IsError(arguments[0]) {
+		if len(arguments) == 1 && error.IsError(arguments[0]) {
 			return arguments[0]
 		}
 
@@ -154,17 +155,18 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 	return nil
 }
 
+// EvalPackage evaluates the specified ghost file and returns an object.
 func EvalPackage(name string, line int) object.Object {
 	filename := utilities.FindPackage(name)
 
 	if filename == "" {
-		return utilities.NewError("[%d] Import Error: no module named '%s' found", line, name)
+		return error.NewError(line, error.NoModuleFound, name)
 	}
 
 	b, err := ioutil.ReadFile(filename)
 
 	if err != nil {
-		return utilities.NewError("[%d] IO Error: error reading module '%s': %s", line, name, err)
+		return error.NewError(line, error.ErrorReadingModule, name, err)
 	}
 
 	l := lexer.New(string(b))
@@ -173,7 +175,7 @@ func EvalPackage(name string, line int) object.Object {
 	module := p.ParseProgram()
 
 	if len(p.Errors()) != 0 {
-		return utilities.NewError("[%d] Parse Error: %s", line, p.Errors())
+		return error.NewError(line, error.ParseError, p.Errors())
 	}
 
 	env := object.NewEnvironment()
@@ -205,7 +207,7 @@ func evalExpressions(expressions []ast.Expression, env *object.Environment) []ob
 	for _, expression := range expressions {
 		evaluated := Eval(expression, env)
 
-		if utilities.IsError(evaluated) {
+		if error.IsError(evaluated) {
 			return []object.Object{evaluated}
 		}
 
@@ -239,7 +241,7 @@ func evalPrefixExpression(operator string, right object.Object, line int) object
 	case "-":
 		return evalMinusPrefixOperatorExpression(right, line)
 	default:
-		return utilities.NewError("[%d] Unknown operator: %s%s", line, operator, right.Type())
+		return error.NewError(line, error.UnknownOperator, operator, right.Type())
 	}
 }
 
@@ -258,7 +260,7 @@ func evalBangOperatorExpression(right object.Object) object.Object {
 
 func evalMinusPrefixOperatorExpression(right object.Object, line int) object.Object {
 	if right.Type() != object.NUMBER_OBJ {
-		return utilities.NewError("[%d] Unknown operator: -%s", line, right.Type())
+		return error.NewError(line, error.UnknownOperator, "-", right.Type())
 	}
 
 	val := right.(*object.Number).Value.Neg()
@@ -279,9 +281,9 @@ func evalInfixExpression(node *ast.InfixExpression, operator string, left object
 	case operator == "!=":
 		return utilities.NativeBoolToBooleanObject(left != right)
 	case left.Type() != right.Type():
-		return utilities.NewError("[%d] Type mismatch: %s %s %s", node.Token.Line, left.Type(), operator, right.Type())
+		return error.NewError(node.Token.Line, error.InfixTypeMismatch, left.Type(), operator, right.Type())
 	default:
-		return utilities.NewError("[%d] Unknown operator: %s %s %s", node.Token.Line, left.Type(), operator, right.Type())
+		return error.NewError(node.Token.Line, error.UnknownInfixOperator, left.Type(), operator, right.Type())
 	}
 }
 
@@ -291,13 +293,13 @@ func evalPostfixExpression(node *ast.PostfixExpression, operator string, env *ob
 		val, ok := env.Get(node.Token.Literal)
 
 		if !ok {
-			return utilities.NewError("[%d] Token literal %s is unknown", node.Token.Line, node.Token.Literal)
+			return error.NewError(node.Token.Line, error.UnknownIdentifier, node.Token.Literal)
 		}
 
 		expression, ok := val.(*object.Number)
 
 		if !ok {
-			return utilities.NewError("[%d] Invalid left-hand side expression in postfix operation", node.Token.Line)
+			return error.NewError(node.Token.Line, error.UnsupportedPostfixOperator, "++", node.Token.Type)
 		}
 
 		one := decimal.NewFromInt(1)
@@ -309,13 +311,13 @@ func evalPostfixExpression(node *ast.PostfixExpression, operator string, env *ob
 		val, ok := env.Get(node.Token.Literal)
 
 		if !ok {
-			return utilities.NewError("[%d] Token literal %s is unknown", node.Token.Line, node.Token.Literal)
+			return error.NewError(node.Token.Line, error.UnknownIdentifier, node.Token.Literal)
 		}
 
 		expression, ok := val.(*object.Number)
 
 		if !ok {
-			return utilities.NewError("[%d] Invalid left-hand side expression in postfix operation", node.Token.Line)
+			return error.NewError(node.Token.Line, error.UnsupportedPostfixOperator, "--", node.Token.Type)
 		}
 
 		one := decimal.NewFromInt(1)
@@ -324,7 +326,7 @@ func evalPostfixExpression(node *ast.PostfixExpression, operator string, env *ob
 
 		return decimal
 	default:
-		return utilities.NewError("[%d] Unknown operator: %s", node.Token.Line, operator)
+		return error.NewError(node.Token.Line, error.UnknownOperator, node.Token.Literal, operator)
 	}
 }
 
@@ -342,7 +344,7 @@ func evalBooleanInfixExpression(node *ast.InfixExpression, operator string, left
 	case "!=":
 		return utilities.NativeBoolToBooleanObject(leftValue != rightValue)
 	default:
-		return utilities.NewError("[%d] Unknown operator: %s %s %s", node.Token.Line, left.Type(), operator, right.Type())
+		return error.NewError(node.Token.Line, error.UnknownInfixOperator, left.Type(), operator, right.Type())
 	}
 }
 
@@ -377,7 +379,7 @@ func evalNumberInfixExpression(node *ast.InfixExpression, operator string, left 
 		_, ok := env.Get(node.Left.String())
 
 		if !ok {
-			return utilities.NewError("[%d] Variable %s is unknown", node.Token.Line, node.Left.String())
+			return error.NewError(node.Token.Line, error.UnknownIdentifier, node.Left.String())
 		}
 
 		dec := &object.Number{Value: leftValue.Add(rightValue)}
@@ -388,7 +390,7 @@ func evalNumberInfixExpression(node *ast.InfixExpression, operator string, left 
 		_, ok := env.Get(node.Left.String())
 
 		if !ok {
-			return utilities.NewError("[%d] Variable %s is unknown", node.Token.Line, node.Left.String())
+			return error.NewError(node.Token.Line, error.UnknownIdentifier, node.Left.String())
 		}
 
 		dec := &object.Number{Value: leftValue.Sub(rightValue)}
@@ -399,7 +401,7 @@ func evalNumberInfixExpression(node *ast.InfixExpression, operator string, left 
 		_, ok := env.Get(node.Left.String())
 
 		if !ok {
-			return utilities.NewError("[%d] Variable %s is unknown", node.Token.Line, node.Left.String())
+			return error.NewError(node.Token.Line, error.UnknownIdentifier, node.Left.String())
 		}
 
 		dec := &object.Number{Value: leftValue.Mul(rightValue)}
@@ -410,7 +412,7 @@ func evalNumberInfixExpression(node *ast.InfixExpression, operator string, left 
 		_, ok := env.Get(node.Left.String())
 
 		if !ok {
-			return utilities.NewError("[%d] Variable %s is unknown", node.Token.Line, node.Left.String())
+			return error.NewError(node.Token.Line, error.UnknownIdentifier, node.Left.String())
 		}
 
 		dec := &object.Number{Value: leftValue.Div(rightValue)}
@@ -434,7 +436,7 @@ func evalNumberInfixExpression(node *ast.InfixExpression, operator string, left 
 
 		return &object.List{Elements: numbers}
 	default:
-		return utilities.NewError("[%d] Unknown operator: %s %s %s", node.Token.Line, left.Type(), operator, right.Type())
+		return error.NewError(node.Token.Line, error.UnknownInfixOperator, left.Type(), operator, right.Type())
 	}
 }
 
@@ -450,14 +452,14 @@ func evalStringInfixExpression(node *ast.InfixExpression, operator string, left 
 	case "!=":
 		return utilities.NativeBoolToBooleanObject(leftValue != rightValue)
 	default:
-		return utilities.NewError("[%d] Unknown operator: %s %s %s", node.Token.Line, left.Type(), operator, right.Type())
+		return error.NewError(node.Token.Line, error.UnknownInfixOperator, left.Type(), operator, right.Type())
 	}
 }
 
 func evalAssignStatement(as *ast.AssignStatement, env *object.Environment) object.Object {
 	val := Eval(as.Value, env)
 
-	if utilities.IsError(val) {
+	if error.IsError(val) {
 		return val
 	}
 
@@ -480,7 +482,7 @@ func evalAssignStatement(as *ast.AssignStatement, env *object.Environment) objec
 func evalPropertyExpression(pe *ast.PropertyExpression, env *object.Environment) object.Object {
 	o := Eval(pe.Object, env)
 
-	if utilities.IsError(o) {
+	if error.IsError(o) {
 		return o
 	}
 
@@ -491,13 +493,13 @@ func evalPropertyExpression(pe *ast.PropertyExpression, env *object.Environment)
 		return evalPackageIndexExpression(pe.Token.Line, obj, &object.String{Value: pe.Property.String()})
 	}
 
-	return utilities.NewError("[%d] Invalid property '%s' on type %s", pe.Token.Line, pe.Property.String(), o.Type())
+	return error.NewError(pe.Token.Line, error.InvalidPropertyType, pe.Property.String(), o.Type())
 }
 
 func evalIfExpression(ie *ast.IfExpression, env *object.Environment) object.Object {
 	condition := Eval(ie.Condition, env)
 
-	if utilities.IsError(condition) {
+	if error.IsError(condition) {
 		return condition
 	}
 
@@ -519,7 +521,7 @@ func evalIdentifierLiteral(node *ast.IdentifierLiteral, env *object.Environment)
 		return builtin
 	}
 
-	return utilities.NewError("[%d] Identifier not found: %s", node.Token.Line, node.Value)
+	return error.NewError(node.Token.Line, error.UnknownIdentifier, node.Value)
 }
 
 func evalIndexExpression(node *ast.IndexExpression, left object.Object, index object.Object) object.Object {
@@ -531,7 +533,7 @@ func evalIndexExpression(node *ast.IndexExpression, left object.Object, index ob
 	case left.Type() == object.PACKAGE_OBJ:
 		return evalPackageIndexExpression(node.Token.Line, left, index)
 	default:
-		return utilities.NewError("[%d] Index operator not supported: %s", node.Token.Line, left.Type())
+		return error.NewError(node.Token.Line, error.UnsupportedIndexExpression, left.Type())
 	}
 }
 
@@ -553,19 +555,19 @@ func evalMapLiteral(node *ast.MapLiteral, env *object.Environment) object.Object
 	for keyNode, valueNode := range node.Pairs {
 		key := Eval(keyNode, env)
 
-		if utilities.IsError(key) {
+		if error.IsError(key) {
 			return key
 		}
 
 		mapKey, ok := key.(object.Mappable)
 
 		if !ok {
-			return utilities.NewError("[%d] Unusable as map key: %s", node.Token.Line, key.Type())
+			return error.NewError(node.Token.Line, error.UnusableMapKey, key.Type())
 		}
 
 		val := Eval(valueNode, env)
 
-		if utilities.IsError(val) {
+		if error.IsError(val) {
 			return val
 		}
 
@@ -582,7 +584,7 @@ func evalMapIndexExpression(line int, m object.Object, index object.Object) obje
 	key, ok := index.(object.Mappable)
 
 	if !ok {
-		return utilities.NewError("[%d] Unusable as map key: %s", line, index.Type())
+		return error.NewError(line, error.UnusableMapKey, index.Type())
 	}
 
 	pair, ok := mapObject.Pairs[key.MapKey()]
@@ -604,7 +606,7 @@ func evalWhileExpression(we *ast.WhileExpression, env *object.Environment) objec
 	for {
 		condition := Eval(we.Condition, env)
 
-		if utilities.IsError(condition) {
+		if error.IsError(condition) {
 			return condition
 		}
 
@@ -631,7 +633,7 @@ func evalForExpression(fe *ast.ForExpression, env *object.Environment) object.Ob
 
 	initializer := Eval(fe.Initializer, env)
 
-	if utilities.IsError(initializer) {
+	if error.IsError(initializer) {
 		return initializer
 	}
 
@@ -640,20 +642,20 @@ func evalForExpression(fe *ast.ForExpression, env *object.Environment) object.Ob
 	for loop {
 		condition := Eval(fe.Condition, env)
 
-		if utilities.IsError(condition) {
+		if error.IsError(condition) {
 			return condition
 		}
 
 		if utilities.IsTruthy(condition) {
 			err := Eval(fe.Block, env)
 
-			if utilities.IsError(err) {
+			if error.IsError(err) {
 				return err
 			}
 
 			err = Eval(fe.Increment, env)
 
-			if utilities.IsError(err) {
+			if error.IsError(err) {
 				return err
 			}
 
@@ -693,35 +695,35 @@ func evalForInExpression(fie *ast.ForInExpression, env *object.Environment) obje
 			env.Set(fie.Value, v)
 			block := Eval(fie.Block, env)
 
-			if utilities.IsError(block) {
+			if error.IsError(block) {
 				return block
 			}
 		}
 
 		return value.NULL
 	default:
-		return utilities.NewError("[%d] '%s' is not a List, cannot be used in for loop", fie.Token.Line, i.Inspect())
+		return error.NewError(fie.Token.Line, error.UnusableForLoop, i.Inspect())
 	}
 }
 
 func evalImportExpression(ie *ast.ImportExpression, env *object.Environment) object.Object {
 	name := Eval(ie.Name, env)
 
-	if utilities.IsError(name) {
+	if error.IsError(name) {
 		return name
 	}
 
 	if s, ok := name.(*object.String); ok {
 		attributes := EvalPackage(s.Value, ie.Token.Line)
 
-		if utilities.IsError(attributes) {
+		if error.IsError(attributes) {
 			return attributes
 		}
 
 		return &object.Package{Name: s.Value, Attributes: attributes}
 	}
 
-	return utilities.NewError("[%d] Import Error: invalid import path '%s'", ie.Token.Line, name)
+	return error.NewError(ie.Token.Line, error.InvalidImportPath, name)
 }
 
 func evalIndexAssignment(ie *ast.IndexExpression, expression object.Object, env *object.Environment) object.Object {
@@ -734,7 +736,7 @@ func evalIndexAssignment(ie *ast.IndexExpression, expression object.Object, env 
 		elements := listObject.Elements
 
 		if idx < 0 {
-			return utilities.NewError("[%d] Index out of range: %d", ie.Token.Line, idx)
+			return error.NewError(ie.Token.Line, error.IndexOutOfRange, idx)
 		}
 
 		if idx >= len(elements) {
@@ -754,7 +756,7 @@ func evalIndexAssignment(ie *ast.IndexExpression, expression object.Object, env 
 		key, ok := index.(object.Mappable)
 
 		if !ok {
-			return utilities.NewError("[%d] Unusable as map key: %s", ie.Token.Line, index.Type())
+			return error.NewError(ie.Token.Line, error.UnusableMapKey, index.Type())
 		}
 
 		mapped := key.MapKey()
@@ -782,7 +784,7 @@ func evalPropertyAssignment(pe *ast.PropertyExpression, val object.Object, env *
 		return value.NULL
 	}
 
-	return utilities.NewError("[%d] Can only assign to map property, got %s", pe.Token.Line, leftObj.Type())
+	return error.NewError(pe.Token.Line, error.InvalidPropertyAssignment, pe.Token.Literal, leftObj.Type())
 }
 
 func applyFunction(tok token.Token, fn object.Object, env *object.Environment, arguments []object.Object) object.Object {
@@ -793,13 +795,13 @@ func applyFunction(tok token.Token, fn object.Object, env *object.Environment, a
 
 		return unwrapReturnValue(evaluated)
 	case *object.Builtin:
-		if result := fn.Fn(env, arguments...); result != nil {
+		if result := fn.Fn(env, tok.Line, arguments...); result != nil {
 			return result
 		}
 
 		return value.NULL
 	default:
-		return utilities.NewError("[%d] Not a function: %s", tok.Line, fn.Type())
+		return error.NewError(tok.Line, error.NotAFunction, fn.Type())
 	}
 }
 

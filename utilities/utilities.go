@@ -64,20 +64,6 @@ func FindPackage(name string) string {
 	return ""
 }
 
-// NewError returns a new error object used during runtime.
-func NewError(format string, a ...interface{}) *object.Error {
-	return &object.Error{Message: fmt.Sprintf(format, a...)}
-}
-
-// IsError determines if the passed object is an error object.
-func IsError(obj object.Object) bool {
-	if obj != nil {
-		return obj.Type() == object.ERROR_OBJ
-	}
-
-	return false
-}
-
 // NativeBoolToBooleanObject converts a native
 // Go boolean to a Ghost boolean value.
 func NativeBoolToBooleanObject(input bool) *object.Boolean {
