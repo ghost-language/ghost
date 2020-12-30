@@ -1,8 +1,9 @@
 package ghost
 
 import (
+	"fmt"
+
 	"ghostlang.org/x/ghost/builtins"
-	"ghostlang.org/x/ghost/error"
 	"ghostlang.org/x/ghost/evaluator"
 	"ghostlang.org/x/ghost/lexer"
 	"ghostlang.org/x/ghost/object"
@@ -78,6 +79,6 @@ func Call(source string, env *object.Environment) (_env *object.Environment, obj
 }
 
 // NewError returns a new error object used during runtime.
-func NewError(line int, index int, args ...interface{}) *object.Error {
-	return error.NewError(line, index, args...)
+func NewError(line int, message string, args ...interface{}) *object.Error {
+	return &object.Error{Message: message + fmt.Sprintf(" on line %d", line)}
 }
