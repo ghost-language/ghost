@@ -29,6 +29,7 @@ func init() {
 	RegisterFunction("string", stringFunction)
 	RegisterFunction("tail", tailFunction)
 	RegisterFunction("type", typeFunction)
+	RegisterFunction("write", writeFunction)
 }
 
 func exitFunction(env *object.Environment, line int, args ...object.Object) object.Object {
@@ -166,6 +167,16 @@ func printFunction(env *object.Environment, line int, args ...object.Object) obj
 		fmt.Println(args[0].Inspect())
 	} else {
 		fmt.Println()
+	}
+
+	return nil
+}
+
+func writeFunction(env *object.Environment, line int, args ...object.Object) object.Object {
+	if len(args) > 0 {
+		fmt.Print(args[0].Inspect())
+	} else {
+		fmt.Print()
 	}
 
 	return nil
