@@ -7,7 +7,6 @@ import (
 	"os"
 	"strings"
 	"time"
-	"unicode/utf8"
 
 	"ghostlang.org/x/ghost/error"
 	"ghostlang.org/x/ghost/object"
@@ -21,7 +20,6 @@ func init() {
 	RegisterFunction("identifiers", identifiersFunction)
 	RegisterFunction("input", inputFunction)
 	RegisterFunction("last", lastFunction)
-	RegisterFunction("length", lengthFunction)
 	RegisterFunction("number", numberFunction)
 	RegisterFunction("print", printFunction)
 	RegisterFunction("push", pushFunction)
@@ -122,21 +120,6 @@ func lastFunction(env *object.Environment, line int, args ...object.Object) obje
 	length := len(list.Elements)
 
 	return list.Elements[length-1]
-}
-
-func lengthFunction(env *object.Environment, line int, args ...object.Object) object.Object {
-	if len(args) != 1 {
-		return error.NewError(line, error.WrongNumberArguments, len(args), 1)
-	}
-
-	switch arg := args[0].(type) {
-	case *object.List:
-		return &object.Number{Value: decimal.NewFromInt(int64(len(arg.Elements)))}
-	case *object.String:
-		return &object.Number{Value: decimal.NewFromInt(int64(utf8.RuneCountInString(arg.Value)))}
-	default:
-		return error.NewError(line, error.ArgumentMustBe, "first", "length", "LIST or STRING", args[0].Type())
-	}
 }
 
 func numberFunction(env *object.Environment, line int, args ...object.Object) object.Object {

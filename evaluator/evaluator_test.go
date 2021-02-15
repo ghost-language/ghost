@@ -577,7 +577,7 @@ func TestForExpressions(t *testing.T) {
 	}{
 		{`x := 1; for (x := 0; x < 10; x := x + 1) { x }; x;`, 1},
 		{`for (i := 0; i < 10; i := i + 1) { i };`, nil},
-		{`y := []; for (x in 1 .. 10) { push(y, x) }; length(y)`, 10},
+		{`y := []; for (x in 1 .. 10) { push(y, x) }; y.length()`, 10},
 		{`y := []; x := 100 for (x in 1 .. 10) { x := x + 1 }; x`, 100},
 	}
 
@@ -593,16 +593,16 @@ func TestForExpressions(t *testing.T) {
 	}
 }
 
-func TestBuiltinFunctions(t *testing.T) {
+func TestLengthMethod(t *testing.T) {
 	tests := []struct {
 		input    string
 		expected interface{}
 	}{
-		{`length("")`, 0},
-		{`length("four")`, 4},
-		{`length("hello world")`, 11},
-		{`length(1)`, "first argument to 'length' must be LIST or STRING, got NUMBER on line 1"},
-		{`length("one", "two")`, "wrong number of arguments: 2 while expected: 1 on line 1"},
+		{`"".length()`, 0},
+		{`"four".length()`, 4},
+		{`"hello world".length()`, 11},
+		{`[1].length()`, 1},
+		{`{'foo': 0, 'bar': 1}.length()`, 2},
 	}
 
 	for _, tt := range tests {

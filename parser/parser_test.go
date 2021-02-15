@@ -1266,6 +1266,29 @@ func TestForExpression(t *testing.T) {
 	}
 }
 
+func TestMethodCallExpression(t *testing.T) {
+	input := "[1, 2, 3].length()"
+	l := lexer.New(input)
+	p := New(l)
+
+	program := p.ParseProgram()
+
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("program.Statements does not contain 1 statement. got=%d", len(program.Statements))
+	}
+
+	statement := program.Statements[0].(*ast.ExpressionStatement)
+	method, ok := statement.Expression.(*ast.MethodExpression)
+
+	if !ok {
+		t.Fatalf("expression not *ast.MethodExpression. got=%T (%+v)", statement.Expression, statement.Expression)
+	}
+
+	_ = method
+}
+
 func checkParserErrors(t *testing.T, p *Parser) {
 	errors := p.Errors()
 

@@ -43,19 +43,7 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 
 		return value.NULL
 	case *ast.MethodExpression:
-		obj := Eval(node.Object, env)
-
-		if error.IsError(obj) {
-			return obj
-		}
-
-		args := evalExpressions(node.Arguments, env)
-
-		if len(args) == 1 && error.IsError(args[0]) {
-			return args[0]
-		}
-
-		return applyMethod(node.Token, obj, node, env, args)
+		return evalMethodExpression(node, env)
 	case *ast.PropertyExpression:
 		return evalPropertyExpression(node, env)
 	case *ast.IfExpression:
@@ -787,6 +775,22 @@ func evalPropertyAssignment(pe *ast.PropertyExpression, val object.Object, env *
 	return error.NewError(pe.Token.Line, error.InvalidPropertyAssignment, pe.Token.Literal, leftObj.Type())
 }
 
+func evalMethodExpression(me *ast.MethodExpression, env *object.Environment) object.Object {
+	obj := Eval(me.Object, env)
+
+	if error.IsError(obj) {
+		return obj
+	}
+
+	args := evalExpressions(me.Arguments, env)
+
+	if len(args) == 1 && error.IsError(args[0]) {
+		return args[0]
+	}
+
+	return obj.CallMethod(me.Method.String(), args)
+}
+
 func applyFunction(tok token.Token, fn object.Object, env *object.Environment, arguments []object.Object) object.Object {
 	switch fn := fn.(type) {
 	case *object.Function:
@@ -803,18 +807,6 @@ func applyFunction(tok token.Token, fn object.Object, env *object.Environment, a
 	default:
 		return error.NewError(tok.Line, error.NotAFunction, fn.Type())
 	}
-}
-
-func applyMethod(tok token.Token, obj object.Object, me *ast.MethodExpression, env *object.Environment, args []object.Object) object.Object {
-	method := me.Method.String()
-
-	mapObject, _ := obj.(*object.Map)
-
-	// if isMapObject && mapObject.GetKeyType(method) == object.FUNCTION_OBJ {
-	pair, _ := mapObject.GetPair(method)
-
-	return applyFunction(tok, pair.Value.(*object.Function), env, args)
-	// }
 }
 
 func extendFunctionEnv(fn *object.Function, arguments []object.Object) *object.Environment {
