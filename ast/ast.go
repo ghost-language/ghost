@@ -161,6 +161,13 @@ type (
 		Condition   Expression
 		Consequence *BlockStatement
 	}
+
+	// MethodCallExpression defines a new expression type for defining method call expressions.
+	MethodCallExpression struct {
+		Token  token.Token
+		Object Expression
+		Call   Expression
+	}
 )
 
 // ----------------------------------------------------------------------------
@@ -212,18 +219,19 @@ type (
 // expressionNode() ensures that only expression/literal nodes
 // can be assigned to an Expression.
 //
-func (ce *CallExpression) expressionNode()     {}
-func (fe *ForExpression) expressionNode()      {}
-func (fie *ForInExpression) expressionNode()   {}
-func (ie *IfExpression) expressionNode()       {}
-func (ie *ImportExpression) expressionNode()   {}
-func (ie *IndexExpression) expressionNode()    {}
-func (ie *InfixExpression) expressionNode()    {}
-func (me *MethodExpression) expressionNode()   {}
-func (pe *PostfixExpression) expressionNode()  {}
-func (pe *PrefixExpression) expressionNode()   {}
-func (pe *PropertyExpression) expressionNode() {}
-func (we *WhileExpression) expressionNode()    {}
+func (ce *CallExpression) expressionNode()        {}
+func (fe *ForExpression) expressionNode()         {}
+func (fie *ForInExpression) expressionNode()      {}
+func (ie *IfExpression) expressionNode()          {}
+func (ie *ImportExpression) expressionNode()      {}
+func (ie *IndexExpression) expressionNode()       {}
+func (ie *InfixExpression) expressionNode()       {}
+func (me *MethodExpression) expressionNode()      {}
+func (pe *PostfixExpression) expressionNode()     {}
+func (pe *PrefixExpression) expressionNode()      {}
+func (pe *PropertyExpression) expressionNode()    {}
+func (we *WhileExpression) expressionNode()       {}
+func (mce *MethodCallExpression) expressionNode() {}
 
 func (bl *BooleanLiteral) expressionNode()    {}
 func (fl *FunctionLiteral) expressionNode()   {}
@@ -235,18 +243,19 @@ func (sl *StringLiteral) expressionNode()     {}
 
 // TokenLiteral and String implementations for expression/literal nodes.
 //
-func (ce *CallExpression) TokenLiteral() string     { return ce.Token.Literal }
-func (fe *ForExpression) TokenLiteral() string      { return fe.Token.Literal }
-func (fie *ForInExpression) TokenLiteral() string   { return fie.Token.Literal }
-func (ie *IfExpression) TokenLiteral() string       { return ie.Token.Literal }
-func (ie *ImportExpression) TokenLiteral() string   { return ie.Token.Literal }
-func (ie *IndexExpression) TokenLiteral() string    { return ie.Token.Literal }
-func (ie *InfixExpression) TokenLiteral() string    { return ie.Token.Literal }
-func (me *MethodExpression) TokenLiteral() string   { return me.Token.Literal }
-func (pe *PostfixExpression) TokenLiteral() string  { return pe.Token.Literal }
-func (pe *PrefixExpression) TokenLiteral() string   { return pe.Token.Literal }
-func (pe *PropertyExpression) TokenLiteral() string { return pe.Token.Literal }
-func (we *WhileExpression) TokenLiteral() string    { return we.Token.Literal }
+func (ce *CallExpression) TokenLiteral() string        { return ce.Token.Literal }
+func (fe *ForExpression) TokenLiteral() string         { return fe.Token.Literal }
+func (fie *ForInExpression) TokenLiteral() string      { return fie.Token.Literal }
+func (ie *IfExpression) TokenLiteral() string          { return ie.Token.Literal }
+func (ie *ImportExpression) TokenLiteral() string      { return ie.Token.Literal }
+func (ie *IndexExpression) TokenLiteral() string       { return ie.Token.Literal }
+func (ie *InfixExpression) TokenLiteral() string       { return ie.Token.Literal }
+func (me *MethodExpression) TokenLiteral() string      { return me.Token.Literal }
+func (pe *PostfixExpression) TokenLiteral() string     { return pe.Token.Literal }
+func (pe *PrefixExpression) TokenLiteral() string      { return pe.Token.Literal }
+func (pe *PropertyExpression) TokenLiteral() string    { return pe.Token.Literal }
+func (we *WhileExpression) TokenLiteral() string       { return we.Token.Literal }
+func (mce *MethodCallExpression) TokenLiteral() string { return mce.Token.Literal }
 
 func (bl *BooleanLiteral) TokenLiteral() string    { return bl.Token.Literal }
 func (fl *FunctionLiteral) TokenLiteral() string   { return fl.Token.Literal }
@@ -417,6 +426,16 @@ func (we *WhileExpression) String() string {
 	out.WriteString(we.Condition.String())
 	out.WriteString(" ")
 	out.WriteString(we.Consequence.String())
+
+	return out.String()
+}
+
+func (mce *MethodCallExpression) String() string {
+	var out bytes.Buffer
+
+	out.WriteString(mce.Object.String())
+	out.WriteString(".")
+	out.WriteString(mce.Call.String())
 
 	return out.String()
 }

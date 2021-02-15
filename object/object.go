@@ -9,6 +9,7 @@ import (
 	"hash/fnv"
 	"strconv"
 	"strings"
+	"unicode/utf8"
 
 	"ghostlang.org/x/ghost/ast"
 	"github.com/shopspring/decimal"
@@ -30,6 +31,8 @@ const (
 	PACKAGE_OBJ      = "PACKAGE"
 	RETURN_VALUE_OBJ = "RETURN_VALUE"
 	STRING_OBJ       = "STRING"
+
+	NoMethodFound = "no method '%s' for %s found"
 )
 
 // ----------------------------------------------------------------------------
@@ -41,6 +44,7 @@ type ObjectType string
 type Object interface {
 	Type() ObjectType
 	Inspect() string
+	CallMethod(method string, args []Object) Object
 }
 
 // Mutable interface is implemented by all mutable objects.
@@ -199,6 +203,102 @@ func (n *Number) Inspect() string       { return n.Value.String() }
 func (m *Package) Inspect() string      { return fmt.Sprintf("package(%s)", m.Name) }
 func (rv *ReturnValue) Inspect() string { return rv.Value.Inspect() }
 func (s *String) Inspect() string       { return s.Value }
+
+// ----------------------------------------------------------------------------
+// Call Methods
+
+func (b *Boolean) CallMethod(method string, args []Object) Object {
+	switch method {
+	case "toString":
+		return &String{Value: b.Inspect()}
+	}
+
+	return &Error{Message: fmt.Sprintf(NoMethodFound, method, b.Type())}
+}
+
+func (b *Builtin) CallMethod(method string, args []Object) Object {
+	return &Error{Message: fmt.Sprintf(NoMethodFound, method, b.Type())}
+}
+
+func (e *Error) CallMethod(method string, args []Object) Object {
+	return &Error{Message: fmt.Sprintf(NoMethodFound, method, e.Type())}
+}
+
+func (f *Function) CallMethod(method string, args []Object) Object {
+	return &Error{Message: fmt.Sprintf(NoMethodFound, method, f.Type())}
+}
+
+func (l *List) CallMethod(method string, args []Object) Object {
+	switch method {
+	case "length":
+		return &Number{Value: decimal.NewFromInt(int64(len(l.Elements)))}
+	case "toString":
+		return &String{Value: l.Inspect()}
+	}
+
+	return &Error{Message: fmt.Sprintf(NoMethodFound, method, l.Type())}
+}
+
+func (m *Map) CallMethod(method string, args []Object) Object {
+	switch method {
+	case "length":
+		return &Number{Value: decimal.NewFromInt(int64(len(m.Pairs)))}
+	case "toString":
+		return &String{Value: m.Inspect()}
+	}
+
+	return &Error{Message: fmt.Sprintf(NoMethodFound, method, m.Type())}
+}
+
+func (m *Module) CallMethod(method string, args []Object) Object {
+	return &Error{Message: fmt.Sprintf(NoMethodFound, method, m.Type())}
+}
+
+func (n *Null) CallMethod(method string, args []Object) Object {
+	return &Error{Message: fmt.Sprintf(NoMethodFound, method, n.Type())}
+}
+
+func (n *Number) CallMethod(method string, args []Object) Object {
+	switch method {
+	case "toString":
+		return &String{Value: n.Inspect()}
+	}
+
+	return &Error{Message: fmt.Sprintf(NoMethodFound, method, n.Type())}
+}
+
+func (p *Package) CallMethod(method string, args []Object) Object {
+	return &Error{Message: fmt.Sprintf(NoMethodFound, method, p.Type())}
+}
+
+func (rv *ReturnValue) CallMethod(method string, args []Object) Object {
+	return &Error{Message: fmt.Sprintf(NoMethodFound, method, rv.Type())}
+}
+
+func (s *String) CallMethod(method string, args []Object) Object {
+	switch method {
+	case "length":
+		return &Number{Value: decimal.NewFromInt(int64(utf8.RuneCountInString(s.Value)))}
+	case "toLowerCase":
+		return &String{Value: strings.ToLower(s.Value)}
+	case "toUpperCase":
+		return &String{Value: strings.ToUpper(s.Value)}
+	case "toString":
+		return &String{Value: s.Inspect()}
+	case "toNumber":
+		num, _ := decimal.NewFromString(s.Value)
+
+		return &Number{Value: num}
+	case "trim":
+		return &String{Value: strings.TrimSpace(s.Value)}
+	case "trimEnd":
+		return &String{Value: strings.TrimRight(s.Value, "\t\n\v\f\r ")}
+	case "trimStart":
+		return &String{Value: strings.TrimLeft(s.Value, "\t\n\v\f\r ")}
+	}
+
+	return &Error{Message: fmt.Sprintf(NoMethodFound, method, s.Type())}
+}
 
 // ----------------------------------------------------------------------------
 // Settables

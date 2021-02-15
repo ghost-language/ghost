@@ -1,6 +1,8 @@
 package object
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestObjectMapKey(t *testing.T) {
 	hello1 := &String{Value: "Hello World"}
