@@ -789,8 +789,6 @@ func evalMethodExpression(me *ast.MethodExpression, env *object.Environment) obj
 	}
 
 	return obj.CallMethod(me.Method.String(), args)
-
-	// return applyMethod(me.Token, obj, me, env, args)
 }
 
 func applyFunction(tok token.Token, fn object.Object, env *object.Environment, arguments []object.Object) object.Object {
@@ -809,18 +807,6 @@ func applyFunction(tok token.Token, fn object.Object, env *object.Environment, a
 	default:
 		return error.NewError(tok.Line, error.NotAFunction, fn.Type())
 	}
-}
-
-func applyMethod(tok token.Token, obj object.Object, me *ast.MethodExpression, env *object.Environment, args []object.Object) object.Object {
-	method := me.Method.String()
-
-	mapObject, _ := obj.(*object.Map)
-
-	// if isMapObject && mapObject.GetKeyType(method) == object.FUNCTION_OBJ {
-	pair, _ := mapObject.GetPair(method)
-
-	return applyFunction(tok, pair.Value.(*object.Function), env, args)
-	// }
 }
 
 func extendFunctionEnv(fn *object.Function, arguments []object.Object) *object.Environment {
