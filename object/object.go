@@ -230,8 +230,35 @@ func (f *Function) CallMethod(method string, args []Object) Object {
 
 func (l *List) CallMethod(method string, args []Object) Object {
 	switch method {
+	case "first":
+		return l.Elements[0]
+	case "last":
+		length := len(l.Elements)
+
+		return l.Elements[length-1]
 	case "length":
 		return &Number{Value: decimal.NewFromInt(int64(len(l.Elements)))}
+	case "push":
+		length := len(l.Elements)
+
+		newElements := make([]Object, length+1, length+1)
+		copy(newElements, l.Elements)
+		newElements[length] = args[1]
+
+		l.Elements = newElements
+
+		return &Number{Value: decimal.NewFromInt(int64(len(l.Elements)))}
+	case "tail":
+		length := len(l.Elements)
+
+		if length > 0 {
+			newElements := make([]Object, length-1, length-1)
+			copy(newElements, l.Elements[1:length])
+
+			return &List{Elements: newElements}
+		}
+
+		return &Null{}
 	case "toString":
 		return &String{Value: l.Inspect()}
 	}
