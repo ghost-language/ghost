@@ -232,6 +232,16 @@ func (l *List) CallMethod(method string, args []Object) Object {
 	switch method {
 	case "first":
 		return l.Elements[0]
+	case "join":
+		var s []string
+
+		for _, v := range l.Elements {
+			s = append(s, v.Inspect())
+		}
+
+		str := strings.Join(s, args[0].(*String).Value)
+
+		return &String{Value: str}
 	case "last":
 		length := len(l.Elements)
 
@@ -311,6 +321,15 @@ func (s *String) CallMethod(method string, args []Object) Object {
 		return &Boolean{Value: hasPrefix}
 	case "length":
 		return &Number{Value: decimal.NewFromInt(int64(utf8.RuneCountInString(s.Value)))}
+	case "split":
+		split := strings.Split(s.Value, args[0].(*String).Value)
+		list := &List{}
+
+		for _, v := range split {
+			list.Elements = append(list.Elements, &String{Value: v})
+		}
+
+		return list
 	case "startsWith":
 		hasPrefix := strings.HasPrefix(s.Value, args[0].(*String).Value)
 
