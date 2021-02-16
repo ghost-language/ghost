@@ -240,14 +240,15 @@ func (l *List) CallMethod(method string, args []Object) Object {
 		return &Number{Value: decimal.NewFromInt(int64(len(l.Elements)))}
 	case "push":
 		length := len(l.Elements)
+		newLength := length + 1
 
-		newElements := make([]Object, length+1, length+1)
+		newElements := make([]Object, newLength, newLength)
 		copy(newElements, l.Elements)
-		newElements[length] = args[1]
+		newElements[length] = args[0]
 
 		l.Elements = newElements
 
-		return &Number{Value: decimal.NewFromInt(int64(len(l.Elements)))}
+		return &Number{Value: decimal.NewFromInt(int64(newLength))}
 	case "tail":
 		length := len(l.Elements)
 
@@ -304,8 +305,16 @@ func (rv *ReturnValue) CallMethod(method string, args []Object) Object {
 
 func (s *String) CallMethod(method string, args []Object) Object {
 	switch method {
+	case "endsWith":
+		hasPrefix := strings.HasSuffix(s.Value, args[0].(*String).Value)
+
+		return &Boolean{Value: hasPrefix}
 	case "length":
 		return &Number{Value: decimal.NewFromInt(int64(utf8.RuneCountInString(s.Value)))}
+	case "startsWith":
+		hasPrefix := strings.HasPrefix(s.Value, args[0].(*String).Value)
+
+		return &Boolean{Value: hasPrefix}
 	case "toLowerCase":
 		return &String{Value: strings.ToLower(s.Value)}
 	case "toUpperCase":
