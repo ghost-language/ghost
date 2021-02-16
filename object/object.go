@@ -230,8 +230,46 @@ func (f *Function) CallMethod(method string, args []Object) Object {
 
 func (l *List) CallMethod(method string, args []Object) Object {
 	switch method {
+	case "first":
+		return l.Elements[0]
+	case "join":
+		var s []string
+
+		for _, v := range l.Elements {
+			s = append(s, v.Inspect())
+		}
+
+		str := strings.Join(s, args[0].(*String).Value)
+
+		return &String{Value: str}
+	case "last":
+		length := len(l.Elements)
+
+		return l.Elements[length-1]
 	case "length":
 		return &Number{Value: decimal.NewFromInt(int64(len(l.Elements)))}
+	case "push":
+		length := len(l.Elements)
+		newLength := length + 1
+
+		newElements := make([]Object, newLength, newLength)
+		copy(newElements, l.Elements)
+		newElements[length] = args[0]
+
+		l.Elements = newElements
+
+		return &Number{Value: decimal.NewFromInt(int64(newLength))}
+	case "tail":
+		length := len(l.Elements)
+
+		if length > 0 {
+			newElements := make([]Object, length-1, length-1)
+			copy(newElements, l.Elements[1:length])
+
+			return &List{Elements: newElements}
+		}
+
+		return &Null{}
 	case "toString":
 		return &String{Value: l.Inspect()}
 	}
@@ -277,8 +315,25 @@ func (rv *ReturnValue) CallMethod(method string, args []Object) Object {
 
 func (s *String) CallMethod(method string, args []Object) Object {
 	switch method {
+	case "endsWith":
+		hasPrefix := strings.HasSuffix(s.Value, args[0].(*String).Value)
+
+		return &Boolean{Value: hasPrefix}
 	case "length":
 		return &Number{Value: decimal.NewFromInt(int64(utf8.RuneCountInString(s.Value)))}
+	case "split":
+		split := strings.Split(s.Value, args[0].(*String).Value)
+		list := &List{}
+
+		for _, v := range split {
+			list.Elements = append(list.Elements, &String{Value: v})
+		}
+
+		return list
+	case "startsWith":
+		hasPrefix := strings.HasPrefix(s.Value, args[0].(*String).Value)
+
+		return &Boolean{Value: hasPrefix}
 	case "toLowerCase":
 		return &String{Value: strings.ToLower(s.Value)}
 	case "toUpperCase":
