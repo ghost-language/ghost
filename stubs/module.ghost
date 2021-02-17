@@ -1,6 +1,0 @@
-a := 1
-A := 5
-
-Sum := function(a, b) {
-    return a + b
-}
