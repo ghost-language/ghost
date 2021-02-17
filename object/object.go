@@ -248,6 +248,15 @@ func (l *List) CallMethod(method string, args []Object) Object {
 		return l.Elements[length-1]
 	case "length":
 		return &Number{Value: decimal.NewFromInt(int64(len(l.Elements)))}
+	case "pop":
+		if len(l.Elements) > 0 {
+			x := l.Elements[0]
+			l.Elements = l.Elements[1:]
+
+			return x
+		}
+
+		return &Null{}
 	case "push":
 		length := len(l.Elements)
 		newLength := length + 1
