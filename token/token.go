@@ -51,6 +51,7 @@ const (
 	TRUE     = "true"
 	WHILE    = "while"
 	EOF      = "eof"
+	INVALID  = "__INVALID__"
 )
 
 // Token contains the lexeme read by the scanner and records the line.
