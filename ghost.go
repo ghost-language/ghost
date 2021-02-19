@@ -7,6 +7,7 @@ import (
 	"os"
 	"path"
 
+	"ghostlang.org/x/ghost/scanner"
 	"ghostlang.org/x/ghost/version"
 )
 
@@ -69,7 +70,12 @@ func runFile(file string) {
 }
 
 func run(source string) {
-	fmt.Println(source)
+	scanner := scanner.New(source)
+	tokens := scanner.ScanTokens()
+
+	for _, token := range tokens {
+		fmt.Println(token.String())
+	}
 }
 
 func showHelp() {
