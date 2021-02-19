@@ -108,6 +108,8 @@ func (scanner *Scanner) scanToken() {
 	default:
 		if scanner.isDigit(c) {
 			scanner.scanNumber()
+		} else if scanner.isAlpha(c) {
+			scanner.scanIdentifier()
 		} else {
 			ghost.Error(scanner.line, "Parse error")
 		}
@@ -167,6 +169,14 @@ func (scanner *Scanner) scanNumber() {
 	}
 }
 
+func (scanner *Scanner) scanIdentifier() {
+	for scanner.isAlphaNumeric(scanner.peek()) {
+		scanner.advance()
+	}
+
+	scanner.addToken(token.IDENTIFIER)
+}
+
 // Helper methods
 // =============================================================================
 
@@ -183,8 +193,7 @@ func (scanner *Scanner) addTokenWithLiteral(tokenType token.Type, literal interf
 	scanner.tokens = append(scanner.tokens, token.Token{Type: tokenType, Lexeme: lexeme, Literal: literal, Line: scanner.line})
 }
 
-// isAtEnd tells us if we've consumed all the characters
-// in our source code.
+// isAtEnd tells us if we've consumed all the characters in our source code.
 func (scanner *Scanner) isAtEnd() bool {
 	return scanner.current >= len(scanner.source)
 }
@@ -192,6 +201,19 @@ func (scanner *Scanner) isAtEnd() bool {
 // isDigit tells us if the passed character is a number.
 func (scanner *Scanner) isDigit(c byte) bool {
 	return c >= '0' && c <= '9'
+}
+
+// isAlpha tells us if the passed character is an alphabetic character.
+func (scanner *Scanner) isAlpha(c byte) bool {
+	return (c >= 'a' && c <= 'z') ||
+		(c >= 'A' && c <= 'Z') ||
+		c == '_'
+}
+
+// isAlphaNumeric tells us if the passed character is either an alphabetic or
+// numeric character.
+func (scanner *Scanner) isAlphaNumeric(c byte) bool {
+	return scanner.isAlpha(c) || scanner.isDigit(c)
 }
 
 // advance consumes the next character in our source code
