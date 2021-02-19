@@ -16,6 +16,24 @@ type Scanner struct {
 	tokens  []token.Token
 }
 
+// keywords contains a list of all reserved keywords in Ghost.
+var keywords = map[string]token.Type{
+	"and":      token.AND,
+	"class":    token.CLASS,
+	"else":     token.ELSE,
+	"false":    token.FALSE,
+	"for":      token.FOR,
+	"function": token.FUNCTION,
+	"if":       token.IF,
+	"null":     token.NULL,
+	"or":       token.OR,
+	"return":   token.RETURN,
+	"super":    token.SUPER,
+	"this":     token.THIS,
+	"true":     token.TRUE,
+	"while":    token.WHILE,
+}
+
 // New creates a new scanner instance.
 func New(source string) Scanner {
 	scanner := Scanner{source: source, line: 1}
@@ -174,7 +192,14 @@ func (scanner *Scanner) scanIdentifier() {
 		scanner.advance()
 	}
 
-	scanner.addToken(token.IDENTIFIER)
+	text := scanner.source[scanner.start:scanner.current]
+	keyword, ok := keywords[text]
+
+	if ok {
+		scanner.addToken(keyword)
+	} else {
+		scanner.addToken(token.IDENTIFIER)
+	}
 }
 
 // Helper methods
