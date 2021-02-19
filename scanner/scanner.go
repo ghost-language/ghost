@@ -202,8 +202,8 @@ func (scanner *Scanner) scanIdentifier() {
 	}
 }
 
-// Helper methods
 // =============================================================================
+// Helper methods
 
 // addToken grabs the current lexeme and creates a new token for it. In this
 // case, addToken is for tokens without a literal value.
