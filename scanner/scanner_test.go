@@ -7,7 +7,7 @@ import (
 )
 
 func TestScanTokens(t *testing.T) {
-	input := `(){},.-+;*"hello world"`
+	input := `( ) { } , . - + ; * > < >= <= ! != = == "hello world" 42 3.14`
 	tests := []struct {
 		expectedType   token.Type
 		expectedLexeme string
@@ -22,7 +22,17 @@ func TestScanTokens(t *testing.T) {
 		{token.PLUS, "+"},
 		{token.SEMICOLON, ";"},
 		{token.STAR, "*"},
+		{token.GREATER, ">"},
+		{token.LESS, "<"},
+		{token.GREATEREQUAL, ">="},
+		{token.LESSEQUAL, "<="},
+		{token.BANG, "!"},
+		{token.BANGEQUAL, "!="},
+		{token.EQUAL, "="},
+		{token.EQUALEQUAL, "=="},
 		{token.STRING, "\"hello world\""},
+		{token.NUMBER, "42"},
+		{token.NUMBER, "3.14"},
 	}
 
 	scanner := New(input)

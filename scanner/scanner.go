@@ -1,6 +1,8 @@
 package scanner
 
 import (
+	"strconv"
+
 	"ghostlang.org/x/ghost/ghost"
 	"ghostlang.org/x/ghost/token"
 )
@@ -67,7 +69,7 @@ func (scanner *Scanner) scanToken() {
 		if scanner.match('=') {
 			scanner.addToken(token.BANGEQUAL)
 		} else {
-			scanner.addToken(token.EQUAL)
+			scanner.addToken(token.BANG)
 		}
 	case '=':
 		if scanner.match('=') {
@@ -105,10 +107,17 @@ func (scanner *Scanner) scanToken() {
 	case '"':
 		scanner.scanString()
 	default:
-		ghost.Error(scanner.line, "Parse error")
+		if scanner.isDigit(c) {
+			scanner.scanNumber()
+		} else {
+			ghost.Error(scanner.line, "Parse error")
+		}
 	}
 }
 
+// scanString consumes characters until it hits either the closing
+// " or end of file. If we run to the end of the file without a
+// closing ", we report an error.
 func (scanner *Scanner) scanString() {
 	for scanner.peek() != '"' && !scanner.isAtEnd() {
 		if scanner.peek() == '\n' {
@@ -132,6 +141,34 @@ func (scanner *Scanner) scanString() {
 	scanner.addTokenWithLiteral(token.STRING, value)
 }
 
+// scanNumber consumes all digits for the integer part of the literal,
+// and then the fractional part if we encounter a decimal point (.)
+// followed by at least one digit. If we do have a fractional part,
+// we consume all remaining digits.
+func (scanner *Scanner) scanNumber() {
+	for scanner.isDigit(scanner.peek()) {
+		scanner.advance()
+	}
+
+	// Look for a fractional part.
+	if scanner.peek() == '.' && scanner.isDigit(scanner.peekNext()) {
+		// Consume the "."
+		scanner.advance()
+
+		for scanner.isDigit(scanner.peek()) {
+			scanner.advance()
+		}
+	}
+
+	number, err := strconv.ParseFloat(scanner.source[scanner.start:scanner.current], 64)
+
+	if err != nil {
+		panic("Invalid number format")
+	} else {
+		scanner.addTokenWithLiteral(token.NUMBER, number)
+	}
+}
+
 // Helper methods
 // ======================================================================
 
@@ -152,6 +189,11 @@ func (scanner *Scanner) addTokenWithLiteral(tokenType token.Type, literal interf
 // in our source code.
 func (scanner *Scanner) isAtEnd() bool {
 	return scanner.current >= len(scanner.source)
+}
+
+// isDigit tells us if the passed character is a number.
+func (scanner *Scanner) isDigit(c byte) bool {
+	return c >= '0' && c <= '9'
 }
 
 // advance consumes the next character in our source code
@@ -186,4 +228,15 @@ func (scanner *Scanner) peek() byte {
 	}
 
 	return scanner.source[scanner.current]
+}
+
+// peekNext operates in a similar manner to peek() however,
+// it instead looks at the next upcoming character in our
+// source code.
+func (scanner *Scanner) peekNext() byte {
+	if scanner.current+1 >= len(scanner.source) {
+		return 0
+	}
+
+	return scanner.source[scanner.current+1]
 }
