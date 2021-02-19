@@ -1,11 +1,11 @@
 package ast
 
-import "go/token"
+import "ghostlang.org/x/ghost/token"
 
 // Binary structures are for binary expressions.
 type Binary struct {
-	Expression
-	Left     Expression
+	ExpressionNode
+	Left     ExpressionNode
 	Operator token.Token
-	Right    Expression
+	Right    ExpressionNode
 }

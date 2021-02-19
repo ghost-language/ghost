@@ -15,6 +15,7 @@ var (
 	flagVersion     bool
 	flagInteractive bool
 	flagHelp        bool
+	flagTokens      bool
 )
 
 func init() {
@@ -27,6 +28,7 @@ func init() {
 	flag.BoolVar(&flagHelp, "h", false, "display help information")
 	flag.BoolVar(&flagVersion, "v", false, "display version information")
 	flag.BoolVar(&flagInteractive, "i", false, "enable interactive mode")
+	flag.BoolVar(&flagTokens, "t", false, "output scanned token information")
 }
 
 func main() {
@@ -70,11 +72,17 @@ func runFile(file string) {
 }
 
 func run(source string) {
-	scanner := scanner.New(source)
-	tokens := scanner.ScanTokens()
+	fmt.Printf("    %s", source)
 
-	for _, token := range tokens {
-		fmt.Println(token.String())
+	if flagTokens {
+		scanner := scanner.New(source)
+		tokens := scanner.ScanTokens()
+
+		fmt.Printf("    =====\n")
+
+		for index, token := range tokens {
+			fmt.Printf("    [%d] %s\n", index, token.String())
+		}
 	}
 }
 

@@ -1,10 +1,10 @@
 package ast
 
-import "go/token"
+import "ghostlang.org/x/ghost/token"
 
 // Unary structures are for unary expressions.
 type Unary struct {
-	Expression
+	ExpressionNode
 	Operator token.Token
-	Right    Expression
+	Right    ExpressionNode
 }
