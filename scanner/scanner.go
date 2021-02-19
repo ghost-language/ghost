@@ -1,10 +1,9 @@
 package scanner
 
 import (
-	"strconv"
-
 	"ghostlang.org/x/ghost/ghost"
 	"ghostlang.org/x/ghost/token"
+	"github.com/shopspring/decimal"
 )
 
 // Scanner transforms our source code into tokens.
@@ -178,7 +177,7 @@ func (scanner *Scanner) scanNumber() {
 		}
 	}
 
-	number, err := strconv.ParseFloat(scanner.source[scanner.start:scanner.current], 64)
+	number, err := decimal.NewFromString(scanner.source[scanner.start:scanner.current])
 
 	if err != nil {
 		panic("Invalid number format")

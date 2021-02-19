@@ -6,6 +6,8 @@ import "ghostlang.org/x/ghost/ast"
 // producing a result.
 func Evaluate(expression ast.ExpressionNode) interface{} {
 	switch node := expression.(type) {
+	case *ast.Grouping:
+		return Evaluate(node.Expression)
 	case *ast.Literal:
 		return node.Value
 	}

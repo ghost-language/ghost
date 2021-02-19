@@ -5,14 +5,15 @@ import (
 
 	"ghostlang.org/x/ghost/ast"
 	"ghostlang.org/x/ghost/scanner"
+	"github.com/shopspring/decimal"
 )
 
 func TestParseBinaryOperator(t *testing.T) {
 	tests := []struct {
 		input    string
-		left     float64
+		left     int
 		operator string
-		right    float64
+		right    int
 	}{
 		{"1 + 5", 1, "+", 5},
 		{"1 - 5", 1, "-", 5},
@@ -42,8 +43,8 @@ func TestParseBinaryOperator(t *testing.T) {
 			t.Errorf("binary operator value not %v, got=%v", test.operator, binary.Operator.Lexeme)
 		}
 
-		verifyFloatLiteral(binary.Left, test.left, t)
-		verifyFloatLiteral(binary.Right, test.right, t)
+		verifyNumberLiteral(binary.Left, test.left, t)
+		verifyNumberLiteral(binary.Right, test.right, t)
 	}
 }
 
@@ -83,7 +84,7 @@ func TestParseBooleans(t *testing.T) {
 func TestParseGroupedExpressions(t *testing.T) {
 	tests := []struct {
 		input    string
-		expected float64
+		expected interface{}
 	}{
 		{"(5)", 5},
 		{"(3.14)", 3.14},
@@ -101,7 +102,7 @@ func TestParseGroupedExpressions(t *testing.T) {
 			t.Fatalf("expression is not *ast.Grouping, got=%T", expression)
 		}
 
-		verifyFloatLiteral(grouping.Expression, test.expected, t)
+		verifyNumberLiteral(grouping.Expression, test.expected, t)
 	}
 }
 
@@ -133,7 +134,7 @@ func TestParseNull(t *testing.T) {
 func TestParseNumbers(t *testing.T) {
 	tests := []struct {
 		input    string
-		expected float64
+		expected interface{}
 	}{
 		{"5", 5},
 		{"3.14", 3.14},
@@ -145,7 +146,7 @@ func TestParseNumbers(t *testing.T) {
 		parser := New(tokens)
 		expression := parser.Parse()
 
-		verifyFloatLiteral(expression, test.expected, t)
+		verifyNumberLiteral(expression, test.expected, t)
 	}
 }
 
@@ -215,18 +216,22 @@ func TestParseUnaryOperators(t *testing.T) {
 			t.Fatalf("unary right is not *ast.Literal, got=%T", right)
 		}
 
-		value, ok := right.Value.(float64)
+		value, ok := right.Value.(decimal.Decimal)
 
 		if !ok {
 			value, ok := right.Value.(bool)
 
 			if !ok {
-				t.Fatalf("unary right type is not float64 or bool, got=%T", value)
+				t.Fatalf("unary right type is not decimal.Decimal or bool, got=%T", value)
 			} else if value != test.right.(bool) {
 				t.Errorf("unary right value not %v, got=%v", test.right, value)
 			}
-		} else if value != test.right.(float64) {
-			t.Errorf("unary right value not %v, got=%v", test.right, value)
+		} else {
+			number := decimal.NewFromFloat(test.right.(float64))
+
+			if !number.Equal(value) {
+				t.Errorf("unary right value not %v, got=%v", number, value)
+			}
 		}
 	}
 }
@@ -234,20 +239,30 @@ func TestParseUnaryOperators(t *testing.T) {
 // =============================================================================
 // Helper methods
 
-func verifyFloatLiteral(expression ast.ExpressionNode, expected float64, t *testing.T) {
+func verifyNumberLiteral(expression ast.ExpressionNode, expected interface{}, t *testing.T) {
 	literal, ok := expression.(*ast.Literal)
 
 	if !ok {
 		t.Fatalf("result is not *ast.Literal, got=%T", expression)
 	}
 
-	value, ok := literal.Value.(float64)
+	check, ok := expected.(int)
 
-	if !ok {
-		t.Fatalf("Literal.Value type not float64, got=%T", value)
+	if ok {
+		expected = decimal.NewFromInt(int64(check))
+	} else {
+		check, ok := expected.(float64)
+
+		if ok {
+			expected = decimal.NewFromFloat(check)
+		} else {
+			t.Fatalf("Expected either an int64 or float64, got=%T", expected)
+		}
 	}
 
-	if value != expected {
-		t.Errorf("literal value not %v, got=%v", expected, value)
+	equals := expected.(decimal.Decimal).Equal(literal.Value.(decimal.Decimal))
+
+	if !equals {
+		t.Errorf("literal value not %v, got=%v", expected, literal.Value)
 	}
 }
