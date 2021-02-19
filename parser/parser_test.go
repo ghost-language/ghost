@@ -182,6 +182,55 @@ func TestParseStrings(t *testing.T) {
 	}
 }
 
+func TestParseUnaryOperators(t *testing.T) {
+	tests := []struct {
+		input    string
+		operator string
+		right    interface{}
+	}{
+		{"!true", "!", true},
+		{"!false", "!", false},
+		{"-3.14", "-", 3.14},
+	}
+
+	for _, test := range tests {
+		scanner := scanner.New(test.input)
+		tokens := scanner.ScanTokens()
+		parser := New(tokens)
+		expression := parser.Parse()
+
+		unary, ok := expression.(*ast.Unary)
+
+		if !ok {
+			t.Fatalf("result is not *ast.Unary, got=%T", expression)
+		}
+
+		if unary.Operator.Lexeme != test.operator {
+			t.Errorf("binary operator value not %v, got=%v", test.operator, unary.Operator.Lexeme)
+		}
+
+		right, ok := unary.Right.(*ast.Literal)
+
+		if !ok {
+			t.Fatalf("unary right is not *ast.Literal, got=%T", right)
+		}
+
+		value, ok := right.Value.(float64)
+
+		if !ok {
+			value, ok := right.Value.(bool)
+
+			if !ok {
+				t.Fatalf("unary right type is not float64 or bool, got=%T", value)
+			} else if value != test.right.(bool) {
+				t.Errorf("unary right value not %v, got=%v", test.right, value)
+			}
+		} else if value != test.right.(float64) {
+			t.Errorf("unary right value not %v, got=%v", test.right, value)
+		}
+	}
+}
+
 // =============================================================================
 // Helper methods
 
