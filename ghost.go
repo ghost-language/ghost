@@ -7,6 +7,8 @@ import (
 	"os"
 	"path"
 
+	"ghostlang.org/x/ghost/interpreter"
+	"ghostlang.org/x/ghost/parser"
 	"ghostlang.org/x/ghost/scanner"
 	"ghostlang.org/x/ghost/version"
 )
@@ -60,7 +62,7 @@ func runPrompt() {
 	reader := bufio.NewReader(os.Stdin)
 
 	for {
-		fmt.Print(">>> ")
+		fmt.Print(">> ")
 		data, _ := reader.ReadBytes('\n')
 
 		run(string(data))
@@ -72,16 +74,19 @@ func runFile(file string) {
 }
 
 func run(source string) {
-	fmt.Printf("    %s", source)
+	scanner := scanner.New(source)
+	tokens := scanner.ScanTokens()
+	parser := parser.New(tokens)
+	expression := parser.Parse()
+	result := interpreter.Evaluate(expression)
+
+	fmt.Printf("   %v\n", result)
 
 	if flagTokens {
-		scanner := scanner.New(source)
-		tokens := scanner.ScanTokens()
-
-		fmt.Printf("    =====\n")
+		fmt.Printf("   =====\n")
 
 		for index, token := range tokens {
-			fmt.Printf("    [%d] %s\n", index, token.String())
+			fmt.Printf("   [%d] %s\n", index, token.String())
 		}
 	}
 }
