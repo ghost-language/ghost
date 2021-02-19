@@ -74,19 +74,37 @@ func (parser *Parser) equality() ast.ExpressionNode {
 }
 
 func (parser *Parser) comparison() ast.ExpressionNode {
-	expression := parser.addition()
+	expression := parser.term()
+
+	if parser.match(token.GREATER, token.GREATEREQUAL, token.LESS, token.LESSEQUAL) {
+		operator := parser.previous()
+		right := parser.term()
+		expression = &ast.Binary{Left: expression, Operator: operator, Right: right}
+	}
 
 	return expression
 }
 
-func (parser *Parser) addition() ast.ExpressionNode {
-	expression := parser.multiplication()
+func (parser *Parser) term() ast.ExpressionNode {
+	expression := parser.factor()
+
+	for parser.match(token.MINUS, token.PLUS) {
+		operator := parser.previous()
+		right := parser.factor()
+		expression = &ast.Binary{Left: expression, Operator: operator, Right: right}
+	}
 
 	return expression
 }
 
-func (parser *Parser) multiplication() ast.ExpressionNode {
+func (parser *Parser) factor() ast.ExpressionNode {
 	expression := parser.unary()
+
+	for parser.match(token.SLASH, token.STAR) {
+		operator := parser.previous()
+		right := parser.unary()
+		expression = &ast.Binary{Left: expression, Operator: operator, Right: right}
+	}
 
 	return expression
 }

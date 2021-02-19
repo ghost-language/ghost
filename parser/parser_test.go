@@ -7,6 +7,44 @@ import (
 	"ghostlang.org/x/ghost/scanner"
 )
 
+func TestParseBinaryOperator(t *testing.T) {
+	tests := []struct {
+		input    string
+		left     float64
+		operator string
+		right    float64
+	}{
+		{"1 + 5", 1, "+", 5},
+		{"1 - 5", 1, "-", 5},
+		{"1 * 5", 1, "*", 5},
+		{"1 / 5", 1, "/", 5},
+		{"1 >= 5", 1, ">=", 5},
+		{"1 <= 5", 1, "<=", 5},
+		{"1 > 5", 1, ">", 5},
+		{"1 < 5", 1, "<", 5},
+	}
+
+	for i, test := range tests {
+		scanner := scanner.New(test.input)
+		tokens := scanner.ScanTokens()
+		parser := New(tokens)
+		expression := parser.Parse()
+
+		binary, ok := expression.(*ast.Binary)
+
+		if !ok {
+			t.Fatalf("test[%v] result is not *ast.Binary, got=%T", i, expression)
+		}
+
+		if binary.Operator.Lexeme != test.operator {
+			t.Errorf("binary operator value not %v, got=%v", test.operator, binary.Operator.Lexeme)
+		}
+
+		verifyFloatLiteral(binary.Left, test.left, t)
+		verifyFloatLiteral(binary.Right, test.right, t)
+	}
+}
+
 func TestParseBooleans(t *testing.T) {
 	tests := []struct {
 		input    string
@@ -25,7 +63,7 @@ func TestParseBooleans(t *testing.T) {
 		literal, ok := expression.(*ast.Literal)
 
 		if !ok {
-			t.Fatalf("result is not ast.Literal, got=%T", expression)
+			t.Fatalf("result is not *ast.Literal, got=%T", expression)
 		}
 
 		value, ok := literal.Value.(bool)
@@ -58,7 +96,7 @@ func TestParseGroupedExpressions(t *testing.T) {
 		grouping, ok := expression.(*ast.Grouping)
 
 		if !ok {
-			t.Fatalf("expression is not ast.Grouping, got=%T", expression)
+			t.Fatalf("expression is not *ast.Grouping, got=%T", expression)
 		}
 
 		verifyFloatLiteral(grouping.Expression, test.expected, t)
@@ -81,7 +119,7 @@ func TestParseNull(t *testing.T) {
 		literal, ok := expression.(*ast.Literal)
 
 		if !ok {
-			t.Fatalf("result is not ast.Literal, got=%T", expression)
+			t.Fatalf("result is not *ast.Literal, got=%T", expression)
 		}
 
 		if literal.Value != nil {
@@ -127,7 +165,7 @@ func TestParseStrings(t *testing.T) {
 		literal, ok := expression.(*ast.Literal)
 
 		if !ok {
-			t.Fatalf("result is not ast.Literal, got=%T", expression)
+			t.Fatalf("result is not *ast.Literal, got=%T", expression)
 		}
 
 		value, ok := literal.Value.(string)
@@ -149,7 +187,7 @@ func verifyFloatLiteral(expression ast.ExpressionNode, expected float64, t *test
 	literal, ok := expression.(*ast.Literal)
 
 	if !ok {
-		t.Fatalf("result is not ast.Literal, got=%T", expression)
+		t.Fatalf("result is not *ast.Literal, got=%T", expression)
 	}
 
 	value, ok := literal.Value.(float64)
