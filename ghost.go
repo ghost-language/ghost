@@ -1,16 +1,18 @@
 package main
 
 import (
-	"bufio"
 	"flag"
 	"fmt"
+	"log"
 	"os"
 	"path"
+	"path/filepath"
 
 	"ghostlang.org/x/ghost/interpreter"
 	"ghostlang.org/x/ghost/parser"
 	"ghostlang.org/x/ghost/scanner"
 	"ghostlang.org/x/ghost/version"
+	"github.com/peterh/liner"
 )
 
 var (
@@ -18,6 +20,7 @@ var (
 	flagInteractive bool
 	flagHelp        bool
 	flagTokens      bool
+	history         = filepath.Join(os.TempDir(), ".ghost_history")
 )
 
 func init() {
@@ -59,13 +62,33 @@ func main() {
 }
 
 func runPrompt() {
-	reader := bufio.NewReader(os.Stdin)
+	line := liner.NewLiner()
+	defer line.Close()
+
+	line.SetCtrlCAborts(true)
+
+	if f, err := os.Open(history); err == nil {
+		line.ReadHistory(f)
+		f.Close()
+	}
+
+	if f, err := os.Create(history); err != nil {
+		log.Print("Error writing history file: ", err)
+	} else {
+		line.WriteHistory(f)
+		f.Close()
+	}
 
 	for {
-		fmt.Print(">> ")
-		data, _ := reader.ReadBytes('\n')
+		source, err := line.Prompt(">> ")
 
-		run(string(data))
+		if err == liner.ErrPromptAborted {
+			fmt.Println("   Exiting...")
+			os.Exit(1)
+		} else {
+			run(string(source))
+			line.AppendHistory(source)
+		}
 	}
 }
 
