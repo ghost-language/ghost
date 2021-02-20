@@ -2,9 +2,6 @@ package token
 
 import "fmt"
 
-// Type is the type of the token given as a string
-type Type string
-
 // All available tokens
 const (
 	// single-character tokens
@@ -53,6 +50,9 @@ const (
 	EOF      = "eof"
 	INVALID  = "__INVALID__"
 )
+
+// Type is the type of the token given as a string
+type Type string
 
 // Token contains the lexeme read by the scanner and records the line.
 type Token struct {
