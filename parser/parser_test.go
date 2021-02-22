@@ -210,27 +210,29 @@ func TestParseUnaryOperators(t *testing.T) {
 			t.Errorf("binary operator value not %v, got=%v", test.operator, unary.Operator.Lexeme)
 		}
 
-		right, ok := unary.Right.(*ast.Literal)
+		// Test for literal
+		_, ok = unary.Right.(*ast.Literal)
 
 		if !ok {
-			t.Fatalf("unary right is not *ast.Literal, got=%T", right)
-		}
-
-		value, ok := right.Value.(decimal.Decimal)
-
-		if !ok {
-			value, ok := right.Value.(bool)
+			right, ok := unary.Right.(*ast.Number)
 
 			if !ok {
-				t.Fatalf("unary right type is not decimal.Decimal or bool, got=%T", value)
-			} else if value != test.right.(bool) {
-				t.Errorf("unary right value not %v, got=%v", test.right, value)
+				t.Fatalf("unary right is not *ast.Literal or *ast.Number, got=%T", right)
+			}
+
+			// Number
+			expected := decimal.NewFromFloat(test.right.(float64))
+			number := unary.Right.(*ast.Number).Value
+
+			if !number.Equal(expected) {
+				t.Errorf("unary right value not %v, got=%v", expected, number)
 			}
 		} else {
-			number := decimal.NewFromFloat(test.right.(float64))
+			// Boolean
+			value, _ := unary.Right.(*ast.Literal).Value.(bool)
 
-			if !number.Equal(value) {
-				t.Errorf("unary right value not %v, got=%v", number, value)
+			if value != test.right.(bool) {
+				t.Errorf("unary right value not %v, got=%v", test.right, value)
 			}
 		}
 	}
@@ -240,10 +242,10 @@ func TestParseUnaryOperators(t *testing.T) {
 // Helper methods
 
 func verifyNumberLiteral(expression ast.ExpressionNode, expected interface{}, t *testing.T) {
-	literal, ok := expression.(*ast.Literal)
+	number, ok := expression.(*ast.Number)
 
 	if !ok {
-		t.Fatalf("result is not *ast.Literal, got=%T", expression)
+		t.Fatalf("result is not *ast.Number, got=%T", expression)
 	}
 
 	check, ok := expected.(int)
@@ -260,9 +262,9 @@ func verifyNumberLiteral(expression ast.ExpressionNode, expected interface{}, t 
 		}
 	}
 
-	equals := expected.(decimal.Decimal).Equal(literal.Value.(decimal.Decimal))
+	equals := expected.(decimal.Decimal).Equal(number.Value)
 
 	if !equals {
-		t.Errorf("literal value not %v, got=%v", expected, literal.Value)
+		t.Errorf("number value not %v, got=%v", expected, number.Value)
 	}
 }

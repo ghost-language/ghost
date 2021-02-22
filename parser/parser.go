@@ -5,6 +5,7 @@ import (
 
 	"ghostlang.org/x/ghost/ast"
 	"ghostlang.org/x/ghost/token"
+	"github.com/shopspring/decimal"
 )
 
 // Ghost uses a recursive decent parser. It starts from the top or outermost
@@ -122,13 +123,16 @@ func (parser *Parser) unary() ast.ExpressionNode {
 
 func (parser *Parser) primary() ast.ExpressionNode {
 	if parser.match(token.FALSE) {
-		return &ast.Literal{Value: false}
+		return &ast.Boolean{Value: false}
 	} else if parser.match(token.TRUE) {
-		return &ast.Literal{Value: true}
+		return &ast.Boolean{Value: true}
 	} else if parser.match(token.NULL) {
-		return &ast.Literal{Value: nil}
-	} else if parser.match(token.NUMBER, token.STRING) {
-		return &ast.Literal{Value: parser.previous().Literal}
+		return &ast.Null{}
+	} else if parser.match(token.NUMBER) {
+		value, _ := decimal.NewFromString(parser.previous().Lexeme)
+		return &ast.Number{Value: value}
+	} else if parser.match(token.STRING) {
+		return &ast.String{Value: parser.previous().Lexeme}
 	} else if parser.match(token.LEFTPAREN) {
 		expression := parser.expression()
 		parser.consume(token.RIGHTPAREN, "Expected ')' after expression.")

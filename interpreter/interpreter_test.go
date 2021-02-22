@@ -3,6 +3,7 @@ package interpreter
 import (
 	"testing"
 
+	"ghostlang.org/x/ghost/object"
 	"ghostlang.org/x/ghost/parser"
 	"ghostlang.org/x/ghost/scanner"
 	"github.com/shopspring/decimal"
@@ -33,7 +34,7 @@ func TestEvaluateLiteral(t *testing.T) {
 
 func verifyLiteralValue(literal interface{}, expected interface{}, t *testing.T) {
 	switch result := literal.(type) {
-	case decimal.Decimal:
+	case *object.Number:
 		verifyNumberValue(result, expected, t)
 	// case bool:
 	// 	verifyBooleanValue(result, expected, t)
@@ -44,7 +45,7 @@ func verifyLiteralValue(literal interface{}, expected interface{}, t *testing.T)
 	}
 }
 
-func verifyNumberValue(value decimal.Decimal, expected interface{}, t *testing.T) {
+func verifyNumberValue(number *object.Number, expected interface{}, t *testing.T) {
 	check, ok := expected.(int)
 
 	if ok {
@@ -59,9 +60,9 @@ func verifyNumberValue(value decimal.Decimal, expected interface{}, t *testing.T
 		}
 	}
 
-	equals := expected.(decimal.Decimal).Equal(value)
+	equals := expected.(decimal.Decimal).Equal(number.Value)
 
 	if !equals {
-		t.Errorf("Numbers are not equal, expected %v, got=%v", expected, value)
+		t.Errorf("Numbers are not equal, expected %v, got=%v", expected, number.Value)
 	}
 }

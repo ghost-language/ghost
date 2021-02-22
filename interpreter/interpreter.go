@@ -2,39 +2,25 @@ package interpreter
 
 import (
 	"ghostlang.org/x/ghost/ast"
-	"ghostlang.org/x/ghost/token"
-	"github.com/shopspring/decimal"
+	"ghostlang.org/x/ghost/object"
 )
 
 // Evaluate parses the abstract syntax tree, evaluating each type of node and
 // producing a result.
-func Evaluate(expression ast.ExpressionNode) interface{} {
+func Evaluate(expression ast.ExpressionNode) object.Object {
 	switch node := expression.(type) {
 	case *ast.Binary:
-		left := Evaluate(node.Left)
-		right := Evaluate(node.Right)
-
-		switch node.Operator.Type {
-		case token.MINUS:
-			return left.(decimal.Decimal).Sub(right.(decimal.Decimal))
-		case token.PLUS:
-			switch left := left.(type) {
-			case decimal.Decimal:
-				return left.Add(right.(decimal.Decimal))
-			case string:
-				return left + right.(string)
-			}
-		case token.SLASH:
-			return left.(decimal.Decimal).Div(right.(decimal.Decimal))
-		case token.STAR:
-			return left.(decimal.Decimal).Mul(right.(decimal.Decimal))
-		case token.GREATER:
-			return left.(decimal.Decimal).GreaterThan(right.(decimal.Decimal))
-		}
+		return evaluateBinary(node)
 	case *ast.Grouping:
 		return Evaluate(node.Expression)
-	case *ast.Literal:
-		return node.Value
+	case *ast.Number:
+		return &object.Number{Value: node.Value}
+	case *ast.String:
+		return &object.String{Value: node.Value}
+	case *ast.Boolean:
+		return &object.Boolean{Value: node.Value}
+	case *ast.Null:
+		return &object.Null{}
 	}
 
 	panic("Fatal error")
