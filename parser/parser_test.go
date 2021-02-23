@@ -63,13 +63,13 @@ func TestParseBooleans(t *testing.T) {
 		parser := New(tokens)
 		expression := parser.Parse()
 
-		literal, ok := expression.(*ast.Literal)
+		literal, ok := expression.(*ast.Boolean)
 
 		if !ok {
-			t.Fatalf("result is not *ast.Literal, got=%T", expression)
+			t.Fatalf("result is not *ast.Boolean, got=%T", expression)
 		}
 
-		value, ok := literal.Value.(bool)
+		value := literal.Value
 
 		if !ok {
 			t.Fatalf("Literal.Value type not bool, got=%T", value)
@@ -119,14 +119,10 @@ func TestParseNull(t *testing.T) {
 		parser := New(tokens)
 		expression := parser.Parse()
 
-		literal, ok := expression.(*ast.Literal)
+		_, ok := expression.(*ast.Null)
 
 		if !ok {
-			t.Fatalf("result is not *ast.Literal, got=%T", expression)
-		}
-
-		if literal.Value != nil {
-			t.Errorf("literal value not %v, got=%v", nil, literal.Value)
+			t.Fatalf("result is not *ast.Null, got=%T", expression)
 		}
 	}
 }
@@ -165,20 +161,16 @@ func TestParseStrings(t *testing.T) {
 		parser := New(tokens)
 		expression := parser.Parse()
 
-		literal, ok := expression.(*ast.Literal)
+		literal, ok := expression.(*ast.String)
 
 		if !ok {
-			t.Fatalf("result is not *ast.Literal, got=%T", expression)
+			t.Fatalf("result is not *ast.String, got=%T", expression)
 		}
 
-		value, ok := literal.Value.(string)
-
-		if !ok {
-			t.Fatalf("Literal.Value type not string, got=%T", value)
-		}
+		value := literal.Value
 
 		if value != test.expected {
-			t.Errorf("literal value not %v, got=%v", test.expected, value)
+			t.Errorf("string value not %v, got=%v", test.expected, value)
 		}
 	}
 }
@@ -191,7 +183,6 @@ func TestParseUnaryOperators(t *testing.T) {
 	}{
 		{"!true", "!", true},
 		{"!false", "!", false},
-		{"-3.14", "-", 3.14},
 	}
 
 	for _, test := range tests {
@@ -210,30 +201,14 @@ func TestParseUnaryOperators(t *testing.T) {
 			t.Errorf("binary operator value not %v, got=%v", test.operator, unary.Operator.Lexeme)
 		}
 
-		// Test for literal
-		_, ok = unary.Right.(*ast.Literal)
+		right, ok := unary.Right.(*ast.Boolean)
 
 		if !ok {
-			right, ok := unary.Right.(*ast.Number)
+			t.Fatalf("unary right is not *ast.Boolean, got=%T", right)
+		}
 
-			if !ok {
-				t.Fatalf("unary right is not *ast.Literal or *ast.Number, got=%T", right)
-			}
-
-			// Number
-			expected := decimal.NewFromFloat(test.right.(float64))
-			number := unary.Right.(*ast.Number).Value
-
-			if !number.Equal(expected) {
-				t.Errorf("unary right value not %v, got=%v", expected, number)
-			}
-		} else {
-			// Boolean
-			value, _ := unary.Right.(*ast.Literal).Value.(bool)
-
-			if value != test.right.(bool) {
-				t.Errorf("unary right value not %v, got=%v", test.right, value)
-			}
+		if right.Value != test.right.(bool) {
+			t.Errorf("unary right value not %v, got=%v", test.right, right.Value)
 		}
 	}
 }

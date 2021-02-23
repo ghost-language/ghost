@@ -132,7 +132,7 @@ func (parser *Parser) primary() ast.ExpressionNode {
 		value, _ := decimal.NewFromString(parser.previous().Lexeme)
 		return &ast.Number{Value: value}
 	} else if parser.match(token.STRING) {
-		return &ast.String{Value: parser.previous().Lexeme}
+		return &ast.String{Value: parser.previous().Literal.(string)}
 	} else if parser.match(token.LEFTPAREN) {
 		expression := parser.expression()
 		parser.consume(token.RIGHTPAREN, "Expected ')' after expression.")

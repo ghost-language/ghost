@@ -4,6 +4,7 @@ import (
 	"ghostlang.org/x/ghost/ast"
 	"ghostlang.org/x/ghost/object"
 	"ghostlang.org/x/ghost/token"
+	"github.com/shopspring/decimal"
 )
 
 func evaluateBinary(node *ast.Binary) object.Object {
@@ -15,8 +16,28 @@ func evaluateBinary(node *ast.Binary) object.Object {
 		value := left.(*object.Number).Value.Sub(right.(*object.Number).Value)
 		return &object.Number{Value: value}
 	case token.PLUS:
-		value := left.(*object.Number).Value.Add(right.(*object.Number).Value)
-		return &object.Number{Value: value}
+		switch left.(type) {
+		case *object.Number:
+			switch right.(type) {
+			case *object.String:
+				number, _ := decimal.NewFromString(right.(*object.String).Value)
+				value := left.(*object.Number).Value.Add(number)
+				return &object.Number{Value: value}
+			case *object.Number:
+				value := left.(*object.Number).Value.Add(right.(*object.Number).Value)
+				return &object.Number{Value: value}
+			}
+
+		case *object.String:
+			switch right.(type) {
+			case *object.String:
+				value := left.(*object.String).Value + right.(*object.String).Value
+				return &object.String{Value: value}
+			case *object.Number:
+				value := left.(*object.String).Value + right.(*object.Number).String()
+				return &object.String{Value: value}
+			}
+		}
 	case token.SLASH:
 		value := left.(*object.Number).Value.Div(right.(*object.Number).Value)
 		return &object.Number{Value: value}
