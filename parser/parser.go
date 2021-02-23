@@ -67,13 +67,15 @@ func (parser *Parser) ternary() ast.ExpressionNode {
 	condition := parser.equality()
 
 	if parser.match("?") {
+		question := parser.previous()
 		thenExpression := parser.expression()
 
 		parser.match(":")
 
+		colon := parser.previous()
 		elseExpression := parser.expression()
 
-		return &ast.Ternary{Condition: condition, Then: thenExpression, Else: elseExpression}
+		return &ast.Ternary{Condition: condition, Question: question, Then: thenExpression, Colon: colon, Else: elseExpression}
 	}
 
 	return condition
