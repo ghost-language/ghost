@@ -22,7 +22,8 @@ import (
 // =============================================================================
 // Precedence order
 
-// expression    -> equality
+// expression    -> ternary ( equality "?" expression ":" expression )
+// ternary       -> equality
 // equality      -> comparison ( ( "!=" | "==" ) comparison )*
 // comparison    -> term ( ( ">" | ">=" | "<" | "<=" ) term )*
 // term          -> factor ( ( "-" | "+" ) factor )*
@@ -59,7 +60,23 @@ func (parser *Parser) Parse() ast.ExpressionNode {
 // and returns it to the caller. When the body of the rule contains a non-
 // terminal -- a reference to another rule -- we call that other rule's method.
 func (parser *Parser) expression() ast.ExpressionNode {
-	return parser.equality()
+	return parser.ternary()
+}
+
+func (parser *Parser) ternary() ast.ExpressionNode {
+	condition := parser.equality()
+
+	if parser.match("?") {
+		thenExpression := parser.expression()
+
+		parser.match(":")
+
+		elseExpression := parser.expression()
+
+		return &ast.Ternary{Condition: condition, Then: thenExpression, Else: elseExpression}
+	}
+
+	return condition
 }
 
 func (parser *Parser) equality() ast.ExpressionNode {

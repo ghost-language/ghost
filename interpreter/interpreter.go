@@ -26,6 +26,8 @@ func Evaluate(expression ast.ExpressionNode) object.Object {
 		return &object.Number{Value: node.Value}
 	case *ast.String:
 		return &object.String{Value: node.Value}
+	case *ast.Ternary:
+		return evaluateTernary(node)
 	case *ast.Unary:
 		return evaluateUnary(node)
 	}

@@ -81,6 +81,10 @@ func (scanner *Scanner) scanToken() {
 		scanner.addToken(token.SEMICOLON)
 	case '*':
 		scanner.addToken(token.STAR)
+	case '?':
+		scanner.addToken(token.QUESTION)
+	case ':':
+		scanner.addToken(token.COLON)
 	case '!':
 		if scanner.match('=') {
 			scanner.addToken(token.BANGEQUAL)
