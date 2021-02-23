@@ -3,6 +3,7 @@ package interpreter
 import (
 	"ghostlang.org/x/ghost/ast"
 	"ghostlang.org/x/ghost/object"
+	"ghostlang.org/x/ghost/value"
 )
 
 // Evaluate parses the abstract syntax tree, evaluating each type of node and
@@ -18,9 +19,13 @@ func Evaluate(expression ast.ExpressionNode) object.Object {
 	case *ast.String:
 		return &object.String{Value: node.Value}
 	case *ast.Boolean:
-		return &object.Boolean{Value: node.Value}
+		if node.Value {
+			return value.TRUE
+		}
+
+		return value.FALSE
 	case *ast.Null:
-		return &object.Null{}
+		return value.NULL
 	}
 
 	panic("Fatal error")

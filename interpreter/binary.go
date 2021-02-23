@@ -2,6 +2,7 @@ package interpreter
 
 import (
 	"ghostlang.org/x/ghost/ast"
+	"ghostlang.org/x/ghost/helper"
 	"ghostlang.org/x/ghost/object"
 	"ghostlang.org/x/ghost/token"
 	"github.com/shopspring/decimal"
@@ -57,8 +58,7 @@ func evaluateBinary(node *ast.Binary) object.Object {
 		value := left.(*object.Number).Value.LessThanOrEqual(right.(*object.Number).Value)
 		return &object.Boolean{Value: value}
 	case token.EQUALEQUAL:
-		value := left.(*object.Number).Value.Equal(right.(*object.Number).Value)
-		return &object.Boolean{Value: value}
+		return helper.NativeBooleanToObject(helper.IsEqual(left, right))
 	}
 
 	panic("Fatal error")
