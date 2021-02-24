@@ -8,14 +8,14 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-func evaluateBinary(node *ast.Binary) object.Object {
-	left := Evaluate(node.Left)
-	right := Evaluate(node.Right)
+func evaluateBinary(node *ast.Binary) (object.Object, bool) {
+	left, _ := Evaluate(node.Left)
+	right, _ := Evaluate(node.Right)
 
 	switch node.Operator.Type {
 	case token.MINUS:
 		value := left.(*object.Number).Value.Sub(right.(*object.Number).Value)
-		return &object.Number{Value: value}
+		return &object.Number{Value: value}, true
 	case token.PLUS:
 		switch left.(type) {
 		case *object.Number:
@@ -23,42 +23,42 @@ func evaluateBinary(node *ast.Binary) object.Object {
 			case *object.String:
 				number, _ := decimal.NewFromString(right.(*object.String).Value)
 				value := left.(*object.Number).Value.Add(number)
-				return &object.Number{Value: value}
+				return &object.Number{Value: value}, true
 			case *object.Number:
 				value := left.(*object.Number).Value.Add(right.(*object.Number).Value)
-				return &object.Number{Value: value}
+				return &object.Number{Value: value}, true
 			}
 
 		case *object.String:
 			switch right.(type) {
 			case *object.String:
 				value := left.(*object.String).Value + right.(*object.String).Value
-				return &object.String{Value: value}
+				return &object.String{Value: value}, true
 			case *object.Number:
 				value := left.(*object.String).Value + right.(*object.Number).String()
-				return &object.String{Value: value}
+				return &object.String{Value: value}, true
 			}
 		}
 	case token.SLASH:
 		value := left.(*object.Number).Value.Div(right.(*object.Number).Value)
-		return &object.Number{Value: value}
+		return &object.Number{Value: value}, true
 	case token.STAR:
 		value := left.(*object.Number).Value.Mul(right.(*object.Number).Value)
-		return &object.Number{Value: value}
+		return &object.Number{Value: value}, true
 	case token.GREATER:
 		value := left.(*object.Number).Value.GreaterThan(right.(*object.Number).Value)
-		return &object.Boolean{Value: value}
+		return &object.Boolean{Value: value}, true
 	case token.GREATEREQUAL:
 		value := left.(*object.Number).Value.GreaterThanOrEqual(right.(*object.Number).Value)
-		return &object.Boolean{Value: value}
+		return &object.Boolean{Value: value}, true
 	case token.LESS:
 		value := left.(*object.Number).Value.LessThan(right.(*object.Number).Value)
-		return &object.Boolean{Value: value}
+		return &object.Boolean{Value: value}, true
 	case token.LESSEQUAL:
 		value := left.(*object.Number).Value.LessThanOrEqual(right.(*object.Number).Value)
-		return &object.Boolean{Value: value}
+		return &object.Boolean{Value: value}, true
 	case token.EQUALEQUAL:
-		return helper.NativeBooleanToObject(helper.IsEqual(left, right))
+		return helper.NativeBooleanToObject(helper.IsEqual(left, right)), true
 	}
 
 	panic("Fatal error")

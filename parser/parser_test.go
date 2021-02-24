@@ -31,7 +31,7 @@ func TestParseBinaryOperator(t *testing.T) {
 		scanner := scanner.New(test.input)
 		tokens := scanner.ScanTokens()
 		parser := New(tokens)
-		expression := parser.Parse()
+		expression := parser.expression()
 
 		binary, ok := expression.(*ast.Binary)
 
@@ -61,7 +61,7 @@ func TestParseBooleans(t *testing.T) {
 		scanner := scanner.New(test.input)
 		tokens := scanner.ScanTokens()
 		parser := New(tokens)
-		expression := parser.Parse()
+		expression := parser.expression()
 
 		literal, ok := expression.(*ast.Boolean)
 
@@ -94,7 +94,7 @@ func TestParseGroupedExpressions(t *testing.T) {
 		scanner := scanner.New(test.input)
 		tokens := scanner.ScanTokens()
 		parser := New(tokens)
-		expression := parser.Parse()
+		expression := parser.expression()
 
 		grouping, ok := expression.(*ast.Grouping)
 
@@ -117,7 +117,7 @@ func TestParseNull(t *testing.T) {
 		scanner := scanner.New(test.input)
 		tokens := scanner.ScanTokens()
 		parser := New(tokens)
-		expression := parser.Parse()
+		expression := parser.expression()
 
 		_, ok := expression.(*ast.Null)
 
@@ -140,7 +140,7 @@ func TestParseNumbers(t *testing.T) {
 		scanner := scanner.New(test.input)
 		tokens := scanner.ScanTokens()
 		parser := New(tokens)
-		expression := parser.Parse()
+		expression := parser.expression()
 
 		verifyNumberLiteral(expression, test.expected, t)
 	}
@@ -159,7 +159,7 @@ func TestParseStrings(t *testing.T) {
 		scanner := scanner.New(test.input)
 		tokens := scanner.ScanTokens()
 		parser := New(tokens)
-		expression := parser.Parse()
+		expression := parser.expression()
 
 		literal, ok := expression.(*ast.String)
 
@@ -189,7 +189,7 @@ func TestParseUnaryOperators(t *testing.T) {
 		scanner := scanner.New(test.input)
 		tokens := scanner.ScanTokens()
 		parser := New(tokens)
-		expression := parser.Parse()
+		expression := parser.expression()
 
 		unary, ok := expression.(*ast.Unary)
 
@@ -210,6 +210,35 @@ func TestParseUnaryOperators(t *testing.T) {
 		if right.Value != test.right.(bool) {
 			t.Errorf("unary right value not %v, got=%v", test.right, right.Value)
 		}
+	}
+}
+
+func TestParseExpressionStatement(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected interface{}
+	}{
+		{"5", 5},
+		{"3.14", 3.14},
+	}
+
+	for _, test := range tests {
+		scanner := scanner.New(test.input)
+		tokens := scanner.ScanTokens()
+		parser := New(tokens)
+		statements := parser.Parse()
+
+		if len(statements) != 1 {
+			t.Fatalf("Expected 1 statement, got=%v", len(statements))
+		}
+
+		expression, ok := statements[0].(*ast.Expression)
+
+		if !ok {
+			t.Fatalf("Expected *ast.Expression, got=%T", statements[0])
+		}
+
+		verifyNumberLiteral(expression.Expression, test.expected, t)
 	}
 }
 

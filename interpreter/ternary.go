@@ -6,8 +6,8 @@ import (
 	"ghostlang.org/x/ghost/object"
 )
 
-func evaluateTernary(node *ast.Ternary) object.Object {
-	condition := Evaluate(node.Condition)
+func evaluateTernary(node *ast.Ternary) (object.Object, bool) {
+	condition, _ := Evaluate(node.Condition)
 
 	if helper.IsTruthy(condition) {
 		return Evaluate(node.Then)

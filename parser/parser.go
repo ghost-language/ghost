@@ -48,10 +48,27 @@ func New(tokens []token.Token) Parser {
 }
 
 // Parse kicks off the parser.
-func (parser *Parser) Parse() ast.ExpressionNode {
+func (parser *Parser) Parse() []ast.StatementNode {
+	statements := make([]ast.StatementNode, 0)
+
+	for !parser.isAtEnd() {
+		statement := parser.statement()
+		statements = append(statements, statement)
+	}
+
+	return statements
+}
+
+func (parser *Parser) statement() ast.StatementNode {
+	statement := parser.expressionStatement()
+
+	return statement
+}
+
+func (parser *Parser) expressionStatement() ast.StatementNode {
 	expression := parser.expression()
 
-	return expression
+	return &ast.Expression{Expression: expression}
 }
 
 // expression starts the process of parsing expression grammar rules.

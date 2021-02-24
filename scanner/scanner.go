@@ -132,7 +132,7 @@ func (scanner *Scanner) scanToken() {
 		} else if scanner.isAlpha(c) {
 			scanner.scanIdentifier()
 		} else {
-			ghost.Error(scanner.line, "Parse error")
+			ghost.ParseError(scanner.line, "Parse error")
 		}
 	}
 }
@@ -150,7 +150,7 @@ func (scanner *Scanner) scanString() {
 	}
 
 	if scanner.isAtEnd() {
-		ghost.Error(scanner.line, "Unterminated string.")
+		ghost.ParseError(scanner.line, "Unterminated string.")
 		return
 	}
 

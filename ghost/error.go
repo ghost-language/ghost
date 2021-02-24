@@ -5,11 +5,20 @@ import (
 	"os"
 )
 
-// Error reports errors encountered during parsing through stderr.
-func Error(line int, message string) {
-	report(line, "", message)
+// HadRuntimeError tracks if we encountered an error during runtime.
+var HadRuntimeError = false
+
+// HadParseError tracks if we encountered an error during the parsing step.
+var HadParseError = false
+
+// RuntimeError ...
+func RuntimeError(message string) {
+	fmt.Fprintf(os.Stderr, "%v\n", message)
+	HadRuntimeError = true
 }
 
-func report(line int, where string, message string) {
-	fmt.Fprintf(os.Stderr, "[line %d] Error: %s: %s\n", line, where, message)
+// ParseError ...
+func ParseError(line int, message string) {
+	fmt.Fprintf(os.Stderr, "[line %d] Error: %s\n", line, message)
+	HadParseError = true
 }
