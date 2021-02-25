@@ -44,6 +44,7 @@ const (
 	IF       = "if"
 	NULL     = "null"
 	OR       = "or"
+	PRINT    = "print"
 	RETURN   = "return"
 	SUPER    = "super"
 	THIS     = "this"

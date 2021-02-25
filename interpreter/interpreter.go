@@ -32,18 +32,6 @@ func Evaluate(node ast.Node) (object.Object, bool) {
 		}
 
 		return value.FALSE, true
-	case *ast.Grouping:
-		return Evaluate(node.Expression)
-	case *ast.Null:
-		return value.NULL, true
-	case *ast.Number:
-		return &object.Number{Value: node.Value}, true
-	case *ast.String:
-		return &object.String{Value: node.Value}, true
-	case *ast.Ternary:
-		return evaluateTernary(node)
-	case *ast.Unary:
-		return evaluateUnary(node)
 	case *ast.Expression:
 		result, ok := Evaluate(node.Expression)
 
@@ -52,6 +40,20 @@ func Evaluate(node ast.Node) (object.Object, bool) {
 		}
 
 		return value.NULL, ok
+	case *ast.Grouping:
+		return Evaluate(node.Expression)
+	case *ast.Null:
+		return value.NULL, true
+	case *ast.Number:
+		return &object.Number{Value: node.Value}, true
+	case *ast.Print:
+		return evaluatePrint(node)
+	case *ast.String:
+		return &object.String{Value: node.Value}, true
+	case *ast.Ternary:
+		return evaluateTernary(node)
+	case *ast.Unary:
+		return evaluateUnary(node)
 	}
 
 	return &object.Error{Message: fmt.Sprintf("unrecognized node: %v", node)}, false

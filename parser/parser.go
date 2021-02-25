@@ -22,15 +22,17 @@ import (
 // =============================================================================
 // Precedence order
 
-// expression    -> ternary ( equality "?" expression ":" expression )
-// ternary       -> equality
-// equality      -> comparison ( ( "!=" | "==" ) comparison )*
-// comparison    -> term ( ( ">" | ">=" | "<" | "<=" ) term )*
-// term          -> factor ( ( "-" | "+" ) factor )*
-// factor        -> unary ( ( "/" | "*" ) unary )*
-// unary         -> ( "!" | "-" ) unary
-// primary       -> NUMBER | STRING | "true" | "false" | "null" |
-//                  "(" expression ")"
+// statement              -> expressionStatement
+// expressionStatement    -> expression
+// expression             -> ternary ( equality "?" expression ":" expression )
+// ternary                -> equality
+// equality               -> comparison ( ( "!=" | "==" ) comparison )*
+// comparison             -> term ( ( ">" | ">=" | "<" | "<=" ) term )*
+// term                   -> factor ( ( "-" | "+" ) factor )*
+// factor                 -> unary ( ( "/" | "*" ) unary )*
+// unary                  -> ( "!" | "-" ) unary
+// primary                -> NUMBER | STRING | "true" | "false" | "null" |
+//                        "(" expression ")"
 
 // =============================================================================
 
@@ -60,9 +62,17 @@ func (parser *Parser) Parse() []ast.StatementNode {
 }
 
 func (parser *Parser) statement() ast.StatementNode {
-	statement := parser.expressionStatement()
+	if parser.match(token.PRINT) {
+		return parser.printStatement()
+	}
 
-	return statement
+	return parser.expressionStatement()
+}
+
+func (parser *Parser) printStatement() ast.StatementNode {
+	expression := parser.expression()
+
+	return &ast.Print{Expression: expression}
 }
 
 func (parser *Parser) expressionStatement() ast.StatementNode {
