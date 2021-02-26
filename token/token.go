@@ -24,6 +24,7 @@ const (
 	BANGEQUAL    = "!="
 	EQUAL        = "="
 	EQUALEQUAL   = "=="
+	ASSIGN       = ":="
 	GREATER      = ">"
 	GREATEREQUAL = ">="
 	LESS         = "<"

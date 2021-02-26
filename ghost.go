@@ -8,6 +8,7 @@ import (
 	"path"
 	"path/filepath"
 
+	"ghostlang.org/x/ghost/environment"
 	"ghostlang.org/x/ghost/ghost"
 	"ghostlang.org/x/ghost/interpreter"
 	"ghostlang.org/x/ghost/parser"
@@ -64,6 +65,7 @@ func main() {
 
 func runPrompt() {
 	line := liner.NewLiner()
+	env := environment.New()
 	defer line.Close()
 
 	line.SetCtrlCAborts(true)
@@ -87,7 +89,7 @@ func runPrompt() {
 			fmt.Println("   Exiting...")
 			os.Exit(1)
 		} else {
-			run(source)
+			run(source, env)
 			ghost.HadParseError = false
 			line.AppendHistory(source)
 		}
@@ -98,12 +100,17 @@ func runFile(file string) {
 	//
 }
 
-func run(source string) {
+func run(source string, env *environment.Environment) {
 	scanner := scanner.New(source)
 	tokens := scanner.ScanTokens()
 	parser := parser.New(tokens)
 	statements := parser.Parse()
-	interpreter.Interpret(statements)
+
+	if ghost.HadParseError {
+		return
+	}
+
+	interpreter.Interpret(statements, env)
 
 	if flagTokens {
 		fmt.Printf("   =====\n")

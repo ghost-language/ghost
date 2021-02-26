@@ -85,7 +85,11 @@ func (scanner *Scanner) scanToken() {
 	case '?':
 		scanner.addToken(token.QUESTION)
 	case ':':
-		scanner.addToken(token.COLON)
+		if scanner.match('=') {
+			scanner.addToken(token.ASSIGN)
+		} else {
+			scanner.addToken(token.COLON)
+		}
 	case '!':
 		if scanner.match('=') {
 			scanner.addToken(token.BANGEQUAL)
@@ -133,7 +137,7 @@ func (scanner *Scanner) scanToken() {
 		} else if scanner.isAlpha(c) {
 			scanner.scanIdentifier()
 		} else {
-			ghost.ParseError(scanner.line, "Parse error")
+			ghost.LogError(scanner.line, "Parse error")
 		}
 	}
 }
@@ -151,7 +155,7 @@ func (scanner *Scanner) scanString() {
 	}
 
 	if scanner.isAtEnd() {
-		ghost.ParseError(scanner.line, "Unterminated string.")
+		ghost.LogError(scanner.line, "Unterminated string.")
 		return
 	}
 

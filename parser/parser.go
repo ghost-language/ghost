@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"ghostlang.org/x/ghost/ast"
+	"ghostlang.org/x/ghost/ghost"
 	"ghostlang.org/x/ghost/token"
 	"github.com/shopspring/decimal"
 )
@@ -54,14 +55,15 @@ func (parser *Parser) Parse() []ast.StatementNode {
 	statements := make([]ast.StatementNode, 0)
 
 	for !parser.isAtEnd() {
-		statement := parser.statement()
+		statement, _ := parser.statement()
+
 		statements = append(statements, statement)
 	}
 
 	return statements
 }
 
-func (parser *Parser) statement() ast.StatementNode {
+func (parser *Parser) statement() (ast.StatementNode, error) {
 	if parser.match(token.PRINT) {
 		return parser.printStatement()
 	}
@@ -69,16 +71,24 @@ func (parser *Parser) statement() ast.StatementNode {
 	return parser.expressionStatement()
 }
 
-func (parser *Parser) printStatement() ast.StatementNode {
-	expression := parser.expression()
+func (parser *Parser) printStatement() (ast.StatementNode, error) {
+	expression, err := parser.expression()
 
-	return &ast.Print{Expression: expression}
+	if err != nil {
+		return nil, err
+	}
+
+	return &ast.Print{Expression: expression}, nil
 }
 
-func (parser *Parser) expressionStatement() ast.StatementNode {
-	expression := parser.expression()
+func (parser *Parser) expressionStatement() (ast.StatementNode, error) {
+	expression, err := parser.expression()
 
-	return &ast.Expression{Expression: expression}
+	if err != nil {
+		return nil, err
+	}
+
+	return &ast.Expression{Expression: expression}, nil
 }
 
 // expression starts the process of parsing expression grammar rules.
@@ -86,105 +96,192 @@ func (parser *Parser) expressionStatement() ast.StatementNode {
 // Each method for parsing a grammar rule produces a syntax tree for that rule
 // and returns it to the caller. When the body of the rule contains a non-
 // terminal -- a reference to another rule -- we call that other rule's method.
-func (parser *Parser) expression() ast.ExpressionNode {
-	return parser.ternary()
+func (parser *Parser) expression() (ast.ExpressionNode, error) {
+	return parser.assign()
 }
 
-func (parser *Parser) ternary() ast.ExpressionNode {
-	condition := parser.equality()
+func (parser *Parser) assign() (ast.ExpressionNode, error) {
+	if parser.match(token.IDENTIFIER) {
+		name := parser.previous()
+
+		parser.match(token.ASSIGN)
+
+		val, err := parser.expression()
+
+		if err != nil {
+			return nil, err
+		}
+
+		return &ast.Assign{Name: name, Value: val}, nil
+	}
+
+	expression, err := parser.ternary()
+
+	if err != nil {
+		return nil, err
+	}
+
+	return expression, nil
+}
+
+func (parser *Parser) ternary() (ast.ExpressionNode, error) {
+	condition, err := parser.equality()
+
+	if err != nil {
+		return nil, err
+	}
 
 	if parser.match("?") {
-		thenExpression := parser.expression()
+		thenExpression, err := parser.expression()
+
+		if err != nil {
+			return nil, err
+		}
 
 		parser.match(":")
 
-		elseExpression := parser.expression()
+		elseExpression, err := parser.expression()
 
-		return &ast.Ternary{Condition: condition, Then: thenExpression, Else: elseExpression}
+		if err != nil {
+			return nil, err
+		}
+
+		return &ast.Ternary{Condition: condition, Then: thenExpression, Else: elseExpression}, nil
 	}
 
-	return condition
+	return condition, nil
 }
 
-func (parser *Parser) equality() ast.ExpressionNode {
-	expression := parser.comparison()
+func (parser *Parser) equality() (ast.ExpressionNode, error) {
+	expression, err := parser.comparison()
+
+	if err != nil {
+		return nil, err
+	}
 
 	for parser.match(token.BANGEQUAL, token.EQUALEQUAL) {
 		operator := parser.previous()
-		right := parser.comparison()
+		right, err := parser.comparison()
+
+		if err != nil {
+			return nil, err
+		}
+
 		expression = &ast.Binary{Left: expression, Operator: operator, Right: right}
 	}
 
-	return expression
+	return expression, nil
 }
 
-func (parser *Parser) comparison() ast.ExpressionNode {
-	expression := parser.term()
+func (parser *Parser) comparison() (ast.ExpressionNode, error) {
+	expression, err := parser.term()
+
+	if err != nil {
+		return nil, err
+	}
 
 	if parser.match(token.GREATER, token.GREATEREQUAL, token.LESS, token.LESSEQUAL) {
 		operator := parser.previous()
-		right := parser.term()
+		right, err := parser.term()
+
+		if err != nil {
+			return nil, err
+		}
+
 		expression = &ast.Binary{Left: expression, Operator: operator, Right: right}
 	}
 
-	return expression
+	return expression, nil
 }
 
-func (parser *Parser) term() ast.ExpressionNode {
-	expression := parser.factor()
+func (parser *Parser) term() (ast.ExpressionNode, error) {
+	expression, err := parser.factor()
+
+	if err != nil {
+		return nil, err
+	}
 
 	for parser.match(token.MINUS, token.PLUS) {
 		operator := parser.previous()
-		right := parser.factor()
+		right, err := parser.factor()
+
+		if err != nil {
+			return nil, err
+		}
+
 		expression = &ast.Binary{Left: expression, Operator: operator, Right: right}
 	}
 
-	return expression
+	return expression, nil
 }
 
-func (parser *Parser) factor() ast.ExpressionNode {
-	expression := parser.unary()
+func (parser *Parser) factor() (ast.ExpressionNode, error) {
+	expression, err := parser.unary()
+
+	if err != nil {
+		return nil, err
+	}
 
 	for parser.match(token.SLASH, token.STAR) {
 		operator := parser.previous()
-		right := parser.unary()
+		right, err := parser.unary()
+
+		if err != nil {
+			return nil, err
+		}
+
 		expression = &ast.Binary{Left: expression, Operator: operator, Right: right}
 	}
 
-	return expression
+	return expression, nil
 }
 
-func (parser *Parser) unary() ast.ExpressionNode {
+func (parser *Parser) unary() (ast.ExpressionNode, error) {
 	if parser.match(token.BANG, token.MINUS) {
 		operator := parser.previous()
-		right := parser.unary()
+		right, err := parser.unary()
 
-		return &ast.Unary{Operator: operator, Right: right}
+		if err != nil {
+			return nil, err
+		}
+
+		return &ast.Unary{Operator: operator, Right: right}, nil
 	}
 
 	return parser.primary()
 }
 
-func (parser *Parser) primary() ast.ExpressionNode {
+func (parser *Parser) primary() (ast.ExpressionNode, error) {
 	if parser.match(token.FALSE) {
-		return &ast.Boolean{Value: false}
+		return &ast.Boolean{Value: false}, nil
 	} else if parser.match(token.TRUE) {
-		return &ast.Boolean{Value: true}
+		return &ast.Boolean{Value: true}, nil
 	} else if parser.match(token.NULL) {
-		return &ast.Null{}
+		return &ast.Null{}, nil
 	} else if parser.match(token.NUMBER) {
 		value, _ := decimal.NewFromString(parser.previous().Lexeme)
-		return &ast.Number{Value: value}
+		return &ast.Number{Value: value}, nil
 	} else if parser.match(token.STRING) {
-		return &ast.String{Value: parser.previous().Literal.(string)}
+		return &ast.String{Value: parser.previous().Literal.(string)}, nil
 	} else if parser.match(token.LEFTPAREN) {
-		expression := parser.expression()
-		parser.consume(token.RIGHTPAREN, "Expected ')' after expression.")
+		expression, err := parser.expression()
 
-		return &ast.Grouping{Expression: expression}
+		if err != nil {
+			return nil, err
+		}
+
+		_, err = parser.consume(token.RIGHTPAREN, "Expected ')' after expression.")
+
+		if err != nil {
+			return nil, err
+		}
+
+		return &ast.Grouping{Expression: expression}, nil
+	} else if parser.match(token.IDENTIFIER) {
+		return &ast.Variable{Name: parser.previous()}, nil
 	}
 
-	panic("Expected expression.")
+	return nil, ghost.ParseError(parser.peek(), fmt.Sprintf("Expected expression, got=%v", parser.peek().Type))
 }
 
 // =============================================================================
@@ -204,12 +301,12 @@ func (parser *Parser) match(tt ...token.Type) bool {
 	return false
 }
 
-func (parser *Parser) consume(tt token.Type, message string) token.Token {
+func (parser *Parser) consume(tt token.Type, message string) (token.Token, error) {
 	if parser.check(tt) {
-		return parser.advance()
+		return parser.advance(), nil
 	}
 
-	panic(fmt.Sprintf("%v: %v", parser.peek(), message))
+	return parser.previous(), ghost.ParseError(parser.peek(), message)
 }
 
 // advance consumes the next token and pushes our current pointer ahead if we

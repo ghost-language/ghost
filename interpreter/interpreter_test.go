@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"ghostlang.org/x/ghost/ast"
+	"ghostlang.org/x/ghost/environment"
 	"ghostlang.org/x/ghost/object"
 	"ghostlang.org/x/ghost/parser"
 	"ghostlang.org/x/ghost/scanner"
@@ -23,6 +24,7 @@ func TestEvaluateLiteral(t *testing.T) {
 		tokens := scanner.ScanTokens()
 		parser := parser.New(tokens)
 		statements := parser.Parse()
+		env := environment.New()
 
 		if len(statements) != 1 {
 			t.Fatalf("Expected 1 statement, got=%v", len(statements))
@@ -34,7 +36,7 @@ func TestEvaluateLiteral(t *testing.T) {
 			t.Fatalf("Expected *ast.Expression, got=%T", statements[0])
 		}
 
-		result, _ := Evaluate(expression.Expression)
+		result, _ := Evaluate(expression.Expression, env)
 
 		verifyLiteralValue(result, test.expected, t)
 	}

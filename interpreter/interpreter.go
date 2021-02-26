@@ -4,15 +4,16 @@ import (
 	"fmt"
 
 	"ghostlang.org/x/ghost/ast"
+	"ghostlang.org/x/ghost/environment"
 	"ghostlang.org/x/ghost/ghost"
 	"ghostlang.org/x/ghost/object"
 	"ghostlang.org/x/ghost/value"
 )
 
 // Interpret ...
-func Interpret(statements []ast.StatementNode) {
+func Interpret(statements []ast.StatementNode, env *environment.Environment) {
 	for _, statement := range statements {
-		result, ok := Evaluate(statement)
+		result, ok := Evaluate(statement, env)
 
 		if !ok {
 			ghost.RuntimeError(result.String())
@@ -22,10 +23,12 @@ func Interpret(statements []ast.StatementNode) {
 
 // Evaluate parses the abstract syntax tree, evaluating each type of node and
 // producing a result.
-func Evaluate(node ast.Node) (object.Object, bool) {
+func Evaluate(node ast.Node, env *environment.Environment) (object.Object, bool) {
 	switch node := node.(type) {
+	case *ast.Assign:
+		return evaluateAssign(node, env)
 	case *ast.Binary:
-		return evaluateBinary(node)
+		return evaluateBinary(node, env)
 	case *ast.Boolean:
 		if node.Value {
 			return value.TRUE, true
@@ -33,7 +36,7 @@ func Evaluate(node ast.Node) (object.Object, bool) {
 
 		return value.FALSE, true
 	case *ast.Expression:
-		result, ok := Evaluate(node.Expression)
+		result, ok := Evaluate(node.Expression, env)
 
 		if !ok {
 			return result, ok
@@ -41,19 +44,22 @@ func Evaluate(node ast.Node) (object.Object, bool) {
 
 		return value.NULL, ok
 	case *ast.Grouping:
-		return Evaluate(node.Expression)
+		return Evaluate(node.Expression, env)
 	case *ast.Null:
 		return value.NULL, true
 	case *ast.Number:
 		return &object.Number{Value: node.Value}, true
 	case *ast.Print:
-		return evaluatePrint(node)
+		return evaluatePrint(node, env)
 	case *ast.String:
 		return &object.String{Value: node.Value}, true
 	case *ast.Ternary:
-		return evaluateTernary(node)
+		return evaluateTernary(node, env)
 	case *ast.Unary:
-		return evaluateUnary(node)
+		return evaluateUnary(node, env)
+	case *ast.Variable:
+		val, _ := env.Get(node.Name)
+		return val, true
 	}
 
 	return &object.Error{Message: fmt.Sprintf("unrecognized node: %v", node)}, false
