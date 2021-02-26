@@ -31,7 +31,7 @@ func TestParseBinaryOperator(t *testing.T) {
 		scanner := scanner.New(test.input)
 		tokens := scanner.ScanTokens()
 		parser := New(tokens)
-		expression := parser.expression()
+		expression, _ := parser.expression()
 
 		binary, ok := expression.(*ast.Binary)
 
@@ -61,7 +61,7 @@ func TestParseBooleans(t *testing.T) {
 		scanner := scanner.New(test.input)
 		tokens := scanner.ScanTokens()
 		parser := New(tokens)
-		expression := parser.expression()
+		expression, _ := parser.expression()
 
 		literal, ok := expression.(*ast.Boolean)
 
@@ -94,7 +94,7 @@ func TestParseGroupedExpressions(t *testing.T) {
 		scanner := scanner.New(test.input)
 		tokens := scanner.ScanTokens()
 		parser := New(tokens)
-		expression := parser.expression()
+		expression, _ := parser.expression()
 
 		grouping, ok := expression.(*ast.Grouping)
 
@@ -117,7 +117,7 @@ func TestParseNull(t *testing.T) {
 		scanner := scanner.New(test.input)
 		tokens := scanner.ScanTokens()
 		parser := New(tokens)
-		expression := parser.expression()
+		expression, _ := parser.expression()
 
 		_, ok := expression.(*ast.Null)
 
@@ -140,7 +140,7 @@ func TestParseNumbers(t *testing.T) {
 		scanner := scanner.New(test.input)
 		tokens := scanner.ScanTokens()
 		parser := New(tokens)
-		expression := parser.expression()
+		expression, _ := parser.expression()
 
 		verifyNumberLiteral(expression, test.expected, t)
 	}
@@ -159,7 +159,7 @@ func TestParseStrings(t *testing.T) {
 		scanner := scanner.New(test.input)
 		tokens := scanner.ScanTokens()
 		parser := New(tokens)
-		expression := parser.expression()
+		expression, _ := parser.expression()
 
 		literal, ok := expression.(*ast.String)
 
@@ -189,7 +189,7 @@ func TestParseUnaryOperators(t *testing.T) {
 		scanner := scanner.New(test.input)
 		tokens := scanner.ScanTokens()
 		parser := New(tokens)
-		expression := parser.expression()
+		expression, _ := parser.expression()
 
 		unary, ok := expression.(*ast.Unary)
 
