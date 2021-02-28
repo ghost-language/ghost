@@ -101,9 +101,11 @@ func (parser *Parser) expression() (ast.ExpressionNode, error) {
 }
 
 func (parser *Parser) assign() (ast.ExpressionNode, error) {
-	if parser.check(token.IDENTIFIER) && parser.peek().Type == token.ASSIGN {
+	if parser.check(token.IDENTIFIER) && parser.next().Type == token.ASSIGN {
 		parser.match(token.IDENTIFIER)
 		name := parser.previous()
+
+		parser.match(token.ASSIGN)
 
 		val, err := parser.expression()
 
@@ -343,6 +345,10 @@ func (parser *Parser) isAtEnd() bool {
 // peek looks at the current unconsumed token.
 func (parser *Parser) peek() token.Token {
 	return parser.tokens[parser.current]
+}
+
+func (parser *Parser) next() token.Token {
+	return parser.tokens[parser.current+1]
 }
 
 // previous returns the previous token.
