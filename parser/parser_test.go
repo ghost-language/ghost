@@ -242,6 +242,28 @@ func TestParseExpressionStatement(t *testing.T) {
 	}
 }
 
+func TestParseVariables(t *testing.T) {
+	tests := []struct {
+		input string
+	}{
+		{"foo"},
+		{"bar"},
+	}
+
+	for _, test := range tests {
+		scanner := scanner.New(test.input)
+		tokens := scanner.ScanTokens()
+		parser := New(tokens)
+		statements := parser.Parse()
+
+		_, ok := statements[0].(*ast.Variable)
+
+		if !ok {
+			t.Fatalf("Expected *ast.Variable, got=%T", statements[0])
+		}
+	}
+}
+
 // =============================================================================
 // Helper methods
 

@@ -264,10 +264,17 @@ func (parser *Parser) primary() (ast.ExpressionNode, error) {
 	} else if parser.match(token.STRING) {
 		return &ast.String{Value: parser.previous().Literal.(string)}, nil
 	} else if parser.match(token.LEFTPAREN) {
-		expression, err := parser.expression()
+		var expression ast.ExpressionNode
+		var err error
 
-		if err != nil {
-			return nil, err
+		if parser.check(token.RIGHTPAREN) {
+			expression = &ast.Null{}
+		} else {
+			expression, err = parser.expression()
+
+			if err != nil {
+				return nil, err
+			}
 		}
 
 		_, err = parser.consume(token.RIGHTPAREN, "Expected ')' after expression.")
@@ -281,7 +288,7 @@ func (parser *Parser) primary() (ast.ExpressionNode, error) {
 		return &ast.Variable{Name: parser.previous()}, nil
 	}
 
-	return nil, ghost.ParseError(parser.peek(), fmt.Sprintf("Expected expression, got=%v", parser.peek().Type))
+	return nil, ghost.ParseError(parser.peek(), fmt.Sprintf("Expected expression (primary), got=%v", parser.peek().Type))
 }
 
 // =============================================================================
