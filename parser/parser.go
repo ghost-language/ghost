@@ -101,10 +101,9 @@ func (parser *Parser) expression() (ast.ExpressionNode, error) {
 }
 
 func (parser *Parser) assign() (ast.ExpressionNode, error) {
-	if parser.match(token.IDENTIFIER) {
+	if parser.check(token.IDENTIFIER) && parser.peek().Type == token.ASSIGN {
+		parser.match(token.IDENTIFIER)
 		name := parser.previous()
-
-		parser.match(token.ASSIGN)
 
 		val, err := parser.expression()
 
@@ -288,7 +287,7 @@ func (parser *Parser) primary() (ast.ExpressionNode, error) {
 		return &ast.Variable{Name: parser.previous()}, nil
 	}
 
-	return nil, ghost.ParseError(parser.peek(), fmt.Sprintf("Expected expression (primary), got=%v", parser.peek().Type))
+	return nil, ghost.ParseError(parser.peek(), fmt.Sprintf("Expected expression, got=%v", parser.peek().Type))
 }
 
 // =============================================================================

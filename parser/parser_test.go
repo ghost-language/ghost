@@ -256,10 +256,10 @@ func TestParseVariables(t *testing.T) {
 		parser := New(tokens)
 		statements := parser.Parse()
 
-		_, ok := statements[0].(*ast.Variable)
+		_, ok := statements[0].(*ast.Expression)
 
 		if !ok {
-			t.Fatalf("Expected *ast.Variable, got=%T", statements[0])
+			t.Fatalf("Expected *ast.Expression, got=%T", statements[0])
 		}
 	}
 }
