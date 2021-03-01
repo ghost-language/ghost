@@ -1,6 +1,6 @@
 module ghostlang.org/x/ghost
 
-go 1.15
+go 1.16
 
 require (
 	github.com/peterh/liner v1.2.1
