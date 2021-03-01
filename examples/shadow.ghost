@@ -1,0 +1,10 @@
+a := 10
+b := a + 3.14
+
+{
+    a := 2
+    c := a + b
+    print "Shadowing: " + c
+}
+
+print a + b

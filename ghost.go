@@ -97,7 +97,17 @@ func runPrompt() {
 }
 
 func runFile(file string) {
-	//
+	source, err := os.ReadFile(file)
+
+	if err != nil {
+		panic(err)
+	}
+
+	run(string(source), environment.New())
+
+	if ghost.HadParseError || ghost.HadRuntimeError {
+		os.Exit(1)
+	}
 }
 
 func run(source string, env *environment.Environment) {
