@@ -29,6 +29,8 @@ func Evaluate(node ast.Node, env *environment.Environment) (object.Object, bool)
 		return evaluateAssign(node, env)
 	case *ast.Binary:
 		return evaluateBinary(node, env)
+	case *ast.Block:
+		return evaluateBlock(node, env)
 	case *ast.Boolean:
 		if node.Value {
 			return value.TRUE, true

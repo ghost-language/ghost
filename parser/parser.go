@@ -23,7 +23,8 @@ import (
 // =============================================================================
 // Precedence order
 
-// statement              -> expressionStatement
+// statement              -> expressionStatement | printStatement |
+//                        blockStatement
 // expressionStatement    -> expression
 // expression             -> ternary ( equality "?" expression ":" expression )
 // ternary                -> equality
@@ -66,6 +67,14 @@ func (parser *Parser) Parse() []ast.StatementNode {
 func (parser *Parser) statement() (ast.StatementNode, error) {
 	if parser.match(token.PRINT) {
 		return parser.printStatement()
+	} else if parser.match(token.LEFTBRACE) {
+		var err error
+
+		if statements, err := parser.block(); err == nil {
+			return &ast.Block{Statements: statements}, nil
+		}
+
+		return nil, err
 	}
 
 	return parser.expressionStatement()
@@ -79,6 +88,24 @@ func (parser *Parser) printStatement() (ast.StatementNode, error) {
 	}
 
 	return &ast.Print{Expression: expression}, nil
+}
+
+func (parser *Parser) block() ([]ast.StatementNode, error) {
+	statements := make([]ast.StatementNode, 0)
+
+	for !parser.check(token.RIGHTBRACE) && !parser.isAtEnd() {
+		statement, err := parser.statement()
+
+		if err != nil {
+			return nil, err
+		}
+
+		statements = append(statements, statement)
+	}
+
+	parser.consume(token.RIGHTBRACE, "Expected closing bracket '}' after block.")
+
+	return statements, nil
 }
 
 func (parser *Parser) expressionStatement() (ast.StatementNode, error) {

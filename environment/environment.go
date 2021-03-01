@@ -9,12 +9,18 @@ import (
 
 // Environment stores the bindings that associate variables to values.
 type Environment struct {
-	values map[string]object.Object
+	values    map[string]object.Object
+	enclosing *Environment
 }
 
 // New creates a new instance of Environment.
 func New() *Environment {
-	return &Environment{values: make(map[string]object.Object)}
+	return &Environment{values: make(map[string]object.Object), enclosing: nil}
+}
+
+// Extend an existing environment.
+func Extend(env *Environment) *Environment {
+	return &Environment{values: make(map[string]object.Object), enclosing: env}
 }
 
 // Define binds a new value to the environment with the given name.
@@ -28,6 +34,10 @@ func (e *Environment) Get(name token.Token) (object.Object, error) {
 
 	if exists {
 		return result, nil
+	}
+
+	if e.enclosing != nil {
+		return e.enclosing.Get(name)
 	}
 
 	return nil, fmt.Errorf("Undefined variable '%v'", name.Lexeme)
