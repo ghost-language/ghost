@@ -47,6 +47,8 @@ func Evaluate(node ast.Node, env *environment.Environment) (object.Object, bool)
 		return value.NULL, ok
 	case *ast.Grouping:
 		return Evaluate(node.Expression, env)
+	case *ast.If:
+		return evaluateIf(node, env)
 	case *ast.Null:
 		return value.NULL, true
 	case *ast.Number:

@@ -65,7 +65,9 @@ func (parser *Parser) Parse() []ast.StatementNode {
 }
 
 func (parser *Parser) statement() (ast.StatementNode, error) {
-	if parser.match(token.PRINT) {
+	if parser.match(token.IF) {
+		return parser.ifStatement()
+	} else if parser.match(token.PRINT) {
 		return parser.printStatement()
 	} else if parser.match(token.LEFTBRACE) {
 		var err error
@@ -78,6 +80,30 @@ func (parser *Parser) statement() (ast.StatementNode, error) {
 	}
 
 	return parser.expressionStatement()
+}
+
+func (parser *Parser) ifStatement() (ast.StatementNode, error) {
+	var err error
+
+	if _, err := parser.consume(token.LEFTPAREN, "Expected '(' after 'if'."); err != nil {
+		return nil, err
+	}
+
+	if condition, err := parser.expression(); err == nil {
+		if _, err := parser.consume(token.RIGHTPAREN, "Expected ')' after 'if' condition."); err == nil {
+			if thenBranch, err := parser.statement(); err == nil {
+				if parser.match(token.ELSE) {
+					if elseBranch, err := parser.statement(); err == nil {
+						return &ast.If{Condition: condition, Then: thenBranch, Else: elseBranch}, nil
+					}
+
+					return &ast.If{Condition: condition, Then: thenBranch}, nil
+				}
+			}
+		}
+	}
+
+	return nil, err
 }
 
 func (parser *Parser) printStatement() (ast.StatementNode, error) {
