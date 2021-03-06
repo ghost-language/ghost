@@ -1,10 +1,23 @@
-a := 10
-b := a + 3.14
+a := "global a"
+b := "global b"
+c := "global c"
 
 {
-    a := 2
-    c := a + b
-    print "Shadowing: " + c
+    a := "outer a"
+    b := "outer b"
+
+    {
+        a := "inner a"
+        print a
+        print b
+        print c
+    }
+
+    print a
+    print b
+    print c
 }
 
-print a + b
+print a
+print b
+print c
