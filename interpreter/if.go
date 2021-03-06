@@ -9,7 +9,7 @@ import (
 )
 
 func evaluateIf(node *ast.If, env *environment.Environment) (object.Object, bool) {
-	if conditionValue, err := Evaluate(node.Condition, env); err == true {
+	if conditionValue, success := Evaluate(node.Condition, env); success == true {
 		if helper.IsTruthy(conditionValue) {
 			return Evaluate(node.Then, env)
 		} else if node.Else != nil {

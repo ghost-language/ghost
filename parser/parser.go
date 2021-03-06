@@ -96,7 +96,7 @@ func (parser *Parser) ifStatement() (ast.StatementNode, error) {
 					if elseBranch, err := parser.statement(); err == nil {
 						return &ast.If{Condition: condition, Then: thenBranch, Else: elseBranch}, nil
 					}
-
+				} else {
 					return &ast.If{Condition: condition, Then: thenBranch}, nil
 				}
 			}
