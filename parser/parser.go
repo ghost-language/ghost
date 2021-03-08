@@ -26,8 +26,10 @@ import (
 // statement              -> expressionStatement | printStatement |
 //                        blockStatement
 // expressionStatement    -> expression
-// expression             -> ternary ( equality "?" expression ":" expression )
-// ternary                -> equality
+// expression             -> or
+// or                     -> and ( "or" and )
+// and                    -> ternary ( "and" ternary )
+// ternary                -> equality ( equality "?" expression ":" expression )
 // equality               -> comparison ( ( "!=" | "==" ) comparison )*
 // comparison             -> term ( ( ">" | ">=" | "<" | "<=" ) term )*
 // term                   -> factor ( ( "-" | "+" ) factor )*
@@ -169,13 +171,55 @@ func (parser *Parser) assign() (ast.ExpressionNode, error) {
 		return &ast.Assign{Name: name, Value: val}, nil
 	}
 
-	expression, err := parser.ternary()
+	expression, err := parser.or()
 
 	if err != nil {
 		return nil, err
 	}
 
 	return expression, nil
+}
+
+func (parser *Parser) or() (ast.ExpressionNode, error) {
+	expression, err := parser.and()
+
+	if err != nil {
+		return nil, err
+	}
+
+	for parser.match(token.OR) {
+		operator := parser.previous()
+		right, err := parser.and()
+
+		if err != nil {
+			return nil, err
+		}
+
+		expression = &ast.Logical{Left: expression, Operator: operator, Right: right}
+	}
+
+	return expression, err
+}
+
+func (parser *Parser) and() (ast.ExpressionNode, error) {
+	expression, err := parser.ternary()
+
+	if err != nil {
+		return nil, err
+	}
+
+	for parser.match(token.AND) {
+		operator := parser.previous()
+		right, err := parser.ternary()
+
+		if err != nil {
+			return nil, err
+		}
+
+		expression = &ast.Logical{Left: expression, Operator: operator, Right: right}
+	}
+
+	return expression, err
 }
 
 func (parser *Parser) ternary() (ast.ExpressionNode, error) {

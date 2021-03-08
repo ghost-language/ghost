@@ -1,0 +1,5 @@
+pi := 3.141592653
+radius := 4
+area := pi * radius * radius
+
+print area
