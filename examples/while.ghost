@@ -1,0 +1,9 @@
+x := 0
+
+while (x < 10) {
+    print "before: " + x
+    x := x + 1
+    print "after: " + x
+}
+
+print "done"

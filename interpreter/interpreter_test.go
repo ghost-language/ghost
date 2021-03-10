@@ -1,6 +1,7 @@
 package interpreter
 
 import (
+	"strings"
 	"testing"
 
 	"ghostlang.org/x/ghost/ast"
@@ -39,6 +40,52 @@ func TestEvaluateLiteral(t *testing.T) {
 		result, _ := Evaluate(expression.Expression, env)
 
 		verifyLiteralValue(result, test.expected, t)
+	}
+}
+
+func TestEvaluateWhileStatement(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected interface{}
+	}{
+		{
+			`
+				x := 0
+				y := 5
+
+				while (y > 5) {
+					x := x + 1
+					y := y - 1
+				}
+
+				print x
+			`, 5,
+		},
+	}
+
+	for _, test := range tests {
+		scanner := scanner.New(test.input)
+		tokens := scanner.ScanTokens()
+		parser := parser.New(tokens)
+		statements := parser.Parse()
+
+		output := &strings.Builder{}
+
+		env := environment.New()
+
+		for _, statement := range statements {
+			_, success := Evaluate(statement, env)
+
+			if !success {
+				t.Errorf("Runetime error")
+			}
+		}
+
+		outputString := strings.TrimSuffix(output.String(), "\n")
+
+		if outputString != test.expected {
+			t.Errorf("Expected %s, got=%s", test.expected, outputString)
+		}
 	}
 }
 

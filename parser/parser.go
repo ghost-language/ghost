@@ -23,8 +23,8 @@ import (
 // =============================================================================
 // Precedence order
 
-// statement              -> expressionStatement | printStatement |
-//                        blockStatement
+// statement              -> expressionStatement | ifStatement | whileStatement |
+//                        printStatement | blockStatement
 // expressionStatement    -> expression
 // expression             -> or
 // or                     -> and ( "or" and )
@@ -69,6 +69,8 @@ func (parser *Parser) Parse() []ast.StatementNode {
 func (parser *Parser) statement() (ast.StatementNode, error) {
 	if parser.match(token.IF) {
 		return parser.ifStatement()
+	} else if parser.match(token.WHILE) {
+		return parser.whileStatement()
 	} else if parser.match(token.PRINT) {
 		return parser.printStatement()
 	} else if parser.match(token.LEFTBRACE) {
@@ -106,6 +108,34 @@ func (parser *Parser) ifStatement() (ast.StatementNode, error) {
 	}
 
 	return nil, err
+}
+
+func (parser *Parser) whileStatement() (ast.StatementNode, error) {
+	_, err := parser.consume(token.LEFTPAREN, "Expected '(' after 'while'.")
+
+	if err != nil {
+		return nil, err
+	}
+
+	condition, err := parser.expression()
+
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = parser.consume(token.RIGHTPAREN, "Expected ')' after 'while' condition.")
+
+	if err != nil {
+		return nil, err
+	}
+
+	body, err := parser.statement()
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &ast.While{Condition: condition, Body: body}, nil
 }
 
 func (parser *Parser) printStatement() (ast.StatementNode, error) {
