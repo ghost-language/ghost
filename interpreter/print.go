@@ -16,7 +16,7 @@ func evaluatePrint(node *ast.Print, env *environment.Environment) (object.Object
 		return result, ok
 	}
 
-	fmt.Println(result.String())
+	fmt.Fprintln(env.GetWriter(), result.String())
 
 	return value.NULL, true
 }

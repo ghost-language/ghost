@@ -1,0 +1,9 @@
+html := "<html>" +
+    "   <head>" +
+    "       <title>Ghost HTTP Example</title>" +
+    "   </head>" +
+    "   <body>" +
+    "       <h1>Hello Universe</h1>" +
+    "   </body>"
+
+print html

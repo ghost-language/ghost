@@ -4,9 +4,11 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"path"
 	"path/filepath"
+	"time"
 
 	"ghostlang.org/x/ghost/environment"
 	"ghostlang.org/x/ghost/ghost"
@@ -17,11 +19,21 @@ import (
 	"github.com/peterh/liner"
 )
 
+// const ...
+const (
+	InfoColor    = "\033[1;34m%s\033[0m"
+	NoticeColor  = "\033[1;36m%s\033[0m"
+	WarningColor = "\033[1;33m%s\033[0m"
+	ErrorColor   = "\033[1;31m%s\033[0m"
+	DebugColor   = "\033[0;36m%s\033[0m"
+)
+
 var (
 	flagVersion     bool
 	flagInteractive bool
 	flagHelp        bool
 	flagTokens      bool
+	flagServe       bool
 	history         = filepath.Join(os.TempDir(), ".ghost_history")
 )
 
@@ -36,6 +48,7 @@ func init() {
 	flag.BoolVar(&flagVersion, "v", false, "display version information")
 	flag.BoolVar(&flagInteractive, "i", false, "enable interactive mode")
 	flag.BoolVar(&flagTokens, "t", false, "output scanned token information")
+	flag.BoolVar(&flagServe, "serve", false, "start web server")
 }
 
 func main() {
@@ -57,7 +70,11 @@ func main() {
 		fmt.Println("Usage: ghost [script]")
 		os.Exit(64)
 	} else if len(args) == 1 {
-		runFile(args[0])
+		if flagServe {
+			runServer(args[0])
+		} else {
+			runFile(args[0])
+		}
 	} else {
 		runPrompt()
 	}
@@ -66,6 +83,9 @@ func main() {
 func runPrompt() {
 	line := liner.NewLiner()
 	env := environment.New()
+
+	env.SetWriter(os.Stdout)
+
 	defer line.Close()
 
 	line.SetCtrlCAborts(true)
@@ -103,11 +123,50 @@ func runFile(file string) {
 		panic(err)
 	}
 
-	run(string(source), environment.New())
+	env := environment.New()
+	env.SetWriter(os.Stdout)
+
+	run(string(source), env)
 
 	if ghost.HadParseError || ghost.HadRuntimeError {
 		os.Exit(1)
 	}
+}
+
+func runServer(path string) {
+	address := "0.0.0.0:8080"
+	currentTime := time.Now()
+
+	fmt.Printf("%s --> ", currentTime.Format("2006/01/02 15:04:05"))
+	fmt.Printf(InfoColor, fmt.Sprintf("Starting Ghost %s server: ", version.Version))
+	fmt.Printf("%s\n", address)
+
+	http.HandleFunc("/", func(writer http.ResponseWriter, request *http.Request) {
+		start := time.Now()
+
+		env := environment.New()
+		env.SetWriter(writer)
+
+		source := readSource(path)
+
+		run(source, env)
+
+		secs := time.Since(start).String()
+
+		log.Printf("--> %s %s (%s)", request.Method, request.URL.Path, secs)
+	})
+
+	log.Fatal(http.ListenAndServe(address, nil))
+}
+
+func readSource(path string) string {
+	source, err := os.ReadFile(path)
+
+	if err != nil {
+		panic(err)
+	}
+
+	return string(source)
 }
 
 func run(source string, env *environment.Environment) {

@@ -9,7 +9,7 @@ import (
 func evaluateAssign(node *ast.Assign, env *environment.Environment) (object.Object, bool) {
 	val, _ := Evaluate(node.Value, env)
 
-	env.Define(node.Name.Lexeme, val)
+	env.Set(node.Name.Lexeme, val)
 
 	return nil, true
 }
