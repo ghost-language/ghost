@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"ghostlang.org/x/ghost/ast"
-	"ghostlang.org/x/ghost/ghost"
+	"ghostlang.org/x/ghost/glitch"
 	"ghostlang.org/x/ghost/token"
 	"github.com/shopspring/decimal"
 )
@@ -416,7 +416,7 @@ func (parser *Parser) primary() (ast.ExpressionNode, error) {
 		return &ast.Variable{Name: parser.previous()}, nil
 	}
 
-	return nil, ghost.ParseError(parser.peek(), fmt.Sprintf("Expected expression, got=%v", parser.peek().Type))
+	return nil, glitch.ParseError(parser.peek(), fmt.Sprintf("Expected expression, got=%v", parser.peek().Type))
 }
 
 // =============================================================================
@@ -441,7 +441,7 @@ func (parser *Parser) consume(tt token.Type, message string) (token.Token, error
 		return parser.advance(), nil
 	}
 
-	return parser.previous(), ghost.ParseError(parser.peek(), message)
+	return parser.previous(), glitch.ParseError(parser.peek(), message)
 }
 
 // advance consumes the next token and pushes our current pointer ahead if we

@@ -1,23 +1,42 @@
 package interpreter
 
 import (
+	"bytes"
+	"os"
 	"strings"
 	"testing"
 
 	"ghostlang.org/x/ghost/ast"
 	"ghostlang.org/x/ghost/environment"
+	"ghostlang.org/x/ghost/glitch"
 	"ghostlang.org/x/ghost/object"
 	"ghostlang.org/x/ghost/parser"
 	"ghostlang.org/x/ghost/scanner"
 	"github.com/shopspring/decimal"
 )
 
-func TestEvaluateLiteral(t *testing.T) {
+func TestEvaluateNumberExpression(t *testing.T) {
 	tests := []struct {
 		literal  string
 		expected interface{}
 	}{
 		{"5", 5},
+		{"10", 10},
+		{"3.14", 3.14},
+		{"-5", -5},
+		{"-10", -10},
+		{"-3.14", -3.14},
+		{"5 + 5 + 5 + 5 - 10", 10},
+		{"2 * 2 * 2 * 2 * 2", 32},
+		{"-50 + 100 + -50", 0},
+		{"5 * 2 + 10", 20},
+		{"5 + 2 * 10", 25},
+		{"20 + 2 * -10", 0},
+		{"50 / 2 * 2 + 10", 60},
+		{"2 * (5 + 10)", 30},
+		{"3 * 3 * 3 + 10", 37},
+		{"3 * (3 * 3) + 10", 37},
+		{"(5 + 10 * 2 + 15 / 3) * 2 + -10", 50},
 	}
 
 	for _, test := range tests {
@@ -43,48 +62,93 @@ func TestEvaluateLiteral(t *testing.T) {
 	}
 }
 
-func TestEvaluateWhileStatement(t *testing.T) {
+func TestEvaluateIfStatement(t *testing.T) {
 	tests := []struct {
 		input    string
-		expected interface{}
+		expected string
 	}{
-		{
-			`
-				x := 0
-				y := 5
-
-				while (y > 5) {
-					x := x + 1
-					y := y - 1
-				}
-
-				print x
-			`, 5,
-		},
+		{"if (true) { print 10 }", "10"},
+		{"if (false) { print true } print false", "false"},
+		{"if (1) { print 10 }", "10"},
+		{"if (1 < 2) { print 10 }", "10"},
+		{"if (1 > 2) { print true } print false", "false"},
+		{"if (1 > 2) { print 10 } else { print 20 }", "20"},
+		{"if (1 < 2) { print 10 } else { print 20 }", "10"},
+		{"if (1 < 2) { print 10 } else if (1 == 1) { print 20 } else { print 30 }", "10"},
+		{"if (1 > 2) {print  10 } else if (1 == 1) { print 20 } else { print 30 }", "20"},
+		{"if (1 > 2) { print 10 } else if (1 == 2) { print 20 } else { print 30 }", "30"},
 	}
 
 	for _, test := range tests {
+		result := new(bytes.Buffer)
+		env := environment.New()
+		env.SetWriter(result)
+
 		scanner := scanner.New(test.input)
 		tokens := scanner.ScanTokens()
 		parser := parser.New(tokens)
 		statements := parser.Parse()
 
-		output := &strings.Builder{}
-
-		env := environment.New()
-
-		for _, statement := range statements {
-			_, success := Evaluate(statement, env)
-
-			if !success {
-				t.Errorf("Runetime error")
-			}
+		if glitch.HadParseError {
+			return
 		}
 
-		outputString := strings.TrimSuffix(output.String(), "\n")
+		Interpret(statements, env)
 
-		if outputString != test.expected {
-			t.Errorf("Expected %s, got=%s", test.expected, outputString)
+		if glitch.HadParseError || glitch.HadRuntimeError {
+			os.Exit(1)
+		}
+
+		equals := strings.Compare(test.expected, string(bytes.TrimRight(result.Bytes(), "\n")))
+
+		if equals != 0 {
+			t.Errorf("expected value not %v, got=%v", test.expected, result.String())
+		}
+	}
+}
+
+func TestEvaluateWhileStatement(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected string
+	}{
+		{
+			`
+				x := 5
+
+				while (x < 10) {
+					x := x + 1
+				}
+
+				print x
+			`, "10",
+		},
+	}
+
+	for _, test := range tests {
+		result := new(bytes.Buffer)
+		env := environment.New()
+		env.SetWriter(result)
+
+		scanner := scanner.New(test.input)
+		tokens := scanner.ScanTokens()
+		parser := parser.New(tokens)
+		statements := parser.Parse()
+
+		if glitch.HadParseError {
+			return
+		}
+
+		Interpret(statements, env)
+
+		if glitch.HadParseError || glitch.HadRuntimeError {
+			os.Exit(1)
+		}
+
+		equals := strings.Compare(test.expected, string(bytes.TrimRight(result.Bytes(), "\n")))
+
+		if equals != 0 {
+			t.Errorf("expected value not %v, got=%v", test.expected, result.String())
 		}
 	}
 }

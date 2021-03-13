@@ -5,7 +5,7 @@ import (
 
 	"ghostlang.org/x/ghost/ast"
 	"ghostlang.org/x/ghost/environment"
-	"ghostlang.org/x/ghost/ghost"
+	"ghostlang.org/x/ghost/glitch"
 	"ghostlang.org/x/ghost/object"
 	"ghostlang.org/x/ghost/value"
 )
@@ -16,7 +16,7 @@ func Interpret(statements []ast.StatementNode, env *environment.Environment) {
 		result, ok := Evaluate(statement, env)
 
 		if !ok {
-			ghost.RuntimeError(result.String())
+			glitch.RuntimeError(result.String())
 		}
 	}
 }

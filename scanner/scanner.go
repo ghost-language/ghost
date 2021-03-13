@@ -1,7 +1,7 @@
 package scanner
 
 import (
-	"ghostlang.org/x/ghost/ghost"
+	"ghostlang.org/x/ghost/glitch"
 	"ghostlang.org/x/ghost/token"
 	"github.com/shopspring/decimal"
 )
@@ -15,7 +15,7 @@ type Scanner struct {
 	tokens  []token.Token
 }
 
-// keywords contains a list of all reserved keywords in Ghost.
+// keywords contains a list of all reserved keywords in glitch.
 var keywords = map[string]token.Type{
 	"and":      token.AND,
 	"class":    token.CLASS,
@@ -137,7 +137,7 @@ func (scanner *Scanner) scanToken() {
 		} else if scanner.isAlpha(c) {
 			scanner.scanIdentifier()
 		} else {
-			ghost.LogError(scanner.line, "Parse error")
+			glitch.LogError(scanner.line, "Parse error")
 		}
 	}
 }
@@ -155,7 +155,7 @@ func (scanner *Scanner) scanString() {
 	}
 
 	if scanner.isAtEnd() {
-		ghost.LogError(scanner.line, "Unterminated string.")
+		glitch.LogError(scanner.line, "Unterminated string.")
 		return
 	}
 
