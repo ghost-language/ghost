@@ -16,15 +16,11 @@ func evaluateWhile(node *ast.While, env *environment.Environment) (object.Object
 			return nil, success
 		}
 
-		if helper.IsTruthy(condition) {
+		if !helper.IsTruthy(condition) {
 			break
 		}
 
-		_, success = Evaluate(node.Body, env)
-
-		if !success {
-			return nil, success
-		}
+		Evaluate(node.Body, env)
 	}
 
 	return value.NULL, true

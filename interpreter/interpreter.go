@@ -64,7 +64,12 @@ func Evaluate(node ast.Node, env *environment.Environment) (object.Object, bool)
 	case *ast.Unary:
 		return evaluateUnary(node, env)
 	case *ast.Variable:
-		val, _ := env.Get(node.Name)
+		val, err := env.Get(node.Name)
+
+		if err != nil {
+			return &object.Error{Message: fmt.Sprintf("unknown identifier: %v", node)}, false
+		}
+
 		return val, true
 	case *ast.While:
 		return evaluateWhile(node, env)

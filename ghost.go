@@ -34,6 +34,7 @@ var (
 	flagHelp        bool
 	flagTokens      bool
 	flagServe       bool
+	flagAddress     string
 	history         = filepath.Join(os.TempDir(), ".ghost_history")
 )
 
@@ -49,6 +50,7 @@ func init() {
 	flag.BoolVar(&flagInteractive, "i", false, "enable interactive mode")
 	flag.BoolVar(&flagTokens, "t", false, "output scanned token information")
 	flag.BoolVar(&flagServe, "serve", false, "start web server")
+	flag.StringVar(&flagAddress, "address", "0.0.0.0:8080", "listen on the given network address when running as a web server")
 }
 
 func main() {
@@ -134,12 +136,11 @@ func runFile(file string) {
 }
 
 func runServer(path string) {
-	address := "0.0.0.0:8080"
 	currentTime := time.Now()
 
 	fmt.Printf("%s --> ", currentTime.Format("2006/01/02 15:04:05"))
 	fmt.Printf(InfoColor, fmt.Sprintf("Starting Ghost %s server: ", version.Version))
-	fmt.Printf("%s\n", address)
+	fmt.Printf("%s\n", flagAddress)
 
 	http.HandleFunc("/", func(writer http.ResponseWriter, request *http.Request) {
 		start := time.Now()
@@ -156,7 +157,7 @@ func runServer(path string) {
 		log.Printf("--> %s %s (%s)", request.Method, request.URL.Path, secs)
 	})
 
-	log.Fatal(http.ListenAndServe(address, nil))
+	log.Fatal(http.ListenAndServe(flagAddress, nil))
 }
 
 func readSource(path string) string {

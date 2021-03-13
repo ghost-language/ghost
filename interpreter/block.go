@@ -7,8 +7,6 @@ import (
 )
 
 func evaluateBlock(node *ast.Block, env *environment.Environment) (object.Object, bool) {
-	env = environment.Extend(env)
-
 	for _, statement := range node.Statements {
 		_, err := Evaluate(statement, env)
 

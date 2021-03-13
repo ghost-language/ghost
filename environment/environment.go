@@ -1,6 +1,7 @@
 package environment
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 
@@ -25,9 +26,15 @@ func Extend(env *Environment) *Environment {
 	return &Environment{values: make(map[string]object.Object), enclosing: env, writer: env.writer}
 }
 
+func (e *Environment) All() map[string]object.Object {
+	return e.values
+}
+
 // Set binds a new value to the environment with the given name.
-func (e *Environment) Set(name string, value object.Object) {
+func (e *Environment) Set(name string, value object.Object) object.Object {
 	e.values[name] = value
+
+	return value
 }
 
 // Get fetches the variable with the given name from the environment.
@@ -43,6 +50,16 @@ func (e *Environment) Get(name token.Token) (object.Object, error) {
 	}
 
 	return nil, fmt.Errorf("Undefined variable '%v'", name.Lexeme)
+}
+
+func (e *Environment) String() string {
+	var values bytes.Buffer
+
+	for key, value := range e.values {
+		values.WriteString(fmt.Sprintf("%s: %s\n", key, value.String()))
+	}
+
+	return values.String()
 }
 
 // SetWriter ...

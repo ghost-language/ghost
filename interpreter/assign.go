@@ -7,7 +7,11 @@ import (
 )
 
 func evaluateAssign(node *ast.Assign, env *environment.Environment) (object.Object, bool) {
-	val, _ := Evaluate(node.Value, env)
+	val, success := Evaluate(node.Value, env)
+
+	if !success {
+		return nil, false
+	}
 
 	env.Set(node.Name.Lexeme, val)
 
