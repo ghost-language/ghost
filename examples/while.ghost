@@ -1,15 +1,15 @@
-x := 5
+let x = 5
 
 while (x < 10) {
-    x := x + 1
+    x = x + 1
 }
 
 print x
 
-error := 50.0
+let error = 50.0
 
 while (error > 1) {
-    error := error / 4
+    error = error / 4
     print error
 }
 

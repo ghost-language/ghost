@@ -1,8 +1,9 @@
-let message = "hello world"
-print message
+let a = 1
 
-message = "hello universe"
-print message
+{
+    a = 3
+    let a = a + 2
+    print a
+}
 
-let value
-print value
+print a
