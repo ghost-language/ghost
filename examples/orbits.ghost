@@ -1,0 +1,7 @@
+let gravity = 6.67428e-11
+let AU      = 149.6e6 * 1000
+let scale   = 250 / AU
+
+print "Gravity: " + gravity
+print "AU:      " + AU
+print "Scale:   " + scale

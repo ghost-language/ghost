@@ -1,6 +1,8 @@
 package scanner
 
 import (
+	"fmt"
+
 	"ghostlang.org/x/ghost/glitch"
 	"ghostlang.org/x/ghost/token"
 	"github.com/shopspring/decimal"
@@ -187,10 +189,31 @@ func (scanner *Scanner) scanNumber() {
 		}
 	}
 
+	if scanner.peek() == 'e' {
+		// Consume the "e"
+		scanner.advance()
+
+		if scanner.peek() == '-' {
+			// Consume the "-"
+			scanner.advance()
+		}
+
+		if scanner.isDigit(scanner.peek()) {
+			// Consume the "e"
+			scanner.advance()
+
+			for scanner.isDigit(scanner.peek()) {
+				scanner.advance()
+			}
+		} else {
+			glitch.LogError(scanner.line, "Expected number following e notation.")
+		}
+	}
+
 	number, err := decimal.NewFromString(scanner.source[scanner.start:scanner.current])
 
 	if err != nil {
-		panic("Invalid number format")
+		panic(fmt.Sprintf("Invalid number format: %s", scanner.source[scanner.start:scanner.current]))
 	} else {
 		scanner.addTokenWithLiteral(token.NUMBER, number)
 	}
