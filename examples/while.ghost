@@ -4,14 +4,13 @@ while (x < 10) {
     x := x + 1
 }
 
-print "x := " + x
+print x
 
-y := 0
+error := 50.0
 
-while (y < 10) {
-    x := x - 1
-    y := y + 1
+while (error > 1) {
+    error := error / 4
+    print error
 }
 
-print "x := " + x
-print "y := " + y
+print "done"

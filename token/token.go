@@ -43,6 +43,7 @@ const (
 	FOR      = "for"
 	FUNCTION = "function"
 	IF       = "if"
+	LET      = "let"
 	NULL     = "null"
 	OR       = "or"
 	PRINT    = "print"

@@ -30,11 +30,25 @@ func (e *Environment) All() map[string]object.Object {
 	return e.values
 }
 
-// Set binds a new value to the environment with the given name.
-func (e *Environment) Set(name string, value object.Object) object.Object {
+// Declare binds a new value to the environment with the given name.
+func (e *Environment) Declare(name string, value object.Object) object.Object {
 	e.values[name] = value
 
 	return value
+}
+
+// Assign ...
+func (e *Environment) Assign(name token.Token, value object.Object) (object.Object, error) {
+	if _, ok := e.values[name.Lexeme]; ok {
+		e.values[name.Lexeme] = value
+		return value, nil
+	}
+
+	if e.enclosing != nil {
+		return e.enclosing.Assign(name, value)
+	}
+
+	return nil, fmt.Errorf("Undefined variable '%v'", name.Lexeme)
 }
 
 // Get fetches the variable with the given name from the environment.

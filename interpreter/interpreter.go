@@ -37,6 +37,8 @@ func Evaluate(node ast.Node, env *environment.Environment) (object.Object, bool)
 		}
 
 		return value.FALSE, true
+	case *ast.Declaration:
+		return evaluateDeclaration(node, env)
 	case *ast.Expression:
 		result, ok := Evaluate(node.Expression, env)
 

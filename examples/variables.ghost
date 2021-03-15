@@ -1,0 +1,8 @@
+let message = "hello world"
+print message
+
+message = "hello universe"
+print message
+
+let value
+print value

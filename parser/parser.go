@@ -23,6 +23,9 @@ import (
 // =============================================================================
 // Precedence order
 
+// parse                  -> declaration
+// declaration            -> varDeclaration | statement
+// varDeclaration         -> "let" IDENTIFIER ( "=" expression )
 // statement              -> expressionStatement | ifStatement | whileStatement |
 //                        printStatement | blockStatement
 // expressionStatement    -> expression
@@ -58,12 +61,45 @@ func (parser *Parser) Parse() []ast.StatementNode {
 	statements := make([]ast.StatementNode, 0)
 
 	for !parser.isAtEnd() {
-		statement, _ := parser.statement()
+		statement, _ := parser.declaration()
 
 		statements = append(statements, statement)
 	}
 
 	return statements
+}
+
+func (parser *Parser) declaration() (ast.StatementNode, error) {
+	var statement ast.StatementNode
+	var err error
+
+	if parser.match(token.LET) {
+		statement, err = parser.letDeclaration()
+	} else {
+		statement, err = parser.statement()
+	}
+
+	return statement, err
+}
+
+func (parser *Parser) letDeclaration() (ast.StatementNode, error) {
+	name, err := parser.consume(token.IDENTIFIER, "Expected variable name.")
+
+	if err != nil {
+		return nil, err
+	}
+
+	var initializer ast.ExpressionNode
+
+	if parser.match(token.EQUAL) {
+		initializer, err = parser.expression()
+
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return &ast.Declaration{Name: name, Initializer: initializer}, nil
 }
 
 func (parser *Parser) statement() (ast.StatementNode, error) {
@@ -74,13 +110,13 @@ func (parser *Parser) statement() (ast.StatementNode, error) {
 	} else if parser.match(token.PRINT) {
 		return parser.printStatement()
 	} else if parser.match(token.LEFTBRACE) {
-		var err error
+		statements, err := parser.block()
 
-		if statements, err := parser.block(); err == nil {
-			return &ast.Block{Statements: statements}, nil
+		if err != nil {
+			return nil, err
 		}
 
-		return nil, err
+		return &ast.Block{Statements: statements}, nil
 	}
 
 	return parser.expressionStatement()
@@ -152,7 +188,7 @@ func (parser *Parser) block() ([]ast.StatementNode, error) {
 	statements := make([]ast.StatementNode, 0)
 
 	for !parser.check(token.RIGHTBRACE) && !parser.isAtEnd() {
-		statement, err := parser.statement()
+		statement, err := parser.declaration()
 
 		if err != nil {
 			return nil, err
@@ -186,28 +222,27 @@ func (parser *Parser) expression() (ast.ExpressionNode, error) {
 }
 
 func (parser *Parser) assign() (ast.ExpressionNode, error) {
-	if parser.check(token.IDENTIFIER) && parser.next().Type == token.ASSIGN {
-		parser.match(token.IDENTIFIER)
-		name := parser.previous()
-
-		parser.match(token.ASSIGN)
-
-		val, err := parser.expression()
-
-		if err != nil {
-			return nil, err
-		}
-
-		return &ast.Assign{Name: name, Value: val}, nil
-	}
-
 	expression, err := parser.or()
 
 	if err != nil {
 		return nil, err
 	}
 
-	return expression, nil
+	if parser.match(token.EQUAL) {
+		val, err := parser.assign()
+
+		if err != nil {
+			return nil, err
+		}
+
+		if variable, ok := expression.(*ast.Variable); ok {
+			return &ast.Assign{Name: variable.Name, Value: val}, nil
+		}
+
+		return nil, glitch.ParseError(parser.peek(), fmt.Sprintf("Invalid assignment target."))
+	}
+
+	return expression, err
 }
 
 func (parser *Parser) or() (ast.ExpressionNode, error) {

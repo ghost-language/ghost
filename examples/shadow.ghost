@@ -1,13 +1,13 @@
-a := "global a"
-b := "global b"
-c := "global c"
+let a = "global a"
+let b = "global b"
+let c = "global c"
 
 {
-    a := "outer a"
-    b := "outer b"
+    let a = "outer a"
+    let b = "outer b"
 
     {
-        a := "inner a"
+        let a = "inner a"
         print a
         print b
         print c
