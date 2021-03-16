@@ -6,6 +6,7 @@ import (
 	"ghostlang.org/x/ghost/ast"
 	"ghostlang.org/x/ghost/errors"
 	"ghostlang.org/x/ghost/token"
+	"ghostlang.org/x/ghost/value"
 	"github.com/shopspring/decimal"
 )
 
@@ -99,11 +100,16 @@ func (parser *Parser) letDeclaration() (ast.StatementNode, error) {
 		}
 	}
 
+	// consume the semicolon and continue on
+	parser.match(token.SEMICOLON)
+
 	return &ast.Declaration{Name: name, Initializer: initializer}, nil
 }
 
 func (parser *Parser) statement() (ast.StatementNode, error) {
-	if parser.match(token.IF) {
+	if parser.match(token.FOR) {
+		return parser.forStatement()
+	} else if parser.match(token.IF) {
 		return parser.ifStatement()
 	} else if parser.match(token.WHILE) {
 		return parser.whileStatement()
@@ -120,6 +126,99 @@ func (parser *Parser) statement() (ast.StatementNode, error) {
 	}
 
 	return parser.expressionStatement()
+}
+
+func (parser *Parser) forStatement() (ast.StatementNode, error) {
+	_, err := parser.consume(token.LEFTPAREN, "Expected '(' after 'for'.")
+
+	if err != nil {
+		return nil, err
+	}
+
+	// Initializer
+	var initializer ast.StatementNode
+
+	if parser.match(token.SEMICOLON) {
+		initializer = nil
+	} else if parser.match(token.LET) {
+		initializer, err = parser.letDeclaration()
+
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		initializer, err = parser.expressionStatement()
+
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// Condition
+	var condition ast.ExpressionNode
+
+	if !parser.check(token.SEMICOLON) {
+		condition, err = parser.expression()
+
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	_, err = parser.consume(token.SEMICOLON, "Expect ';' afer loop condition.")
+
+	if err != nil {
+		return nil, err
+	}
+
+	// Increment
+	var increment ast.ExpressionNode
+
+	if !parser.check(token.RIGHTPAREN) {
+		increment, err = parser.expression()
+
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	_, err = parser.consume(token.RIGHTPAREN, "Expected ')' after for clause.")
+
+	if err != nil {
+		return nil, err
+	}
+
+	// Body
+	body, err := parser.statement()
+
+	if err != nil {
+		return nil, err
+	}
+
+	// Desugaring to while loop 🦾
+	if increment != nil {
+		statements := make([]ast.StatementNode, 0)
+		statements = append(statements, body)
+		statements = append(statements, increment)
+
+		body = &ast.Block{Statements: statements}
+	}
+
+	if condition == nil {
+		condition = value.TRUE
+	}
+
+	body = &ast.While{Condition: condition, Body: body}
+
+	if initializer != nil {
+		statements := make([]ast.StatementNode, 0)
+		statements = append(statements, initializer)
+		statements = append(statements, body)
+
+		body = &ast.Block{Statements: statements}
+	}
+
+	return body, nil
 }
 
 func (parser *Parser) ifStatement() (ast.StatementNode, error) {
