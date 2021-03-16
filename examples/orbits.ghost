@@ -1,7 +1,13 @@
 let gravity = 6.67428e-11
+
 let AU      = 149.6e6 * 1000
 let scale   = 250 / AU
 
+let testA = 6.67428e-11 - 2
+let testB = gravity - 2
+
 print "Gravity: " + gravity
-print "AU:      " + AU
-print "Scale:   " + scale
+print " Test A: " + testA
+print " Test B: " + testB
+print "     AU: " + AU
+print "  Scale: " + scale

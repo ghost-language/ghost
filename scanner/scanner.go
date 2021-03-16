@@ -3,7 +3,7 @@ package scanner
 import (
 	"fmt"
 
-	"ghostlang.org/x/ghost/glitch"
+	"ghostlang.org/x/ghost/errors"
 	"ghostlang.org/x/ghost/token"
 	"github.com/shopspring/decimal"
 )
@@ -17,7 +17,7 @@ type Scanner struct {
 	tokens  []token.Token
 }
 
-// keywords contains a list of all reserved keywords in glitch.
+// keywords contains a list of all reserved keywords in errors.
 var keywords = map[string]token.Type{
 	"and":      token.AND,
 	"class":    token.CLASS,
@@ -140,7 +140,7 @@ func (scanner *Scanner) scanToken() {
 		} else if scanner.isAlpha(c) {
 			scanner.scanIdentifier()
 		} else {
-			glitch.LogError(scanner.line, "Parse error")
+			errors.LogError(scanner.line, "Parse error")
 		}
 	}
 }
@@ -158,7 +158,7 @@ func (scanner *Scanner) scanString() {
 	}
 
 	if scanner.isAtEnd() {
-		glitch.LogError(scanner.line, "Unterminated string.")
+		errors.LogError(scanner.line, "Unterminated string.")
 		return
 	}
 
@@ -206,7 +206,7 @@ func (scanner *Scanner) scanNumber() {
 				scanner.advance()
 			}
 		} else {
-			glitch.LogError(scanner.line, "Expected number following e notation.")
+			errors.LogError(scanner.line, "Expected number following e notation.")
 		}
 	}
 

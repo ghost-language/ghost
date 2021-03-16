@@ -8,7 +8,7 @@ import (
 
 	"ghostlang.org/x/ghost/ast"
 	"ghostlang.org/x/ghost/environment"
-	"ghostlang.org/x/ghost/glitch"
+	"ghostlang.org/x/ghost/errors"
 	"ghostlang.org/x/ghost/object"
 	"ghostlang.org/x/ghost/parser"
 	"ghostlang.org/x/ghost/scanner"
@@ -89,13 +89,13 @@ func TestEvaluateIfStatement(t *testing.T) {
 		parser := parser.New(tokens)
 		statements := parser.Parse()
 
-		if glitch.HadParseError {
+		if errors.HadParseError {
 			return
 		}
 
 		Interpret(statements, env)
 
-		if glitch.HadParseError || glitch.HadRuntimeError {
+		if errors.HadParseError || errors.HadRuntimeError {
 			os.Exit(1)
 		}
 
@@ -135,13 +135,13 @@ func TestEvaluateWhileStatement(t *testing.T) {
 		parser := parser.New(tokens)
 		statements := parser.Parse()
 
-		if glitch.HadParseError {
+		if errors.HadParseError {
 			return
 		}
 
 		Interpret(statements, env)
 
-		if glitch.HadParseError || glitch.HadRuntimeError {
+		if errors.HadParseError || errors.HadRuntimeError {
 			os.Exit(1)
 		}
 

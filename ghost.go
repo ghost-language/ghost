@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"ghostlang.org/x/ghost/environment"
-	"ghostlang.org/x/ghost/glitch"
+	"ghostlang.org/x/ghost/errors"
 	"ghostlang.org/x/ghost/interpreter"
 	"ghostlang.org/x/ghost/parser"
 	"ghostlang.org/x/ghost/scanner"
@@ -112,7 +112,7 @@ func runPrompt() {
 			os.Exit(1)
 		} else {
 			run(source, env)
-			glitch.HadParseError = false
+			errors.HadParseError = false
 			line.AppendHistory(source)
 		}
 	}
@@ -130,7 +130,7 @@ func runFile(file string) {
 
 	run(string(source), env)
 
-	if glitch.HadParseError || glitch.HadRuntimeError {
+	if errors.HadParseError || errors.HadRuntimeError {
 		os.Exit(1)
 	}
 }
@@ -176,7 +176,7 @@ func run(source string, env *environment.Environment) {
 	parser := parser.New(tokens)
 	statements := parser.Parse()
 
-	if glitch.HadParseError {
+	if errors.HadParseError {
 		return
 	}
 

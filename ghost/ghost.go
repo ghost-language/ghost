@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"ghostlang.org/x/ghost/environment"
-	"ghostlang.org/x/ghost/glitch"
+	"ghostlang.org/x/ghost/errors"
 	"ghostlang.org/x/ghost/interpreter"
 	"ghostlang.org/x/ghost/parser"
 	"ghostlang.org/x/ghost/scanner"
@@ -20,13 +20,13 @@ func Run(source string, writer io.Writer) {
 	parser := parser.New(tokens)
 	statements := parser.Parse()
 
-	if glitch.HadParseError {
+	if errors.HadParseError {
 		return
 	}
 
 	interpreter.Interpret(statements, env)
 
-	if glitch.HadParseError || glitch.HadRuntimeError {
+	if errors.HadParseError || errors.HadRuntimeError {
 		os.Exit(1)
 	}
 }
