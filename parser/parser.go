@@ -38,7 +38,9 @@ import (
 // comparison             -> term ( ( ">" | ">=" | "<" | "<=" ) term )*
 // term                   -> factor ( ( "-" | "+" ) factor )*
 // factor                 -> unary ( ( "/" | "*" ) unary )*
-// unary                  -> ( "!" | "-" ) unary
+// unary                  -> ( "!" | "-" ) unary | call
+// call                   -> primary ( "(" arguments? ")" )
+// arguments              -> expression ( "," expression )
 // primary                -> NUMBER | STRING | "true" | "false" | "null" |
 //                        "(" expression ")"
 
@@ -510,7 +512,61 @@ func (parser *Parser) unary() (ast.ExpressionNode, error) {
 		return &ast.Unary{Operator: operator, Right: right}, nil
 	}
 
-	return parser.primary()
+	return parser.call()
+}
+
+func (parser *Parser) call() (ast.ExpressionNode, error) {
+	expression, err := parser.primary()
+
+	if err != nil {
+		return nil, err
+	}
+
+	for {
+		if parser.match(token.LEFTPAREN) {
+			expression, err = parser.finishCall(expression)
+
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			break
+		}
+	}
+
+	return expression, err
+}
+
+func (parser *Parser) finishCall(callee ast.ExpressionNode) (ast.ExpressionNode, error) {
+	arguments := make([]ast.ExpressionNode, 0)
+
+	if !parser.check(token.RIGHTPAREN) {
+		for {
+			argument, err := parser.assign()
+
+			if err != nil {
+				return nil, err
+			}
+
+			if len(arguments) >= 255 {
+				return nil, errors.ParseError(parser.peek(), "Cannot have more than 255 arguments.")
+			}
+
+			arguments = append(arguments, argument)
+
+			if !parser.match(token.COMMA) {
+				break
+			}
+		}
+	}
+
+	paren, err := parser.consume(token.RIGHTPAREN, "Expected ')' after arguments.")
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &ast.Call{Callee: callee, Paren: paren, Arguments: arguments}, nil
 }
 
 func (parser *Parser) primary() (ast.ExpressionNode, error) {
