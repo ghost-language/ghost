@@ -7,6 +7,7 @@ import (
 	"ghostlang.org/x/ghost/environment"
 	"ghostlang.org/x/ghost/errors"
 	"ghostlang.org/x/ghost/object"
+	"ghostlang.org/x/ghost/standard"
 	"ghostlang.org/x/ghost/value"
 )
 
@@ -37,6 +38,8 @@ func Evaluate(node ast.Node, env *environment.Environment) (object.Object, bool)
 		}
 
 		return value.FALSE, true
+	case *ast.Call:
+		return evaluateCall(node, env)
 	case *ast.Declaration:
 		return evaluateDeclaration(node, env)
 	case *ast.Expression:
@@ -69,7 +72,13 @@ func Evaluate(node ast.Node, env *environment.Environment) (object.Object, bool)
 		val, err := env.Get(node.Name)
 
 		if err != nil {
-			return &object.Error{Message: fmt.Sprintf("unknown identifier: %v", node)}, false
+			standard, success := standard.StandardFunctions[node.Name.Lexeme]
+
+			if success != true {
+				return &object.Error{Message: fmt.Sprintf("unknown identifier: %v", node)}, false
+			}
+
+			return standard, true
 		}
 
 		return val, true

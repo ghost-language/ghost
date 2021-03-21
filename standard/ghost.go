@@ -9,7 +9,7 @@ func init() {
 	RegisterFunction("version", versionFunction)
 }
 
-func versionFunction(args ...object.Object) object.Object {
+func versionFunction(args ...[]object.Object) object.Object {
 	v := version.Version
 
 	return &object.String{Value: v}
