@@ -7,6 +7,7 @@ import (
 )
 
 func evaluateCall(node *ast.Call, env *environment.Environment) (object.Object, bool) {
+
 	callee, success := Evaluate(node.Callee, env)
 
 	if success != true {
@@ -18,7 +19,7 @@ func evaluateCall(node *ast.Call, env *environment.Environment) (object.Object, 
 	for _, arg := range node.Arguments {
 		nodeArg, success := Evaluate(arg, env)
 
-		if success != false {
+		if success != true {
 			return nil, false
 		}
 
@@ -32,6 +33,4 @@ func evaluateCall(node *ast.Call, env *environment.Environment) (object.Object, 
 	}
 
 	return function.Function(args), true
-
-	// panic(fmt.Sprintf("%T: %+v", callee, callee))
 }

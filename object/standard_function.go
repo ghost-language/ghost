@@ -3,7 +3,7 @@ package object
 // STANDARDFUNCTION represents the object's type.
 const STANDARDFUNCTION = "STANDARDFUNCTION"
 
-type StandardFunction func(args ...[]Object) Object
+type StandardFunction func(args []Object) Object
 
 // String represents the string form of the standard function object.
 func (sf *StandardFunction) String() string {
