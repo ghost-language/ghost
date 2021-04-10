@@ -1,16 +1,17 @@
 package interpreter
 
 import (
+	"fmt"
+
 	"ghostlang.org/x/ghost/ast"
 	"ghostlang.org/x/ghost/environment"
 	"ghostlang.org/x/ghost/object"
 )
 
 func evaluateCall(node *ast.Call, env *environment.Environment) (object.Object, bool) {
-
 	callee, success := Evaluate(node.Callee, env)
 
-	if success != true {
+	if success != false {
 		return nil, false
 	}
 
@@ -29,7 +30,7 @@ func evaluateCall(node *ast.Call, env *environment.Environment) (object.Object, 
 	function, ok := callee.(*object.Standard)
 
 	if !ok {
-		panic("uh oh")
+		return &object.Error{Message: fmt.Sprintf("can only call functions.")}, false
 	}
 
 	return function.Function(args), true

@@ -7,7 +7,6 @@ import (
 	"ghostlang.org/x/ghost/environment"
 	"ghostlang.org/x/ghost/errors"
 	"ghostlang.org/x/ghost/object"
-	"ghostlang.org/x/ghost/standard"
 	"ghostlang.org/x/ghost/value"
 )
 
@@ -33,23 +32,15 @@ func Evaluate(node ast.Node, env *environment.Environment) (object.Object, bool)
 	case *ast.Block:
 		return evaluateBlock(node, env)
 	case *ast.Boolean:
-		if node.Value {
-			return value.TRUE, true
-		}
-
-		return value.FALSE, true
+		return evaluateBoolean(node, env)
 	case *ast.Call:
 		return evaluateCall(node, env)
 	case *ast.Declaration:
 		return evaluateDeclaration(node, env)
 	case *ast.Expression:
-		result, ok := Evaluate(node.Expression, env)
-
-		if !ok {
-			return result, ok
-		}
-
-		return value.NULL, ok
+		return evaluateExpression(node, env)
+	case *ast.Function:
+		return evaluateFunction(node, env)
 	case *ast.Grouping:
 		return Evaluate(node.Expression, env)
 	case *ast.If:
@@ -69,19 +60,7 @@ func Evaluate(node ast.Node, env *environment.Environment) (object.Object, bool)
 	case *ast.Unary:
 		return evaluateUnary(node, env)
 	case *ast.Variable:
-		val, err := env.Get(node.Name)
-
-		if err != nil {
-			standard, success := standard.StandardFunctions[node.Name.Lexeme]
-
-			if success != true {
-				return &object.Error{Message: fmt.Sprintf("unknown identifier: %v", node)}, false
-			}
-
-			return standard, true
-		}
-
-		return val, true
+		return evaluateVariable(node, env)
 	case *ast.While:
 		return evaluateWhile(node, env)
 	}

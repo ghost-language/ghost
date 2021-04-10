@@ -78,6 +78,8 @@ func (parser *Parser) declaration() (ast.StatementNode, error) {
 
 	if parser.match(token.LET) {
 		statement, err = parser.letDeclaration()
+	} else if parser.match(token.FUNCTION) {
+		statement, err = parser.functionDeclaration("function")
 	} else {
 		statement, err = parser.statement()
 	}
@@ -106,6 +108,58 @@ func (parser *Parser) letDeclaration() (ast.StatementNode, error) {
 	parser.match(token.SEMICOLON)
 
 	return &ast.Declaration{Name: name, Initializer: initializer}, nil
+}
+
+func (parser *Parser) functionDeclaration(kind string) (ast.StatementNode, error) {
+	name, err := parser.consume(token.IDENTIFIER, "Expected " + kind + " name.")
+
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = parser.consume(token.LEFTPAREN, "Expected '(' after " + kind + " name.")
+
+	if err != nil {
+		return nil, err
+	}
+
+	parameters := make([]token.Token, 0)
+
+	if !parser.check(token.RIGHTPAREN) {
+		for {
+			param, err := parser.consume(token.IDENTIFIER, "Expected parameter name.")
+
+			if err != nil {
+				return nil, err
+			}
+
+			parameters = append(parameters, param)
+
+			if !parser.match(token.COMMA) {
+				break
+			}
+		}
+	}
+
+	_, err = parser.consume(token.RIGHTPAREN, "Expected ')' after parameters.")
+
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = parser.consume(token.LEFTBRACE, "Expected '{' before " + kind + " body.")
+
+	if err != nil {
+		return nil, err
+	}
+
+	body, err := parser.block()
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &ast.Function{Name: name, Params: parameters, Body: body}, nil
 }
 
 func (parser *Parser) statement() (ast.StatementNode, error) {
