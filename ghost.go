@@ -56,13 +56,7 @@ func init() {
 }
 
 func main() {
-	viper.SetConfigFile(".env")
-
-	// Find and read the config file
-	viper.ReadInConfig()
-
-	viper.SetDefault("APP_SERVER", false)
-	viper.SetDefault("APP_ADDRESS", "0.0.0.0:8080")
+	configureEnvironment()
 
 	flag.Parse()
 
@@ -82,7 +76,7 @@ func main() {
 		fmt.Println("Usage: ghost [script]")
 		os.Exit(64)
 	} else if len(args) == 1 {
-		if flagServe {
+		if viper.GetString("SERVER") == "true" {
 			runServer(args[0])
 		} else {
 			runFile(args[0])
@@ -90,6 +84,15 @@ func main() {
 	} else {
 		runPrompt()
 	}
+}
+
+func configureEnvironment() {
+	viper.SetConfigFile(".env")
+
+	viper.ReadInConfig()
+
+	viper.SetDefault("SERVER", false)
+	viper.SetDefault("SERVER_ADDRESS", "0.0.0.0:8080")
 }
 
 func runPrompt() {
@@ -166,9 +169,18 @@ func runServer(path string) {
 		if errors.HadParseError == true {
 			status = "error"
 
-			t, _ := template.ParseFiles("server/error.html")
-			e := errors.ErrorBag{Message: errors.ParseErrorMessage}
-			t.Execute(w, e)
+			data := struct {
+				Message string
+				Host string
+				Path string
+			}{
+				Message: errors.ParseErrorMessage,
+				Host: r.Host,
+				Path: r.URL.Path,
+			}
+
+			t, _ := template.ParseFiles("server/templates/error.html")
+			t.Execute(w, data)
 
 			errors.Reset()
 		}
@@ -177,8 +189,9 @@ func runServer(path string) {
 
 		log.Printf("--> %s (%s) %s (%s)", r.Method, status, r.URL.Path, secs)
 	})
+	http.Handle("/ghost/css/", http.StripPrefix("/ghost/css/", http.FileServer(http.Dir("./server/templates/public"))))
 
-	log.Fatal(http.ListenAndServe(flagAddress, nil))
+	log.Fatal(http.ListenAndServe(viper.GetString("SERVER_ADDRESS"), nil))
 }
 
 func readSource(path string) string {

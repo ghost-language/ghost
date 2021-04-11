@@ -1,5 +1,5 @@
-let a = 1
-let b =
+let a =
+let b = 2
 
 print file("examples/example.html")
 

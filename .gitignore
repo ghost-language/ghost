@@ -16,6 +16,5 @@
 # Dependency directories (remove the comment below to include it)
 # vendor/
 
-dist/
-*node_modules/
+node_modules
 .env

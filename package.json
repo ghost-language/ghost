@@ -1,0 +1,15 @@
+{
+    "private": true,
+    "scripts": {
+        "dev": "TAILWIND_MODE=watch NODE_ENV=development postcss server/templates/css/ghost.css -o ./server/templates/public/ghost.css -w",
+        "build:dev": "TAILWIND_MODE=build NODE_ENV=development postcss server/templates/css/ghost.css -o ./server/templates/public/ghost.css",
+        "build:prod": "TAILWIND_MODE=build NODE_ENV=production postcss server/templates/css/ghost.css -o ./server/templates/public/ghost.css"
+    },
+    "devDependencies": {
+        "autoprefixer": "^10.2.5",
+        "postcss": "^8.2.9",
+        "postcss-cli": "^8.3.1",
+        "postcss-import": "^14.0.1",
+        "tailwindcss": "^2.1.1"
+    }
+}
