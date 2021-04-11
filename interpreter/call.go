@@ -11,7 +11,7 @@ import (
 func evaluateCall(node *ast.Call, env *environment.Environment) (object.Object, bool) {
 	callee, success := Evaluate(node.Callee, env)
 
-	if success != false {
+	if success != true {
 		return nil, false
 	}
 

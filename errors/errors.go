@@ -2,10 +2,14 @@ package errors
 
 import (
 	"fmt"
-	"os"
 
+	"ghostlang.org/x/ghost/environment"
 	"ghostlang.org/x/ghost/token"
 )
+
+type ErrorBag struct {
+	Message string
+}
 
 // HadRuntimeError tracks if we encountered an error during runtime.
 var HadRuntimeError = false
@@ -13,27 +17,47 @@ var HadRuntimeError = false
 // HadParseError tracks if we encountered an error during the parsing step.
 var HadParseError = false
 
+var ParseErrorMessage string
+var RuntimeErrorMessage string
+
 // LogError ...
 func LogError(line int, message string) {
-	fmt.Fprintf(os.Stderr, "[line %v] Error: %s\n", line, message)
+	ParseErrorMessage = fmt.Sprintf("[line %v] Error: %s\n", line, message)
 	HadParseError = true
 }
 
 // RuntimeError ...
 func RuntimeError(message string) {
-	fmt.Fprintf(os.Stderr, "%v\n", message)
+	RuntimeErrorMessage = fmt.Sprintf("%v\n", message)
 	HadRuntimeError = true
 }
 
 // ParseError ...
 func ParseError(t token.Token, message string) error {
-	message = fmt.Sprintf("[line %v] Error at '%s': %s\n", t.Line, t.Lexeme, message)
-
 	if t.Type == token.EOF {
 		message = fmt.Sprintf("[line %v] Error at end of file: %s\n", t.Line, message)
+	} else {
+		message = fmt.Sprintf("[line %v] Error at '%s': %s\n", t.Line, t.Lexeme, message)
 	}
 
 	HadParseError = true
-	fmt.Fprintf(os.Stderr, message)
+	ParseErrorMessage = message
 	return fmt.Errorf(message)
+}
+
+func Reset() {
+	HadParseError = false
+	HadRuntimeError = false
+	ParseErrorMessage = ""
+	RuntimeErrorMessage = ""
+}
+
+func Print(env *environment.Environment) {
+	if HadParseError == true {
+		fmt.Fprintln(env.GetWriter(), ParseErrorMessage)
+	}
+
+	if HadRuntimeError == true {
+		fmt.Fprintln(env.GetWriter(), RuntimeErrorMessage)
+	}
 }

@@ -8,6 +8,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"text/template"
 	"time"
 
 	"ghostlang.org/x/ghost/environment"
@@ -17,6 +18,7 @@ import (
 	"ghostlang.org/x/ghost/scanner"
 	"ghostlang.org/x/ghost/version"
 	"github.com/peterh/liner"
+	"github.com/spf13/viper"
 )
 
 // const ...
@@ -54,6 +56,14 @@ func init() {
 }
 
 func main() {
+	viper.SetConfigFile(".env")
+
+	// Find and read the config file
+	viper.ReadInConfig()
+
+	viper.SetDefault("APP_SERVER", false)
+	viper.SetDefault("APP_ADDRESS", "0.0.0.0:8080")
+
 	flag.Parse()
 
 	if flagVersion {
@@ -142,19 +152,30 @@ func runServer(path string) {
 	fmt.Printf(InfoColor, fmt.Sprintf("Starting Ghost %s server: ", version.Version))
 	fmt.Printf("%s\n", flagAddress)
 
-	http.HandleFunc("/", func(writer http.ResponseWriter, request *http.Request) {
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		status := "success"
 		start := time.Now()
 
 		env := environment.New()
-		env.SetWriter(writer)
+		env.SetWriter(w)
 
 		source := readSource(path)
 
 		run(source, env)
 
+		if errors.HadParseError == true {
+			status = "error"
+
+			t, _ := template.ParseFiles("server/error.html")
+			e := errors.ErrorBag{Message: errors.ParseErrorMessage}
+			t.Execute(w, e)
+
+			errors.Reset()
+		}
+
 		secs := time.Since(start).String()
 
-		log.Printf("--> %s %s (%s)", request.Method, request.URL.Path, secs)
+		log.Printf("--> %s (%s) %s (%s)", r.Method, status, r.URL.Path, secs)
 	})
 
 	log.Fatal(http.ListenAndServe(flagAddress, nil))

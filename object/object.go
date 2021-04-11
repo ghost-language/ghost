@@ -8,3 +8,10 @@ type Object interface {
 	Type() Type
 	String() string
 }
+
+type GhostCallable func([]Object) (Object, error)
+
+type Callable interface {
+	Arity() int
+	Call([]Object) (Object, error)
+}
