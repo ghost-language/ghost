@@ -8,7 +8,7 @@ import (
 	"ghostlang.org/x/ghost/standard"
 )
 
-func evaluateVariable(node *ast.Variable, env *object.Environment) (object.Object, bool) {
+func evaluateIdentifier(node *ast.Identifier, env *object.Environment) (object.Object, bool) {
 	val, err := env.Get(node.Name)
 
 	if err != nil {

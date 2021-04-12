@@ -1,8 +1,6 @@
 package interpreter
 
 import (
-	"fmt"
-
 	"ghostlang.org/x/ghost/ast"
 	"ghostlang.org/x/ghost/object"
 )
@@ -10,8 +8,8 @@ import (
 func evaluateCall(node *ast.Call, env *object.Environment) (object.Object, bool) {
 	callee, success := Evaluate(node.Callee, env)
 
-	if success != true {
-		return nil, false
+	if !success {
+		return &object.Error{Message: "unknown identifier."}, false
 	}
 
 	args := make([]object.Object, 0)
@@ -19,8 +17,8 @@ func evaluateCall(node *ast.Call, env *object.Environment) (object.Object, bool)
 	for _, arg := range node.Arguments {
 		nodeArg, success := Evaluate(arg, env)
 
-		if success != true {
-			return nil, false
+		if !success {
+			return &object.Error{Message: "could not properly evaluate argument expressions."}, false
 		}
 
 		args = append(args, nodeArg)
@@ -29,7 +27,7 @@ func evaluateCall(node *ast.Call, env *object.Environment) (object.Object, bool)
 	function, ok := callee.(*object.Standard)
 
 	if !ok {
-		return &object.Error{Message: fmt.Sprintf("can only call functions.")}, false
+		return &object.Error{Message: "can only call functions."}, false
 	}
 
 	return function.Function(args), true

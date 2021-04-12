@@ -128,7 +128,15 @@ func runPrompt() {
 			os.Exit(1)
 		} else {
 			run(source, env)
+
+			if errors.HadParseError {
+				fmt.Printf("%s\n", errors.ParseErrorMessage)
+			} else if errors.HadRuntimeError {
+				fmt.Printf("%s\n", errors.RuntimeErrorMessage)
+			}
+
 			errors.HadParseError = false
+			errors.HadRuntimeError = false
 			line.AppendHistory(source)
 		}
 	}

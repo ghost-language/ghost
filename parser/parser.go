@@ -2,6 +2,7 @@ package parser
 
 import (
 	"fmt"
+	"log"
 
 	"ghostlang.org/x/ghost/ast"
 	"ghostlang.org/x/ghost/errors"
@@ -79,7 +80,8 @@ func (parser *Parser) declaration() (ast.StatementNode, error) {
 	if parser.match(token.LET) {
 		statement, err = parser.letDeclaration()
 	} else if parser.match(token.FUNCTION) {
-		statement, err = parser.functionDeclaration("function")
+		statement, err = parser.statement()
+		// statement, err = parser.functionDeclaration("function")
 	} else {
 		statement, err = parser.statement()
 	}
@@ -159,7 +161,10 @@ func (parser *Parser) functionDeclaration(kind string) (ast.StatementNode, error
 		return nil, err
 	}
 
-	return &ast.Function{Name: name, Params: parameters, Body: body}, nil
+	log.Fatal(fmt.Sprintf("%s : %s", name.Lexeme, body))
+
+	return nil, nil
+	// return &ast.Function{Name: name, Params: parameters, Body: body}, nil
 }
 
 func (parser *Parser) statement() (ast.StatementNode, error) {
@@ -390,8 +395,8 @@ func (parser *Parser) assign() (ast.ExpressionNode, error) {
 			return nil, err
 		}
 
-		if variable, ok := expression.(*ast.Variable); ok {
-			return &ast.Assign{Name: variable.Name, Value: val}, nil
+		if identifier, ok := expression.(*ast.Identifier); ok {
+			return &ast.Assign{Name: identifier.Name, Value: val}, nil
 		}
 
 		return nil, errors.ParseError(parser.peek(), fmt.Sprintf("Invalid assignment target."))
@@ -657,7 +662,7 @@ func (parser *Parser) primary() (ast.ExpressionNode, error) {
 
 		return &ast.Grouping{Expression: expression}, nil
 	} else if parser.match(token.IDENTIFIER) {
-		return &ast.Variable{Name: parser.previous()}, nil
+		return &ast.Identifier{Name: parser.previous()}, nil
 	}
 
 	return nil, errors.ParseError(parser.peek(), fmt.Sprintf("Expected expression, got=%v", parser.peek().Type))

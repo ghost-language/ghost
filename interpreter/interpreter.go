@@ -58,8 +58,8 @@ func Evaluate(node ast.Node, env *object.Environment) (object.Object, bool) {
 		return evaluateTernary(node, env)
 	case *ast.Unary:
 		return evaluateUnary(node, env)
-	case *ast.Variable:
-		return evaluateVariable(node, env)
+	case *ast.Identifier:
+		return evaluateIdentifier(node, env)
 	case *ast.While:
 		return evaluateWhile(node, env)
 	}
