@@ -10,10 +10,108 @@
 </head>
 <body class="bg-gray-100 text-gray-900 m-12">
     <main class="w-full max-w-6xl mx-auto">
-        <div class="bg-white border border-gray-200 p-12">
+        <div class="bg-white border border-gray-200 p-12 mb-12 rounded-lg overflow-hidden shadow-sm">
             <h1 class="text-xl text-gray-500">Parse Error</h1>
             <h2 class="text-lg font-bold">{{.Message}}</h2>
-            <span>{{.Host}}{{.Path}}</span>
+
+            <div class="mt-6">
+                <a href="{{.Host}}{{.Path}}" target="_blank" class="text-sm text-gray-400 hover:text-gray-600 underline">{{.Host}}{{.Path}}</a>
+            </div>
+        </div>
+
+        <div class="bg-white border border-gray-200 mb-12 rounded-lg overflow-hidden shadow-sm">
+            <div class="border-t-8 border-purple-400">
+                <div class="px-12 py-6">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900">
+                        Environment Information
+                    </h3>
+
+                    <p class="mt-1 max-w-2xl text-sm text-gray-500">
+                        Details on the environment and application.
+                    </p>
+                </div>
+
+                <div class="border-t border-gray-200 px-12 py-6">
+                    <dl class="grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-2">
+                        <div class="sm:col-span-1">
+                            <dt class="text-sm font-medium text-gray-500">
+                                Ghost Version
+                            </dt>
+
+                            <dd class="mt-1 text-sm text-gray-900">
+                                {{.Version}}
+                            </dd>
+                        </div>
+                        <div class="sm:col-span-1">
+                            <dt class="text-sm font-medium text-gray-500">
+                                Operating System
+                            </dt>
+                            <dd class="mt-1 text-sm text-gray-900">
+                                {{.OperatingSystem}}
+                            </dd>
+                        </div>
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white border border-gray-200 mb-12 rounded-lg overflow-hidden shadow-sm">
+            <div class="border-t-8 border-gray-300">
+                <div class="px-12 py-6">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900">
+                        Request Information
+                    </h3>
+
+                    <p class="mt-1 max-w-2xl text-sm text-gray-500">
+                        Details on the request and headers.
+                    </p>
+                </div>
+
+                <div class="border-t border-gray-200 px-12 py-6">
+                    <dl class="grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-2">
+                        <div class="sm:col-span-1">
+                            <dt class="text-sm font-medium text-gray-500">
+                                URL
+                            </dt>
+
+                            <dd class="mt-1 text-sm text-gray-900">
+                                {{.Host}}{{.Path}}
+                            </dd>
+                        </div>
+
+                        <div class="sm:col-span-1">
+                            <dt class="text-sm font-medium text-gray-500">
+                                Method
+                            </dt>
+                            <dd class="mt-1 text-sm text-gray-900">
+                                {{.Method}}
+                            </dd>
+                        </div>
+
+                        <div class="sm:col-span-1">
+                            <dt class="text-sm font-medium text-gray-500">
+                                accept-language
+                            </dt>
+                            <dd class=" text-sm text-gray-900">
+                                {{.AcceptLanguage}}
+                            </dd>
+                        </div>
+
+                        <div class="sm:col-span-1">
+                            <dt class="text-sm font-medium text-gray-500">
+                                accept-encoding
+                            </dt>
+                            <dd class=" text-sm text-gray-900">
+                                {{.AcceptEncoding}}
+                            </dd>
+                        </div>
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white border border-gray-200 mb-12 p-12 rounded-lg overflow-hidden shadow-sm font-mono text-sm">
+            {{.Source}}
         </div>
     </main>
 </body>

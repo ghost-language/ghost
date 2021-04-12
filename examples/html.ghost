@@ -1,6 +1,6 @@
-let a =
+let a = 1
 let b = 2
 
-print file("examples/example.html")
-
 let c = a + b
+
+print file("examples/example.html")

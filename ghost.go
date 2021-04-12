@@ -3,11 +3,14 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"path"
 	"path/filepath"
+	"runtime"
+	"strings"
 	"text/template"
 	"time"
 
@@ -155,6 +158,7 @@ func runServer(path string) {
 	fmt.Printf(InfoColor, fmt.Sprintf("Starting Ghost %s server: ", version.Version))
 	fmt.Printf("%s\n", flagAddress)
 
+	http.Handle("/ghost/css/", http.StripPrefix("/ghost/css/", http.FileServer(http.Dir("./server/templates/public"))))
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		status := "success"
 		start := time.Now()
@@ -168,15 +172,28 @@ func runServer(path string) {
 
 		if errors.HadParseError == true {
 			status = "error"
+			sourceBuffer, _ := ioutil.ReadFile(path)
 
 			data := struct {
 				Message string
 				Host string
 				Path string
+				Version string
+				OperatingSystem string
+				Method string
+				AcceptLanguage string
+				AcceptEncoding string
+				Source string
 			}{
 				Message: errors.ParseErrorMessage,
 				Host: r.Host,
 				Path: r.URL.Path,
+				Version: version.Version,
+				OperatingSystem: runtime.GOOS,
+				Method: r.Method,
+				AcceptLanguage: r.Header.Get("Accept-Language"),
+				AcceptEncoding: r.Header.Get("Accept-Encoding"),
+				Source: strings.Replace(string(sourceBuffer), "\n", "<br>", -1),
 			}
 
 			t, _ := template.ParseFiles("server/templates/error.html")
@@ -189,7 +206,6 @@ func runServer(path string) {
 
 		log.Printf("--> %s (%s) %s (%s)", r.Method, status, r.URL.Path, secs)
 	})
-	http.Handle("/ghost/css/", http.StripPrefix("/ghost/css/", http.FileServer(http.Dir("./server/templates/public"))))
 
 	log.Fatal(http.ListenAndServe(viper.GetString("SERVER_ADDRESS"), nil))
 }

@@ -685,7 +685,7 @@ func (parser *Parser) consume(tt token.Type, message string) (token.Token, error
 		return parser.advance(), nil
 	}
 
-	return parser.previous(), errors.ParseError(parser.peek(), message)
+	return parser.previous(), errors.ParseError(parser.previous(), message)
 }
 
 // advance consumes the next token and pushes our current pointer ahead if we
