@@ -94,6 +94,22 @@ npm run production
 
 This will compile the final assets in a condensed format with the smallest filesize possible.
 
+## Running Ghost as a Server
+To run Ghost as a server, create a `.env` alongside `ghost` with the following contents:
+
+```
+SERVER=true
+SERVER_ADDRESS=0.0.0.0:8080
+```
+
+`SERVER` tells ghost to run as a server instance, while `SERVER_ADDRESS` tells Ghost what port it should listen on. By default we're listening on port `8080` but you can configure this as you need to.
+
+```
+$ ghost example.ghost
+```
+
+Once running, Ghost will output log information on every request that comes through. You can now open your browser and navigate to http://localhost:8080 and see your website running 🦾
+
 ## Releasing
 Ghost is hosted and distributed through GitHub. We utilize [GoReleaser](https://goreleaser.com) to automate the release process. GoReleaser will build all the necessary binaries, publish the release and publish the brew tap formula. The following steps outline the process for maintainers of Ghost:
 
