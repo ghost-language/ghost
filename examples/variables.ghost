@@ -1,9 +1,0 @@
-let a = 1
-
-{
-    a = 3
-    let a = a + 2
-    print a
-}
-
-print a

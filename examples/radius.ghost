@@ -1,5 +1,0 @@
-let pi = 3.141592653
-let radius = 4
-let area = pi * radius * radius
-
-print area

@@ -1,7 +1,0 @@
-let a = 87.93
-let b = 82.27
-let c = 86.17
-
-let average = (a + b + c) / 3
-
-print average
