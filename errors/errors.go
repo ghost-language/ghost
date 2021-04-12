@@ -3,7 +3,6 @@ package errors
 import (
 	"fmt"
 
-	"ghostlang.org/x/ghost/environment"
 	"ghostlang.org/x/ghost/token"
 )
 
@@ -50,14 +49,4 @@ func Reset() {
 	HadRuntimeError = false
 	ParseErrorMessage = ""
 	RuntimeErrorMessage = ""
-}
-
-func Print(env *environment.Environment) {
-	if HadParseError == true {
-		fmt.Fprintln(env.GetWriter(), ParseErrorMessage)
-	}
-
-	if HadRuntimeError == true {
-		fmt.Fprintln(env.GetWriter(), RuntimeErrorMessage)
-	}
 }

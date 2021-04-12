@@ -1,44 +1,43 @@
-package environment
+package object
 
 import (
 	"bytes"
 	"fmt"
 	"io"
 
-	"ghostlang.org/x/ghost/object"
 	"ghostlang.org/x/ghost/token"
 )
 
 // Environment stores the bindings that associate variables to values.
 type Environment struct {
-	values    map[string]object.Object
+	values    map[string]Object
 	enclosing *Environment
 	writer    io.Writer
 }
 
-// New creates a new instance of Environment.
-func New() *Environment {
-	return &Environment{values: make(map[string]object.Object), enclosing: nil}
+// NewEnvironment creates a new instance of Environment.
+func NewEnvironment() *Environment {
+	return &Environment{values: make(map[string]Object), enclosing: nil}
 }
 
 // Extend an existing environment.
-func Extend(env *Environment) *Environment {
-	return &Environment{values: make(map[string]object.Object), enclosing: env, writer: env.writer}
+func ExtendEnvironment(env *Environment) *Environment {
+	return &Environment{values: make(map[string]Object), enclosing: env, writer: env.writer}
 }
 
-func (e *Environment) All() map[string]object.Object {
+func (e *Environment) All() map[string]Object {
 	return e.values
 }
 
 // Declare binds a new value to the environment with the given name.
-func (e *Environment) Declare(name string, value object.Object) object.Object {
+func (e *Environment) Declare(name string, value Object) Object {
 	e.values[name] = value
 
 	return value
 }
 
 // Assign ...
-func (e *Environment) Assign(name token.Token, value object.Object) (object.Object, error) {
+func (e *Environment) Assign(name token.Token, value Object) (Object, error) {
 	if _, ok := e.values[name.Lexeme]; ok {
 		e.values[name.Lexeme] = value
 		return value, nil
@@ -52,7 +51,7 @@ func (e *Environment) Assign(name token.Token, value object.Object) (object.Obje
 }
 
 // Get fetches the variable with the given name from the environment.
-func (e *Environment) Get(name token.Token) (object.Object, error) {
+func (e *Environment) Get(name token.Token) (Object, error) {
 	result, exists := e.values[name.Lexeme]
 
 	if exists {

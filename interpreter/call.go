@@ -4,11 +4,10 @@ import (
 	"fmt"
 
 	"ghostlang.org/x/ghost/ast"
-	"ghostlang.org/x/ghost/environment"
 	"ghostlang.org/x/ghost/object"
 )
 
-func evaluateCall(node *ast.Call, env *environment.Environment) (object.Object, bool) {
+func evaluateCall(node *ast.Call, env *object.Environment) (object.Object, bool) {
 	callee, success := Evaluate(node.Callee, env)
 
 	if success != true {

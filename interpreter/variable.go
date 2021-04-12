@@ -4,12 +4,11 @@ import (
 	"fmt"
 
 	"ghostlang.org/x/ghost/ast"
-	"ghostlang.org/x/ghost/environment"
 	"ghostlang.org/x/ghost/object"
 	"ghostlang.org/x/ghost/standard"
 )
 
-func evaluateVariable(node *ast.Variable, env *environment.Environment) (object.Object, bool) {
+func evaluateVariable(node *ast.Variable, env *object.Environment) (object.Object, bool) {
 	val, err := env.Get(node.Name)
 
 	if err != nil {

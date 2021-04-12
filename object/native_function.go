@@ -1,21 +1,19 @@
 package object
 
-import "fmt"
+// NATIVE_FUNCTION represents the object's type.
+const NATIVE_FUNCTION = "NATIVE_FUNCTION"
 
 type NativeFunction struct {
-	Callable
-	nativeCall GhostCallable
-	arity int
+	Name string
+	Function GhostFunction
 }
 
-func (n *NativeFunction) Call(arguments []Object) (Object, error) {
-	return n.nativeCall(arguments)
+// String represents the string form of the native function object.
+func (nf *NativeFunction) String() string {
+	return nf.Name
 }
 
-func (n *NativeFunction) Arity() int {
-	return n.arity
-}
-
-func (n *NativeFunction) String() string {
-	return fmt.Sprintf("native function: %p", n.nativeCall)
+// Type returns the native function object type.
+func (nf *NativeFunction) Type() Type {
+	return NATIVE_FUNCTION
 }

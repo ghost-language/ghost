@@ -2,13 +2,12 @@ package interpreter
 
 import (
 	"ghostlang.org/x/ghost/ast"
-	"ghostlang.org/x/ghost/environment"
 	"ghostlang.org/x/ghost/helper"
 	"ghostlang.org/x/ghost/object"
 	"ghostlang.org/x/ghost/token"
 )
 
-func evaluateLogical(node *ast.Logical, env *environment.Environment) (object.Object, bool) {
+func evaluateLogical(node *ast.Logical, env *object.Environment) (object.Object, bool) {
 	left, err := Evaluate(node.Left, env)
 
 	if !err {

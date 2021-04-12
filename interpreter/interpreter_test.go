@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"ghostlang.org/x/ghost/ast"
-	"ghostlang.org/x/ghost/environment"
 	"ghostlang.org/x/ghost/errors"
 	"ghostlang.org/x/ghost/object"
 	"ghostlang.org/x/ghost/parser"
@@ -44,7 +43,7 @@ func TestEvaluateNumberExpression(t *testing.T) {
 		tokens := scanner.ScanTokens()
 		parser := parser.New(tokens)
 		statements := parser.Parse()
-		env := environment.New()
+		env := object.NewEnvironment()
 
 		if len(statements) != 1 {
 			t.Fatalf("Expected 1 statement, got=%v", len(statements))
@@ -81,7 +80,7 @@ func TestEvaluateIfStatement(t *testing.T) {
 
 	for _, test := range tests {
 		result := new(bytes.Buffer)
-		env := environment.New()
+		env := object.NewEnvironment()
 		env.SetWriter(result)
 
 		scanner := scanner.New(test.input)
@@ -127,7 +126,7 @@ func TestEvaluateWhileStatement(t *testing.T) {
 
 	for _, test := range tests {
 		result := new(bytes.Buffer)
-		env := environment.New()
+		env := object.NewEnvironment()
 		env.SetWriter(result)
 
 		scanner := scanner.New(test.input)

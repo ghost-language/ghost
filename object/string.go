@@ -13,7 +13,7 @@ func (n *String) String() string {
 	return n.Value
 }
 
-// Type returns the number object type.
+// Type returns the string object type.
 func (n *String) Type() Type {
 	return STRING
 }

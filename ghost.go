@@ -14,9 +14,9 @@ import (
 	"text/template"
 	"time"
 
-	"ghostlang.org/x/ghost/environment"
 	"ghostlang.org/x/ghost/errors"
 	"ghostlang.org/x/ghost/interpreter"
+	"ghostlang.org/x/ghost/object"
 	"ghostlang.org/x/ghost/parser"
 	"ghostlang.org/x/ghost/scanner"
 	"ghostlang.org/x/ghost/version"
@@ -100,7 +100,7 @@ func configureEnvironment() {
 
 func runPrompt() {
 	line := liner.NewLiner()
-	env := environment.New()
+	env := object.NewEnvironment()
 
 	env.SetWriter(os.Stdout)
 
@@ -141,7 +141,7 @@ func runFile(file string) {
 		panic(err)
 	}
 
-	env := environment.New()
+	env := object.NewEnvironment()
 	env.SetWriter(os.Stdout)
 
 	run(string(source), env)
@@ -163,7 +163,7 @@ func runServer(path string) {
 		status := "success"
 		start := time.Now()
 
-		env := environment.New()
+		env := object.NewEnvironment()
 		env.SetWriter(w)
 
 		source := readSource(path)
@@ -220,7 +220,7 @@ func readSource(path string) string {
 	return string(source)
 }
 
-func run(source string, env *environment.Environment) {
+func run(source string, env *object.Environment) {
 	scanner := scanner.New(source)
 	tokens := scanner.ScanTokens()
 	parser := parser.New(tokens)

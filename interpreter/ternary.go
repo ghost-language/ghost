@@ -2,12 +2,11 @@ package interpreter
 
 import (
 	"ghostlang.org/x/ghost/ast"
-	"ghostlang.org/x/ghost/environment"
 	"ghostlang.org/x/ghost/helper"
 	"ghostlang.org/x/ghost/object"
 )
 
-func evaluateTernary(node *ast.Ternary, env *environment.Environment) (object.Object, bool) {
+func evaluateTernary(node *ast.Ternary, env *object.Environment) (object.Object, bool) {
 	condition, _ := Evaluate(node.Condition, env)
 
 	if helper.IsTruthy(condition) {

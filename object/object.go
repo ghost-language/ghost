@@ -9,9 +9,4 @@ type Object interface {
 	String() string
 }
 
-type GhostCallable func([]Object) (Object, error)
-
-type Callable interface {
-	Arity() int
-	Call([]Object) (Object, error)
-}
+type GhostFunction func(env *Environment, args ...Object) Object

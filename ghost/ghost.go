@@ -4,15 +4,15 @@ import (
 	"io"
 	"os"
 
-	"ghostlang.org/x/ghost/environment"
 	"ghostlang.org/x/ghost/errors"
 	"ghostlang.org/x/ghost/interpreter"
+	"ghostlang.org/x/ghost/object"
 	"ghostlang.org/x/ghost/parser"
 	"ghostlang.org/x/ghost/scanner"
 )
 
 func Run(source string, writer io.Writer) {
-	env := environment.New()
+	env := object.NewEnvironment()
 	env.SetWriter(writer)
 
 	scanner := scanner.New(source)

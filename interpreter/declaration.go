@@ -2,12 +2,11 @@ package interpreter
 
 import (
 	"ghostlang.org/x/ghost/ast"
-	"ghostlang.org/x/ghost/environment"
 	"ghostlang.org/x/ghost/object"
 	"ghostlang.org/x/ghost/value"
 )
 
-func evaluateDeclaration(node *ast.Declaration, env *environment.Environment) (object.Object, bool) {
+func evaluateDeclaration(node *ast.Declaration, env *object.Environment) (object.Object, bool) {
 	if node.Initializer != nil {
 		val, success := Evaluate(node.Initializer, env)
 

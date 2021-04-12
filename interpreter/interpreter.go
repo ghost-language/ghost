@@ -4,14 +4,13 @@ import (
 	"fmt"
 
 	"ghostlang.org/x/ghost/ast"
-	"ghostlang.org/x/ghost/environment"
 	"ghostlang.org/x/ghost/errors"
 	"ghostlang.org/x/ghost/object"
 	"ghostlang.org/x/ghost/value"
 )
 
 // Interpret ...
-func Interpret(statements []ast.StatementNode, env *environment.Environment) {
+func Interpret(statements []ast.StatementNode, env *object.Environment) {
 	for _, statement := range statements {
 		result, ok := Evaluate(statement, env)
 
@@ -23,7 +22,7 @@ func Interpret(statements []ast.StatementNode, env *environment.Environment) {
 
 // Evaluate parses the abstract syntax tree, evaluating each type of node and
 // producing a result.
-func Evaluate(node ast.Node, env *environment.Environment) (object.Object, bool) {
+func Evaluate(node ast.Node, env *object.Environment) (object.Object, bool) {
 	switch node := node.(type) {
 	case *ast.Assign:
 		return evaluateAssign(node, env)
