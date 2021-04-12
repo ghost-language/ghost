@@ -23,7 +23,7 @@ $ brew install ghost-language/ghost/ghost
 ### Go Install
 If you have Go installed, you may use `go install`:
 ```
-go install github.com/ghost-language/ghost
+go install ghostlang.org/x/ghost
 ```
 
 ### Direct Download
@@ -78,6 +78,22 @@ $  ghost -i examples/fibtc.ghost
 >>
 ```
 
+## Compiling Templates
+Ghost comes bundled with its own web server, making it easy for you to build and launch websites powered by Ghost on the backend. As such, we also provide the means for Ghost to report errors during development within your browser. These are powered by templates utilizing the TailwindCSS framework. To work with these templates and compile down the CSS, we use npm and PostCSS.
+
+```
+npm install
+npm run watch
+```
+
+Running `watch` will start the PostCSS process and watch our `.html` files for changes, recompiling our CSS automatically. When you're happy with the final code, just compile everything down for production:
+
+```
+npm run production
+```
+
+This will compile the final assets in a condensed format with the smallest filesize possible.
+
 ## Releasing
 Ghost is hosted and distributed through GitHub. We utilize [GoReleaser](https://goreleaser.com) to automate the release process. GoReleaser will build all the necessary binaries, publish the release and publish the brew tap formula. The following steps outline the process for maintainers of Ghost:
 
@@ -88,7 +104,7 @@ Ghost is hosted and distributed through GitHub. We utilize [GoReleaser](https://
 2. Ensure the internal version reference is updated:
    ```go
    // version/version.go
-   
+
    var (
       Version = "x.y.z"
    )
