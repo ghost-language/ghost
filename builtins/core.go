@@ -93,7 +93,7 @@ func firstFunction(env *object.Environment, line int, args ...object.Object) obj
 func inputFunction(env *object.Environment, line int, args ...object.Object) object.Object {
 	if len(args) == 1 {
 		prompt := args[0].(*object.String).Value + " "
-		fmt.Fprintf(os.Stdout, prompt)
+		fmt.Fprint(os.Stdout, prompt)
 	}
 
 	buffer := bufio.NewReader(os.Stdin)
@@ -147,9 +147,9 @@ func numberFunction(env *object.Environment, line int, args ...object.Object) ob
 
 func printFunction(env *object.Environment, line int, args ...object.Object) object.Object {
 	if len(args) > 0 {
-		fmt.Println(args[0].Inspect())
+		fmt.Fprintln(env.GetWriter(), args[0].Inspect())
 	} else {
-		fmt.Println()
+		fmt.Fprintln(env.GetWriter())
 	}
 
 	return nil
@@ -177,7 +177,7 @@ func pushFunction(env *object.Environment, line int, args ...object.Object) obje
 	list := args[0].(*object.List)
 	length := len(list.Elements)
 
-	newElements := make([]object.Object, length+1, length+1)
+	newElements := make([]object.Object, length + 1)
 	copy(newElements, list.Elements)
 	newElements[length] = args[1]
 
@@ -222,7 +222,7 @@ func tailFunction(env *object.Environment, line int, args ...object.Object) obje
 	length := len(list.Elements)
 
 	if length > 0 {
-		newElements := make([]object.Object, length-1, length-1)
+		newElements := make([]object.Object, length - 1)
 		copy(newElements, list.Elements[1:length])
 
 		return &object.List{Elements: newElements}

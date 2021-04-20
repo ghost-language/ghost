@@ -3,12 +3,17 @@
 // implement the Object interface.
 package object
 
-import "unicode"
+import (
+	"io"
+	"os"
+	"unicode"
+)
 
 // Environment is an object that holds a mapping of names to bound objects
 type Environment struct {
 	store map[string]Object
 	outer *Environment
+	writer io.Writer
 }
 
 // NewEnvironment constructs a new Environment object to hold bindings
@@ -16,7 +21,7 @@ type Environment struct {
 func NewEnvironment() *Environment {
 	s := make(map[string]Object)
 
-	return &Environment{store: s, outer: nil}
+	return &Environment{store: s, writer: os.Stdout}
 }
 
 // NewEnclosedEnvironment constructs a new Environment, extending off
@@ -24,6 +29,7 @@ func NewEnvironment() *Environment {
 func NewEnclosedEnvironment(outer *Environment) *Environment {
 	env := NewEnvironment()
 	env.outer = outer
+	env.writer = outer.writer
 
 	return env
 }
@@ -68,4 +74,12 @@ func (e *Environment) Exported() *Map {
 	}
 
 	return &Map{Pairs: pairs}
+}
+
+func (e *Environment) SetWriter(writer io.Writer) {
+	e.writer = writer
+}
+
+func (e *Environment) GetWriter() io.Writer {
+	return e.writer
 }

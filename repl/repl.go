@@ -6,6 +6,7 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -26,8 +27,17 @@ const PROMPT = ">> "
 // program results.
 const OUTPUT = "   "
 
+const (
+	InfoColor    = "\033[1;34m%s\033[0m"
+	NoticeColor  = "\033[1;36m%s\033[0m"
+	WarningColor = "\033[1;33m%s\033[0m"
+	ErrorColor   = "\033[1;31m%s\033[0m"
+	DebugColor   = "\033[0;36m%s\033[0m"
+)
+
 type Options struct {
 	Interactive bool
+	Server bool
 }
 
 type REPL struct {
@@ -51,27 +61,32 @@ func (r *REPL) Run() {
 	}
 
 	if len(r.args) > 0 {
-		start := time.Now()
-		f, err := os.Open(r.args[0])
+		if r.opts.Server {
+			r.StartServer()
+		} else {
+			start := time.Now()
+			f, err := os.Open(r.args[0])
 
-		if err != nil {
-			log.Fatalf("Could not open source file %s: %s", r.args[0], err)
-		}
+			if err != nil {
+				log.Fatalf("Could not open source file %s: %s", r.args[0], err)
+			}
 
-		defer f.Close()
+			defer f.Close()
 
-		env := r.Eval(f)
-		elapsed := time.Since(start)
+			env := r.Eval(f, os.Stdout)
+			elapsed := time.Since(start)
 
-		if r.opts.Interactive {
-			fmt.Printf(OUTPUT+"(executed in: %s)\n", elapsed)
-			r.StartEvalLoop(os.Stdin, os.Stdout, env)
+			if r.opts.Interactive {
+				fmt.Printf(OUTPUT+"(executed in: %s)\n", elapsed)
+				r.StartEvalLoop(os.Stdin, os.Stdout, env)
+			}
 		}
 	}
 }
 
-func (r *REPL) Eval(f io.Reader) (env *object.Environment) {
+func (r *REPL) Eval(f io.Reader, writer io.Writer) (env *object.Environment) {
 	env = object.NewEnvironment()
+	env.SetWriter(writer)
 
 	b, err := ioutil.ReadAll(f)
 
@@ -110,7 +125,7 @@ func (r *REPL) StartEvalLoop(in io.Reader, out io.Writer, env *object.Environmen
 	}
 
 	for {
-		fmt.Printf(PROMPT)
+		fmt.Print(PROMPT)
 		scanned := scanner.Scan()
 
 		if !scanned {
@@ -138,6 +153,35 @@ func (r *REPL) StartEvalLoop(in io.Reader, out io.Writer, env *object.Environmen
 			}
 		}
 	}
+}
+
+func (r *REPL) StartServer() {
+	address := "0.0.0.0:8080"
+	currentTime := time.Now()
+
+	fmt.Printf("%s --> ", currentTime.Format("2006/01/02 15:04:05"))
+	fmt.Printf(InfoColor, fmt.Sprintf("Starting Ghost %s server: ", version.Version))
+	fmt.Printf("%s\n", address)
+
+	http.HandleFunc("/", func(writer http.ResponseWriter, request *http.Request) {
+		start := time.Now()
+
+		f, err := os.Open(r.args[0])
+
+		if err != nil {
+			log.Fatalf("Could not open source file %s: %s", r.args[0], err)
+		}
+
+		defer f.Close()
+
+		r.Eval(f, writer)
+
+		secs := time.Since(start).String()
+
+		log.Printf("--> %s %s (%s)", request.Method, request.URL.Path, secs)
+	})
+
+	log.Fatal(http.ListenAndServe(address, nil))
 }
 
 func registerCloseHandler() {

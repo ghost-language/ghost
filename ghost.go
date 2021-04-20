@@ -14,6 +14,7 @@ var (
 	flagVersion     bool
 	flagInteractive bool
 	flagHelp        bool
+	flagServer      bool
 )
 
 func init() {
@@ -26,6 +27,7 @@ func init() {
 	flag.BoolVar(&flagHelp, "h", false, "display help information")
 	flag.BoolVar(&flagVersion, "v", false, "display version information")
 	flag.BoolVar(&flagInteractive, "i", false, "enable interactive mode")
+	flag.BoolVar(&flagServer, "s", false, "run as a server")
 }
 
 func main() {
@@ -44,6 +46,7 @@ func main() {
 	args := flag.Args()
 	opts := &repl.Options{
 		Interactive: flagInteractive,
+		Server: flagServer,
 	}
 
 	repl := repl.New(args, opts)
