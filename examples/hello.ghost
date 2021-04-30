@@ -1,1 +1,15 @@
-print("Hello universe")
+test := function() {
+    print("Hello!")
+}
+
+map := {}
+
+Router.post("/hello", function() {
+    print("hello route")
+})
+
+Router.get("/hello", function() {
+    print("hello route")
+})
+
+test()

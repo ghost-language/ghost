@@ -7,6 +7,7 @@ import (
 	"path"
 
 	"ghostlang.org/x/ghost/repl"
+	"ghostlang.org/x/ghost/server"
 	"ghostlang.org/x/ghost/version"
 )
 
@@ -44,13 +45,17 @@ func main() {
 	}
 
 	args := flag.Args()
-	opts := &repl.Options{
-		Interactive: flagInteractive,
-		Server: flagServer,
-	}
 
-	repl := repl.New(args, opts)
-	repl.Run()
+	if flagServer {
+		server := server.New(args)
+		server.Run()
+	} else {
+		repl := repl.New(args, &repl.Options{
+			Interactive: flagInteractive,
+		})
+
+		repl.Run()
+	}
 }
 
 func showHelp() {

@@ -794,10 +794,10 @@ func evalMethodExpression(me *ast.MethodExpression, env *object.Environment) obj
 func applyFunction(tok token.Token, fn object.Object, env *object.Environment, arguments []object.Object) object.Object {
 	switch fn := fn.(type) {
 	case *object.Function:
-		extendedEnv := extendFunctionEnv(fn, arguments)
+		extendedEnv := ExtendFunctionEnv(fn, arguments)
 		evaluated := Eval(fn.Body, extendedEnv)
 
-		return unwrapReturnValue(evaluated)
+		return UnwrapReturnValue(evaluated)
 	case *object.Builtin:
 		if result := fn.Fn(env, tok.Line, arguments...); result != nil {
 			return result
@@ -809,7 +809,7 @@ func applyFunction(tok token.Token, fn object.Object, env *object.Environment, a
 	}
 }
 
-func extendFunctionEnv(fn *object.Function, arguments []object.Object) *object.Environment {
+func ExtendFunctionEnv(fn *object.Function, arguments []object.Object) *object.Environment {
 	env := object.NewEnclosedEnvironment(fn.Env)
 
 	for key, val := range fn.Defaults {
@@ -833,7 +833,7 @@ func extendForEnv(fe *ast.ForExpression, forEnv *object.Environment) *object.Env
 	return env
 }
 
-func unwrapReturnValue(obj object.Object) object.Object {
+func UnwrapReturnValue(obj object.Object) object.Object {
 	if returnValue, ok := obj.(*object.ReturnValue); ok {
 		return returnValue.Value
 	}
