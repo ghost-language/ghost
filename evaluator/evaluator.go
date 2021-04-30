@@ -514,6 +514,8 @@ func evalIdentifierLiteral(node *ast.IdentifierLiteral, env *object.Environment)
 
 func evalIndexExpression(node *ast.IndexExpression, left object.Object, index object.Object) object.Object {
 	switch {
+	case left.Type() == object.STRING_OBJ && index.Type() == object.NUMBER_OBJ:
+		return evalStringIndexExpression(node, left, index)
 	case left.Type() == object.LIST_OBJ && index.Type() == object.NUMBER_OBJ:
 		return evalListIndexExpression(node, left, index)
 	case left.Type() == object.MAP_OBJ:
@@ -523,6 +525,18 @@ func evalIndexExpression(node *ast.IndexExpression, left object.Object, index ob
 	default:
 		return error.NewError(node.Token.Line, error.UnsupportedIndexExpression, left.Type())
 	}
+}
+
+func evalStringIndexExpression(node *ast.IndexExpression, str object.Object, index object.Object) object.Object {
+	stringObject := str.(*object.String)
+	idx := index.(*object.Number).Value.IntPart()
+	max := int64(len(stringObject.Inspect()) - 1)
+
+	if idx < 0 || idx > max {
+		return value.NULL
+	}
+
+	return &object.String{Value: string(stringObject.Inspect()[idx])}
 }
 
 func evalListIndexExpression(node *ast.IndexExpression, list object.Object, index object.Object) object.Object {
