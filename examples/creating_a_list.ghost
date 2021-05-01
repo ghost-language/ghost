@@ -1,0 +1,7 @@
+messageList := []
+messageList[0] := 'Hello'
+messageList[99] := 'World'
+
+if (messageList.length() == 100) {
+    print('The length of the list is 100.')
+}

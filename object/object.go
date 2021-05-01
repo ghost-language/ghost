@@ -309,6 +309,18 @@ func (n *Number) CallMethod(method string, args []Object) Object {
 	switch method {
 	case "toString":
 		return &String{Value: n.Inspect()}
+	case "round":
+		places := &Number{Value: decimal.NewFromInt(0)}
+
+		if len(args) == 1 {
+			if args[0].Type() != NUMBER_OBJ {
+				return &Error{Message: fmt.Sprintf("%s argument to '%s' must be %s, got %s", "first", "Number.round", "NUMBER", args[0].Type())}
+			}
+
+			places = args[0].(*Number)
+		}
+
+		return &Number{Value: n.Value.Round(int32(places.Value.IntPart()))}
 	}
 
 	return &Error{Message: fmt.Sprintf(NoMethodFound, method, n.Type())}

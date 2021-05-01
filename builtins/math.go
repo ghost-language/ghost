@@ -16,6 +16,7 @@ func init() {
 	RegisterFunction("Math.cos", mathCosFunction)
 	RegisterFunction("Math.pi", mathPiFunction)
 	RegisterFunction("Math.random", mathRandomFunction)
+	RegisterFunction("Math.round", mathRoundFunction)
 }
 
 // mathAbsFunction returns the absolute value of the decimal.
@@ -57,15 +58,15 @@ func mathPiFunction(env *object.Environment, line int, args ...object.Object) ob
 
 // mathRandomFunction returns a random decimal value with optional min max ranges.
 func mathRandomFunction(env *object.Environment, line int, args ...object.Object) object.Object {
-	min := int64(0)
-	max := int64(0)
+	min := float64(0)
+	max := float64(0)
 
 	if len(args) > 0 {
 		if args[0].Type() != object.NUMBER_OBJ {
 			return error.NewError(line, error.ArgumentMustBe, "first", "Math.random", "NUMBER", args[0].Type())
 		}
 
-		max = args[0].(*object.Number).Value.IntPart()
+		max, _ = args[0].(*object.Number).Value.Float64()
 
 		if len(args) > 1 {
 			if args[1].Type() != object.NUMBER_OBJ {
@@ -73,7 +74,7 @@ func mathRandomFunction(env *object.Environment, line int, args ...object.Object
 			}
 
 			min = max
-			max = args[1].(*object.Number).Value.IntPart()
+			max, _ = args[1].(*object.Number).Value.Float64()
 
 			if max < min {
 				return error.NewError(line, error.ArgumentMustBe, "second", "Math.random", "larger than first argument", args[1].Type())
@@ -81,13 +82,41 @@ func mathRandomFunction(env *object.Environment, line int, args ...object.Object
 		}
 	}
 
-	number := int64(0)
+	number := float64(0)
 
 	if max > 0 {
-		number = int64(rand.Intn(int(max)-int(min)) + int(min))
+		number = float64(min + rand.Float64() * (max - min))
 	} else {
-		number = rand.Int63()
+		number = rand.Float64()
 	}
 
-	return &object.Number{Value: decimal.NewFromInt(number)}
+	return &object.Number{Value: decimal.NewFromFloat(number)}
+}
+
+func mathRoundFunction(env *object.Environment, line int, args ...object.Object) object.Object {
+	if len(args) < 1 {
+		return error.NewError(line, error.WrongNumberArguments, len(args), 1)
+	}
+
+	if len(args) > 2 {
+		return error.NewError(line, error.WrongNumberArguments, len(args), 2)
+	}
+
+	if args[0].Type() != object.NUMBER_OBJ {
+		return error.NewError(line, error.ArgumentMustBe, "first", "Math.round", "NUMBER", args[0].Type())
+	}
+
+	places := &object.Number{Value: decimal.NewFromInt(0)}
+
+	if len(args) == 2 {
+		if args[1].Type() != object.NUMBER_OBJ {
+			return error.NewError(line, error.ArgumentMustBe, "second", "Math.round", "NUMBER", args[1].Type())
+		}
+
+		places = args[1].(*object.Number)
+	}
+
+	number := args[0].(*object.Number)
+
+	return &object.Number{Value: number.Value.Round(int32(places.Value.IntPart()))}
 }

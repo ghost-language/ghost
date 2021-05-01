@@ -32,7 +32,7 @@ const (
 	WrongNumberArguments
 )
 
-var messageBag = map[int]string{
+var MessageBag = map[int]string{
 	ArgumentMustBe:             "%s argument to '%s' must be %s, got %s",
 	ArgumentNotSupported:       "%s argument to '%s' is not supported, got %s",
 	ErrorReadingInput:          "error reading input: %s",
@@ -58,7 +58,7 @@ var messageBag = map[int]string{
 
 // NewError formats and returns a new Error object.
 func NewError(line int, index int, args ...interface{}) *object.Error {
-	return &object.Error{Message: fmt.Sprintf(messageBag[index], args...) + fmt.Sprintf(" on line %d", line)}
+	return &object.Error{Message: fmt.Sprintf(MessageBag[index], args...) + fmt.Sprintf(" on line %d", line)}
 }
 
 // IsError determines if the passed object is an error object.
