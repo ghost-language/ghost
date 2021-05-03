@@ -725,10 +725,6 @@ func (p *Parser) parseAssignStatement() ast.Statement {
 				p.nextToken()
 			}
 
-			if fl, ok := statement.Value.(*ast.FunctionLiteral); ok {
-				fl.Name = statement.Name.Value
-			}
-
 			return statement
 		}
 
@@ -740,10 +736,6 @@ func (p *Parser) parseAssignStatement() ast.Statement {
 
 			if p.peekTokenIs(token.SEMICOLON) {
 				p.nextToken()
-			}
-
-			if fl, ok := statement.Value.(*ast.FunctionLiteral); ok {
-				fl.Name = statement.Name.Value
 			}
 
 			return statement
@@ -762,10 +754,6 @@ func (p *Parser) parseAssignStatement() ast.Statement {
 
 	if p.peekTokenIs(token.SEMICOLON) {
 		p.nextToken()
-	}
-
-	if fl, ok := statement.Value.(*ast.FunctionLiteral); ok {
-		fl.Name = statement.Name.Value
 	}
 
 	return statement

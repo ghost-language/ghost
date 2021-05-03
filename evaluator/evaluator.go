@@ -17,6 +17,7 @@ import (
 
 // Eval evaluates the node and returns an object
 func Eval(node ast.Node, env *object.Environment) object.Object {
+
 	switch node := node.(type) {
 
 	// Statements
