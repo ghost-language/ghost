@@ -22,10 +22,10 @@ func runCode(this js.Value, i []js.Value) interface{} {
 
 	program := p.ParseProgram()
 
-	result := evaluator.Eval(program, env)
+	obj := evaluator.Eval(program, env)
 
-	m["out"] = buf.String()
-	m["result"] = result.Inspect()
+	m["result"] = buf.String()
+	m["object"] = obj.Inspect()
 
 	return js.ValueOf(m)
 }
