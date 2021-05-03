@@ -2,7 +2,6 @@ package utilities
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -16,18 +15,16 @@ var SearchPaths []string
 func init() {
 	cwd, err := os.Getwd()
 
-	if err != nil {
-		log.Fatalf("error getting cwd: %s", err)
-	}
+	if err == nil {
+		if e := os.Getenv("GHOSTPATH"); e != "" {
+			tokens := strings.Split(e, ":")
 
-	if e := os.Getenv("GHOSTPATH"); e != "" {
-		tokens := strings.Split(e, ":")
-
-		for _, token := range tokens {
-			AddPath(token)
+			for _, token := range tokens {
+				AddPath(token)
+			}
+		} else {
+			SearchPaths = append(SearchPaths, cwd)
 		}
-	} else {
-		SearchPaths = append(SearchPaths, cwd)
 	}
 }
 

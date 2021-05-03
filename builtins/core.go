@@ -147,9 +147,9 @@ func numberFunction(env *object.Environment, line int, args ...object.Object) ob
 
 func printFunction(env *object.Environment, line int, args ...object.Object) object.Object {
 	if len(args) > 0 {
-		fmt.Println(args[0].Inspect())
+		fmt.Fprintln(env.GetWriter(), args[0].Inspect())
 	} else {
-		fmt.Println()
+		fmt.Fprintln(env.GetWriter())
 	}
 
 	return nil
