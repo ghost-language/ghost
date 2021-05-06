@@ -3,7 +3,7 @@ package version
 import "fmt"
 
 var (
-	Version = "0.12.0"
+	Version = "0.13.0"
 )
 
 func String() string {
