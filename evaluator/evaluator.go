@@ -17,6 +17,7 @@ import (
 
 // Eval evaluates the node and returns an object
 func Eval(node ast.Node, env *object.Environment) object.Object {
+
 	switch node := node.(type) {
 
 	// Statements
@@ -125,22 +126,26 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 	case *ast.ImportExpression:
 		return evalImportExpression(node, env)
 	case *ast.CallExpression:
-		function := Eval(node.Callable, env)
-
-		if error.IsError(function) {
-			return function
-		}
-
-		arguments := evalExpressions(node.Arguments, env)
-
-		if len(arguments) == 1 && error.IsError(arguments[0]) {
-			return arguments[0]
-		}
-
-		return applyFunction(node.Token, function, env, arguments)
+		return evalCallExpression(node, env)
 	}
 
 	return nil
+}
+
+func evalCallExpression(node *ast.CallExpression, env *object.Environment) object.Object {
+	function := Eval(node.Callable, env)
+
+	if error.IsError(function) {
+		return function
+	}
+
+	arguments := evalExpressions(node.Arguments, env)
+
+	if len(arguments) == 1 && error.IsError(arguments[0]) {
+		return arguments[0]
+	}
+
+	return applyFunction(node.Token, function, env, arguments)
 }
 
 // EvalPackage evaluates the specified ghost file and returns an object.
@@ -802,7 +807,34 @@ func evalMethodExpression(me *ast.MethodExpression, env *object.Environment) obj
 		return args[0]
 	}
 
-	return obj.CallMethod(me.Method.String(), args)
+	result := obj.CallMethod(me.Method.String(), args)
+
+	if (! error.IsError(result)) {
+		return result
+	}
+
+	err := result
+
+	// We don't have a built in method, so do we have an invokable function?
+	switch obj.(type) {
+	case *object.Map:
+		// return evalMapIndexExpression(me.Token.Line, obj, &object.String{Value: me.Method.String()})
+		key := &object.String{Value: me.Method.String()}
+
+		mapObject := obj.(*object.Map)
+
+		pair, ok := mapObject.Pairs[key.MapKey()]
+
+		if !ok {
+			return value.NULL
+		}
+
+		function := pair.Value
+
+		return applyFunction(me.Token, function, env, args)
+	}
+
+	return err
 }
 
 func applyFunction(tok token.Token, fn object.Object, env *object.Environment, arguments []object.Object) object.Object {

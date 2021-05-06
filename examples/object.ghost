@@ -1,19 +1,7 @@
-function Person(name, age) {
-    self := {}
+self := {}
 
-    self.name := name
-    self.age := age
-
-    self.greet := function() {
-        print("Hello, " + self.name + ".")
-    }
-
-    // self.age := function() {
-    //     print(self.name + " is " + self.age + " years old.")
-    // }
-
-    return self
+self.test := function() {
+    print("test!!!")
 }
 
-person := Person("Kai", 31)
-print(person.name)
+self.test()
