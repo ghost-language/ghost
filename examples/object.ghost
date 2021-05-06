@@ -1,13 +1,7 @@
 self := {}
 
-test := function() {
-    print("test!!!")
-}
-
-test()
-
 self.test := function() {
-    print("test")
+    print("test!!!")
 }
 
 self.test()
