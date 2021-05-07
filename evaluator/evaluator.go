@@ -267,7 +267,7 @@ func evalInfixExpression(node *ast.InfixExpression, operator string, left object
 		return evalBooleanInfixExpression(node, operator, left, right)
 	case left.Type() == object.NUMBER_OBJ && right.Type() == object.NUMBER_OBJ:
 		return evalNumberInfixExpression(node, operator, left, right, env)
-	case left.Type() == object.STRING_OBJ && right.Type() == object.STRING_OBJ:
+	case left.Type() == object.STRING_OBJ:
 		return evalStringInfixExpression(node, operator, left, right)
 	case operator == "==":
 		return utilities.NativeBoolToBooleanObject(left == right)
@@ -434,8 +434,8 @@ func evalNumberInfixExpression(node *ast.InfixExpression, operator string, left 
 }
 
 func evalStringInfixExpression(node *ast.InfixExpression, operator string, left object.Object, right object.Object) object.Object {
-	leftValue := left.(*object.String).Value
-	rightValue := right.(*object.String).Value
+	leftValue := left.Inspect()
+	rightValue := right.Inspect()
 
 	switch operator {
 	case "+":
