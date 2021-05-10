@@ -818,8 +818,22 @@ func evalMethodExpression(me *ast.MethodExpression, env *object.Environment) obj
 
 	// We don't have a built in method, so do we have an invokable function?
 	switch obj.(type) {
+	case *object.Package:
+		key := &object.String{Value: me.Method.String()}
+
+		packageObject := obj.(*object.Package)
+		mapObject := packageObject.Attributes.(*object.Map)
+
+		pair, ok := mapObject.Pairs[key.MapKey()]
+
+		if !ok {
+			return value.NULL
+		}
+
+		function := pair.Value
+
+		return applyFunction(me.Token, function, env, args)
 	case *object.Map:
-		// return evalMapIndexExpression(me.Token.Line, obj, &object.String{Value: me.Method.String()})
 		key := &object.String{Value: me.Method.String()}
 
 		mapObject := obj.(*object.Map)

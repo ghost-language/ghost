@@ -6,7 +6,6 @@ package object
 import (
 	"io"
 	"os"
-	"unicode"
 )
 
 // Environment is an object that holds a mapping of names to bound objects
@@ -67,11 +66,8 @@ func (e *Environment) Exported() *Map {
 	pairs := make(map[MapKey]MapPair)
 
 	for k, v := range e.store {
-		// Replace this with checking for "Import" token
-		if unicode.IsUpper(rune(k[0])) {
-			s := &String{Value: k}
-			pairs[s.MapKey()] = MapPair{Key: s, Value: v}
-		}
+		s := &String{Value: k}
+		pairs[s.MapKey()] = MapPair{Key: s, Value: v}
 	}
 
 	return &Map{Pairs: pairs}
