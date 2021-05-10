@@ -14,6 +14,7 @@ type Environment struct {
 	store map[string]Object
 	outer *Environment
 	writer io.Writer
+	directory string
 }
 
 // NewEnvironment constructs a new Environment object to hold bindings
@@ -82,4 +83,12 @@ func (e *Environment) SetWriter(writer io.Writer) {
 
 func (e *Environment) GetWriter() io.Writer {
 	return e.writer
+}
+
+func (e *Environment) SetDirectory(directory string) {
+	e.directory = directory
+}
+
+func (e *Environment) GetDirectory() string {
+	return e.directory
 }

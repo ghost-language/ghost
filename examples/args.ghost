@@ -1,0 +1,3 @@
+for (arg in os.args()) {
+    print(arg)
+}

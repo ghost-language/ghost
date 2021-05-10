@@ -721,6 +721,7 @@ func evalImportExpression(ie *ast.ImportExpression, env *object.Environment) obj
 	}
 
 	if s, ok := name.(*object.String); ok {
+		utilities.AddPath(env.GetDirectory())
 		attributes := EvalPackage(s.Value, ie.Token.Line)
 
 		if error.IsError(attributes) {

@@ -1,6 +1,3 @@
-print(Math.round(Math.cos(1), 8))
-print(Math.round(123.456))
-print(Math.random(5, 10).round(4))
-
-value := Math.random(5, 10)
-print(value.round(10))
+Add := function(a, b) {
+    return a + b
+}

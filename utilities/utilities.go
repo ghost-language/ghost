@@ -50,6 +50,7 @@ func Exists(path string) bool {
 func FindPackage(name string) string {
 	basename := fmt.Sprintf("%s.ghost", name)
 
+
 	for _, p := range SearchPaths {
 		filename := filepath.Join(p, basename)
 
