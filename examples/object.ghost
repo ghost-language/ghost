@@ -1,7 +1,0 @@
-self := {}
-
-self.test := function() {
-    print("test!!!")
-}
-
-self.test()

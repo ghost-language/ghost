@@ -886,14 +886,6 @@ func extendFunctionEnv(fn *object.Function, arguments []object.Object) *object.E
 	return env
 }
 
-func extendForEnv(fe *ast.ForExpression, forEnv *object.Environment) *object.Environment {
-	env := object.NewEnclosedEnvironment(forEnv)
-
-	env.Set(fe.Identifier, Eval(fe.Initializer, env))
-
-	return env
-}
-
 func unwrapReturnValue(obj object.Object) object.Object {
 	if returnValue, ok := obj.(*object.ReturnValue); ok {
 		return returnValue.Value

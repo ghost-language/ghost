@@ -1,3 +1,0 @@
-m := import("math")
-
-print(m.add(1, 2))

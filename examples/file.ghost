@@ -1,9 +1,0 @@
-m := import("./math")
-
-content := file.read("hello.txt")
-
-print(content)
-
-file.write("test.txt", "hello from ghost!")
-
-print("done")
