@@ -12,11 +12,11 @@ import (
 func init() {
 	rand.Seed(time.Now().UnixNano())
 
-	RegisterFunction("Math.abs", mathAbsFunction)
-	RegisterFunction("Math.cos", mathCosFunction)
-	RegisterFunction("Math.pi", mathPiFunction)
-	RegisterFunction("Math.random", mathRandomFunction)
-	RegisterFunction("Math.round", mathRoundFunction)
+	RegisterFunction("math.abs", mathAbsFunction)
+	RegisterFunction("math.cos", mathCosFunction)
+	RegisterFunction("math.pi", mathPiFunction)
+	RegisterFunction("math.random", mathRandomFunction)
+	RegisterFunction("math.round", mathRoundFunction)
 }
 
 // mathAbsFunction returns the absolute value of the decimal.

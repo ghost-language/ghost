@@ -721,6 +721,7 @@ func evalImportExpression(ie *ast.ImportExpression, env *object.Environment) obj
 	}
 
 	if s, ok := name.(*object.String); ok {
+		utilities.AddPath(env.GetDirectory())
 		attributes := EvalPackage(s.Value, ie.Token.Line)
 
 		if error.IsError(attributes) {
@@ -817,8 +818,22 @@ func evalMethodExpression(me *ast.MethodExpression, env *object.Environment) obj
 
 	// We don't have a built in method, so do we have an invokable function?
 	switch obj.(type) {
+	case *object.Package:
+		key := &object.String{Value: me.Method.String()}
+
+		packageObject := obj.(*object.Package)
+		mapObject := packageObject.Attributes.(*object.Map)
+
+		pair, ok := mapObject.Pairs[key.MapKey()]
+
+		if !ok {
+			return value.NULL
+		}
+
+		function := pair.Value
+
+		return applyFunction(me.Token, function, env, args)
 	case *object.Map:
-		// return evalMapIndexExpression(me.Token.Line, obj, &object.String{Value: me.Method.String()})
 		key := &object.String{Value: me.Method.String()}
 
 		mapObject := obj.(*object.Map)
@@ -867,14 +882,6 @@ func extendFunctionEnv(fn *object.Function, arguments []object.Object) *object.E
 			env.Set(parameter.Value, arguments[index])
 		}
 	}
-
-	return env
-}
-
-func extendForEnv(fe *ast.ForExpression, forEnv *object.Environment) *object.Environment {
-	env := object.NewEnclosedEnvironment(forEnv)
-
-	env.Set(fe.Identifier, Eval(fe.Initializer, env))
 
 	return env
 }

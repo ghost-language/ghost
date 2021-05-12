@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 	"time"
 
@@ -52,15 +53,17 @@ func (r *REPL) Run() {
 
 	if len(r.args) > 0 {
 		start := time.Now()
-		f, err := os.Open(r.args[0])
+		source, err := os.Open(r.args[0])
 
 		if err != nil {
 			log.Fatalf("Could not open source file %s: %s", r.args[0], err)
 		}
 
-		defer f.Close()
+		defer source.Close()
 
-		env := r.Eval(f)
+		directory, _ := filepath.Abs(filepath.Dir(r.args[0]))
+
+		env := r.Eval(source, directory)
 		elapsed := time.Since(start)
 
 		if r.opts.Interactive {
@@ -70,15 +73,17 @@ func (r *REPL) Run() {
 	}
 }
 
-func (r *REPL) Eval(f io.Reader) (env *object.Environment) {
+func (r *REPL) Eval(source io.Reader, directory string) (env *object.Environment) {
 	env = object.NewEnvironment()
 
-	b, err := ioutil.ReadAll(f)
+	b, err := ioutil.ReadAll(source)
 
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error reading source file: %s", err)
 		return
 	}
+
+	env.SetDirectory(directory + "/")
 
 	l := lexer.New(string(b))
 	p := parser.New(l)
@@ -92,11 +97,9 @@ func (r *REPL) Eval(f io.Reader) (env *object.Environment) {
 
 	obj := evaluator.Eval(program, env)
 
-	if obj != nil {
-		if _, ok := obj.(*object.Error); ok {
-			io.WriteString(os.Stdout, OUTPUT+obj.Inspect())
-			io.WriteString(os.Stdout, "\n")
-		}
+	if _, ok := obj.(*object.Error); ok {
+		io.WriteString(os.Stdout, OUTPUT+obj.Inspect())
+		io.WriteString(os.Stdout, "\n")
 	}
 
 	return
@@ -106,11 +109,13 @@ func (r *REPL) StartEvalLoop(in io.Reader, out io.Writer, env *object.Environmen
 	scanner := bufio.NewScanner(in)
 
 	if env == nil {
+		directory, _ := os.Getwd()
 		env = object.NewEnvironment()
+		env.SetDirectory(directory + "/")
 	}
 
 	for {
-		fmt.Printf(PROMPT)
+		fmt.Print(PROMPT)
 		scanned := scanner.Scan()
 
 		if !scanned {

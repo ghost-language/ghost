@@ -6,7 +6,7 @@ import (
 )
 
 func init() {
-	RegisterFunction("Ghost.version", ghostVersionFunction)
+	RegisterFunction("ghost.version", ghostVersionFunction)
 }
 
 // ghostVersionFunction returns the current version of Ghost.
