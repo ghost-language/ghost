@@ -293,6 +293,18 @@ func (lexer *Lexer) readNumber() string {
 		lexer.readCharacter()
 	}
 
+	if lexer.character == rune('e') {
+		lexer.readCharacter()
+
+		if lexer.character == rune('-') {
+			lexer.readCharacter()
+		}
+
+		for isDigit(lexer.character) {
+			lexer.readCharacter()
+		}
+	}
+
 	return string(lexer.input[position:lexer.position])
 }
 
