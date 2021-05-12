@@ -58,6 +58,8 @@ for (key, value in data) {
 }
 こんにちは
 世界
+123e4
+123e-4
 `
 
 	tests := []struct {
@@ -200,6 +202,8 @@ for (key, value in data) {
 		{token.RBRACE, "}", 49},
 		{token.IDENTIFIER, "こんにちは", 50},
 		{token.IDENTIFIER, "世界", 51},
+		{token.NUMBER, "123e4", 52},
+		{token.NUMBER, "123e-4", 53},
 		{token.EOF, "", 0},
 	}
 
