@@ -74,13 +74,17 @@ func NativeBoolToBooleanObject(input bool) *object.Boolean {
 
 // IsTruthy returns the truthy value of the passed object.
 func IsTruthy(obj object.Object) bool {
-	switch obj {
-	case value.NULL:
+	switch obj := obj.(type) {
+	case *object.Null:
 		return false
-	case value.TRUE:
-		return true
-	case value.FALSE:
-		return false
+	case *object.Boolean:
+		return obj.Value
+	case *object.String:
+		return len(obj.Value) > 0
+	case *object.List:
+		return len(obj.Elements) > 0
+	case *object.Map:
+		return len(obj.Pairs) > 0
 	default:
 		return true
 	}

@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"fmt"
 	"hash/fnv"
+	"regexp"
 	"strconv"
 	"strings"
 	"unicode/utf8"
@@ -336,12 +337,44 @@ func (rv *ReturnValue) CallMethod(method string, args []Object) Object {
 
 func (s *String) CallMethod(method string, args []Object) Object {
 	switch method {
+	case "matches":
+		matches, err := regexp.Match(s.Value, []byte(args[0].(*String).Value))
+
+		if err != nil {
+			return &Error{Message: err.Error()}
+		}
+
+		return &Boolean{Value: matches}
+	case "find":
+		re := regexp.MustCompile(s.Value)
+
+		found := re.FindStringSubmatch(args[0].(*String).Value)
+
+		if len(found) > 0 {
+			return &String{Value: found[1]}
+		}
+
+		return &String{}
+	case "findAll":
+		re := regexp.MustCompile(s.Value)
+		list := &List{}
+		found := re.FindStringSubmatch(args[0].(*String).Value)
+
+		for _, f := range found {
+			list.Elements = append(list.Elements, &String{Value: f})
+		}
+
+		return list
 	case "endsWith":
 		hasPrefix := strings.HasSuffix(s.Value, args[0].(*String).Value)
 
 		return &Boolean{Value: hasPrefix}
 	case "length":
 		return &Number{Value: decimal.NewFromInt(int64(utf8.RuneCountInString(s.Value)))}
+	case "replace":
+		value := strings.Replace(s.Value, args[0].(*String).Value, args[1].(*String).Value, -1)
+
+		return &String{Value: value}
 	case "split":
 		split := strings.Split(s.Value, args[0].(*String).Value)
 		list := &List{}
