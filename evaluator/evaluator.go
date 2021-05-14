@@ -521,7 +521,7 @@ func evalIndexExpression(node *ast.IndexExpression, left object.Object, index ob
 	switch {
 	case left.Type() == object.STRING_OBJ && index.Type() == object.NUMBER_OBJ:
 		return evalStringIndexExpression(node, left, index)
-	case left.Type() == object.LIST_OBJ && index.Type() == object.NUMBER_OBJ:
+	case left.Type() == object.LIST_OBJ:
 		return evalListIndexExpression(node, left, index)
 	case left.Type() == object.MAP_OBJ:
 		return evalMapIndexExpression(node.Token.Line, left, index)
@@ -700,6 +700,18 @@ func evalForInExpression(fie *ast.ForInExpression, env *object.Environment) obje
 		for k, v := range i.Elements {
 			env.Set(fie.Key, &object.Number{Value: decimal.NewFromInt(int64(k))})
 			env.Set(fie.Value, v)
+			block := Eval(fie.Block, env)
+
+			if error.IsError(block) {
+				return block
+			}
+		}
+
+		return value.NULL
+	case *object.Map:
+		for _, p := range i.Pairs {
+			env.Set(fie.Key, p.Key)
+			env.Set(fie.Value, p.Value)
 			block := Eval(fie.Block, env)
 
 			if error.IsError(block) {
