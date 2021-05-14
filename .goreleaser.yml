@@ -2,14 +2,15 @@
 # Make sure to check the documentation at http://goreleaser.com
 builds:
   - binary: ghost
+    goos: ['linux', 'darwin', 'windows', 'js']
+    goarch: ['386', 'amd64', 'arm', 'arm64', 'wasm']
     env:
       - CGO_ENABLED=0
 archives:
-  - replacements:
-      darwin: Darwin
-      linux: Linux
-      windows: Windows
-      amd64: x86_64
+  - format_overrides:
+    - goos: 'windows'
+      format: 'zip'
+    files: ['LICENSE', 'README.md']
 checksum:
   name_template: 'checksums.txt'
 snapshot:
