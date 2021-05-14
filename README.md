@@ -23,7 +23,7 @@ $ brew install ghost-language/ghost/ghost
 ### Go Install
 If you have Go installed, you may use `go install`:
 ```
-go install github.com/ghost-language/ghost
+go install ghostlang.org/x/ghost
 ```
 
 ### Direct Download
@@ -88,7 +88,7 @@ Ghost is hosted and distributed through GitHub. We utilize [GoReleaser](https://
 2. Ensure the internal version reference is updated:
    ```go
    // version/version.go
-   
+
    var (
       Version = "x.y.z"
    )
