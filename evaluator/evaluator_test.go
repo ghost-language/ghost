@@ -68,6 +68,21 @@ func TestLogicalOperators(t *testing.T) {
 	}
 }
 
+func TestNull(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected interface{}
+	}{
+		{"null", nil},
+	}
+
+	for _, tt := range tests {
+		evaluated := testEval(tt.input)
+
+		testNullObject(t, evaluated)
+	}
+}
+
 func TestDecimal(t *testing.T) {
 	dec1 := decimal.NewFromInt(1)
 	dec2 := decimal.NewFromInt(1)

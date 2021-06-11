@@ -175,6 +175,10 @@ type (
 		Value bool
 	}
 
+	NullLiteral struct {
+		Token token.Token
+	}
+
 	IdentifierLiteral struct {
 		Token token.Token
 		Value string
@@ -226,6 +230,7 @@ func (pe *PropertyExpression) expressionNode() {}
 func (we *WhileExpression) expressionNode()    {}
 
 func (bl *BooleanLiteral) expressionNode()    {}
+func (nl *NullLiteral) expressionNode()    {}
 func (fl *FunctionLiteral) expressionNode()   {}
 func (il *IdentifierLiteral) expressionNode() {}
 func (ll *ListLiteral) expressionNode()       {}
@@ -249,6 +254,7 @@ func (pe *PropertyExpression) TokenLiteral() string { return pe.Token.Literal }
 func (we *WhileExpression) TokenLiteral() string    { return we.Token.Literal }
 
 func (bl *BooleanLiteral) TokenLiteral() string    { return bl.Token.Literal }
+func (nl *NullLiteral) TokenLiteral() string    { return nl.Token.Literal }
 func (fl *FunctionLiteral) TokenLiteral() string   { return fl.Token.Literal }
 func (il *IdentifierLiteral) TokenLiteral() string { return il.Token.Literal }
 func (ll *ListLiteral) TokenLiteral() string       { return ll.Token.Literal }
@@ -422,6 +428,8 @@ func (we *WhileExpression) String() string {
 }
 
 func (bl *BooleanLiteral) String() string { return bl.Token.Literal }
+
+func (nl *NullLiteral) String() string { return nl.Token.Literal }
 
 func (fl *FunctionLiteral) String() string {
 	var out bytes.Buffer

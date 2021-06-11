@@ -57,6 +57,8 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 		return evalMapLiteral(node, env)
 	case *ast.BooleanLiteral:
 		return utilities.NativeBoolToBooleanObject(node.Value)
+	case *ast.NullLiteral:
+		return value.NULL
 	case *ast.PrefixExpression:
 		right := Eval(node.Right, env)
 
