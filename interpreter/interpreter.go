@@ -34,6 +34,8 @@ func Evaluate(node ast.Node, env *object.Environment) (object.Object, bool) {
 		return evaluateBoolean(node, env)
 	case *ast.Call:
 		return evaluateCall(node, env)
+	case *ast.Class:
+		return evaluateClass(node, env)
 	case *ast.Declaration:
 		return evaluateDeclaration(node, env)
 	case *ast.Expression:
