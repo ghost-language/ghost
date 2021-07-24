@@ -26,8 +26,10 @@ import (
 // Precedence order
 
 // parse                  -> declaration
-// declaration            -> varDeclaration | statement
-// varDeclaration         -> "let" IDENTIFIER ( "=" expression )
+// declaration            -> classDeclaration | letDeclaration | functionDeclaration | statement
+// classDeclaration       -> "class" IDENTIFIER "{" function* "}"
+// functionDeclaration    -> "function" IDENTIFIER "(" parameters? ")" block
+// letDeclaration         -> "let" IDENTIFIER ( "=" expression )
 // statement              -> expressionStatement | ifStatement | whileStatement |
 //                        printStatement | blockStatement
 // expressionStatement    -> expression
@@ -77,16 +79,51 @@ func (parser *Parser) declaration() (ast.StatementNode, error) {
 	var statement ast.StatementNode
 	var err error
 
-	if parser.match(token.LET) {
+	if parser.match(token.CLASS) {
+		statement, err = parser.classDeclaration()
+	} else if parser.match(token.LET) {
 		statement, err = parser.letDeclaration()
 	} else if parser.match(token.FUNCTION) {
-		statement, err = parser.statement()
-		// statement, err = parser.functionDeclaration("function")
+		statement, err = parser.functionDeclaration("function")
 	} else {
 		statement, err = parser.statement()
 	}
 
 	return statement, err
+}
+
+func (parser *Parser) classDeclaration() (ast.StatementNode, error) {
+	name, err := parser.consume(token.IDENTIFIER, "Expected class name.")
+
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = parser.consume(token.LEFTBRACE, "Expected '{' before class body.")
+
+	if err != nil {
+		return nil, err
+	}
+
+	methods := make([]*ast.Function, 0)
+
+	for !parser.check(token.RIGHTBRACE) && !parser.isAtEnd() {
+		function, err := parser.functionDeclaration("method")
+
+		if err != nil {
+			return nil, err
+		}
+
+		methods = append(methods, function)
+	}
+
+	_, err = parser.consume(token.RIGHTBRACE, "Expected '}' after class body.")
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &ast.Class{Name: name, Methods: methods}, nil
 }
 
 func (parser *Parser) letDeclaration() (ast.StatementNode, error) {
@@ -112,7 +149,7 @@ func (parser *Parser) letDeclaration() (ast.StatementNode, error) {
 	return &ast.Declaration{Name: name, Initializer: initializer}, nil
 }
 
-func (parser *Parser) functionDeclaration(kind string) (ast.StatementNode, error) {
+func (parser *Parser) functionDeclaration(kind string) (*ast.Function, error) {
 	name, err := parser.consume(token.IDENTIFIER, "Expected " + kind + " name.")
 
 	if err != nil {

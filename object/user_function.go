@@ -11,6 +11,7 @@ import (
 const USER_FUNCTION = "USER_FUNCTION"
 
 type UserFunction struct {
+	// Callable
 	Parameters []*ast.Identifier
 	Body *ast.Block
 	Defaults map[string]ast.ExpressionNode
@@ -40,4 +41,30 @@ func (uf *UserFunction) String() string {
 // Type returns the native function object type.
 func (uf *UserFunction) Type() Type {
 	return USER_FUNCTION
+}
+
+func (uf *UserFunction) Bind(instance *ClassInstance) *UserFunction {
+	thisEnv := ExtendEnvironment(uf.Env)
+	thisEnv.Declare("this", instance)
+
+	return &UserFunction{
+		Parameters: uf.Parameters,
+		Body: uf.Body,
+		Defaults: uf.Defaults,
+		Env: thisEnv,
+	}
+}
+
+// func (uf *UserFunction) Call(arguments []Object) {
+// 	env := ExtendEnvironment(uf.Env)
+
+// 	for i, parameter := range uf.Parameters {
+// 		env.Declare(parameter.Name.Lexeme, arguments[i])
+// 	}
+
+// 	// interpreter.Evaluate(uf.Body, env)
+// }
+
+func (uf *UserFunction) Arity() int {
+	return len(uf.Parameters)
 }

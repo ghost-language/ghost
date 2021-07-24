@@ -24,11 +24,16 @@ func evaluateCall(node *ast.Call, env *object.Environment) (object.Object, bool)
 		args = append(args, nodeArg)
 	}
 
-	function, ok := callee.(*object.Standard)
+	switch callable := callee.(type) {
+	case *object.Class:
+		instance := &object.ClassInstance{
+			Class: callable,
+		}
 
-	if !ok {
-		return &object.Error{Message: "can only call functions."}, false
+		return instance, true
+	case *object.Standard:
+		return callable.Function(args), true
+	default:
+		return &object.Error{Message: "can only call functions and classes."}, false
 	}
-
-	return function.Function(args), true
 }

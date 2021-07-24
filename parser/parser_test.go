@@ -5,6 +5,7 @@ import (
 
 	"ghostlang.org/x/ghost/ast"
 	"ghostlang.org/x/ghost/scanner"
+	"ghostlang.org/x/ghost/token"
 	"github.com/shopspring/decimal"
 )
 
@@ -261,6 +262,33 @@ func TestParseVariables(t *testing.T) {
 		if !ok {
 			t.Fatalf("Expected *ast.Expression, got=%T", statements[0])
 		}
+	}
+}
+
+func TestParseEmptyClassStatement(t *testing.T) {
+	input := `class Test{}`
+	expected := &ast.Class{
+		Name: token.Token{Lexeme: "Test"},
+		Methods: make([]*ast.Function, 0),
+	}
+
+	scanner := scanner.New(input)
+	tokens := scanner.ScanTokens()
+	parser := New(tokens)
+	statements := parser.Parse()
+
+	if len(statements) != 1 {
+		t.Fatalf("Expected 1 statement, got=%v", len(statements))
+	}
+
+	class, ok := statements[0].(*ast.Class)
+
+	if !ok {
+		t.Fatalf("Expected *ast.Class, got=%T", statements[0])
+	}
+
+	if class.Name.Lexeme != expected.Name.Lexeme {
+		t.Fatalf("Expected class name=Test, got=%s", class.Name.Lexeme)
 	}
 }
 
