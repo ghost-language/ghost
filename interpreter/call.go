@@ -3,6 +3,7 @@ package interpreter
 import (
 	"ghostlang.org/x/ghost/ast"
 	"ghostlang.org/x/ghost/object"
+	"ghostlang.org/x/ghost/value"
 )
 
 func evaluateCall(node *ast.Call, env *object.Environment) (object.Object, bool) {
@@ -33,6 +34,20 @@ func evaluateCall(node *ast.Call, env *object.Environment) (object.Object, bool)
 		return instance, true
 	case *object.Standard:
 		return callable.Function(args), true
+	case *object.UserFunction:
+		for _, parameter := range callable.Parameters {
+			callable.Env.Set(parameter.Name.Lexeme, value.NULL)
+		}
+
+		for _, statement := range callable.Body {
+			_, err := Evaluate(statement, callable.Env)
+
+			if !err {
+				return nil, err
+			}
+		}
+
+		return nil, true
 	default:
 		return &object.Error{Message: "can only call functions and classes."}, false
 	}

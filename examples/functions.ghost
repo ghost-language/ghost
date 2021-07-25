@@ -1,0 +1,12 @@
+function hello(name) {
+    print name
+}
+
+function ignored() {
+    print "I should not be called"
+}
+
+print("---")
+
+hello("kai")
+print("done.")
