@@ -113,10 +113,10 @@ func TestEvaluateWhileStatement(t *testing.T) {
 	}{
 		{
 			`
-				let x = 5
+				x := 5
 
 				while (x < 10) {
-					x = x + 1
+					x := x + 1
 				}
 
 				print x

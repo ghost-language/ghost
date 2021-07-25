@@ -81,8 +81,6 @@ func (parser *Parser) declaration() (ast.StatementNode, error) {
 
 	if parser.match(token.CLASS) {
 		statement, err = parser.classDeclaration()
-	} else if parser.match(token.LET) {
-		statement, err = parser.letDeclaration()
 	} else if parser.match(token.FUNCTION) {
 		statement, err = parser.functionDeclaration("function")
 	} else {
@@ -419,27 +417,26 @@ func (parser *Parser) expression() (ast.ExpressionNode, error) {
 }
 
 func (parser *Parser) assign() (ast.ExpressionNode, error) {
+	if parser.check(token.IDENTIFIER) && parser.next().Type == token.ASSIGN {
+		parser.match(token.IDENTIFIER)
+		name := parser.previous()
+		parser.match(token.ASSIGN)
+		val, err := parser.expression()
+
+		if err != nil {
+			return nil, err
+		}
+
+		return &ast.Assign{Name: name, Value: val}, nil
+	}
+
 	expression, err := parser.or()
 
 	if err != nil {
 		return nil, err
 	}
 
-	if parser.match(token.EQUAL) {
-		val, err := parser.assign()
-
-		if err != nil {
-			return nil, err
-		}
-
-		if identifier, ok := expression.(*ast.Identifier); ok {
-			return &ast.Assign{Name: identifier.Name, Value: val}, nil
-		}
-
-		return nil, errors.ParseError(parser.peek(), fmt.Sprintf("Invalid assignment target."))
-	}
-
-	return expression, err
+	return expression, nil
 }
 
 func (parser *Parser) or() (ast.ExpressionNode, error) {
