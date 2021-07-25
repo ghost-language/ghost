@@ -45,7 +45,7 @@ func (uf *UserFunction) Type() Type {
 
 func (uf *UserFunction) Bind(instance *ClassInstance) *UserFunction {
 	thisEnv := ExtendEnvironment(uf.Env)
-	thisEnv.Declare("this", instance)
+	thisEnv.Set("this", instance)
 
 	return &UserFunction{
 		Parameters: uf.Parameters,

@@ -29,25 +29,15 @@ func (e *Environment) All() map[string]Object {
 	return e.values
 }
 
-// Declare binds a new value to the environment with the given name.
-func (e *Environment) Declare(name string, value Object) Object {
+// Set ...
+func (e *Environment) Set(name string, value Object) (Object, error) {
+	if e.enclosing != nil {
+		return e.enclosing.Set(name, value)
+	}
+
 	e.values[name] = value
 
-	return value
-}
-
-// Assign ...
-func (e *Environment) Assign(name token.Token, value Object) (Object, error) {
-	if _, ok := e.values[name.Lexeme]; ok {
-		e.values[name.Lexeme] = value
-		return value, nil
-	}
-
-	if e.enclosing != nil {
-		return e.enclosing.Assign(name, value)
-	}
-
-	return nil, fmt.Errorf("Undefined variable '%v'", name.Lexeme)
+	return value, nil
 }
 
 // Get fetches the variable with the given name from the environment.

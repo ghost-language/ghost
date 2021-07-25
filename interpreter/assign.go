@@ -12,7 +12,7 @@ func evaluateAssign(node *ast.Assign, env *object.Environment) (object.Object, b
 		return nil, false
 	}
 
-	env.Assign(node.Name, val)
+	env.Set(node.Name.Lexeme, val)
 
 	return nil, true
 }

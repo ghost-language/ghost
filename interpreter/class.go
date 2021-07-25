@@ -6,7 +6,7 @@ import (
 )
 
 func evaluateClass(node *ast.Class, env *object.Environment) (object.Object, bool) {
-	env.Declare(node.Name.Lexeme, nil)
+	env.Set(node.Name.Lexeme, nil)
 
 	methods := make(map[string]*object.UserFunction)
 
@@ -26,7 +26,7 @@ func evaluateClass(node *ast.Class, env *object.Environment) (object.Object, boo
 		Methods: methods,
 	}
 
-	env.Assign(node.Name, class)
+	env.Set(node.Name.Lexeme, class)
 
 	return nil, true
 }
