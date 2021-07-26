@@ -31,10 +31,6 @@ func (e *Environment) All() map[string]Object {
 
 // Set ...
 func (e *Environment) Set(name string, value Object) (Object, error) {
-	if e.enclosing != nil {
-		return e.enclosing.Set(name, value)
-	}
-
 	e.values[name] = value
 
 	return value, nil
