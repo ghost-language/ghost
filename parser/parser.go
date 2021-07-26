@@ -86,13 +86,13 @@ func (parser *Parser) classDeclaration() (ast.StatementNode, error) {
 }
 
 func (parser *Parser) functionDeclaration(kind string) (*ast.Function, error) {
-	name, err := parser.consume(token.IDENTIFIER, "Expected " + kind + " name.")
+	var name token.Token
+	var err error
+	var parameters []ast.Identifier
 
-	if err != nil {
-		return nil, err
+	if parser.check(token.IDENTIFIER) {
+		name = parser.advance()
 	}
-
-	var parameters []token.Token
 
 	if parser.check(token.LEFTPAREN) {
 		parameters, err = parser.parameters(kind)
@@ -117,14 +117,14 @@ func (parser *Parser) functionDeclaration(kind string) (*ast.Function, error) {
 	return &ast.Function{Name: name, Parameters: parameters, Body: body}, nil
 }
 
-func (parser *Parser) parameters(kind string) ([]token.Token, error) {
+func (parser *Parser) parameters(kind string) ([]ast.Identifier, error) {
 	_, err := parser.consume(token.LEFTPAREN, "Expected '(' after " + kind + " name.")
 
 	if err != nil {
 		return nil, err
 	}
 
-	parameters := make([]token.Token, 0)
+	parameters := make([]ast.Identifier, 0)
 
 	if !parser.check(token.RIGHTPAREN) {
 		for {
@@ -134,7 +134,7 @@ func (parser *Parser) parameters(kind string) ([]token.Token, error) {
 				return nil, err
 			}
 
-			parameters = append(parameters, parameter)
+			parameters = append(parameters, ast.Identifier{Name: parameter})
 
 			if !parser.match(token.COMMA) {
 				break
@@ -636,6 +636,8 @@ func (parser *Parser) primary() (ast.ExpressionNode, error) {
 		return &ast.Grouping{Expression: expression}, nil
 	} else if parser.match(token.IDENTIFIER) {
 		return &ast.Identifier{Name: parser.previous()}, nil
+	} else if parser.match(token.FUNCTION) {
+		return parser.functionDeclaration("function")
 	}
 
 	return nil, errors.ParseError(parser.peek(), fmt.Sprintf("Expected expression, got=%v", parser.peek().Type))

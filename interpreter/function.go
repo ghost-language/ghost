@@ -7,11 +7,13 @@ import (
 )
 
 func evaluateFunction(node *ast.Function, env *object.Environment) (object.Object, bool) {
-	name := node.Name.Lexeme
+	function := &object.UserFunction{Env: env, Body: node.Body, Parameters: node.Parameters}
 
-	function := &object.UserFunction{Env: env, Body: node.Body}
+	if node.Name.Lexeme != "" {
+		env.Set(node.Name.Lexeme, function)
 
-	env.Set(name, function)
+		return value.NULL, true
+	}
 
-	return value.NULL, true
+	return function, true
 }

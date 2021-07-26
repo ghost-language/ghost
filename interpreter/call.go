@@ -1,6 +1,8 @@
 package interpreter
 
 import (
+	"fmt"
+
 	"ghostlang.org/x/ghost/ast"
 	"ghostlang.org/x/ghost/object"
 	"ghostlang.org/x/ghost/value"
@@ -13,16 +15,16 @@ func evaluateCall(node *ast.Call, env *object.Environment) (object.Object, bool)
 		return &object.Error{Message: "unknown identifier."}, false
 	}
 
-	args := make([]object.Object, 0)
+	arguments := make([]object.Object, 0)
 
-	for _, arg := range node.Arguments {
-		nodeArg, success := Evaluate(arg, env)
+	for _, argument := range node.Arguments {
+		nodeArgument, success := Evaluate(argument, env)
 
 		if !success {
 			return &object.Error{Message: "could not properly evaluate argument expressions."}, false
 		}
 
-		args = append(args, nodeArg)
+		arguments = append(arguments, nodeArgument)
 	}
 
 	switch callable := callee.(type) {
@@ -33,14 +35,24 @@ func evaluateCall(node *ast.Call, env *object.Environment) (object.Object, bool)
 
 		return instance, true
 	case *object.Standard:
-		return callable.Function(args), true
+		return callable.Function(arguments), true
 	case *object.UserFunction:
-		for _, parameter := range callable.Parameters {
-			callable.Env.Set(parameter.Name.Lexeme, value.NULL)
+		functionEnvironment := object.ExtendEnvironment(callable.Env)
+
+		for i, parameter := range callable.Parameters {
+			var val object.Object
+
+			if i < len(arguments) {
+				val = arguments[i]
+			} else {
+				val = value.NULL
+			}
+
+			functionEnvironment.Set(parameter.Name.Lexeme, val)
 		}
 
 		for _, statement := range callable.Body {
-			_, err := Evaluate(statement, callable.Env)
+			_, err := Evaluate(statement, functionEnvironment)
 
 			if !err {
 				return nil, err
@@ -49,6 +61,6 @@ func evaluateCall(node *ast.Call, env *object.Environment) (object.Object, bool)
 
 		return nil, true
 	default:
-		return &object.Error{Message: "can only call functions and classes."}, false
+		return &object.Error{Message: fmt.Sprintf("can only call functions and classes, got=%s.", callable.String())}, false
 	}
 }
