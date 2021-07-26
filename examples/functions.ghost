@@ -1,0 +1,28 @@
+function hello(name) {
+    if (name) {
+        print "hello, " + name
+    } else {
+        print "hello, world"
+    }
+}
+
+function ignored() {
+    print "I should not be called"
+}
+
+foo := function() {
+    print "foo"
+}
+
+a := 5
+
+function bar(test) {
+    a := 10
+    print "bar"
+    print a
+    test()
+}
+
+foo()
+bar(foo)
+print a

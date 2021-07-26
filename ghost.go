@@ -154,7 +154,11 @@ func runFile(file string) {
 
 	run(string(source), env)
 
-	if errors.HadParseError || errors.HadRuntimeError {
+	if errors.HadParseError {
+		fmt.Printf("%s\n", errors.ParseErrorMessage)
+		os.Exit(1)
+	} else if errors.HadRuntimeError {
+		fmt.Printf("%s\n", errors.RuntimeErrorMessage)
 		os.Exit(1)
 	}
 }

@@ -12,8 +12,8 @@ const USER_FUNCTION = "USER_FUNCTION"
 
 type UserFunction struct {
 	// Callable
-	Parameters []*ast.Identifier
-	Body *ast.Block
+	Parameters []ast.Identifier
+	Body []ast.StatementNode
 	Defaults map[string]ast.ExpressionNode
 	Env *Environment
 }

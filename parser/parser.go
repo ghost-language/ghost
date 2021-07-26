@@ -2,7 +2,6 @@ package parser
 
 import (
 	"fmt"
-	"log"
 
 	"ghostlang.org/x/ghost/ast"
 	"ghostlang.org/x/ghost/errors"
@@ -10,44 +9,6 @@ import (
 	"ghostlang.org/x/ghost/value"
 	"github.com/shopspring/decimal"
 )
-
-// Ghost uses a recursive decent parser. It starts from the top or outermost
-// grammar rule (expression) and works its way down into the nested
-// subexpressions before finally reaching the leaves of the syntax tree.
-
-// A recursive decent parser is a literal translation of the grammar's rules
-// straight into imperative code. Each rule becomes a function. The decent is
-// described as "recursive" because when a grammar rule refers to itself --
-// directly or indirectly -- that translates to a recursive function call.
-// Recursive decent parsers are fast, robust, and can handle sophisticated
-// error reporting while being easy to code and maintain.
-
-// =============================================================================
-// Precedence order
-
-// parse                  -> declaration
-// declaration            -> classDeclaration | letDeclaration | functionDeclaration | statement
-// classDeclaration       -> "class" IDENTIFIER "{" function* "}"
-// functionDeclaration    -> "function" IDENTIFIER "(" parameters? ")" block
-// letDeclaration         -> "let" IDENTIFIER ( "=" expression )
-// statement              -> expressionStatement | ifStatement | whileStatement |
-//                        printStatement | blockStatement
-// expressionStatement    -> expression
-// expression             -> or
-// or                     -> and ( "or" and )
-// and                    -> ternary ( "and" ternary )
-// ternary                -> equality ( equality "?" expression ":" expression )
-// equality               -> comparison ( ( "!=" | "==" ) comparison )*
-// comparison             -> term ( ( ">" | ">=" | "<" | "<=" ) term )*
-// term                   -> factor ( ( "-" | "+" ) factor )*
-// factor                 -> unary ( ( "/" | "*" ) unary )*
-// unary                  -> ( "!" | "-" ) unary | call
-// call                   -> primary ( "(" arguments? ")" )
-// arguments              -> expression ( "," expression )
-// primary                -> NUMBER | STRING | "true" | "false" | "null" |
-//                        "(" expression ")"
-
-// =============================================================================
 
 // Parser - like the scanner - consumes a flat input sequence, only now we're
 // reading tokens instead of characters. We store the list of tokens and use
@@ -124,64 +85,21 @@ func (parser *Parser) classDeclaration() (ast.StatementNode, error) {
 	return &ast.Class{Name: name, Methods: methods}, nil
 }
 
-func (parser *Parser) letDeclaration() (ast.StatementNode, error) {
-	name, err := parser.consume(token.IDENTIFIER, "Expected variable name.")
+func (parser *Parser) functionDeclaration(kind string) (*ast.Function, error) {
+	var name token.Token
+	var err error
+	var parameters []ast.Identifier
 
-	if err != nil {
-		return nil, err
+	if parser.check(token.IDENTIFIER) {
+		name = parser.advance()
 	}
 
-	var initializer ast.ExpressionNode
-
-	if parser.match(token.EQUAL) {
-		initializer, err = parser.expression()
+	if parser.check(token.LEFTPAREN) {
+		parameters, err = parser.parameters(kind)
 
 		if err != nil {
 			return nil, err
 		}
-	}
-
-	// consume the semicolon and continue on
-	parser.match(token.SEMICOLON)
-
-	return &ast.Declaration{Name: name, Initializer: initializer}, nil
-}
-
-func (parser *Parser) functionDeclaration(kind string) (*ast.Function, error) {
-	name, err := parser.consume(token.IDENTIFIER, "Expected " + kind + " name.")
-
-	if err != nil {
-		return nil, err
-	}
-
-	_, err = parser.consume(token.LEFTPAREN, "Expected '(' after " + kind + " name.")
-
-	if err != nil {
-		return nil, err
-	}
-
-	parameters := make([]token.Token, 0)
-
-	if !parser.check(token.RIGHTPAREN) {
-		for {
-			param, err := parser.consume(token.IDENTIFIER, "Expected parameter name.")
-
-			if err != nil {
-				return nil, err
-			}
-
-			parameters = append(parameters, param)
-
-			if !parser.match(token.COMMA) {
-				break
-			}
-		}
-	}
-
-	_, err = parser.consume(token.RIGHTPAREN, "Expected ')' after parameters.")
-
-	if err != nil {
-		return nil, err
 	}
 
 	_, err = parser.consume(token.LEFTBRACE, "Expected '{' before " + kind + " body.")
@@ -196,10 +114,37 @@ func (parser *Parser) functionDeclaration(kind string) (*ast.Function, error) {
 		return nil, err
 	}
 
-	log.Fatal(fmt.Sprintf("%s : %s", name.Lexeme, body))
+	return &ast.Function{Name: name, Parameters: parameters, Body: body}, nil
+}
 
-	return nil, nil
-	// return &ast.Function{Name: name, Params: parameters, Body: body}, nil
+func (parser *Parser) parameters(kind string) ([]ast.Identifier, error) {
+	_, err := parser.consume(token.LEFTPAREN, "Expected '(' after " + kind + " name.")
+
+	if err != nil {
+		return nil, err
+	}
+
+	parameters := make([]ast.Identifier, 0)
+
+	if !parser.check(token.RIGHTPAREN) {
+		for {
+			parameter, err := parser.consume(token.IDENTIFIER, "Expected parameter name.")
+
+			if err != nil {
+				return nil, err
+			}
+
+			parameters = append(parameters, ast.Identifier{Name: parameter})
+
+			if !parser.match(token.COMMA) {
+				break
+			}
+		}
+	}
+
+	_, err = parser.consume(token.RIGHTPAREN, "Expected ')' after parameters.")
+
+	return parameters, err
 }
 
 func (parser *Parser) statement() (ast.StatementNode, error) {
@@ -236,12 +181,6 @@ func (parser *Parser) forStatement() (ast.StatementNode, error) {
 
 	if parser.match(token.SEMICOLON) {
 		initializer = nil
-	} else if parser.match(token.LET) {
-		initializer, err = parser.letDeclaration()
-
-		if err != nil {
-			return nil, err
-		}
 	} else {
 		initializer, err = parser.expressionStatement()
 
@@ -697,6 +636,8 @@ func (parser *Parser) primary() (ast.ExpressionNode, error) {
 		return &ast.Grouping{Expression: expression}, nil
 	} else if parser.match(token.IDENTIFIER) {
 		return &ast.Identifier{Name: parser.previous()}, nil
+	} else if parser.match(token.FUNCTION) {
+		return parser.functionDeclaration("function")
 	}
 
 	return nil, errors.ParseError(parser.peek(), fmt.Sprintf("Expected expression, got=%v", parser.peek().Type))

@@ -1,11 +1,13 @@
 package ast
 
-import "ghostlang.org/x/ghost/token"
+import (
+	"ghostlang.org/x/ghost/token"
+)
 
 type Function struct {
 	Token      token.Token
-	Name       string
-	Parameters []*Identifier
+	Name       token.Token
+	Parameters []Identifier
 	Defaults   map[string]ExpressionNode
-	Body       *Block
+	Body       []StatementNode
 }
