@@ -51,15 +51,22 @@ func evaluateCall(node *ast.Call, env *object.Environment) (object.Object, bool)
 			functionEnvironment.Set(parameter.Name.Lexeme, val)
 		}
 
-		for _, statement := range callable.Body {
-			_, err := Evaluate(statement, functionEnvironment)
+		var evaluation object.Object
+		var ok bool
 
-			if !err {
-				return nil, err
+		for _, statement := range callable.Body {
+			evaluation, ok = Evaluate(statement, functionEnvironment)
+
+			if !ok {
+				return nil, ok
 			}
 		}
 
-		return nil, true
+		if returnValue, ok := evaluation.(*object.Return); ok {
+			return returnValue.Value, ok
+		}
+
+		return value.NULL, true
 	default:
 		return &object.Error{Message: fmt.Sprintf("can only call functions and classes, got=%s.", callable.String())}, false
 	}

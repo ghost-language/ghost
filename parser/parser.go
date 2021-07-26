@@ -156,6 +156,8 @@ func (parser *Parser) statement() (ast.StatementNode, error) {
 		return parser.whileStatement()
 	} else if parser.match(token.PRINT) {
 		return parser.printStatement()
+	} else if parser.match(token.RETURN) {
+		return parser.returnStatement()
 	} else if parser.match(token.LEFTBRACE) {
 		statements, err := parser.block()
 
@@ -316,6 +318,18 @@ func (parser *Parser) printStatement() (ast.StatementNode, error) {
 	}
 
 	return &ast.Print{Expression: expression}, nil
+}
+
+func (parser *Parser) returnStatement() (ast.StatementNode, error) {
+	keyword := parser.previous() // "return" portion of the statement
+
+	value, err := parser.expression()
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &ast.Return{Token: keyword, Value: value}, nil
 }
 
 func (parser *Parser) block() ([]ast.StatementNode, error) {
