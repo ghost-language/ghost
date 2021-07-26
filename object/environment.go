@@ -39,16 +39,17 @@ func (e *Environment) Set(name string, value Object) (Object, error) {
 // Get fetches the variable with the given name from the environment.
 func (e *Environment) Get(name token.Token) (Object, error) {
 	result, exists := e.values[name.Lexeme]
+	var err error
 
-	if exists {
-		return result, nil
+	if !exists && e.enclosing != nil {
+		result, err = e.enclosing.Get(name)
 	}
 
-	if e.enclosing != nil {
-		return e.enclosing.Get(name)
+	if err != nil {
+		return nil, fmt.Errorf("undefined variable '%v'", name.Lexeme)
 	}
 
-	return nil, fmt.Errorf("Undefined variable '%v'", name.Lexeme)
+	return result, nil
 }
 
 func (e *Environment) String() string {

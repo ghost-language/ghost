@@ -6,13 +6,11 @@ import (
 )
 
 func evaluateBlock(node *ast.Block, env *object.Environment) (object.Object, bool) {
-	blockEnv := object.ExtendEnvironment(env)
-
 	for _, statement := range node.Statements {
-		_, err := Evaluate(statement, blockEnv)
+		_, ok := Evaluate(statement, env)
 
-		if err != true {
-			return nil, err
+		if !ok {
+			return nil, ok
 		}
 	}
 

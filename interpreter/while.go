@@ -9,17 +9,17 @@ import (
 
 func evaluateWhile(node *ast.While, env *object.Environment) (object.Object, bool) {
 	for {
-		condition, success := Evaluate(node.Condition, env)
+		condition, ok := Evaluate(node.Condition, env)
 
-		if !success {
-			return nil, success
+		if !ok {
+			return nil, ok
 		}
 
-		if !helper.IsTruthy(condition) {
+		if helper.IsTruthy(condition) {
+			Evaluate(node.Body, env)
+		} else {
 			break
 		}
-
-		Evaluate(node.Body, env)
 	}
 
 	return value.NULL, true
