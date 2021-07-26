@@ -1,0 +1,7 @@
+function foo(name) {
+    return name
+}
+
+bar := foo("kai")
+
+print bar
