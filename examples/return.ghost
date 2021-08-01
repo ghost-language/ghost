@@ -10,5 +10,9 @@ function foo(name) {
 
 bar := foo("kai")
 
+<<<<<<< HEAD
 print bar
 print "hello"
+=======
+print bar
+>>>>>>> 9957d70cad1a1410a3cfddd9788042e4e0a02fb4
