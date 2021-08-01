@@ -17,6 +17,10 @@ func Interpret(statements []ast.StatementNode, env *object.Environment) {
 		if !ok {
 			errors.RuntimeError(result.String())
 		}
+
+		if result, ok = result.(*object.Return); ok {
+			break
+		}
 	}
 }
 

@@ -7,10 +7,14 @@ import (
 
 func evaluateBlock(node *ast.Block, env *object.Environment) (object.Object, bool) {
 	for _, statement := range node.Statements {
-		_, ok := Evaluate(statement, env)
+		result, ok := Evaluate(statement, env)
 
 		if !ok {
 			return nil, ok
+		}
+
+		if returnValue, ok := result.(*object.Return); ok {
+			return returnValue, true
 		}
 	}
 

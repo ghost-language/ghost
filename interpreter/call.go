@@ -60,10 +60,10 @@ func evaluateCall(node *ast.Call, env *object.Environment) (object.Object, bool)
 			if !ok {
 				return nil, ok
 			}
-		}
 
-		if returnValue, ok := evaluation.(*object.Return); ok {
-			return returnValue.Value, ok
+			if returnValue, ok := evaluation.(*object.Return); ok {
+				return returnValue.Value, ok
+			}
 		}
 
 		return value.NULL, true
