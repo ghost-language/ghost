@@ -1,0 +1,10 @@
+class Foo {
+    bar() {
+        print "bar"
+    }
+}
+
+foo := Foo()
+
+print foo.bar()
+// print "Done."

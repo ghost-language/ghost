@@ -14,7 +14,7 @@ func evaluateIdentifier(node *ast.Identifier, env *object.Environment) (object.O
 	if err != nil {
 		standard, success := standard.StandardFunctions[node.Name.Lexeme]
 
-		if success != true {
+		if !success {
 			return &object.Error{Message: fmt.Sprintf("unknown identifier: %s", node.Name.Lexeme)}, false
 		}
 

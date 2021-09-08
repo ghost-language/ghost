@@ -575,6 +575,14 @@ func (parser *Parser) call() (ast.ExpressionNode, error) {
 			if err != nil {
 				return nil, err
 			}
+		} else if parser.match(token.DOT) {
+			name, err := parser.consume(token.IDENTIFIER, "Expected name after '.'")
+
+			if err != nil {
+				return nil, err
+			}
+
+			expression = &ast.Get{Expression: expression, Name: name}
 		} else {
 			break
 		}

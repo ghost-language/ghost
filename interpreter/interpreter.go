@@ -68,6 +68,8 @@ func Evaluate(node ast.Node, env *object.Environment) (object.Object, bool) {
 		return evaluateWhile(node, env)
 	case *ast.Return:
 		return evaluateReturn(node, env)
+	case *ast.Get:
+		return evaluateGet(node, env)
 	}
 
 	return &object.Error{Message: fmt.Sprintf("unrecognized node: %v", node)}, false
