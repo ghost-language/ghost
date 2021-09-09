@@ -1,10 +1,18 @@
 class Foo {
     bar() {
-        print "bar"
+        return "bar!!!!!!!!!"
+    }
+
+    greet(name) {
+        if (name) {
+            return "Hello, " + name + "..."
+        }
+
+        return "Hello, world."
     }
 }
 
 foo := Foo()
 
-print foo.bar()
-// print "Done."
+print foo.greet("Kai")
+print foo.greet()
