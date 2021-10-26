@@ -230,7 +230,7 @@ func (pe *PropertyExpression) expressionNode() {}
 func (we *WhileExpression) expressionNode()    {}
 
 func (bl *BooleanLiteral) expressionNode()    {}
-func (nl *NullLiteral) expressionNode()    {}
+func (nl *NullLiteral) expressionNode()       {}
 func (fl *FunctionLiteral) expressionNode()   {}
 func (il *IdentifierLiteral) expressionNode() {}
 func (ll *ListLiteral) expressionNode()       {}
@@ -254,7 +254,7 @@ func (pe *PropertyExpression) TokenLiteral() string { return pe.Token.Literal }
 func (we *WhileExpression) TokenLiteral() string    { return we.Token.Literal }
 
 func (bl *BooleanLiteral) TokenLiteral() string    { return bl.Token.Literal }
-func (nl *NullLiteral) TokenLiteral() string    { return nl.Token.Literal }
+func (nl *NullLiteral) TokenLiteral() string       { return nl.Token.Literal }
 func (fl *FunctionLiteral) TokenLiteral() string   { return fl.Token.Literal }
 func (il *IdentifierLiteral) TokenLiteral() string { return il.Token.Literal }
 func (ll *ListLiteral) TokenLiteral() string       { return ll.Token.Literal }
@@ -508,6 +508,13 @@ type (
 		Statements []Statement
 	}
 
+	// ClassStatement defines a new statement type for defining classes.
+	ClassStatement struct {
+		Token   token.Token
+		Name    string
+		Methods map[string]FunctionLiteral
+	}
+
 	// ExpressionStatement defines a new statement type for defining expressions.
 	ExpressionStatement struct {
 		Token      token.Token
@@ -526,6 +533,7 @@ type (
 //
 func (as *AssignStatement) statementNode()     {}
 func (bs *BlockStatement) statementNode()      {}
+func (cs *ClassStatement) statementNode()      {}
 func (es *ExpressionStatement) statementNode() {}
 func (rs *ReturnStatement) statementNode()     {}
 
@@ -533,6 +541,7 @@ func (rs *ReturnStatement) statementNode()     {}
 //
 func (as *AssignStatement) TokenLiteral() string     { return as.Token.Literal }
 func (bs *BlockStatement) TokenLiteral() string      { return bs.Token.Literal }
+func (cs *ClassStatement) TokenLiteral() string      { return cs.Token.Literal }
 func (es *ExpressionStatement) TokenLiteral() string { return es.Token.Literal }
 func (rs *ReturnStatement) TokenLiteral() string     { return rs.Token.Literal }
 
@@ -552,6 +561,17 @@ func (bs *BlockStatement) String() string {
 	for _, statement := range bs.Statements {
 		out.WriteString(statement.String())
 	}
+
+	return out.String()
+}
+
+func (cs *ClassStatement) String() string {
+	var out bytes.Buffer
+
+	out.WriteString("class ")
+	out.WriteString(cs.Name)
+	out.WriteString(" {\n")
+	out.WriteString("\n}")
 
 	return out.String()
 }
