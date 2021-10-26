@@ -60,6 +60,7 @@ for (key, value in data) {
 世界
 123e4
 123e-4
+class
 `
 
 	tests := []struct {
@@ -204,6 +205,7 @@ for (key, value in data) {
 		{token.IDENTIFIER, "世界", 51},
 		{token.NUMBER, "123e4", 52},
 		{token.NUMBER, "123e-4", 53},
+		{token.CLASS, "class", 54},
 		{token.EOF, "", 0},
 	}
 

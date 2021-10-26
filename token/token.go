@@ -53,7 +53,7 @@ const (
 	FUNCTION = "FUNCTION"
 	TRUE     = "TRUE"
 	FALSE    = "FALSE"
-	NULL = "NULL"
+	NULL     = "NULL"
 	FOR      = "FOR"
 	IN       = "IN"
 	IF       = "IF"
@@ -64,6 +64,7 @@ const (
 	OR       = "OR"
 	EXPORT   = "EXPORT"
 	IMPORT   = "IMPORT"
+	CLASS    = "CLASS"
 
 	EQ    = "=="
 	NOTEQ = "!="
@@ -84,7 +85,7 @@ var keywords = map[string]TokenType{
 	"function": FUNCTION,
 	"true":     TRUE,
 	"false":    FALSE,
-	"null": NULL,
+	"null":     NULL,
 	"for":      FOR,
 	"in":       IN,
 	"if":       IF,
@@ -95,6 +96,7 @@ var keywords = map[string]TokenType{
 	"or":       OR,
 	"export":   EXPORT,
 	"import":   IMPORT,
+	"class":    CLASS,
 }
 
 // LookupIdentifier checks the `keywords` table to see whether
