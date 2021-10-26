@@ -22,6 +22,7 @@ import (
 const (
 	BOOLEAN_OBJ      = "BOOLEAN"
 	BUILTIN_OBJ      = "BUILTIN"
+	CLASS_OBJ        = "CLASS"
 	ERROR_OBJ        = "ERROR"
 	FUNCTION_OBJ     = "FUNCTION"
 	LIST_OBJ         = "LIST"
@@ -64,6 +65,10 @@ type (
 	}
 
 	BuiltinFunction func(env *Environment, line int, args ...Object) Object
+
+	Class struct {
+		Env *Environment
+	}
 
 	Module struct {
 		Name      string
@@ -129,6 +134,7 @@ type (
 
 func (b *Boolean) Type() ObjectType      { return BOOLEAN_OBJ }
 func (b *Builtin) Type() ObjectType      { return BUILTIN_OBJ }
+func (c *Class) Type() ObjectType        { return CLASS_OBJ }
 func (e *Error) Type() ObjectType        { return ERROR_OBJ }
 func (f *Function) Type() ObjectType     { return FUNCTION_OBJ }
 func (l *List) Type() ObjectType         { return LIST_OBJ }
@@ -145,7 +151,17 @@ func (s *String) Type() ObjectType       { return STRING_OBJ }
 
 func (b *Boolean) Inspect() string { return fmt.Sprintf("%t", b.Value) }
 func (b *Builtin) Inspect() string { return fmt.Sprintf("builtin function: %s", b.Name) }
-func (e *Error) Inspect() string   { return "RUNTIME ERROR: " + e.Message }
+
+func (c *Class) Inspect() string {
+	var out bytes.Buffer
+
+	out.WriteString("class {\n")
+	out.WriteString("}\n")
+
+	return out.String()
+}
+
+func (e *Error) Inspect() string { return "RUNTIME ERROR: " + e.Message }
 
 func (f *Function) Inspect() string {
 	var out bytes.Buffer
