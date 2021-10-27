@@ -52,7 +52,7 @@ func (scanner *Scanner) ScanTokens() []token.Token {
 		scanner.scanToken()
 	}
 
-	scanner.tokens = append(scanner.tokens, token.Token{Type: token.EOF})
+	scanner.tokens = append(scanner.tokens, token.Token{Type: token.EOF, Literal: nil, Line: scanner.line})
 
 	return scanner.tokens
 }
