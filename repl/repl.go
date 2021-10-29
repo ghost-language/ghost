@@ -3,16 +3,18 @@ package repl
 import (
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"path/filepath"
 
+	"ghostlang.org/x/ghost/error"
+	"ghostlang.org/x/ghost/ghost"
 	"ghostlang.org/x/ghost/scanner"
 	"github.com/peterh/liner"
 )
 
 var (
 	prompt  = ">> "
+	spacer  = "   "
 	history = filepath.Join(os.TempDir(), ".ghost_history")
 )
 
@@ -28,7 +30,12 @@ func Start(in io.Reader, out io.Writer) {
 	}
 
 	if f, err := os.Create(history); err != nil {
-		log.Print("Error writing history file: ", err)
+		err := error.Error{
+			Reason:  error.System,
+			Message: fmt.Sprintf("unable to write to history file: %s", err),
+		}
+
+		ghost.LogError(err.Reason, err.Message)
 	} else {
 		line.WriteHistory(f)
 		f.Close()
@@ -38,7 +45,7 @@ func Start(in io.Reader, out io.Writer) {
 		source, err := line.Prompt(prompt)
 
 		if err == liner.ErrPromptAborted {
-			fmt.Println("   Exiting...")
+			fmt.Printf("%sExiting...\n", spacer)
 			os.Exit(1)
 		} else {
 			evaluate(source)
@@ -53,6 +60,6 @@ func evaluate(source string) {
 	tokens := scanner.ScanTokens()
 
 	for index, token := range tokens {
-		fmt.Printf("   [%d] %s\n", index, token.String())
+		fmt.Printf("%s[%d] %s\n", spacer, index, token.String())
 	}
 }

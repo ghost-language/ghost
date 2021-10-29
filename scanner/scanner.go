@@ -3,6 +3,8 @@ package scanner
 import (
 	"fmt"
 
+	"ghostlang.org/x/ghost/error"
+	"ghostlang.org/x/ghost/ghost"
 	"ghostlang.org/x/ghost/token"
 	"github.com/shopspring/decimal"
 )
@@ -49,7 +51,7 @@ func (scanner *Scanner) ScanTokens() []token.Token {
 	for !scanner.isAtEnd() {
 		// We are at the beginning of the next lexeme.
 		scanner.start = scanner.current
-		scanner.scanToken()
+		scanner.ScanToken()
 	}
 
 	scanner.tokens = append(scanner.tokens, token.Token{Type: token.EOF, Literal: nil, Line: scanner.line})
@@ -59,7 +61,7 @@ func (scanner *Scanner) ScanTokens() []token.Token {
 
 // scanToken is responsible for scanning the current character and storing the
 // correct token type for it. This is the heart of our scanner.
-func (scanner *Scanner) scanToken() {
+func (scanner *Scanner) ScanToken() {
 	c := scanner.advance()
 
 	switch c {
@@ -138,8 +140,12 @@ func (scanner *Scanner) scanToken() {
 		} else if scanner.isAlpha(c) {
 			scanner.scanIdentifier()
 		} else {
-			// Log error, unexpected parse error
-			panic(fmt.Sprintf("Unexpected parse error on line %d", scanner.line))
+			err := error.Error{
+				Reason:  error.Syntax,
+				Message: fmt.Sprintf("unexpected parsing error on line %d", scanner.line),
+			}
+
+			ghost.LogError(err.Reason, err.Message)
 		}
 	}
 }
@@ -157,7 +163,12 @@ func (scanner *Scanner) scanString() {
 	}
 
 	if scanner.isAtEnd() {
-		// Log error
+		err := error.Error{
+			Reason:  error.Syntax,
+			Message: fmt.Sprintf("unexpected end of string on line %d", scanner.line),
+		}
+
+		ghost.LogError(err.Reason, err.Message)
 		return
 	}
 
@@ -203,8 +214,13 @@ func (scanner *Scanner) scanNumber() {
 				scanner.advance()
 			}
 		} else {
-			// Log error, expected number following e notation.
-			panic(fmt.Sprintf("Expected number following e notation on line %d", scanner.line))
+			err := error.Error{
+				Reason:  error.Syntax,
+				Message: fmt.Sprintf("exponent has no digits on line %d", scanner.line),
+			}
+
+			ghost.LogError(err.Reason, err.Message)
+			return
 		}
 	}
 
@@ -212,8 +228,12 @@ func (scanner *Scanner) scanNumber() {
 	number, err := decimal.NewFromString(literal)
 
 	if err != nil {
-		// Log error, invalid number format
-		panic(fmt.Sprintf("Invalid number format on line %d, got: %s", scanner.line, number))
+		err := error.Error{
+			Reason:  error.Syntax,
+			Message: fmt.Sprintf("invalid number format on line %d", scanner.line),
+		}
+
+		ghost.LogError(err.Reason, err.Message)
 	} else {
 		scanner.addTokenWithLiteral(token.NUMBER, number)
 	}
