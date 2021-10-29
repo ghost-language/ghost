@@ -23,6 +23,10 @@ func LogDebug(args ...string) {
 	fmt.Println(AnsiBlueBold + "debug: " + AnsiBlue + strings.Join(args, " ") + AnsiReset)
 }
 
+func LogInfo(args ...string) {
+	fmt.Println(AnsiGreen + strings.Join(args, " ") + AnsiReset)
+}
+
 func LogError(reason int, args ...string) {
 	var state string
 

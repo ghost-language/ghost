@@ -14,7 +14,6 @@ import (
 
 var (
 	prompt  = ">> "
-	spacer  = "   "
 	history = filepath.Join(os.TempDir(), ".ghost_history")
 )
 
@@ -45,7 +44,7 @@ func Start(in io.Reader, out io.Writer) {
 		source, err := line.Prompt(prompt)
 
 		if err == liner.ErrPromptAborted {
-			fmt.Printf("%sExiting...\n", spacer)
+			log.LogInfo("Exiting...")
 			os.Exit(1)
 		} else {
 			evaluate(source)
