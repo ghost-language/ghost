@@ -8,7 +8,7 @@ import (
 
 	"ghostlang.org/x/ghost/error"
 	"ghostlang.org/x/ghost/ghost"
-	"ghostlang.org/x/ghost/scanner"
+	"ghostlang.org/x/ghost/log"
 	"github.com/peterh/liner"
 )
 
@@ -35,7 +35,7 @@ func Start(in io.Reader, out io.Writer) {
 			Message: fmt.Sprintf("unable to write to history file: %s", err),
 		}
 
-		ghost.LogError(err.Reason, err.Message)
+		log.LogError(err.Reason, err.Message)
 	} else {
 		line.WriteHistory(f)
 		f.Close()
@@ -56,10 +56,6 @@ func Start(in io.Reader, out io.Writer) {
 }
 
 func evaluate(source string) {
-	scanner := scanner.New(source)
-	tokens := scanner.ScanTokens()
-
-	for index, token := range tokens {
-		fmt.Printf("%s[%d] %s\n", spacer, index, token.String())
-	}
+	engine := ghost.New(source)
+	engine.Execute()
 }

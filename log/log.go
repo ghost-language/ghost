@@ -1,4 +1,4 @@
-package ghost
+package log
 
 import (
 	"fmt"
