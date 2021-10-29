@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"ghostlang.org/x/ghost/log"
+	"ghostlang.org/x/ghost/parser"
 	"ghostlang.org/x/ghost/scanner"
 )
 
@@ -32,8 +33,16 @@ func (engine *Engine) resetWorkingDirectory() {
 func (engine *Engine) Execute() {
 	scanner := scanner.New(engine.Source)
 	tokens := scanner.ScanTokens()
+	parser := parser.New(tokens)
+	statements := parser.Parse()
 
+	log.LogDebug("Scanned tokens...")
 	for index, token := range tokens {
 		log.LogDebug(fmt.Sprintf("[%d] %s", index, token.String()))
+	}
+
+	log.LogDebug("Parsed statements...")
+	for index, statement := range statements {
+		log.LogDebug(fmt.Sprintf("[%d] %v", index, statement))
 	}
 }
