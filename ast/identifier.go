@@ -4,5 +4,7 @@ import "ghostlang.org/x/ghost/token"
 
 type Identifier struct {
 	Token token.Token
-	Value ExpressionNode
+	Value string
 }
+
+func (identifier *Identifier) expressionNode() {}

@@ -5,7 +5,7 @@ import (
 	"ghostlang.org/x/ghost/token"
 )
 
-func (parser *Parser) assign() ast.ExpressionNode {
+func (parser *Parser) assign() ast.StatementNode {
 	if parser.check(token.IDENTIFIER) && parser.checkNext(token.ASSIGN) {
 		parser.match(token.IDENTIFIER)
 		name := parser.previous()
@@ -14,7 +14,7 @@ func (parser *Parser) assign() ast.ExpressionNode {
 		value := parser.expression(LOWEST)
 
 		if value == nil {
-			return value
+			return nil
 		}
 
 		return &ast.Assign{Token: name, Value: value}

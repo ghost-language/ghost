@@ -1,10 +1,9 @@
 package ghost
 
 import (
-	"fmt"
 	"os"
 
-	"ghostlang.org/x/ghost/log"
+	"ghostlang.org/x/ghost/interpreter"
 	"ghostlang.org/x/ghost/parser"
 	"ghostlang.org/x/ghost/scanner"
 )
@@ -36,13 +35,15 @@ func (engine *Engine) Execute() {
 	parser := parser.New(tokens)
 	statements := parser.Parse()
 
-	log.Debug("Scanned tokens...")
-	for index, token := range tokens {
-		log.Debug(fmt.Sprintf("[%d] %s", index, token.String()))
-	}
+	interpreter.Interpret(statements)
 
-	log.Debug("Parsed statements...")
-	for index, statement := range statements {
-		log.Debug(fmt.Sprintf("[%d] %T: %q", index, statement, statement))
-	}
+	// log.Debug("Scanned tokens...")
+	// for index, token := range tokens {
+	// 	log.Debug(fmt.Sprintf("[%d] %s", index, token.String()))
+	// }
+
+	// log.Debug("Parsed statements...")
+	// for index, statement := range statements {
+	// 	log.Debug(fmt.Sprintf("[%d] %T: %q", index, statement, statement))
+	// }
 }

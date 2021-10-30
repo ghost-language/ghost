@@ -5,7 +5,7 @@ import (
 )
 
 func (parser *Parser) identifier() ast.ExpressionNode {
-	identifier := &ast.Identifier{Token: parser.current(), Value: parser.current().Literal}
+	identifier := &ast.Identifier{Token: parser.current(), Value: parser.current().Lexeme}
 
 	return identifier
 }
