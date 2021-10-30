@@ -145,7 +145,7 @@ func (scanner *Scanner) ScanToken() {
 				Message: fmt.Sprintf("unexpected parsing error on line %d", scanner.line),
 			}
 
-			log.LogError(err.Reason, err.Message)
+			log.Error(err.Reason, err.Message)
 		}
 	}
 }
@@ -168,7 +168,7 @@ func (scanner *Scanner) scanString() {
 			Message: fmt.Sprintf("unexpected end of string on line %d", scanner.line),
 		}
 
-		log.LogError(err.Reason, err.Message)
+		log.Error(err.Reason, err.Message)
 		return
 	}
 
@@ -219,7 +219,7 @@ func (scanner *Scanner) scanNumber() {
 				Message: fmt.Sprintf("exponent has no digits on line %d", scanner.line),
 			}
 
-			log.LogError(err.Reason, err.Message)
+			log.Error(err.Reason, err.Message)
 			return
 		}
 	}
@@ -233,7 +233,7 @@ func (scanner *Scanner) scanNumber() {
 			Message: fmt.Sprintf("invalid number format on line %d", scanner.line),
 		}
 
-		log.LogError(err.Reason, err.Message)
+		log.Error(err.Reason, err.Message)
 	} else {
 		scanner.addTokenWithLiteral(token.NUMBER, number)
 	}

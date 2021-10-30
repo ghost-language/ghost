@@ -19,15 +19,15 @@ const (
 	AnsiRedBold   = "\033[31;1m"
 )
 
-func LogDebug(args ...string) {
+func Debug(args ...string) {
 	fmt.Println(AnsiBlueBold + "debug: " + AnsiBlue + strings.Join(args, " ") + AnsiReset)
 }
 
-func LogInfo(args ...string) {
+func Info(args ...string) {
 	fmt.Println(AnsiGreen + strings.Join(args, " ") + AnsiReset)
 }
 
-func LogError(reason int, args ...string) {
+func Error(reason int, args ...string) {
 	var state string
 
 	switch reason {

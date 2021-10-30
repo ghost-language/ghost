@@ -34,7 +34,7 @@ func Start(in io.Reader, out io.Writer) {
 			Message: fmt.Sprintf("unable to write to history file: %s", err),
 		}
 
-		log.LogError(err.Reason, err.Message)
+		log.Error(err.Reason, err.Message)
 	} else {
 		line.WriteHistory(f)
 		f.Close()
@@ -44,7 +44,7 @@ func Start(in io.Reader, out io.Writer) {
 		source, err := line.Prompt(prompt)
 
 		if err == liner.ErrPromptAborted {
-			log.LogInfo("Exiting...")
+			log.Info("Exiting...")
 			os.Exit(1)
 		} else {
 			evaluate(source)

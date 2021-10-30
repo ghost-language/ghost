@@ -36,13 +36,13 @@ func (engine *Engine) Execute() {
 	parser := parser.New(tokens)
 	statements := parser.Parse()
 
-	log.LogDebug("Scanned tokens...")
+	log.Debug("Scanned tokens...")
 	for index, token := range tokens {
-		log.LogDebug(fmt.Sprintf("[%d] %s", index, token.String()))
+		log.Debug(fmt.Sprintf("[%d] %s", index, token.String()))
 	}
 
-	log.LogDebug("Parsed statements...")
+	log.Debug("Parsed statements...")
 	for index, statement := range statements {
-		log.LogDebug(fmt.Sprintf("[%d] %v", index, statement))
+		log.Debug(fmt.Sprintf("[%d] %T: %q", index, statement, statement))
 	}
 }

@@ -2,8 +2,7 @@ package ast
 
 import "ghostlang.org/x/ghost/token"
 
-type Assign struct {
-	ExpressionNode
+type Identifier struct {
 	Token token.Token
 	Value ExpressionNode
 }
