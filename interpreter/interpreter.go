@@ -31,6 +31,8 @@ func Evaluate(node ast.Node) (object.Object, bool) {
 	switch node := node.(type) {
 	case *ast.Expression:
 		return Evaluate(node.Expression)
+	case *ast.Null:
+		return &object.Null{}, true
 	case *ast.Number:
 		return &object.Number{Value: node.Value}, true
 	}

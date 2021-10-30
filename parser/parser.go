@@ -47,6 +47,7 @@ func New(tokens []token.Token) *Parser {
 
 	parser.registerPrefix(token.IDENTIFIER, parser.identifier)
 	parser.registerPrefix(token.NUMBER, parser.number)
+	parser.registerPrefix(token.NULL, parser.null)
 
 	return parser
 }
