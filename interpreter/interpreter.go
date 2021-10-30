@@ -29,6 +29,8 @@ func Interpret(statements []ast.StatementNode) {
 
 func Evaluate(node ast.Node) (object.Object, bool) {
 	switch node := node.(type) {
+	case *ast.Boolean:
+		return &object.Boolean{Value: node.Value}, true
 	case *ast.Expression:
 		return Evaluate(node.Expression)
 	case *ast.Null:
