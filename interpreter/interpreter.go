@@ -7,6 +7,7 @@ import (
 	"ghostlang.org/x/ghost/error"
 	"ghostlang.org/x/ghost/log"
 	"ghostlang.org/x/ghost/object"
+	"ghostlang.org/x/ghost/value"
 )
 
 func Interpret(statements []ast.StatementNode) {
@@ -34,7 +35,7 @@ func Evaluate(node ast.Node) (object.Object, bool) {
 	case *ast.Expression:
 		return Evaluate(node.Expression)
 	case *ast.Null:
-		return &object.Null{}, true
+		return value.NULL, true
 	case *ast.Number:
 		return &object.Number{Value: node.Value}, true
 	}
