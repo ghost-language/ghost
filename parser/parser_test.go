@@ -153,42 +153,6 @@ func TestNumberLiteral(t *testing.T) {
 	}
 }
 
-func TestStringLiteral(t *testing.T) {
-	tests := []struct {
-		input    string
-		expected string
-	}{
-		{`"hello world"`, `hello world`},
-	}
-
-	for _, tt := range tests {
-		scanner := scanner.New(tt.input)
-		tokens := scanner.ScanTokens()
-		parser := New(tokens)
-		statements := parser.Parse()
-
-		if len(statements) != 1 {
-			t.Fatalf("statements does not contain 1 statement. got=%d", len(statements))
-		}
-
-		statement, ok := statements[0].(*ast.Expression)
-
-		if !ok {
-			t.Fatalf("statements[0] is not ast.Expression. got=%T", statements[0])
-		}
-
-		str, ok := statement.Expression.(*ast.String)
-
-		if !ok {
-			t.Fatalf("statement is not ast.String. got=%T", statement.Expression)
-		}
-
-		if str.Value != tt.expected {
-			t.Fatalf("string.Value is not '%s'. got=%s", tt.expected, str.Value)
-		}
-	}
-}
-
 func TestPrefixExpression(t *testing.T) {
 	tests := []struct {
 		input    string
@@ -227,6 +191,42 @@ func TestPrefixExpression(t *testing.T) {
 
 		if !isNumberLiteral(t, prefix.Right, tt.number) {
 			return
+		}
+	}
+}
+
+func TestStringLiteral(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected string
+	}{
+		{`"hello world"`, `hello world`},
+	}
+
+	for _, tt := range tests {
+		scanner := scanner.New(tt.input)
+		tokens := scanner.ScanTokens()
+		parser := New(tokens)
+		statements := parser.Parse()
+
+		if len(statements) != 1 {
+			t.Fatalf("statements does not contain 1 statement. got=%d", len(statements))
+		}
+
+		statement, ok := statements[0].(*ast.Expression)
+
+		if !ok {
+			t.Fatalf("statements[0] is not ast.Expression. got=%T", statements[0])
+		}
+
+		str, ok := statement.Expression.(*ast.String)
+
+		if !ok {
+			t.Fatalf("statement is not ast.String. got=%T", statement.Expression)
+		}
+
+		if str.Value != tt.expected {
+			t.Fatalf("string.Value is not '%s'. got=%s", tt.expected, str.Value)
 		}
 	}
 }
