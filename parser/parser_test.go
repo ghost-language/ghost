@@ -123,7 +123,7 @@ func TestString(t *testing.T) {
 		input    string
 		expected string
 	}{
-		{`"hello world"`, `"hello world"`},
+		{`"hello world"`, `hello world`},
 	}
 
 	for _, tt := range tests {
