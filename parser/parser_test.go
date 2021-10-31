@@ -7,6 +7,41 @@ import (
 	"ghostlang.org/x/ghost/scanner"
 )
 
+func TestAssignStatement(t *testing.T) {
+	tests := []struct {
+		input      string
+		identifier string
+		value      int64
+	}{
+		{`a := 5`, "a", 5},
+	}
+
+	for _, tt := range tests {
+		scanner := scanner.New(tt.input)
+		tokens := scanner.ScanTokens()
+		parser := New(tokens)
+		statements := parser.Parse()
+
+		if len(statements) != 1 {
+			t.Fatalf("statements does not contain 1 statement. got=%d", len(statements))
+		}
+
+		assign, ok := statements[0].(*ast.Assign)
+
+		if !ok {
+			t.Fatalf("statements[0] is not ast.Assign. got=%T", statements[0])
+		}
+
+		if assign.Token.Lexeme != tt.identifier {
+			t.Fatalf("assign.Token is not '%s'. got=%s", tt.identifier, assign.Token.Lexeme)
+		}
+
+		if !isNumberLiteral(t, assign.Value, tt.value) {
+			return
+		}
+	}
+}
+
 func TestBooleanLiteral(t *testing.T) {
 	tests := []struct {
 		input    string
