@@ -1,8 +1,10 @@
 package ast
 
-import "ghostlang.org/x/ghost/token"
+import (
+	"ghostlang.org/x/ghost/token"
+)
 
-type Identifier struct {
+type String struct {
 	ExpressionNode
 	Token token.Token
 	Value string

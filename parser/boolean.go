@@ -5,6 +5,6 @@ import (
 	"ghostlang.org/x/ghost/token"
 )
 
-func (parser *Parser) boolean() ast.ExpressionNode {
+func (parser *Parser) booleanLiteral() ast.ExpressionNode {
 	return &ast.Boolean{Value: parser.check(token.TRUE)}
 }

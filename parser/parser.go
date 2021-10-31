@@ -45,11 +45,12 @@ func New(tokens []token.Token) *Parser {
 	parser.infixParserFns = make(map[token.Type]infixParserFn)
 	parser.postfixParserFns = make(map[token.Type]postfixParserFn)
 
-	parser.registerPrefix(token.IDENTIFIER, parser.identifier)
-	parser.registerPrefix(token.NUMBER, parser.number)
-	parser.registerPrefix(token.NULL, parser.null)
-	parser.registerPrefix(token.TRUE, parser.boolean)
-	parser.registerPrefix(token.FALSE, parser.boolean)
+	parser.registerPrefix(token.IDENTIFIER, parser.identifierLiteral)
+	parser.registerPrefix(token.NUMBER, parser.numberLiteral)
+	parser.registerPrefix(token.NULL, parser.nullLiteral)
+	parser.registerPrefix(token.TRUE, parser.booleanLiteral)
+	parser.registerPrefix(token.FALSE, parser.booleanLiteral)
+	parser.registerPrefix(token.STRING, parser.stringLiteral)
 
 	return parser
 }

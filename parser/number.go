@@ -9,7 +9,7 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-func (parser *Parser) number() ast.ExpressionNode {
+func (parser *Parser) numberLiteral() ast.ExpressionNode {
 	number := &ast.Number{Token: parser.current()}
 
 	value, err := decimal.NewFromString(parser.current().Lexeme)

@@ -6,8 +6,7 @@ import (
 )
 
 type Number struct {
+	ExpressionNode
 	Token token.Token
 	Value decimal.Decimal
 }
-
-func (number *Number) expressionNode() {}
