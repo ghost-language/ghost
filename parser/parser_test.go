@@ -7,7 +7,7 @@ import (
 	"ghostlang.org/x/ghost/scanner"
 )
 
-func TestBoolean(t *testing.T) {
+func TestBooleanLiteral(t *testing.T) {
 	tests := []struct {
 		input    string
 		expected bool
@@ -44,7 +44,7 @@ func TestBoolean(t *testing.T) {
 	}
 }
 
-func TestIdentifier(t *testing.T) {
+func TestIdentifierLiteral(t *testing.T) {
 	tests := []struct {
 		input    string
 		expected string
@@ -80,7 +80,7 @@ func TestIdentifier(t *testing.T) {
 	}
 }
 
-func TestNumber(t *testing.T) {
+func TestNumberLiteral(t *testing.T) {
 	tests := []struct {
 		input    string
 		expected string
@@ -118,7 +118,7 @@ func TestNumber(t *testing.T) {
 	}
 }
 
-func TestString(t *testing.T) {
+func TestStringLiteral(t *testing.T) {
 	tests := []struct {
 		input    string
 		expected string
@@ -152,4 +152,63 @@ func TestString(t *testing.T) {
 			t.Fatalf("string.Value is not '%s'. got=%s", tt.expected, str.Value)
 		}
 	}
+}
+
+func TestPrefixExpression(t *testing.T) {
+	tests := []struct {
+		input    string
+		operator string
+		number   int64
+	}{
+		{"!5", "!", 5},
+		{"-15", "-", 15},
+	}
+
+	for _, tt := range tests {
+		scanner := scanner.New(tt.input)
+		tokens := scanner.ScanTokens()
+		parser := New(tokens)
+		statements := parser.Parse()
+
+		if len(statements) != 1 {
+			t.Fatalf("statements does not contain 1 statement. got=%d", len(statements))
+		}
+
+		statement, ok := statements[0].(*ast.Expression)
+
+		if !ok {
+			t.Fatalf("statements[0] is not ast.Expression. got=%T", statements[0])
+		}
+
+		prefix, ok := statement.Expression.(*ast.Prefix)
+
+		if !ok {
+			t.Fatalf("statement is not ast.Prefix. got=%T", statement.Expression)
+		}
+
+		if prefix.Operator != tt.operator {
+			t.Fatalf("prefix.Operator is not '%s'. got=%s", tt.operator, prefix.Operator)
+		}
+
+		if !isNumberLiteral(t, prefix.Right, tt.number) {
+			return
+		}
+	}
+}
+
+// =============================================================================
+// Helper methods
+
+func isNumberLiteral(t *testing.T, expression ast.ExpressionNode, value int64) bool {
+	number, ok := expression.(*ast.Number)
+
+	if !ok {
+		t.Errorf("expression is not ast.Number. got=%T", expression)
+	}
+
+	if number.Value.IntPart() != value {
+		t.Errorf("number.Value not %d. got=%d", value, number.Value.IntPart())
+	}
+
+	return true
 }

@@ -16,7 +16,7 @@ func (parser *Parser) statement() ast.StatementNode {
 
 func (parser *Parser) expressionStatement() ast.StatementNode {
 	statement := &ast.Expression{}
-	statement.Expression = parser.expression(LOWEST)
+	statement.Expression = parser.parseExpression(LOWEST)
 
 	return statement
 }

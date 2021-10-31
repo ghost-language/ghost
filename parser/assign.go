@@ -11,7 +11,7 @@ func (parser *Parser) assign() ast.StatementNode {
 		name := parser.previous()
 		parser.match(token.ASSIGN)
 
-		value := parser.expression(LOWEST)
+		value := parser.parseExpression(LOWEST)
 
 		if value == nil {
 			return nil

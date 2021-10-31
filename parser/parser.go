@@ -51,6 +51,8 @@ func New(tokens []token.Token) *Parser {
 	parser.registerPrefix(token.TRUE, parser.booleanLiteral)
 	parser.registerPrefix(token.FALSE, parser.booleanLiteral)
 	parser.registerPrefix(token.STRING, parser.stringLiteral)
+	parser.registerPrefix(token.BANG, parser.prefixExpression)
+	parser.registerPrefix(token.MINUS, parser.prefixExpression)
 
 	return parser
 }

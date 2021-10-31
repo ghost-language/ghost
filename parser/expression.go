@@ -4,7 +4,7 @@ import (
 	"ghostlang.org/x/ghost/ast"
 )
 
-func (parser *Parser) expression(precedence int) ast.ExpressionNode {
+func (parser *Parser) parseExpression(precedence int) ast.ExpressionNode {
 	postfix := parser.postfixParserFns[parser.current().Type]
 
 	if postfix != nil {
