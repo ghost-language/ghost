@@ -207,7 +207,7 @@ func isNumberLiteral(t *testing.T, expression ast.ExpressionNode, value int64) b
 	}
 
 	if number.Value.IntPart() != value {
-		t.Errorf("number.Value not %d. got=%d", value, number.Value.IntPart())
+		t.Errorf("number.Value is not %d. got=%d", value, number.Value.IntPart())
 	}
 
 	return true
