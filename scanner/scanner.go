@@ -85,6 +85,8 @@ func (scanner *Scanner) ScanToken() {
 		scanner.addToken(token.SEMICOLON)
 	case '*':
 		scanner.addToken(token.STAR)
+	case '%':
+		scanner.addToken(token.PERCENT)
 	case '?':
 		scanner.addToken(token.QUESTION)
 	case ':':

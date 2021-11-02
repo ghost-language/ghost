@@ -32,6 +32,7 @@ const (
 	SEMICOLON  = ";"
 	SLASH      = "/"
 	STAR       = "*"
+	PERCENT    = "%"
 
 	// one or two character tokens
 	BANG         = "!"
