@@ -3,7 +3,6 @@ package log
 import (
 	"fmt"
 	"os"
-	"strings"
 
 	"ghostlang.org/x/ghost/error"
 )
@@ -19,15 +18,15 @@ const (
 	AnsiRedBold   = "\033[31;1m"
 )
 
-func Debug(args ...string) {
-	fmt.Println(AnsiBlueBold + "debug: " + AnsiBlue + strings.Join(args, " ") + AnsiReset)
+func Debug(str string, args ...interface{}) {
+	fmt.Println(AnsiBlueBold + "debug: " + AnsiBlue + fmt.Sprintf(str, args...) + AnsiReset)
 }
 
-func Info(args ...string) {
-	fmt.Println(AnsiGreen + strings.Join(args, " ") + AnsiReset)
+func Info(str string, args ...interface{}) {
+	fmt.Println(AnsiGreen + fmt.Sprintf(str, args...) + AnsiReset)
 }
 
-func Error(reason int, args ...string) {
+func Error(reason int, str string, args ...interface{}) {
 	var state string
 
 	switch reason {
@@ -41,5 +40,5 @@ func Error(reason int, args ...string) {
 		state = "error"
 	}
 
-	fmt.Fprintln(os.Stderr, AnsiRedBold+state+": "+AnsiRed+strings.Join(args, " ")+AnsiReset)
+	fmt.Fprintln(os.Stderr, AnsiRedBold+state+": "+AnsiRed+fmt.Sprintf(str, args...)+AnsiReset)
 }
