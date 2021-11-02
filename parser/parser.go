@@ -5,7 +5,18 @@ import (
 	"ghostlang.org/x/ghost/token"
 )
 
-var precedences = map[token.Type]int{}
+var precedences = map[token.Type]int{
+	token.EQUALEQUAL:   EQUALS,
+	token.BANGEQUAL:    EQUALS,
+	token.LESS:         LESSGREATER,
+	token.LESSEQUAL:    LESSGREATER,
+	token.GREATER:      LESSGREATER,
+	token.GREATEREQUAL: LESSGREATER,
+	token.PLUS:         SUM,
+	token.MINUS:        SUM,
+	token.STAR:         PRODUCT,
+	token.SLASH:        PRODUCT,
+}
 
 const (
 	_ int = iota
@@ -54,6 +65,17 @@ func New(tokens []token.Token) *Parser {
 	parser.registerPrefix(token.BANG, parser.prefixExpression)
 	parser.registerPrefix(token.MINUS, parser.prefixExpression)
 
+	parser.registerInfix(token.PLUS, parser.infixExpression)
+	parser.registerInfix(token.MINUS, parser.infixExpression)
+	parser.registerInfix(token.SLASH, parser.infixExpression)
+	parser.registerInfix(token.STAR, parser.infixExpression)
+	parser.registerInfix(token.EQUALEQUAL, parser.infixExpression)
+	parser.registerInfix(token.BANGEQUAL, parser.infixExpression)
+	parser.registerInfix(token.GREATER, parser.infixExpression)
+	parser.registerInfix(token.GREATEREQUAL, parser.infixExpression)
+	parser.registerInfix(token.LESS, parser.infixExpression)
+	parser.registerInfix(token.LESSEQUAL, parser.infixExpression)
+
 	return parser
 }
 
@@ -61,9 +83,9 @@ func (parser *Parser) registerPrefix(tokenType token.Type, fn prefixParserFn) {
 	parser.prefixParserFns[tokenType] = fn
 }
 
-// func (parser *Parser) registerInfix(tokenType token.Type, fn infixParserFn) {
-// 	parser.infixParserFns[tokenType] = fn
-// }
+func (parser *Parser) registerInfix(tokenType token.Type, fn infixParserFn) {
+	parser.infixParserFns[tokenType] = fn
+}
 
 // func (parser *Parser) registerPostfix(tokenType token.Type, fn postfixParserFn) {
 // 	parser.postfixParserFns[tokenType] = fn
@@ -151,13 +173,14 @@ func (parser *Parser) previous() token.Token {
 	return parser.tokens[parser.position-1]
 }
 
-// func (parser *Parser) currentPrecedence() int {
-// 	if parser, ok := precedences[parser.current().Type]; ok {
-// 		return parser
-// 	}
+func (parser *Parser) currentPrecedence() int {
+	if precedence, ok := precedences[parser.current().Type]; ok {
+		// log.Debug("found precedence: %s (%d)", parser.current().Type, precedence)
+		return precedence
+	}
 
-// 	return LOWEST
-// }
+	return LOWEST
+}
 
 func (parser *Parser) nextPrecedence() int {
 	if parser, ok := precedences[parser.next().Type]; ok {

@@ -115,6 +115,59 @@ func TestIdentifierLiteral(t *testing.T) {
 	}
 }
 
+func TestInfixExpressions(t *testing.T) {
+	tests := []struct {
+		input      string
+		leftValue  int64
+		operator   string
+		rightValue int64
+	}{
+		{"5 + 5", 5, "+", 5},
+		{"5 - 5", 5, "-", 5},
+		{"5 * 5", 5, "*", 5},
+		{"5 / 5", 5, "/", 5},
+		{"5 > 5", 5, ">", 5},
+		{"5 < 5", 5, "<", 5},
+		{"5 == 5", 5, "==", 5},
+		{"5 != 5", 5, "!=", 5},
+	}
+
+	for _, tt := range tests {
+		scanner := scanner.New(tt.input)
+		tokens := scanner.ScanTokens()
+		parser := New(tokens)
+		statements := parser.Parse()
+
+		if len(statements) != 1 {
+			t.Fatalf("statements does not contain 1 statement. got=%d", len(statements))
+		}
+
+		statement, ok := statements[0].(*ast.Expression)
+
+		if !ok {
+			t.Fatalf("statements[0] is not ast.Expression. got=%T", statements[0])
+		}
+
+		infix, ok := statement.Expression.(*ast.Infix)
+
+		if !ok {
+			t.Fatalf("statement is not ast.Infix. got=%T", statement.Expression)
+		}
+
+		if infix.Operator != tt.operator {
+			t.Fatalf("infix.Operator is not '%s'. got=%s", tt.operator, infix.Operator)
+		}
+
+		if !isNumberLiteral(t, infix.Right, tt.rightValue) {
+			return
+		}
+
+		if !isNumberLiteral(t, infix.Left, tt.leftValue) {
+			return
+		}
+	}
+}
+
 func TestNumberLiteral(t *testing.T) {
 	tests := []struct {
 		input    string
@@ -153,7 +206,7 @@ func TestNumberLiteral(t *testing.T) {
 	}
 }
 
-func TestPrefixExpression(t *testing.T) {
+func TestPrefixExpressions(t *testing.T) {
 	tests := []struct {
 		input    string
 		operator string

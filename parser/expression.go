@@ -19,12 +19,14 @@ func (parser *Parser) parseExpression(precedence int) ast.ExpressionNode {
 
 	leftExpression := prefix()
 
-	for !parser.isAtEnd() && precedence < parser.nextPrecedence() {
+	for precedence < parser.nextPrecedence() {
 		infix := parser.infixParserFns[parser.next().Type]
 
 		if infix == nil {
 			return leftExpression
 		}
+
+		parser.advance()
 
 		leftExpression = infix(leftExpression)
 	}
