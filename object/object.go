@@ -8,3 +8,5 @@ type Object interface {
 	Type() Type
 	String() string
 }
+
+type GoFunction func(args ...Object) Object

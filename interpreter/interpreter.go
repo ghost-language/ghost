@@ -34,6 +34,8 @@ func Evaluate(node ast.Node) (object.Object, bool) {
 		return evaluateBoolean(node)
 	case *ast.Expression:
 		return Evaluate(node.Expression)
+	case *ast.Identifier:
+		return evaluateIdentifier(node)
 	case *ast.Infix:
 		return evaluateInfix(node)
 	case *ast.Null:

@@ -29,12 +29,12 @@ var keywords = map[string]token.Type{
 	"if":       token.IF,
 	"null":     token.NULL,
 	"or":       token.OR,
-	"print":    token.PRINT,
-	"return":   token.RETURN,
-	"super":    token.SUPER,
-	"this":     token.THIS,
-	"true":     token.TRUE,
-	"while":    token.WHILE,
+	// "print":    token.PRINT,
+	"return": token.RETURN,
+	"super":  token.SUPER,
+	"this":   token.THIS,
+	"true":   token.TRUE,
+	"while":  token.WHILE,
 }
 
 // New creates a new scanner instance.
