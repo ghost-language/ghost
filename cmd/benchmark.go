@@ -15,10 +15,10 @@ func benchmarkCommand() {
 
 func benchmarkHelloWorld() {
 	goTime := nativeHelloWorld()
-	scanTime, parseTime, interpretTime, ghostTime := benchmark(`"Hello, world!"`)
+	scanTime, parseTime, interpretTime, ghostTime := benchmark(`print("Hello, world!")`)
 
 	fmt.Println("==============================")
-	fmt.Println("hello world benchmark")
+	fmt.Println("Hello world benchmark")
 	fmt.Println("==============================")
 	fmt.Printf("Go:             %s\n", goTime)
 	fmt.Printf("Ghost:          %s\n", ghostTime)
