@@ -1,55 +1,8 @@
 package main
 
-import (
-	"flag"
-	"fmt"
-	"os"
-	"path"
+import "fmt"
 
-	"ghostlang.org/x/ghost/repl"
-	"ghostlang.org/x/ghost/version"
-)
-
-var (
-	flagHelp    bool
-	flagVersion bool
-)
-
-func init() {
-	flag.Usage = func() {
-		fmt.Fprintf(flag.CommandLine.Output(), "Usage: %s [options] [<filename>]\n", path.Base(os.Args[0]))
-		flag.PrintDefaults()
-		os.Exit(0)
-	}
-
-	flag.BoolVar(&flagHelp, "h", false, "display help information")
-	flag.BoolVar(&flagVersion, "v", false, "display version information")
-}
-
-func main() {
-	flag.Parse()
-
-	if flagVersion {
-		fmt.Printf("%s %s\n", path.Base(os.Args[0]), version.Version)
-		os.Exit(0)
-	}
-
-	if flagHelp {
-		showHelp()
-		os.Exit(2)
-	}
-
-	args := flag.Args()
-
-	if len(args) > 1 {
-		fmt.Println("Usage: ghost [script]")
-		os.Exit(64)
-	} else {
-		repl.Start(os.Stdin, os.Stdout)
-	}
-}
-
-func showHelp() {
+func helpCommand() {
 	fmt.Println("Usage:")
 	fmt.Println()
 	fmt.Println("    ghost [flags] {file}")
