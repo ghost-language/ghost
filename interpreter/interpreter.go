@@ -12,18 +12,11 @@ import (
 
 func Interpret(statements []ast.StatementNode) {
 	for _, statement := range statements {
-		result, ok := Evaluate(statement)
+		_, ok := Evaluate(statement)
 
-		if !ok {
-			err := error.Error{
-				Reason:  error.Runtime,
-				Message: fmt.Sprintf("unknown runtime node: %T", statement),
-			}
-
-			log.Error(err.Reason, err.Message)
-		} else {
+		if ok {
 			// temporarily log the returned object
-			log.Info(fmt.Sprintf("== %s", result.String()))
+			// log.Info(fmt.Sprintf("== %s", result.String()))
 		}
 	}
 }
@@ -32,6 +25,8 @@ func Evaluate(node ast.Node) (object.Object, bool) {
 	switch node := node.(type) {
 	case *ast.Boolean:
 		return evaluateBoolean(node)
+	case *ast.Call:
+		return evaluateCall(node)
 	case *ast.Expression:
 		return Evaluate(node.Expression)
 	case *ast.Identifier:
@@ -46,9 +41,20 @@ func Evaluate(node ast.Node) (object.Object, bool) {
 		return evaluatePrefix(node)
 	case *ast.String:
 		return evaluateString(node)
-	}
+	case nil:
+		return nil, false
+	default:
+		if node != nil {
+			err := error.Error{
+				Reason:  error.Runtime,
+				Message: fmt.Sprintf("unknown runtime node: %T", node),
+			}
 
-	return nil, false
+			log.Error(err.Reason, err.Message)
+		}
+
+		return nil, false
+	}
 }
 
 func toBooleanValue(input bool) *object.Boolean {

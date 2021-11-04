@@ -2,13 +2,24 @@ package functions
 
 import (
 	"fmt"
+	"strings"
 
+	"ghostlang.org/x/ghost/log"
 	"ghostlang.org/x/ghost/object"
-	"ghostlang.org/x/ghost/value"
 )
 
 func Print(args ...object.Object) object.Object {
-	fmt.Println("print()")
+	if len(args) > 0 {
+		str := make([]string, 0)
 
-	return value.TRUE
+		for _, value := range args {
+			str = append(str, value.String())
+		}
+
+		log.Info(strings.Join(str, " "))
+	} else {
+		fmt.Println()
+	}
+
+	return nil
 }

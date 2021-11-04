@@ -17,6 +17,7 @@ var precedences = map[token.Type]int{
 	token.STAR:         PRODUCT,
 	token.SLASH:        PRODUCT,
 	token.PERCENT:      MODULO,
+	token.LEFTPAREN:    CALL,
 }
 
 const (
@@ -77,6 +78,7 @@ func New(tokens []token.Token) *Parser {
 	parser.registerInfix(token.GREATEREQUAL, parser.infixExpression)
 	parser.registerInfix(token.LESS, parser.infixExpression)
 	parser.registerInfix(token.LESSEQUAL, parser.infixExpression)
+	parser.registerInfix(token.LEFTPAREN, parser.callExpression)
 
 	return parser
 }
