@@ -15,27 +15,27 @@ func evaluateNumberInfix(node *ast.Infix, right object.Object, left object.Objec
 
 	switch node.Operator {
 	case "+":
-		return &object.Number{Value: leftValue.Add(rightValue)}, true
+		return &object.Number{Value: rightValue.Add(leftValue)}, true
 	case "-":
-		return &object.Number{Value: leftValue.Sub(rightValue)}, true
+		return &object.Number{Value: rightValue.Sub(leftValue)}, true
 	case "*":
-		return &object.Number{Value: leftValue.Mul(rightValue)}, true
+		return &object.Number{Value: rightValue.Mul(leftValue)}, true
 	case "/":
-		return &object.Number{Value: leftValue.Div(rightValue)}, true
+		return &object.Number{Value: rightValue.Div(leftValue)}, true
 	case "%":
-		return &object.Number{Value: leftValue.Mod(rightValue)}, true
+		return &object.Number{Value: rightValue.Mod(leftValue)}, true
 	case "<":
-		return &object.Boolean{Value: leftValue.LessThan(rightValue)}, true
+		return &object.Boolean{Value: rightValue.LessThan(leftValue)}, true
 	case "<=":
-		return &object.Boolean{Value: leftValue.LessThanOrEqual(rightValue)}, true
+		return &object.Boolean{Value: rightValue.LessThanOrEqual(leftValue)}, true
 	case ">":
-		return &object.Boolean{Value: leftValue.GreaterThan(rightValue)}, true
+		return &object.Boolean{Value: rightValue.GreaterThan(leftValue)}, true
 	case ">=":
-		return &object.Boolean{Value: leftValue.GreaterThanOrEqual(rightValue)}, true
+		return &object.Boolean{Value: rightValue.GreaterThanOrEqual(leftValue)}, true
 	case "==":
-		return &object.Boolean{Value: leftValue.Equal(rightValue)}, true
+		return &object.Boolean{Value: rightValue.Equal(leftValue)}, true
 	case "!=":
-		return &object.Boolean{Value: !leftValue.Equal(rightValue)}, true
+		return &object.Boolean{Value: !rightValue.Equal(leftValue)}, true
 	default:
 		return nil, false
 	}

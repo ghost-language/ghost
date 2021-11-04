@@ -6,5 +6,5 @@ import (
 )
 
 func evaluateBoolean(node *ast.Boolean) (object.Object, bool) {
-	return &object.Boolean{Value: node.Value}, true
+	return toBooleanValue(node.Value), true
 }
