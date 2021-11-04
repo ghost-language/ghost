@@ -25,17 +25,17 @@ func evaluateNumberInfix(node *ast.Infix, right object.Object, left object.Objec
 	case "%":
 		return &object.Number{Value: rightValue.Mod(leftValue)}, true
 	case "<":
-		return &object.Boolean{Value: rightValue.LessThan(leftValue)}, true
+		return toBooleanValue(rightValue.LessThan(leftValue)), true
 	case "<=":
-		return &object.Boolean{Value: rightValue.LessThanOrEqual(leftValue)}, true
+		return toBooleanValue(rightValue.LessThanOrEqual(leftValue)), true
 	case ">":
-		return &object.Boolean{Value: rightValue.GreaterThan(leftValue)}, true
+		return toBooleanValue(rightValue.GreaterThan(leftValue)), true
 	case ">=":
-		return &object.Boolean{Value: rightValue.GreaterThanOrEqual(leftValue)}, true
+		return toBooleanValue(rightValue.GreaterThanOrEqual(leftValue)), true
 	case "==":
-		return &object.Boolean{Value: rightValue.Equal(leftValue)}, true
+		return toBooleanValue(rightValue.Equal(leftValue)), true
 	case "!=":
-		return &object.Boolean{Value: !rightValue.Equal(leftValue)}, true
+		return toBooleanValue(!rightValue.Equal(leftValue)), true
 	default:
 		return nil, false
 	}
