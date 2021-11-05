@@ -1,11 +1,17 @@
 package main
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"path"
+	"time"
 
+	"ghostlang.org/x/ghost/error"
+	"ghostlang.org/x/ghost/ghost"
+	"ghostlang.org/x/ghost/log"
 	"ghostlang.org/x/ghost/repl"
 	"ghostlang.org/x/ghost/version"
 )
@@ -48,10 +54,41 @@ func main() {
 
 	args := flag.Args()
 
-	if len(args) > 1 {
-		fmt.Println("Usage: ghost [script]")
-		os.Exit(64)
-	} else {
+	if len(args) == 0 {
+		fmt.Printf("Ghost (%s)\n", version.Version)
+		fmt.Printf("Press Ctrl + C to exit\n\n")
+
 		repl.Start(os.Stdin, os.Stdout)
+		return
+	}
+
+	if len(args) > 0 {
+		start := time.Now()
+		sourceFile, err := os.Open(args[0])
+
+		if err != nil {
+			err := error.Error{
+				Reason:  error.System,
+				Message: fmt.Sprintf("could not open source file %s: %s", args[0], err),
+			}
+
+			log.Error(err.Reason, err.Message)
+			os.Exit(1)
+		}
+
+		defer sourceFile.Close()
+
+		sourceBuffer := bytes.NewBuffer(nil)
+		io.Copy(sourceBuffer, sourceFile)
+		source := sourceBuffer.String()
+
+		// directory, _ := filepath.Abs(filepath.Dir(args[0]))
+
+		engine := ghost.New(source)
+		engine.Execute()
+
+		elapsed := time.Since(start)
+
+		log.Info("(executed in: %s)\n", elapsed)
 	}
 }

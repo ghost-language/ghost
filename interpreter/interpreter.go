@@ -12,12 +12,7 @@ import (
 
 func Interpret(statements []ast.StatementNode) {
 	for _, statement := range statements {
-		result, ok := Evaluate(statement)
-
-		if ok {
-			// temporarily log the returned object
-			log.Info(fmt.Sprintf("== %s", result.String()))
-		}
+		Evaluate(statement)
 	}
 }
 
