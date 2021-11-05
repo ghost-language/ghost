@@ -12,11 +12,11 @@ import (
 
 func Interpret(statements []ast.StatementNode) {
 	for _, statement := range statements {
-		_, ok := Evaluate(statement)
+		result, ok := Evaluate(statement)
 
 		if ok {
 			// temporarily log the returned object
-			// log.Info(fmt.Sprintf("== %s", result.String()))
+			log.Info(fmt.Sprintf("== %s", result.String()))
 		}
 	}
 }
@@ -31,6 +31,8 @@ func Evaluate(node ast.Node) (object.Object, bool) {
 		return Evaluate(node.Expression)
 	case *ast.Identifier:
 		return evaluateIdentifier(node)
+	case *ast.If:
+		return evaluateIf(node)
 	case *ast.Infix:
 		return evaluateInfix(node)
 	case *ast.Null:
@@ -63,4 +65,17 @@ func toBooleanValue(input bool) *object.Boolean {
 	}
 
 	return value.FALSE
+}
+
+func isTruthy(value object.Object) bool {
+	switch value := value.(type) {
+	case *object.Null:
+		return false
+	case *object.Boolean:
+		return value.Value
+	case *object.String:
+		return len(value.Value) > 0
+	default:
+		return true
+	}
 }
