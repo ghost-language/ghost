@@ -1,0 +1,5 @@
+{
+    print("this is a block")
+}
+
+print("this is outside")

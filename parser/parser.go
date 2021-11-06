@@ -104,7 +104,10 @@ func (parser *Parser) Parse() *ast.Program {
 	for !parser.isAtEnd() {
 		statement := parser.statement()
 
-		program.Statements = append(program.Statements, statement)
+		if statement != nil {
+			program.Statements = append(program.Statements, statement)
+		}
+
 		parser.advance()
 	}
 

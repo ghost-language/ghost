@@ -2,24 +2,32 @@ package parser
 
 import (
 	"ghostlang.org/x/ghost/ast"
+	"ghostlang.org/x/ghost/log"
 	"ghostlang.org/x/ghost/token"
 )
 
 func (parser *Parser) ifExpression() ast.ExpressionNode {
 	expression := &ast.If{Token: parser.current()}
 
-	if !parser.match(token.LEFTPAREN) {
+	parser.advance() // if
+
+	if !parser.match(token.LEFTPAREN) { // (
+		log.Debug("no left paren")
 		return nil
 	}
 
-	parser.advance()
 	expression.Condition = parser.parseExpression(LOWEST)
 
+	parser.advance()
+
 	if !parser.match(token.RIGHTPAREN) {
+		log.Debug("no right paren")
 		return nil
 	}
 
-	if !parser.match(token.RIGHTBRACE) {
+	if !parser.match(token.LEFTBRACE) {
+		log.Debug("current: %s", parser.current().Type)
+		log.Debug("no right brace")
 		return nil
 	}
 
@@ -27,8 +35,11 @@ func (parser *Parser) ifExpression() ast.ExpressionNode {
 
 	if parser.checkNext(token.ELSE) {
 		parser.advance()
+		parser.advance()
 
 		if !parser.match(token.LEFTBRACE) {
+			log.Debug("current: %s", parser.current().Type)
+			log.Debug("no left brace (else)")
 			return nil
 		}
 

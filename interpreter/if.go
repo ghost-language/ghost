@@ -2,22 +2,28 @@ package interpreter
 
 import (
 	"ghostlang.org/x/ghost/ast"
+	"ghostlang.org/x/ghost/log"
 	"ghostlang.org/x/ghost/object"
-	"ghostlang.org/x/ghost/value"
 )
 
 func evaluateIf(node *ast.If) (object.Object, bool) {
+	log.Debug("evaluating if statement")
 	condition, ok := Evaluate(node.Condition)
 
 	if !ok {
 		return nil, false
 	}
 
+	var result object.Object
+
 	if isTruthy(condition) {
-		return Evaluate(node.Consequence)
+		log.Debug("condition true")
+		result, _ = Evaluate(node.Consequence)
+		log.Debug("result: %s", result)
 	} else if node.Alternative != nil {
-		return Evaluate(node.Alternative)
+		log.Debug("condition false")
+		result, _ = Evaluate(node.Consequence)
 	}
 
-	return value.NULL, true
+	return result, true
 }
