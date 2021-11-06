@@ -10,14 +10,10 @@ import (
 	"ghostlang.org/x/ghost/value"
 )
 
-func Interpret(statements []ast.StatementNode) {
-	for _, statement := range statements {
-		Evaluate(statement)
-	}
-}
-
 func Evaluate(node ast.Node) (object.Object, bool) {
 	switch node := node.(type) {
+	case *ast.Program:
+		return evaluateProgram(node)
 	case *ast.Boolean:
 		return evaluateBoolean(node)
 	case *ast.Call:

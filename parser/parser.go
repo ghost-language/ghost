@@ -97,17 +97,18 @@ func (parser *Parser) registerInfix(tokenType token.Type, fn infixParserFn) {
 // 	parser.postfixParserFns[tokenType] = fn
 // }
 
-func (parser *Parser) Parse() []ast.StatementNode {
-	statements := make([]ast.StatementNode, 0)
+func (parser *Parser) Parse() *ast.Program {
+	program := &ast.Program{}
+	program.Statements = []ast.StatementNode{}
 
 	for !parser.isAtEnd() {
 		statement := parser.statement()
 
-		statements = append(statements, statement)
+		program.Statements = append(program.Statements, statement)
 		parser.advance()
 	}
 
-	return statements
+	return program
 }
 
 // =============================================================================

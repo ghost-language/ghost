@@ -43,11 +43,11 @@ func benchmark(source string) (scanTime time.Duration, parseTime time.Duration, 
 
 	parseStart := time.Now()
 	parser := parser.New(tokens)
-	statements := parser.Parse()
+	program := parser.Parse()
 	parseTime = time.Since(parseStart)
 
 	interpretStart := time.Now()
-	interpreter.Interpret(statements)
+	interpreter.Evaluate(program)
 	interpretTime = time.Since(interpretStart)
 	ghostTime = time.Since(start)
 

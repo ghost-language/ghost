@@ -33,9 +33,9 @@ func (engine *Engine) Execute() {
 	scanner := scanner.New(engine.Source)
 	tokens := scanner.ScanTokens()
 	parser := parser.New(tokens)
-	statements := parser.Parse()
+	program := parser.Parse()
 
-	interpreter.Interpret(statements)
+	interpreter.Evaluate(program)
 
 	// log.Debug("Scanned tokens...")
 	// for index, token := range tokens {
