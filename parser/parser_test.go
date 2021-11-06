@@ -226,25 +226,25 @@ func TestPrefixExpressions(t *testing.T) {
 			t.Fatalf("program.Statements does not contain 1 statement. got=%d", len(program.Statements))
 		}
 
-		// statement, ok := program.Statements[0].(*ast.Expression)
+		statement, ok := program.Statements[0].(*ast.Expression)
 
-		// if !ok {
-		// 	t.Fatalf("program.Statements[0] is not ast.Expression. got=%T", program.Statements[0])
-		// }
+		if !ok {
+			t.Fatalf("program.Statements[0] is not ast.Expression. got=%T", program.Statements[0])
+		}
 
-		// prefix, ok := statement.Expression.(*ast.Prefix)
+		prefix, ok := statement.Expression.(*ast.Prefix)
 
-		// if !ok {
-		// 	t.Fatalf("statement is not ast.Prefix. got=%T", statement.Expression)
-		// }
+		if !ok {
+			t.Fatalf("statement is not ast.Prefix. got=%T", statement.Expression)
+		}
 
-		// if prefix.Operator != tt.operator {
-		// 	t.Fatalf("prefix.Operator is not '%s'. got=%s", tt.operator, prefix.Operator)
-		// }
+		if prefix.Operator != tt.operator {
+			t.Fatalf("prefix.Operator is not '%s'. got=%s", tt.operator, prefix.Operator)
+		}
 
-		// if !isNumberLiteral(t, prefix.Right, tt.number) {
-		// 	return
-		// }
+		if !isNumberLiteral(t, prefix.Right, tt.number) {
+			return
+		}
 	}
 }
 
@@ -266,21 +266,21 @@ func TestStringLiteral(t *testing.T) {
 			t.Fatalf("program.Statements does not contain 1 statement. got=%d", len(program.Statements))
 		}
 
-		// statement, ok := program.Statements[0].(*ast.Expression)
+		statement, ok := program.Statements[0].(*ast.Expression)
 
-		// if !ok {
-		// 	t.Fatalf("program.Statements[0] is not ast.Expression. got=%T", program.Statements[0])
-		// }
+		if !ok {
+			t.Fatalf("program.Statements[0] is not ast.Expression. got=%T", program.Statements[0])
+		}
 
-		// str, ok := statement.Expression.(*ast.String)
+		str, ok := statement.Expression.(*ast.String)
 
-		// if !ok {
-		// 	t.Fatalf("statement is not ast.String. got=%T", statement.Expression)
-		// }
+		if !ok {
+			t.Fatalf("statement is not ast.String. got=%T", statement.Expression)
+		}
 
-		// if str.Value != tt.expected {
-		// 	t.Fatalf("string.Value is not '%s'. got=%s", tt.expected, str.Value)
-		// }
+		if str.Value != tt.expected {
+			t.Fatalf("string.Value is not '%s'. got=%s", tt.expected, str.Value)
+		}
 	}
 }
 
