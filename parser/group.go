@@ -14,5 +14,7 @@ func (parser *Parser) groupExpression() ast.ExpressionNode {
 		return nil
 	}
 
+	parser.advance()
+
 	return group
 }
