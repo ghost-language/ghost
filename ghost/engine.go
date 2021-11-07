@@ -3,7 +3,9 @@ package ghost
 import (
 	"os"
 
+	"ghostlang.org/x/ghost/error"
 	"ghostlang.org/x/ghost/interpreter"
+	"ghostlang.org/x/ghost/log"
 	"ghostlang.org/x/ghost/parser"
 	"ghostlang.org/x/ghost/scanner"
 )
@@ -35,6 +37,11 @@ func (engine *Engine) Execute() {
 	parser := parser.New(tokens)
 	program := parser.Parse()
 
+	if len(parser.Errors()) != 0 {
+		logParseErrors(parser.Errors())
+		return
+	}
+
 	interpreter.Evaluate(program)
 
 	// log.Debug("Scanned tokens...")
@@ -46,4 +53,15 @@ func (engine *Engine) Execute() {
 	// for index, statement := range statements {
 	// 	log.Debug(fmt.Sprintf("[%d] %T: %q", index, statement, statement))
 	// }
+}
+
+func logParseErrors(errors []string) {
+	for _, message := range errors {
+		err := error.Error{
+			Reason:  error.Syntax,
+			Message: message,
+		}
+
+		log.Error(err.Reason, err.Message)
+	}
 }

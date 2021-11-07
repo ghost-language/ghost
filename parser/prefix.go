@@ -4,8 +4,8 @@ import "ghostlang.org/x/ghost/ast"
 
 func (parser *Parser) prefixExpression() ast.ExpressionNode {
 	prefix := &ast.Prefix{
-		Token:    parser.current(),
-		Operator: parser.current().Lexeme,
+		Token:    parser.peek(),
+		Operator: parser.peek().Lexeme,
 	}
 
 	parser.advance()

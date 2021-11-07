@@ -6,7 +6,7 @@ import (
 )
 
 func (parser *Parser) callExpression(callee ast.ExpressionNode) ast.ExpressionNode {
-	call := &ast.Call{Token: parser.current(), Callee: callee}
+	call := &ast.Call{Token: parser.peek(), Callee: callee}
 
 	call.Arguments = parser.callArguments()
 

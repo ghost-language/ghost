@@ -6,14 +6,14 @@ import (
 
 func (parser *Parser) infixExpression(left ast.ExpressionNode) ast.ExpressionNode {
 	infix := &ast.Infix{
-		Token:    parser.current(),
-		Operator: parser.current().Lexeme,
+		Token:    parser.peek(),
+		Operator: parser.peek().Lexeme,
 		Left:     left,
 	}
 
 	parser.advance()
 
-	precedence := parser.currentPrecedence()
+	precedence := parser.peekPrecedence()
 
 	infix.Right = parser.parseExpression(precedence)
 

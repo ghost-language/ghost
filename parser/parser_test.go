@@ -22,6 +22,8 @@ func TestAssignStatement(t *testing.T) {
 		parser := New(tokens)
 		program := parser.Parse()
 
+		failIfParserHasErrors(t, parser)
+
 		if len(program.Statements) != 1 {
 			t.Fatalf("program.Statements does not contain 1 statement. got=%d", len(program.Statements))
 		}
@@ -56,6 +58,8 @@ func TestBooleanLiteral(t *testing.T) {
 		tokens := scanner.ScanTokens()
 		parser := New(tokens)
 		program := parser.Parse()
+
+		failIfParserHasErrors(t, parser)
 
 		if len(program.Statements) != 1 {
 			t.Fatalf("program.Statements does not contain 1 statement. got=%d", len(program.Statements))
@@ -93,6 +97,8 @@ func TestIdentifierLiteral(t *testing.T) {
 		parser := New(tokens)
 		program := parser.Parse()
 
+		failIfParserHasErrors(t, parser)
+
 		if len(program.Statements) != 1 {
 			t.Fatalf("program.Statements does not contain 1 statement. got=%d", len(program.Statements))
 		}
@@ -112,6 +118,41 @@ func TestIdentifierLiteral(t *testing.T) {
 		if identifier.Value != tt.expected {
 			t.Fatalf("identifier.Value is not '%s'. got=%s", tt.expected, identifier.Value)
 		}
+	}
+}
+
+func TestIfExpressions(t *testing.T) {
+	tests := []struct {
+		input string
+	}{
+		{"if (x < y) { print(x) }"},
+	}
+
+	for _, tt := range tests {
+		scanner := scanner.New(tt.input)
+		tokens := scanner.ScanTokens()
+		parser := New(tokens)
+		program := parser.Parse()
+
+		failIfParserHasErrors(t, parser)
+
+		if len(program.Statements) != 1 {
+			t.Fatalf("program.Statements does not contain 1 statement. got=%d", len(program.Statements))
+		}
+
+		statement, ok := program.Statements[0].(*ast.Expression)
+
+		if !ok {
+			t.Fatalf("program.Statements[0] is not ast.Expression. got=%T", program.Statements[0])
+		}
+
+		ifExpression, ok := statement.Expression.(*ast.If)
+
+		if !ok {
+			t.Fatalf("statement is not ast.If. got=%T", statement.Expression)
+		}
+
+		_ = ifExpression
 	}
 }
 
@@ -137,6 +178,8 @@ func TestInfixExpressions(t *testing.T) {
 		tokens := scanner.ScanTokens()
 		parser := New(tokens)
 		program := parser.Parse()
+
+		failIfParserHasErrors(t, parser)
 
 		if len(program.Statements) != 1 {
 			t.Fatalf("program.Statements does not contain 1 statement. got=%d", len(program.Statements))
@@ -184,6 +227,8 @@ func TestNumberLiteral(t *testing.T) {
 		parser := New(tokens)
 		program := parser.Parse()
 
+		failIfParserHasErrors(t, parser)
+
 		if len(program.Statements) != 1 {
 			t.Fatalf("program.Statements does not contain 1 statement. got=%d", len(program.Statements))
 		}
@@ -221,6 +266,8 @@ func TestPrefixExpressions(t *testing.T) {
 		tokens := scanner.ScanTokens()
 		parser := New(tokens)
 		program := parser.Parse()
+
+		failIfParserHasErrors(t, parser)
 
 		if len(program.Statements) != 1 {
 			t.Fatalf("program.Statements does not contain 1 statement. got=%d", len(program.Statements))
@@ -262,6 +309,8 @@ func TestStringLiteral(t *testing.T) {
 		parser := New(tokens)
 		program := parser.Parse()
 
+		failIfParserHasErrors(t, parser)
+
 		if len(program.Statements) != 1 {
 			t.Fatalf("program.Statements does not contain 1 statement. got=%d", len(program.Statements))
 		}
@@ -286,6 +335,22 @@ func TestStringLiteral(t *testing.T) {
 
 // =============================================================================
 // Helper methods
+
+func failIfParserHasErrors(t *testing.T, parser *Parser) {
+	errors := parser.Errors()
+
+	if len(errors) == 0 {
+		return
+	}
+
+	t.Errorf("parser has %d errors", len(errors))
+
+	for _, message := range errors {
+		t.Errorf("parser error: %q", message)
+	}
+
+	t.FailNow()
+}
 
 func isNumberLiteral(t *testing.T, expression ast.ExpressionNode, value int64) bool {
 	number, ok := expression.(*ast.Number)

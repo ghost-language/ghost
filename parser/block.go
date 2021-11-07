@@ -6,7 +6,7 @@ import (
 )
 
 func (parser *Parser) blockStatement() *ast.Block {
-	block := &ast.Block{Token: parser.current()}
+	block := &ast.Block{Token: parser.peek()}
 	block.Statements = []ast.StatementNode{}
 
 	parser.advance()

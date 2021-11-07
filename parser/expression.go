@@ -5,13 +5,13 @@ import (
 )
 
 func (parser *Parser) parseExpression(precedence int) ast.ExpressionNode {
-	postfix := parser.postfixParserFns[parser.current().Type]
+	postfix := parser.postfixParserFns[parser.peek().Type]
 
 	if postfix != nil {
 		return postfix()
 	}
 
-	prefix := parser.prefixParserFns[parser.current().Type]
+	prefix := parser.prefixParserFns[parser.peek().Type]
 
 	if prefix == nil {
 		return nil

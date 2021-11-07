@@ -10,14 +10,14 @@ import (
 )
 
 func (parser *Parser) numberLiteral() ast.ExpressionNode {
-	number := &ast.Number{Token: parser.current()}
+	number := &ast.Number{Token: parser.peek()}
 
-	value, err := decimal.NewFromString(parser.current().Lexeme)
+	value, err := decimal.NewFromString(parser.peek().Lexeme)
 
 	if err != nil {
 		err := error.Error{
 			Reason:  error.Syntax,
-			Message: fmt.Sprintf("could not parse %q as number on line %d", parser.current().Lexeme, parser.current().Line),
+			Message: fmt.Sprintf("could not parse %q as number on line %d", parser.peek().Lexeme, parser.peek().Line),
 		}
 
 		log.Error(err.Reason, err.Message)

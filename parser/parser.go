@@ -1,6 +1,8 @@
 package parser
 
 import (
+	"fmt"
+
 	"ghostlang.org/x/ghost/ast"
 	"ghostlang.org/x/ghost/token"
 )
@@ -45,6 +47,7 @@ type (
 type Parser struct {
 	tokens   []token.Token
 	position int
+	errors   []string
 
 	prefixParserFns  map[token.Type]prefixParserFn
 	infixParserFns   map[token.Type]infixParserFn
@@ -114,35 +117,32 @@ func (parser *Parser) Parse() *ast.Program {
 	return program
 }
 
+// Errors returns the slice of errors contained within the parser instance.
+func (parser *Parser) Errors() []string {
+	return parser.errors
+}
+
 // =============================================================================
 // Helper methods
 
+// match checks to see if the current token has any of the given types. If so,
+// it consumes the token and returns true. Otherwise, it returns false and
+// leaves the current token alone.
 func (parser *Parser) match(tt ...token.Type) bool {
 	for _, t := range tt {
 		if parser.check(t) {
 			parser.advance()
 			return true
+		} else {
+			parser.newError("expected current token to be %s, got %s instead", t, parser.peek().Type)
 		}
 	}
 
 	return false
 }
 
-// func (parser *Parser) consume(tt token.Type, message string) token.Token {
-// 	if parser.check(tt) {
-// 		return parser.advance()
-// 	}
-
-// 	err := error.Error{
-// 		Reason:  error.Runtime,
-// 		Message: message,
-// 	}
-
-// 	log.Error(err.Reason, err.Message)
-
-// 	return parser.previous()
-// }
-
+// advance consumes the current token and returns it, similar to how our
+// scanner's corresponding method crawls through characters.
 func (parser *Parser) advance() token.Token {
 	if !parser.isAtEnd() {
 		parser.position++
@@ -151,12 +151,14 @@ func (parser *Parser) advance() token.Token {
 	return parser.previous()
 }
 
+// check returns true if the current token is of the given type. Unlike match(),
+// it never consumes the token, it only looks at it.
 func (parser *Parser) check(tt token.Type) bool {
 	if parser.isAtEnd() {
 		return false
 	}
 
-	return parser.current().Type == tt
+	return parser.peek().Type == tt
 }
 
 func (parser *Parser) checkNext(tt token.Type) bool {
@@ -167,25 +169,28 @@ func (parser *Parser) checkNext(tt token.Type) bool {
 	return parser.next().Type == tt
 }
 
+// isAtEnd checks if we've run out of tokens to parse.
 func (parser *Parser) isAtEnd() bool {
-	return parser.current().Type == token.EOF
+	return parser.peek().Type == token.EOF
 }
 
-func (parser *Parser) current() token.Token {
+// peek returns the current token we have yet to consume.
+func (parser *Parser) peek() token.Token {
 	return parser.tokens[parser.position]
 }
 
+// next returns the token ahead of the currently unconsumed token.
 func (parser *Parser) next() token.Token {
 	return parser.tokens[parser.position+1]
 }
 
+// previous returns the most recently consumed token.
 func (parser *Parser) previous() token.Token {
 	return parser.tokens[parser.position-1]
 }
 
-func (parser *Parser) currentPrecedence() int {
-	if precedence, ok := precedences[parser.current().Type]; ok {
-		// log.Debug("found precedence: %s (%d)", parser.current().Type, precedence)
+func (parser *Parser) peekPrecedence() int {
+	if precedence, ok := precedences[parser.peek().Type]; ok {
 		return precedence
 	}
 
@@ -198,4 +203,10 @@ func (parser *Parser) nextPrecedence() int {
 	}
 
 	return LOWEST
+}
+
+func (parser *Parser) newError(str string, args ...interface{}) {
+	message := fmt.Sprintf(str, args...)
+
+	parser.errors = append(parser.errors, message)
 }

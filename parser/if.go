@@ -7,7 +7,7 @@ import (
 )
 
 func (parser *Parser) ifExpression() ast.ExpressionNode {
-	expression := &ast.If{Token: parser.current()}
+	expression := &ast.If{Token: parser.peek()}
 
 	parser.advance() // if
 
@@ -26,7 +26,7 @@ func (parser *Parser) ifExpression() ast.ExpressionNode {
 	}
 
 	if !parser.match(token.LEFTBRACE) {
-		log.Debug("current: %s", parser.current().Type)
+		log.Debug("peek: %s", parser.peek().Type)
 		log.Debug("no right brace")
 		return nil
 	}
@@ -38,7 +38,7 @@ func (parser *Parser) ifExpression() ast.ExpressionNode {
 		parser.advance()
 
 		if !parser.match(token.LEFTBRACE) {
-			log.Debug("current: %s", parser.current().Type)
+			log.Debug("peek: %s", parser.peek().Type)
 			log.Debug("no left brace (else)")
 			return nil
 		}
