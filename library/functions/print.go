@@ -4,13 +4,10 @@ import (
 	"fmt"
 	"strings"
 
-	"ghostlang.org/x/ghost/log"
 	"ghostlang.org/x/ghost/object"
 )
 
 func Print(args ...object.Object) object.Object {
-	log.Debug("print() called")
-
 	if len(args) > 0 {
 		str := make([]string, 0)
 

@@ -13,9 +13,11 @@ func evaluateIf(node *ast.If) (object.Object, bool) {
 		return nil, false
 	}
 
-	if isTruthy(condition) {
+	conditionIsTrue := isTruthy(condition)
+
+	if conditionIsTrue {
 		return Evaluate(node.Consequence)
-	} else if node.Alternative != nil {
+	} else if node.Alternative != nil && !conditionIsTrue {
 		return Evaluate(node.Alternative)
 	}
 

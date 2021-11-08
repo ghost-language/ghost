@@ -133,8 +133,6 @@ func (parser *Parser) match(tt ...token.Type) bool {
 		if parser.check(t) {
 			parser.advance()
 			return true
-		} else {
-			parser.newError("expected current token to be %s, got %s instead", t, parser.peek().Type)
 		}
 	}
 
@@ -159,6 +157,18 @@ func (parser *Parser) check(tt token.Type) bool {
 	}
 
 	return parser.peek().Type == tt
+}
+
+// consume checks to see if the next token is of the expected typ. If so, it
+// consumes the token and carries on. If some other token is there, then we've
+// hit an error.
+func (parser *Parser) consume(tt token.Type, message string, args ...interface{}) {
+	if parser.check(tt) {
+		parser.advance()
+		return
+	}
+
+	parser.newError(message, args...)
 }
 
 func (parser *Parser) checkNext(tt token.Type) bool {

@@ -1,3 +1,13 @@
-if (true) {
+if (false) {
     print(true)
+} else {
+    print("first if statement is false")
 }
+
+if (true) {
+    print("second if statement is true.")
+}
+
+print(1 + 2)
+print("hello?")
+print("test!")
