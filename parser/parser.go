@@ -191,7 +191,11 @@ func (parser *Parser) peek() token.Token {
 
 // next returns the token ahead of the currently unconsumed token.
 func (parser *Parser) next() token.Token {
-	return parser.tokens[parser.position+1]
+	if !parser.isAtEnd() {
+		return parser.tokens[parser.position+1]
+	}
+
+	return parser.tokens[parser.position]
 }
 
 // previous returns the most recently consumed token.

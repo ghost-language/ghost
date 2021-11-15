@@ -125,7 +125,7 @@ func TestIfExpressions(t *testing.T) {
 	tests := []struct {
 		input string
 	}{
-		{"if (x < y) { print(x) }"},
+		{"if (true) { print(true) }"},
 	}
 
 	for _, tt := range tests {
