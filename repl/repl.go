@@ -56,5 +56,9 @@ func Start(in io.Reader, out io.Writer) {
 
 func evaluate(source string) {
 	engine := ghost.New(source)
-	engine.Execute()
+	result := engine.Execute()
+
+	if result != nil {
+		log.Info(result.String())
+	}
 }
