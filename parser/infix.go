@@ -11,9 +11,9 @@ func (parser *Parser) infixExpression(left ast.ExpressionNode) ast.ExpressionNod
 		Left:     left,
 	}
 
-	parser.advance()
-
 	precedence := parser.peekPrecedence()
+
+	parser.advance()
 
 	infix.Right = parser.parseExpression(precedence)
 
