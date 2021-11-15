@@ -9,3 +9,7 @@ type If struct {
 	Consequence *Block
 	Alternative *Block
 }
+
+func (structure *If) Accept(v Visitor) {
+	v.visitIf(structure)
+}

@@ -7,3 +7,7 @@ type Identifier struct {
 	Token token.Token
 	Value string
 }
+
+func (structure *Identifier) Accept(v Visitor) {
+	v.visitIdentifier(structure)
+}

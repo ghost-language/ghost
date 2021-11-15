@@ -8,3 +8,7 @@ type Prefix struct {
 	Operator string
 	Right    ExpressionNode
 }
+
+func (structure *Prefix) Accept(v Visitor) {
+	v.visitPrefix(structure)
+}

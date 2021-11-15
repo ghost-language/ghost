@@ -10,3 +10,7 @@ type Number struct {
 	Token token.Token
 	Value decimal.Decimal
 }
+
+func (structure *Number) Accept(v Visitor) {
+	v.visitNumber(structure)
+}
