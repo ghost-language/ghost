@@ -13,9 +13,11 @@ func (parser *Parser) ifExpression() ast.ExpressionNode {
 
 	parser.consume(token.LEFTPAREN, "Expect '(' after 'if'. got=%s", parser.peek().Type)
 	expression.Condition = parser.parseExpression(LOWEST)
+	parser.advance()
+	parser.advance()
 	expression.Consequence = parser.blockStatement()
 
-	parser.consume(token.RIGHTBRACE, "Expect '}' after if consequence. got=%s", parser.peek().Type)
+	parser.advance()
 
 	if parser.match(token.ELSE) {
 		expression.Alternative = parser.blockStatement()
