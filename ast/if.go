@@ -10,6 +10,6 @@ type If struct {
 	Alternative *Block
 }
 
-func (structure *If) Accept(v Visitor) {
-	v.visitIf(structure)
+func (node *If) Accept(v Visitor) {
+	v.visitIf(node)
 }

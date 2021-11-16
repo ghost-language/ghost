@@ -7,6 +7,6 @@ type Null struct {
 	Token token.Token
 }
 
-func (structure *Null) Accept(v Visitor) {
-	v.visitNull(structure)
+func (node *Null) Accept(v Visitor) {
+	v.visitNull(node)
 }

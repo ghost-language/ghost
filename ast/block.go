@@ -8,6 +8,6 @@ type Block struct {
 	Statements []StatementNode
 }
 
-func (structure *Block) Accept(v Visitor) {
-	v.visitBlock(structure)
+func (node *Block) Accept(v Visitor) {
+	v.visitBlock(node)
 }

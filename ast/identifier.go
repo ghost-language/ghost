@@ -8,6 +8,6 @@ type Identifier struct {
 	Value string
 }
 
-func (structure *Identifier) Accept(v Visitor) {
-	v.visitIdentifier(structure)
+func (node *Identifier) Accept(v Visitor) {
+	v.visitIdentifier(node)
 }

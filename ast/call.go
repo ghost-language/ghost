@@ -9,6 +9,6 @@ type Call struct {
 	Arguments []ExpressionNode
 }
 
-func (structure *Call) Accept(v Visitor) {
-	v.visitCall(structure)
+func (node *Call) Accept(v Visitor) {
+	v.visitCall(node)
 }

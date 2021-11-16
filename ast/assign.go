@@ -8,6 +8,6 @@ type Assign struct {
 	Value ExpressionNode
 }
 
-func (assign *Assign) Accept(v Visitor) {
-	v.visitAssign(assign)
+func (node *Assign) Accept(v Visitor) {
+	v.visitAssign(node)
 }

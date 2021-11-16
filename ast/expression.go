@@ -5,6 +5,6 @@ type Expression struct {
 	Expression ExpressionNode
 }
 
-func (structure *Expression) Accept(v Visitor) {
-	v.visitExpression(structure)
+func (node *Expression) Accept(v Visitor) {
+	v.visitExpression(node)
 }

@@ -9,6 +9,6 @@ type Prefix struct {
 	Right    ExpressionNode
 }
 
-func (structure *Prefix) Accept(v Visitor) {
-	v.visitPrefix(structure)
+func (node *Prefix) Accept(v Visitor) {
+	v.visitPrefix(node)
 }

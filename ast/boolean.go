@@ -8,6 +8,6 @@ type Boolean struct {
 	Value bool
 }
 
-func (structure *Boolean) Accept(v Visitor) {
-	v.visitBoolean(structure)
+func (node *Boolean) Accept(v Visitor) {
+	v.visitBoolean(node)
 }

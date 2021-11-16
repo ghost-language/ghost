@@ -11,6 +11,6 @@ type Number struct {
 	Value decimal.Decimal
 }
 
-func (structure *Number) Accept(v Visitor) {
-	v.visitNumber(structure)
+func (node *Number) Accept(v Visitor) {
+	v.visitNumber(node)
 }

@@ -4,6 +4,6 @@ type Program struct {
 	Statements []StatementNode
 }
 
-func (structure *Program) Accept(v Visitor) {
-	v.visitProgram(structure)
+func (node *Program) Accept(v Visitor) {
+	v.visitProgram(node)
 }

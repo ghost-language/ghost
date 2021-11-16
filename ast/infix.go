@@ -10,6 +10,6 @@ type Infix struct {
 	Right    ExpressionNode
 }
 
-func (structure *Infix) Accept(v Visitor) {
-	v.visitInfix(structure)
+func (node *Infix) Accept(v Visitor) {
+	v.visitInfix(node)
 }

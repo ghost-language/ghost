@@ -10,6 +10,6 @@ type String struct {
 	Value string
 }
 
-func (structure *String) Accept(v Visitor) {
-	v.visitString(structure)
+func (node *String) Accept(v Visitor) {
+	v.visitString(node)
 }
