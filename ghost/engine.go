@@ -13,15 +13,16 @@ import (
 )
 
 type Engine struct {
-	FatalError bool
-	Source     string
-	File       string
-	Directory  string
+	FatalError  bool
+	Source      string
+	Environment *environment.Environment
+	File        string
+	Directory   string
 }
 
-func New(source string) *Engine {
+func New() *Engine {
 	engine := &Engine{
-		Source: source,
+		Environment: environment.NewEnvironment(),
 	}
 
 	engine.resetWorkingDirectory()
@@ -34,7 +35,6 @@ func (engine *Engine) resetWorkingDirectory() {
 }
 
 func (engine *Engine) Execute() object.Object {
-	env := environment.NewEnvironment()
 	scanner := scanner.New(engine.Source)
 	tokens := scanner.ScanTokens()
 	parser := parser.New(tokens)
@@ -45,17 +45,7 @@ func (engine *Engine) Execute() object.Object {
 		return nil
 	}
 
-	result, _ := interpreter.Evaluate(program, env)
-
-	// log.Debug("Scanned tokens...")
-	// for index, token := range tokens {
-	// 	log.Debug(fmt.Sprintf("[%d] %s", index, token.String()))
-	// }
-
-	// log.Debug("Parsed statements...")
-	// for index, statement := range statements {
-	// 	log.Debug(fmt.Sprintf("[%d] %T: %q", index, statement, statement))
-	// }
+	result, _ := interpreter.Evaluate(program, engine.Environment)
 
 	return result
 }

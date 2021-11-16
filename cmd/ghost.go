@@ -84,7 +84,8 @@ func main() {
 
 		// directory, _ := filepath.Abs(filepath.Dir(args[0]))
 
-		engine := ghost.New(source)
+		engine := ghost.New()
+		engine.Source = source
 		engine.Execute()
 
 		elapsed := time.Since(start)
