@@ -1,7 +1,7 @@
 package ast
 
 type Node interface {
-	Accept(Visitor)
+	Visitable
 }
 
 type StatementNode interface {
@@ -26,4 +26,8 @@ type Visitor interface {
 	visitPrefix(*Prefix)
 	visitProgram(*Program)
 	visitString(*String)
+}
+
+type Visitable interface {
+	Accept(Visitor)
 }

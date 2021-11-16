@@ -10,6 +10,10 @@ type LibraryFunction struct {
 	Function GoFunction
 }
 
+func (object *LibraryFunction) Accept(v Visitor) {
+	v.visitLibraryFunction(object)
+}
+
 // String represents the library function's value as a string.
 func (libraryFunction *LibraryFunction) String() string {
 	return fmt.Sprintf("library function {%s}", libraryFunction.Name)

@@ -9,6 +9,10 @@ type Number struct {
 	Value decimal.Decimal
 }
 
+func (object *Number) Accept(v Visitor) {
+	v.visitNumber(object)
+}
+
 // String represents the number object's value as a string.
 func (number *Number) String() string {
 	return number.Value.String()
