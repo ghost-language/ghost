@@ -2,10 +2,11 @@ package interpreter
 
 import (
 	"ghostlang.org/x/ghost/ast"
+	"ghostlang.org/x/ghost/environment"
 	"ghostlang.org/x/ghost/object"
 )
 
-func evaluateNumber(node *ast.Number) (object.Object, bool) {
+func evaluateNumber(node *ast.Number, env *environment.Environment) (object.Object, bool) {
 	return &object.Number{Value: node.Value}, true
 }
 

@@ -1,0 +1,6 @@
+foo := "bar"
+three := 3
+
+print(3 * three)
+
+print(foo)

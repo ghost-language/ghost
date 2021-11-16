@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"ghostlang.org/x/ghost/environment"
 	"ghostlang.org/x/ghost/interpreter"
 	"ghostlang.org/x/ghost/parser"
 	"ghostlang.org/x/ghost/scanner"
@@ -37,6 +38,7 @@ func nativeHelloWorld() time.Duration {
 func benchmark(source string) (scanTime time.Duration, parseTime time.Duration, interpretTime time.Duration, ghostTime time.Duration) {
 	start := time.Now()
 
+	env := environment.NewEnvironment()
 	scanner := scanner.New(source)
 	tokens := scanner.ScanTokens()
 	scanTime = time.Since(start)
@@ -47,7 +49,7 @@ func benchmark(source string) (scanTime time.Duration, parseTime time.Duration, 
 	parseTime = time.Since(parseStart)
 
 	interpretStart := time.Now()
-	interpreter.Evaluate(program)
+	interpreter.Evaluate(program, env)
 	interpretTime = time.Since(interpretStart)
 	ghostTime = time.Since(start)
 

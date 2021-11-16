@@ -3,6 +3,7 @@ package ghost
 import (
 	"os"
 
+	"ghostlang.org/x/ghost/environment"
 	"ghostlang.org/x/ghost/error"
 	"ghostlang.org/x/ghost/interpreter"
 	"ghostlang.org/x/ghost/log"
@@ -33,6 +34,7 @@ func (engine *Engine) resetWorkingDirectory() {
 }
 
 func (engine *Engine) Execute() object.Object {
+	env := environment.NewEnvironment()
 	scanner := scanner.New(engine.Source)
 	tokens := scanner.ScanTokens()
 	parser := parser.New(tokens)
@@ -43,7 +45,7 @@ func (engine *Engine) Execute() object.Object {
 		return nil
 	}
 
-	result, _ := interpreter.Evaluate(program)
+	result, _ := interpreter.Evaluate(program, env)
 
 	// log.Debug("Scanned tokens...")
 	// for index, token := range tokens {

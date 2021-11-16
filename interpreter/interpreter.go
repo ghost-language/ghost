@@ -4,38 +4,41 @@ import (
 	"fmt"
 
 	"ghostlang.org/x/ghost/ast"
+	"ghostlang.org/x/ghost/environment"
 	"ghostlang.org/x/ghost/error"
 	"ghostlang.org/x/ghost/log"
 	"ghostlang.org/x/ghost/object"
 	"ghostlang.org/x/ghost/value"
 )
 
-func Evaluate(node ast.Node) (object.Object, bool) {
+func Evaluate(node ast.Node, env *environment.Environment) (object.Object, bool) {
 	switch node := node.(type) {
 	case *ast.Program:
-		return evaluateProgram(node)
+		return evaluateProgram(node, env)
+	case *ast.Assign:
+		return evaluateAssign(node, env)
 	case *ast.Block:
-		return evaluateBlock(node)
+		return evaluateBlock(node, env)
 	case *ast.Boolean:
-		return evaluateBoolean(node)
+		return evaluateBoolean(node, env)
 	case *ast.Call:
-		return evaluateCall(node)
+		return evaluateCall(node, env)
 	case *ast.Expression:
-		return Evaluate(node.Expression)
+		return Evaluate(node.Expression, env)
 	case *ast.Identifier:
-		return evaluateIdentifier(node)
+		return evaluateIdentifier(node, env)
 	case *ast.If:
-		return evaluateIf(node)
+		return evaluateIf(node, env)
 	case *ast.Infix:
-		return evaluateInfix(node)
+		return evaluateInfix(node, env)
 	case *ast.Null:
-		return evaluateNull(node)
+		return evaluateNull(node, env)
 	case *ast.Number:
-		return evaluateNumber(node)
+		return evaluateNumber(node, env)
 	case *ast.Prefix:
-		return evaluatePrefix(node)
+		return evaluatePrefix(node, env)
 	case *ast.String:
-		return evaluateString(node)
+		return evaluateString(node, env)
 	case nil:
 		return nil, false
 	default:

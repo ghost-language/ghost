@@ -2,14 +2,15 @@ package interpreter
 
 import (
 	"ghostlang.org/x/ghost/ast"
+	"ghostlang.org/x/ghost/environment"
 	"ghostlang.org/x/ghost/object"
 )
 
-func evaluateExpressions(expressions []ast.ExpressionNode) ([]object.Object, bool) {
+func evaluateExpressions(expressions []ast.ExpressionNode, env *environment.Environment) ([]object.Object, bool) {
 	var result []object.Object
 
 	for _, expression := range expressions {
-		evaluated, ok := Evaluate(expression)
+		evaluated, ok := Evaluate(expression, env)
 
 		if !ok {
 			return nil, false

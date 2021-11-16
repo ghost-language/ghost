@@ -7,8 +7,11 @@ import (
 
 func (parser *Parser) assign() ast.StatementNode {
 	if parser.check(token.IDENTIFIER) && parser.checkNext(token.ASSIGN) {
+		statement := &ast.Assign{}
+
+		statement.Name = &ast.Identifier{Token: parser.peek(), Value: parser.peek().Lexeme}
 		parser.match(token.IDENTIFIER)
-		name := parser.previous()
+		statement.Token = parser.peek()
 		parser.match(token.ASSIGN)
 
 		value := parser.parseExpression(LOWEST)
@@ -17,7 +20,9 @@ func (parser *Parser) assign() ast.StatementNode {
 			return nil
 		}
 
-		return &ast.Assign{Token: name, Value: value}
+		statement.Value = value
+
+		return statement
 	}
 
 	return nil
