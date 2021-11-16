@@ -1,6 +1,8 @@
 package ast
 
-type Node interface{}
+type Node interface {
+	Visitable
+}
 
 type StatementNode interface {
 	Node
@@ -8,4 +10,24 @@ type StatementNode interface {
 
 type ExpressionNode interface {
 	Node
+}
+
+type Visitor interface {
+	visitAssign(*Assign)
+	visitBlock(*Block)
+	visitBoolean(*Boolean)
+	visitCall(*Call)
+	visitExpression(*Expression)
+	visitIdentifier(*Identifier)
+	visitIf(*If)
+	visitInfix(*Infix)
+	visitNull(*Null)
+	visitNumber(*Number)
+	visitPrefix(*Prefix)
+	visitProgram(*Program)
+	visitString(*String)
+}
+
+type Visitable interface {
+	Accept(Visitor)
 }

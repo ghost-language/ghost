@@ -9,3 +9,7 @@ type Infix struct {
 	Operator string
 	Right    ExpressionNode
 }
+
+func (node *Infix) Accept(v Visitor) {
+	v.visitInfix(node)
+}

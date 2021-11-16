@@ -7,3 +7,7 @@ type Block struct {
 	Token      token.Token
 	Statements []StatementNode
 }
+
+func (node *Block) Accept(v Visitor) {
+	v.visitBlock(node)
+}

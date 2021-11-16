@@ -7,3 +7,7 @@ type Assign struct {
 	Token token.Token
 	Value ExpressionNode
 }
+
+func (node *Assign) Accept(v Visitor) {
+	v.visitAssign(node)
+}

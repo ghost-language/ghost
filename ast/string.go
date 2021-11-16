@@ -9,3 +9,7 @@ type String struct {
 	Token token.Token
 	Value string
 }
+
+func (node *String) Accept(v Visitor) {
+	v.visitString(node)
+}
