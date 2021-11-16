@@ -13,6 +13,7 @@ import (
 	"ghostlang.org/x/ghost/ghost"
 	"ghostlang.org/x/ghost/log"
 	"ghostlang.org/x/ghost/repl"
+	"ghostlang.org/x/ghost/scanner"
 	"ghostlang.org/x/ghost/version"
 )
 
@@ -20,6 +21,7 @@ var (
 	flagHelp      bool
 	flagVersion   bool
 	flagBenchmark bool
+	flagTokens    bool
 )
 
 func init() {
@@ -32,6 +34,7 @@ func init() {
 	flag.BoolVar(&flagHelp, "h", false, "display help information")
 	flag.BoolVar(&flagVersion, "v", false, "display version information")
 	flag.BoolVar(&flagBenchmark, "b", false, "run benchmark tests against Ghost and Go")
+	flag.BoolVar(&flagTokens, "t", false, "display tokens of passed source file")
 }
 
 func main() {
@@ -89,6 +92,15 @@ func main() {
 		engine.Execute()
 
 		elapsed := time.Since(start)
+
+		if flagTokens {
+			scanner := scanner.New(engine.Source)
+			tokens := scanner.ScanTokens()
+
+			for index, token := range tokens {
+				log.Info("[%03d] - %s: %s", index, token.Type, token.Lexeme)
+			}
+		}
 
 		log.Info("(executed in: %s)\n", elapsed)
 	}
