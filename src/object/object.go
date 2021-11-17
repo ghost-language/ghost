@@ -12,6 +12,7 @@ type Object interface {
 
 type Visitor interface {
 	visitBoolean(*Boolean)
+	visitFunction(*Function)
 	visitLibraryFunction(*LibraryFunction)
 	visitNull(*Null)
 	visitNumber(*Number)

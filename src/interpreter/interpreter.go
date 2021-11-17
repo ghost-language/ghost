@@ -4,14 +4,13 @@ import (
 	"fmt"
 
 	"ghostlang.org/x/ghost/ast"
-	"ghostlang.org/x/ghost/environment"
 	"ghostlang.org/x/ghost/error"
 	"ghostlang.org/x/ghost/log"
 	"ghostlang.org/x/ghost/object"
 	"ghostlang.org/x/ghost/value"
 )
 
-func Evaluate(node ast.Node, env *environment.Environment) (object.Object, bool) {
+func Evaluate(node ast.Node, env *object.Environment) (object.Object, bool) {
 	switch node := node.(type) {
 	case *ast.Program:
 		return evaluateProgram(node, env)

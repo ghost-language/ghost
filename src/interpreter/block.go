@@ -2,11 +2,10 @@ package interpreter
 
 import (
 	"ghostlang.org/x/ghost/ast"
-	"ghostlang.org/x/ghost/environment"
 	"ghostlang.org/x/ghost/object"
 )
 
-func evaluateBlock(node *ast.Block, env *environment.Environment) (object.Object, bool) {
+func evaluateBlock(node *ast.Block, env *object.Environment) (object.Object, bool) {
 	var result object.Object
 
 	for _, statement := range node.Statements {

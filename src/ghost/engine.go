@@ -3,7 +3,6 @@ package ghost
 import (
 	"os"
 
-	"ghostlang.org/x/ghost/environment"
 	"ghostlang.org/x/ghost/error"
 	"ghostlang.org/x/ghost/interpreter"
 	"ghostlang.org/x/ghost/log"
@@ -15,14 +14,14 @@ import (
 type Engine struct {
 	FatalError  bool
 	Source      string
-	Environment *environment.Environment
+	Environment *object.Environment
 	File        string
 	Directory   string
 }
 
 func New() *Engine {
 	engine := &Engine{
-		Environment: environment.NewEnvironment(),
+		Environment: object.NewEnvironment(),
 	}
 
 	engine.resetWorkingDirectory()

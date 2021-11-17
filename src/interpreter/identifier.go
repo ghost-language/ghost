@@ -2,12 +2,11 @@ package interpreter
 
 import (
 	"ghostlang.org/x/ghost/ast"
-	"ghostlang.org/x/ghost/environment"
 	"ghostlang.org/x/ghost/library"
 	"ghostlang.org/x/ghost/object"
 )
 
-func evaluateIdentifier(node *ast.Identifier, env *environment.Environment) (object.Object, bool) {
+func evaluateIdentifier(node *ast.Identifier, env *object.Environment) (object.Object, bool) {
 	if libraryFunction, ok := library.Functions[node.Value]; ok {
 		return libraryFunction, true
 	}

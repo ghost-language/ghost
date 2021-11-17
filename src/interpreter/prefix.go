@@ -2,12 +2,11 @@ package interpreter
 
 import (
 	"ghostlang.org/x/ghost/ast"
-	"ghostlang.org/x/ghost/environment"
 	"ghostlang.org/x/ghost/object"
 	"ghostlang.org/x/ghost/value"
 )
 
-func evaluatePrefix(node *ast.Prefix, env *environment.Environment) (object.Object, bool) {
+func evaluatePrefix(node *ast.Prefix, env *object.Environment) (object.Object, bool) {
 	right, ok := Evaluate(node.Right, env)
 
 	if !ok {

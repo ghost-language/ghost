@@ -2,13 +2,12 @@ package interpreter
 
 import (
 	"ghostlang.org/x/ghost/ast"
-	"ghostlang.org/x/ghost/environment"
 	"ghostlang.org/x/ghost/object"
 	"ghostlang.org/x/ghost/token"
 	"ghostlang.org/x/ghost/value"
 )
 
-func evaluateCall(node *ast.Call, env *environment.Environment) (object.Object, bool) {
+func evaluateCall(node *ast.Call, env *object.Environment) (object.Object, bool) {
 	callee, ok := Evaluate(node.Callee, env)
 
 	if !ok {

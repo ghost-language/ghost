@@ -2,11 +2,10 @@ package interpreter
 
 import (
 	"ghostlang.org/x/ghost/ast"
-	"ghostlang.org/x/ghost/environment"
 	"ghostlang.org/x/ghost/object"
 )
 
-func evaluateInfix(node *ast.Infix, env *environment.Environment) (object.Object, bool) {
+func evaluateInfix(node *ast.Infix, env *object.Environment) (object.Object, bool) {
 	left, ok := Evaluate(node.Left, env)
 
 	if !ok {
