@@ -9,9 +9,8 @@ type Function struct {
 	Token      token.Token
 	Name       *Identifier
 	Parameters []*Identifier
-	Defaults   map[string]Expression
+	Defaults   map[string]ExpressionNode
 	Body       *Block
-	// Environment *object.Environment
 }
 
 func (node *Function) Accept(v Visitor) {

@@ -10,7 +10,7 @@ const FUNCTION = "FUNCTION"
 type Function struct {
 	Parameters  []*ast.Identifier
 	Body        *ast.Block
-	Defaults    map[string]ast.Expression
+	Defaults    map[string]ast.ExpressionNode
 	Environment *Environment
 }
 

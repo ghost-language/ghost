@@ -19,3 +19,20 @@ func evaluateFunction(node *ast.Function, env *object.Environment) (object.Objec
 
 	return function, true
 }
+
+func createFunctionEnvironment(function *object.Function, arguments []object.Object) *object.Environment {
+	env := object.NewEnvironment()
+
+	for key, val := range function.Defaults {
+		result, _ := Evaluate(val, env)
+		env.Set(key, result)
+	}
+
+	for index, parameter := range function.Parameters {
+		if index < len(arguments) {
+			env.Set(parameter.Value, arguments[index])
+		}
+	}
+
+	return env
+}

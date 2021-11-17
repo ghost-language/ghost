@@ -9,19 +9,19 @@ run:
 build: build-mac build-linux build-wasm build-windows
 
 build-mac: clean
-	cd src && \
+	@cd src && \
 	GOOS=darwin go build -o ../dist/mac/ghost cmd/*.go
 
 build-linux: clean
-	cd src && \
+	@cd src && \
 	GOOS=linux go build -o ../dist/linux/ghost cmd/*.go
 
 build-wasm: clean
-	cd src && \
+	@cd src && \
 	GOOS=js GOARCH=wasm go build -o ../dist/wasm/ghost.wasm wasm/wasm.go
 
 build-windows: clean
-	cd src && \
+	@cd src && \
 	GOOS=windows go build -o ../dist/windows/ghost.exe cmd/*.go
 
 test:

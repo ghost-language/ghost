@@ -1,0 +1,1 @@
+- [ ] parseBlock consumes the opening brace, but **does not** consume the closing brace.

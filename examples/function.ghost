@@ -1,3 +1,5 @@
 function foobar() {
-    print("foobar()")
+    print("oh, hi there :)")
 }
+
+foobar()
