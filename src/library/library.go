@@ -9,6 +9,7 @@ var Functions = map[string]*object.LibraryFunction{}
 
 func init() {
 	RegisterFunction("print", functions.Print)
+	RegisterFunction("readLine", functions.ReadLine)
 	RegisterFunction("sleep", functions.Sleep)
 	RegisterFunction("type", functions.Type)
 }

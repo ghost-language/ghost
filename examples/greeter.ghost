@@ -1,0 +1,3 @@
+name := readLine("What is your name?")
+print("Hello there!")
+print(name)
