@@ -5,13 +5,16 @@ import (
 )
 
 func (parser *Parser) statement() ast.StatementNode {
-	statement := parser.assign()
+	switch parser.currentToken.Type {
+	default:
+		statement := parser.assign()
 
-	if statement != nil {
-		return statement
+		if statement != nil {
+			return statement
+		}
+
+		return parser.expressionStatement()
 	}
-
-	return parser.expressionStatement()
 }
 
 func (parser *Parser) expressionStatement() ast.StatementNode {

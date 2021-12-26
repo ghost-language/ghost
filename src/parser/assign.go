@@ -6,21 +6,17 @@ import (
 )
 
 func (parser *Parser) assign() ast.StatementNode {
-	if parser.check(token.IDENTIFIER) && parser.checkNext(token.ASSIGN) {
-		statement := &ast.Assign{}
-
-		statement.Name = &ast.Identifier{Token: parser.peek(), Value: parser.peek().Lexeme}
-		parser.match(token.IDENTIFIER)
-		statement.Token = parser.peek()
-		parser.match(token.ASSIGN)
-
-		value := parser.parseExpression(LOWEST)
-
-		if value == nil {
-			return nil
+	if parser.currentTokenTypeIs(token.IDENTIFIER) && parser.nextTokenTypeIs(token.ASSIGN) {
+		statement := &ast.Assign{
+			Name:  &ast.Identifier{Token: parser.currentToken, Value: parser.currentToken.Lexeme},
+			Token: parser.nextToken,
 		}
 
-		statement.Value = value
+		// Read the IDENTIFIER and ASSIGN tokens
+		parser.readToken()
+		parser.readToken()
+
+		statement.Value = parser.parseExpression(LOWEST)
 
 		return statement
 	}
