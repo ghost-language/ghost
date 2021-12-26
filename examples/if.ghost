@@ -12,24 +12,30 @@ if (false) {
 
 if (true) {
     print("test 2/6: correct")
-}
+} else {}
+
+// print("foo")
 
 if (true) {
     print("test 3/6: correct")
-
-    if (1 == 1) {
-        print("test 4/6: correct")
-
-        if (true) {
-            print("test 5/6: correct")
-        } else {
-            print("text 5/6: incorrect")
-        }
-    } else {
-        print("text 4/6: incorrect")
-    }
 }
 
-print("test 6/6: correct")
-print(1 + 2 == 3)
-print("completed.")
+// if (true) {
+//     print("test 3/6: correct")
+
+//     // if (1 == 1) {
+//     //     print("test 4/6: correct")
+
+//     //     if (true) {
+//     //         print("test 5/6: correct")
+//     //     } else {
+//     //         print("text 5/6: incorrect")
+//     //     }
+//     // } else {
+//     //     print("text 4/6: incorrect")
+//     // }
+// }
+
+// print("test 6/6: correct")
+// print(1 + 2 == 3)
+// print("completed.")

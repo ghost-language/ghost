@@ -7,6 +7,7 @@ import (
 	"ghostlang.org/x/ghost/token"
 )
 
+// precedences contains a list of tokens mapped to their precedence level.
 var precedences = map[token.Type]int{
 	token.EQUALEQUAL:   EQUALS,
 	token.BANGEQUAL:    EQUALS,
@@ -22,6 +23,7 @@ var precedences = map[token.Type]int{
 	token.LEFTPAREN:    CALL,
 }
 
+// The following list of constants define the available precedence levels.
 const (
 	_ int = iota
 	LOWEST
@@ -44,6 +46,8 @@ type (
 	postfixParserFn func() ast.ExpressionNode
 )
 
+// Parser holds a slice of tokens, its position, and errors
+// as well as the prefix, infix, and postfix parse functions.
 type Parser struct {
 	tokens   []token.Token
 	position int
@@ -54,13 +58,17 @@ type Parser struct {
 	postfixParserFns map[token.Type]postfixParserFn
 }
 
+// New creates a new parser instance.
 func New(tokens []token.Token) *Parser {
-	parser := &Parser{tokens: tokens, position: 0}
+	parser := &Parser{
+		tokens:           tokens,
+		position:         0,
+		prefixParserFns:  make(map[token.Type]prefixParserFn),
+		infixParserFns:   make(map[token.Type]infixParserFn),
+		postfixParserFns: make(map[token.Type]postfixParserFn),
+	}
 
-	parser.prefixParserFns = make(map[token.Type]prefixParserFn)
-	parser.infixParserFns = make(map[token.Type]infixParserFn)
-	parser.postfixParserFns = make(map[token.Type]postfixParserFn)
-
+	// Register all of our prefix parse functions
 	parser.registerPrefix(token.IDENTIFIER, parser.identifierLiteral)
 	parser.registerPrefix(token.NUMBER, parser.numberLiteral)
 	parser.registerPrefix(token.NULL, parser.nullLiteral)
@@ -73,6 +81,7 @@ func New(tokens []token.Token) *Parser {
 	parser.registerPrefix(token.LEFTPAREN, parser.groupExpression)
 	parser.registerPrefix(token.FUNCTION, parser.functionStatement)
 
+	// Register all of our infix parse functions
 	parser.registerInfix(token.PLUS, parser.infixExpression)
 	parser.registerInfix(token.MINUS, parser.infixExpression)
 	parser.registerInfix(token.SLASH, parser.infixExpression)
@@ -89,18 +98,23 @@ func New(tokens []token.Token) *Parser {
 	return parser
 }
 
+// registerPrefix registers a new prefix parse function.
 func (parser *Parser) registerPrefix(tokenType token.Type, fn prefixParserFn) {
 	parser.prefixParserFns[tokenType] = fn
 }
 
+// registerInfix registers a new infix parse function.
 func (parser *Parser) registerInfix(tokenType token.Type, fn infixParserFn) {
 	parser.infixParserFns[tokenType] = fn
 }
 
+// registerPostfix registers a new postfix parse function.
 // func (parser *Parser) registerPostfix(tokenType token.Type, fn postfixParserFn) {
 // 	parser.postfixParserFns[tokenType] = fn
 // }
 
+// Parse parses tokens and creates an AST. It returns the Program node,
+// which holds a slice of Statements (and in turn, the rest of the tree).
 func (parser *Parser) Parse() *ast.Program {
 	program := &ast.Program{}
 	program.Statements = []ast.StatementNode{}
