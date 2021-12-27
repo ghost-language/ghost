@@ -21,6 +21,7 @@ type Visitor interface {
 	visitFunction(*Function)
 	visitIdentifier(*Identifier)
 	visitIf(*If)
+	visitIndex(*Index)
 	visitInfix(*Infix)
 	visitList(*List)
 	visitNull(*Null)
