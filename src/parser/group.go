@@ -6,15 +6,14 @@ import (
 )
 
 func (parser *Parser) groupExpression() ast.ExpressionNode {
-	parser.advance()
+	// Read the opening token.LEFTPAREN ("(")
+	parser.readToken()
 
 	group := parser.parseExpression(LOWEST)
 
-	if !parser.checkNext(token.RIGHTPAREN) {
+	if !parser.expectNextType(token.RIGHTPAREN) {
 		return nil
 	}
-
-	parser.advance()
 
 	return group
 }

@@ -75,16 +75,16 @@ func New(tokens []token.Token) *Parser {
 
 	// Register all of our prefix parse functions
 	parser.registerPrefix(token.IDENTIFIER, parser.identifierLiteral)
-	// parser.registerPrefix(token.NUMBER, parser.numberLiteral)
-	// parser.registerPrefix(token.NULL, parser.nullLiteral)
+	parser.registerPrefix(token.NUMBER, parser.numberLiteral)
+	parser.registerPrefix(token.NULL, parser.nullLiteral)
 	parser.registerPrefix(token.TRUE, parser.booleanLiteral)
 	parser.registerPrefix(token.FALSE, parser.booleanLiteral)
-	// parser.registerPrefix(token.STRING, parser.stringLiteral)
-	// parser.registerPrefix(token.BANG, parser.prefixExpression)
-	// parser.registerPrefix(token.MINUS, parser.prefixExpression)
-	// parser.registerPrefix(token.IF, parser.ifExpression)
-	// parser.registerPrefix(token.LEFTPAREN, parser.groupExpression)
-	// parser.registerPrefix(token.FUNCTION, parser.functionStatement)
+	parser.registerPrefix(token.STRING, parser.stringLiteral)
+	parser.registerPrefix(token.BANG, parser.prefixExpression)
+	parser.registerPrefix(token.MINUS, parser.prefixExpression)
+	parser.registerPrefix(token.IF, parser.ifExpression)
+	parser.registerPrefix(token.LEFTPAREN, parser.groupExpression)
+	parser.registerPrefix(token.FUNCTION, parser.functionStatement)
 
 	// Register all of our infix parse functions
 	// parser.registerInfix(token.PLUS, parser.infixExpression)

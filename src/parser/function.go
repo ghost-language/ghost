@@ -6,20 +6,20 @@ import (
 )
 
 func (parser *Parser) functionStatement() ast.ExpressionNode {
-	expression := &ast.Function{Token: parser.advance()}
+	expression := &ast.Function{Token: parser.currentToken}
 
-	if !parser.check(token.LEFTPAREN) {
-		expression.Name = &ast.Identifier{Token: parser.peek(), Value: parser.peek().Lexeme}
-		parser.advance()
+	if !parser.expectNextType(token.LEFTPAREN) {
+		expression.Name = &ast.Identifier{Token: parser.currentToken, Value: parser.currentToken.Lexeme}
+		parser.readToken()
 	}
 
-	parser.consume(token.LEFTPAREN, "Expect '(' after 'function'. got=%s", parser.peek().Type)
+	if !parser.expectNextType(token.LEFTPAREN) {
+		return nil
+	}
 
 	expression.Defaults, expression.Parameters = parser.functionParameters()
 
 	expression.Body = parser.blockStatement()
-
-	parser.consume(token.RIGHTBRACE, "Expect '}' after function body. got=%s", parser.peek().Type)
 
 	return expression
 }
@@ -28,7 +28,9 @@ func (parser *Parser) functionParameters() (map[string]ast.ExpressionNode, []*as
 	defaults := make(map[string]ast.ExpressionNode)
 	parameters := []*ast.Identifier{}
 
-	if parser.match(token.RIGHTPAREN) {
+	if parser.nextTokenTypeIs(token.RIGHTPAREN) {
+		parser.readToken()
+
 		return defaults, parameters
 	}
 

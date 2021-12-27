@@ -6,19 +6,19 @@ import (
 )
 
 func (parser *Parser) blockStatement() *ast.Block {
-	block := &ast.Block{Token: parser.peek()}
+	block := &ast.Block{Token: parser.currentToken}
 	block.Statements = []ast.StatementNode{}
 
-	parser.advance()
+	parser.readToken()
 
-	for !parser.check(token.RIGHTBRACE) && !parser.isAtEnd() {
+	for !parser.currentTokenTypeIs(token.RIGHTBRACE) && !parser.isAtEnd() {
 		statement := parser.statement()
 
 		if statement != nil {
 			block.Statements = append(block.Statements, statement)
 		}
 
-		parser.advance()
+		parser.readToken()
 	}
 
 	return block
