@@ -333,6 +333,41 @@ func TestStringLiteral(t *testing.T) {
 	}
 }
 
+func TestListLiteral(t *testing.T) {
+	input := `[1, 2 * 2, 3 + 3]`
+
+	scanner := scanner.New(input)
+	tokens := scanner.ScanTokens()
+	parser := New(tokens)
+	program := parser.Parse()
+
+	failIfParserHasErrors(t, parser)
+
+	if len(program.Statements) != 7 {
+		t.Fatalf("program.Statements does not contain 7 statements. got=%d", len(program.Statements))
+	}
+
+	statement, ok := program.Statements[0].(*ast.Expression)
+
+	if !ok {
+		t.Fatalf("program.Statements[0] is not ast.Expression. got=%T", program.Statements[0])
+	}
+
+	list, ok := statement.Expression.(*ast.List)
+
+	if !ok {
+		t.Fatalf("statement is not ast.List. got=%T", statement.Expression)
+	}
+
+	if len(list.Elements) != 3 {
+		t.Fatalf("len(list.Elements) is not 3. got=%d", len(list.Elements))
+	}
+
+	isNumberLiteral(t, list.Elements[0], 1)
+	isNumberLiteral(t, list.Elements[1], 4)
+	isNumberLiteral(t, list.Elements[2], 6)
+}
+
 // =============================================================================
 // Helper methods
 
