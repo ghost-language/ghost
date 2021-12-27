@@ -30,6 +30,8 @@ func Evaluate(node ast.Node, env *object.Environment) (object.Object, bool) {
 		return evaluateIdentifier(node, env)
 	case *ast.If:
 		return evaluateIf(node, env)
+	case *ast.Index:
+		return evaluateIndex(node, env)
 	case *ast.Infix:
 		return evaluateInfix(node, env)
 	case *ast.List:
