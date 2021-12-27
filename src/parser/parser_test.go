@@ -368,6 +368,33 @@ func TestListLiteral(t *testing.T) {
 	isNumberLiteral(t, list.Elements[2], 6)
 }
 
+func TestIndexExpressions(t *testing.T) {
+	input := `example[1 + 1]`
+
+	scanner := scanner.New(input)
+	tokens := scanner.ScanTokens()
+	parser := New(tokens)
+	program := parser.Parse()
+
+	failIfParserHasErrors(t, parser)
+
+	statement, ok := program.Statements[0].(*ast.Expression)
+
+	if !ok {
+		t.Fatalf("program.Statements[0] is not ast.Expression. got=%T", program.Statements[0])
+	}
+
+	index, ok := statement.Expression.(*ast.Index)
+
+	if !ok {
+		t.Fatalf("statement is not ast.Index. got=%T", statement.Expression)
+	}
+
+	if !isIdentifier(t, index.Left, "example") {
+		return
+	}
+}
+
 // =============================================================================
 // Helper methods
 
@@ -396,6 +423,20 @@ func isNumberLiteral(t *testing.T, expression ast.ExpressionNode, value int64) b
 
 	if number.Value.IntPart() != value {
 		t.Errorf("number.Value is not %d. got=%d", value, number.Value.IntPart())
+	}
+
+	return true
+}
+
+func isIdentifier(t *testing.T, expression ast.ExpressionNode, value string) bool {
+	identifier, ok := expression.(*ast.Identifier)
+
+	if !ok {
+		t.Errorf("expression is not ast.Identifier. got=%T", expression)
+	}
+
+	if identifier.Value != value {
+		t.Errorf("identifier.Value is not %s. got=%s", value, identifier.Value)
 	}
 
 	return true

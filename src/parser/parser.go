@@ -21,6 +21,7 @@ var precedences = map[token.Type]int{
 	token.SLASH:        PRODUCT,
 	token.PERCENT:      MODULO,
 	token.LEFTPAREN:    CALL,
+	token.LEFTBRACKET:  INDEX,
 }
 
 // The following list of constants define the available precedence levels.
@@ -100,6 +101,7 @@ func New(tokens []token.Token) *Parser {
 	parser.registerInfix(token.LESS, parser.infixExpression)
 	parser.registerInfix(token.LESSEQUAL, parser.infixExpression)
 	parser.registerInfix(token.LEFTPAREN, parser.callExpression)
+	parser.registerInfix(token.LEFTBRACKET, parser.indexExpression)
 
 	// Read the first two tokens, so currentToken and nextToken are both set.
 	parser.readToken()
@@ -206,98 +208,3 @@ func (parser *Parser) currentTokenPrecedence() int {
 
 	return LOWEST
 }
-
-// // match checks to see if the current token has any of the given types. If so,
-// // it consumes the token and returns true. Otherwise, it returns false and
-// // leaves the current token alone.
-// func (parser *Parser) match(tt ...token.Type) bool {
-// 	for _, t := range tt {
-// 		if parser.check(t) {
-// 			parser.advance()
-// 			return true
-// 		}
-// 	}
-
-// 	return false
-// }
-
-// // advance consumes the current token and returns it, similar to how our
-// // scanner's corresponding method crawls through characters.
-// func (parser *Parser) advance() token.Token {
-// 	if !parser.isAtEnd() {
-// 		parser.position++
-// 	}
-
-// 	return parser.previous()
-// }
-
-// // check returns true if the current token is of the given type. Unlike match(),
-// // it never consumes the token, it only looks at it.
-// func (parser *Parser) check(tt token.Type) bool {
-// 	if parser.isAtEnd() {
-// 		return false
-// 	}
-
-// 	return parser.peek().Type == tt
-// }
-
-// // consume checks to see if the next token is of the expected typ. If so, it
-// // consumes the token and carries on. If some other token is there, then we've
-// // hit an error.
-// func (parser *Parser) consume(tt token.Type, message string, args ...interface{}) {
-// 	if parser.check(tt) {
-// 		parser.advance()
-// 		return
-// 	}
-
-// 	parser.newError(message, args...)
-// }
-
-// func (parser *Parser) checkNext(tt token.Type) bool {
-// 	if parser.isAtEnd() {
-// 		return false
-// 	}
-
-// 	return parser.next().Type == tt
-// }
-
-// // peek returns the current token we have yet to consume.
-// func (parser *Parser) peek() token.Token {
-// 	return parser.tokens[parser.position]
-// }
-
-// // next returns the token ahead of the currently unconsumed token.
-// func (parser *Parser) next() token.Token {
-// 	if !parser.isAtEnd() {
-// 		return parser.tokens[parser.position+1]
-// 	}
-
-// 	return parser.tokens[parser.position]
-// }
-
-// // previous returns the most recently consumed token.
-// func (parser *Parser) previous() token.Token {
-// 	return parser.tokens[parser.position-1]
-// }
-
-// func (parser *Parser) peekPrecedence() int {
-// 	if precedence, ok := precedences[parser.peek().Type]; ok {
-// 		return precedence
-// 	}
-
-// 	return LOWEST
-// }
-
-// func (parser *Parser) nextPrecedence() int {
-// 	if parser, ok := precedences[parser.next().Type]; ok {
-// 		return parser
-// 	}
-
-// 	return LOWEST
-// }
-
-// func (parser *Parser) newError(str string, args ...interface{}) {
-// 	message := fmt.Sprintf(str, args...)
-
-// 	parser.errors = append(parser.errors, message)
-// }
