@@ -68,6 +68,10 @@ func (scanner *Scanner) ScanToken() {
 		scanner.addToken(token.LEFTPAREN)
 	case ')':
 		scanner.addToken(token.RIGHTPAREN)
+	case '[':
+		scanner.addToken(token.LEFTBRACKET)
+	case ']':
+		scanner.addToken(token.RIGHTBRACKET)
 	case '{':
 		scanner.addToken(token.LEFTBRACE)
 	case '}':

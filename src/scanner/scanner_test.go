@@ -14,13 +14,15 @@ func TestScanTokens(t *testing.T) {
 			expectedLexeme string
 		}
 	}{
-		`( ) { } , . - + ; * % ? : > < >= <= ! != = == := "hello world" 42 3.14 6.67428e-11 foo foobar true false class whilefoo`,
+		`( ) [ ] { } , . - + ; * % ? : > < >= <= ! != = == := "hello world" 42 3.14 6.67428e-11 foo foobar true false class whilefoo`,
 		[]struct {
 			expectedType   token.Type
 			expectedLexeme string
 		}{
 			{token.LEFTPAREN, "("},
 			{token.RIGHTPAREN, ")"},
+			{token.LEFTBRACKET, "["},
+			{token.RIGHTBRACKET, "]"},
 			{token.LEFTBRACE, "{"},
 			{token.RIGHTBRACE, "}"},
 			{token.COMMA, ","},
