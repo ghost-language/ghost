@@ -6,5 +6,8 @@ import (
 )
 
 func (parser *Parser) booleanLiteral() ast.ExpressionNode {
-	return &ast.Boolean{Value: parser.check(token.TRUE)}
+	return &ast.Boolean{
+		Token: parser.currentToken,
+		Value: parser.currentTokenTypeIs(token.TRUE),
+	}
 }

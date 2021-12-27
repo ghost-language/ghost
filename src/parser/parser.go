@@ -77,8 +77,8 @@ func New(tokens []token.Token) *Parser {
 	parser.registerPrefix(token.IDENTIFIER, parser.identifierLiteral)
 	// parser.registerPrefix(token.NUMBER, parser.numberLiteral)
 	// parser.registerPrefix(token.NULL, parser.nullLiteral)
-	// parser.registerPrefix(token.TRUE, parser.booleanLiteral)
-	// parser.registerPrefix(token.FALSE, parser.booleanLiteral)
+	parser.registerPrefix(token.TRUE, parser.booleanLiteral)
+	parser.registerPrefix(token.FALSE, parser.booleanLiteral)
 	// parser.registerPrefix(token.STRING, parser.stringLiteral)
 	// parser.registerPrefix(token.BANG, parser.prefixExpression)
 	// parser.registerPrefix(token.MINUS, parser.prefixExpression)
@@ -148,17 +148,20 @@ func (parser *Parser) Errors() []string {
 // previous, current, and next token values for consumption.
 func (parser *Parser) readToken() {
 	if !parser.isAtEnd() {
-		parser.position++
-
 		parser.previousToken = parser.currentToken
 		parser.currentToken = parser.nextToken
-		parser.nextToken = parser.tokens[parser.position]
+
+		if parser.position >= 0 && parser.position < len(parser.tokens) {
+			parser.nextToken = parser.tokens[parser.position]
+		}
+
+		parser.position++
 	}
 }
 
 // // isAtEnd checks if we've run out of tokens to parse.
 func (parser *Parser) isAtEnd() bool {
-	return parser.nextToken.Type == token.EOF
+	return parser.currentTokenTypeIs(token.EOF)
 }
 
 func (parser *Parser) nextError(tt token.Type) {
