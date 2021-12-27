@@ -334,7 +334,7 @@ func TestStringLiteral(t *testing.T) {
 }
 
 func TestListLiteral(t *testing.T) {
-	input := `[1, 2 * 2, 3 + 3]`
+	input := `[1, 4, 6]`
 
 	scanner := scanner.New(input)
 	tokens := scanner.ScanTokens()
@@ -343,8 +343,8 @@ func TestListLiteral(t *testing.T) {
 
 	failIfParserHasErrors(t, parser)
 
-	if len(program.Statements) != 7 {
-		t.Fatalf("program.Statements does not contain 7 statements. got=%d", len(program.Statements))
+	if len(program.Statements) != 1 {
+		t.Fatalf("program.Statements does not contain 1 statements. got=%d", len(program.Statements))
 	}
 
 	statement, ok := program.Statements[0].(*ast.Expression)

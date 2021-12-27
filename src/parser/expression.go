@@ -2,6 +2,7 @@ package parser
 
 import (
 	"ghostlang.org/x/ghost/ast"
+	"ghostlang.org/x/ghost/token"
 )
 
 func (parser *Parser) parseExpression(precedence int) ast.ExpressionNode {
@@ -26,4 +27,30 @@ func (parser *Parser) parseExpression(precedence int) ast.ExpressionNode {
 	}
 
 	return leftExpression
+}
+
+func (parser *Parser) parseExpressionList(end token.Type) []ast.ExpressionNode {
+	list := []ast.ExpressionNode{}
+
+	if parser.nextTokenTypeIs(end) {
+		parser.readToken()
+
+		return list
+	}
+
+	parser.readToken()
+
+	list = append(list, parser.parseExpression(LOWEST))
+
+	for parser.nextTokenTypeIs(token.COMMA) {
+		parser.readToken()
+		parser.readToken()
+		list = append(list, parser.parseExpression(LOWEST))
+	}
+
+	if !parser.expectNextType(end) {
+		return nil
+	}
+
+	return list
 }
