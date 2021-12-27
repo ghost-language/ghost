@@ -8,9 +8,9 @@ import (
 func (parser *Parser) functionStatement() ast.ExpressionNode {
 	expression := &ast.Function{Token: parser.currentToken}
 
-	if !parser.expectNextType(token.LEFTPAREN) {
-		expression.Name = &ast.Identifier{Token: parser.currentToken, Value: parser.currentToken.Lexeme}
+	if !parser.nextTokenTypeIs(token.LEFTPAREN) {
 		parser.readToken()
+		expression.Name = &ast.Identifier{Token: parser.currentToken, Value: parser.currentToken.Lexeme}
 	}
 
 	if !parser.expectNextType(token.LEFTPAREN) {

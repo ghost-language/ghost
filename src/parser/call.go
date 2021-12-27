@@ -6,7 +6,7 @@ import (
 )
 
 func (parser *Parser) callExpression(callee ast.ExpressionNode) ast.ExpressionNode {
-	call := &ast.Call{Token: parser.peek(), Callee: callee}
+	call := &ast.Call{Token: parser.currentToken, Callee: callee}
 
 	call.Arguments = parser.callArguments()
 
@@ -16,21 +16,20 @@ func (parser *Parser) callExpression(callee ast.ExpressionNode) ast.ExpressionNo
 func (parser *Parser) callArguments() []ast.ExpressionNode {
 	args := []ast.ExpressionNode{}
 
-	if parser.checkNext(token.RIGHTPAREN) {
-		parser.advance()
+	if parser.nextTokenTypeIs(token.RIGHTPAREN) {
 		return args
 	}
 
-	parser.advance()
+	parser.readToken()
+
 	args = append(args, parser.parseExpression(LOWEST))
 
-	for parser.checkNext(token.COMMA) {
-		parser.advance()
-		parser.advance()
+	for parser.nextTokenTypeIs(token.COMMA) {
+		parser.readToken()
 		args = append(args, parser.parseExpression(LOWEST))
 	}
 
-	if !parser.checkNext(token.RIGHTPAREN) {
+	if !parser.expectNextType(token.RIGHTPAREN) {
 		return nil
 	}
 

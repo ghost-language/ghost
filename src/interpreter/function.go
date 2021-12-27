@@ -2,10 +2,12 @@ package interpreter
 
 import (
 	"ghostlang.org/x/ghost/ast"
+	"ghostlang.org/x/ghost/log"
 	"ghostlang.org/x/ghost/object"
 )
 
 func evaluateFunction(node *ast.Function, env *object.Environment) (object.Object, bool) {
+	log.Debug("evaluating function... %v", node.Name)
 	function := &object.Function{
 		Parameters:  node.Parameters,
 		Defaults:    node.Defaults,
