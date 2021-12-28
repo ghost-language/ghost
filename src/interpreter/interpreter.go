@@ -36,6 +36,8 @@ func Evaluate(node ast.Node, env *object.Environment) (object.Object, bool) {
 		return evaluateInfix(node, env)
 	case *ast.List:
 		return evaluateList(node, env)
+	case *ast.Map
+		return evaluateMap(node, env)
 	case *ast.Null:
 		return evaluateNull(node, env)
 	case *ast.Number:
