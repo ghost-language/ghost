@@ -20,9 +20,14 @@ type Visitor interface {
 	visitFunction(*Function)
 	visitLibraryFunction(*LibraryFunction)
 	visitList(*List)
+	visitMap(*Map)
 	visitNull(*Null)
 	visitNumber(*Number)
 	visitString(*String)
+}
+
+type Mappable interface {
+	MapKey() MapKey
 }
 
 type Visitable interface {
