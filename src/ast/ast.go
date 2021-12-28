@@ -24,6 +24,7 @@ type Visitor interface {
 	visitIndex(*Index)
 	visitInfix(*Infix)
 	visitList(*List)
+	visitMap(*Map)
 	visitNull(*Null)
 	visitNumber(*Number)
 	visitPrefix(*Prefix)
