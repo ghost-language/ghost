@@ -395,6 +395,78 @@ func TestIndexExpressions(t *testing.T) {
 	}
 }
 
+func TestMapLiteralsWithStringKeys(t *testing.T) {
+	input := `{"one": 1, "two": 2, "three": 3}`
+
+	scanner := scanner.New(input)
+	tokens := scanner.ScanTokens()
+	parser := New(tokens)
+	program := parser.Parse()
+
+	failIfParserHasErrors(t, parser)
+
+	statement, ok := program.Statements[0].(*ast.Expression)
+
+	if !ok {
+		t.Fatalf("program.Statements[0] is not ast.Expression. got=%T", program.Statements[0])
+	}
+
+	mapLiteral, ok := statement.Expression.(*ast.Map)
+
+	if !ok {
+		t.Fatalf("statement is not ast.Map. got=%T", statement.Expression)
+	}
+
+	if len(mapLiteral.Pairs) != 3 {
+		t.Fatalf("map.Pairs has wrong length. got=%d", len(mapLiteral.Pairs))
+	}
+
+	expected := map[string]int64{
+		"one":   1,
+		"two":   2,
+		"three": 3,
+	}
+
+	for key, value := range mapLiteral.Pairs {
+		literal, ok := key.(*ast.String)
+
+		if !ok {
+			t.Errorf("key is not ast.String. got=%T", key)
+		}
+
+		expectedValue := expected[literal.Value]
+
+		isNumberLiteral(t, value, expectedValue)
+	}
+}
+
+func TestEmptyMapLiterals(t *testing.T) {
+	input := `{}`
+
+	scanner := scanner.New(input)
+	tokens := scanner.ScanTokens()
+	parser := New(tokens)
+	program := parser.Parse()
+
+	failIfParserHasErrors(t, parser)
+
+	statement, ok := program.Statements[0].(*ast.Expression)
+
+	if !ok {
+		t.Fatalf("program.Statements[0] is not ast.Expression. got=%T", program.Statements[0])
+	}
+
+	mapLiteral, ok := statement.Expression.(*ast.Map)
+
+	if !ok {
+		t.Fatalf("statement is not ast.Map. got=%T", statement.Expression)
+	}
+
+	if len(mapLiteral.Pairs) != 0 {
+		t.Fatalf("map.Pairs has wrong length. got=%d", len(mapLiteral.Pairs))
+	}
+}
+
 // =============================================================================
 // Helper methods
 
