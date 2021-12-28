@@ -87,14 +87,14 @@ func main() {
 
 		// directory, _ := filepath.Abs(filepath.Dir(args[0]))
 
-		engine := ghost.New()
-		engine.Source = source
-		engine.Execute()
+		ghost := ghost.New()
+		ghost.Source = source
+		ghost.Execute()
 
 		elapsed := time.Since(start)
 
 		if flagTokens {
-			scanner := scanner.New(engine.Source)
+			scanner := scanner.New(ghost.Source)
 			tokens := scanner.ScanTokens()
 
 			for index, token := range tokens {

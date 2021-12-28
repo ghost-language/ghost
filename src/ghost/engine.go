@@ -11,7 +11,7 @@ import (
 	"ghostlang.org/x/ghost/scanner"
 )
 
-type Engine struct {
+type Ghost struct {
 	FatalError  bool
 	Source      string
 	Environment *object.Environment
@@ -19,22 +19,22 @@ type Engine struct {
 	Directory   string
 }
 
-func New() *Engine {
-	engine := &Engine{
+func New() *Ghost {
+	ghost := &Ghost{
 		Environment: object.NewEnvironment(),
 	}
 
-	engine.resetWorkingDirectory()
+	ghost.resetWorkingDirectory()
 
-	return engine
+	return ghost
 }
 
-func (engine *Engine) resetWorkingDirectory() {
-	engine.Directory, _ = os.Getwd()
+func (ghost *Ghost) resetWorkingDirectory() {
+	ghost.Directory, _ = os.Getwd()
 }
 
-func (engine *Engine) Execute() object.Object {
-	scanner := scanner.New(engine.Source)
+func (ghost *Ghost) Execute() object.Object {
+	scanner := scanner.New(ghost.Source)
 	tokens := scanner.ScanTokens()
 	parser := parser.New(tokens)
 	program := parser.Parse()
@@ -44,7 +44,7 @@ func (engine *Engine) Execute() object.Object {
 		return nil
 	}
 
-	result, _ := interpreter.Evaluate(program, engine.Environment)
+	result, _ := interpreter.Evaluate(program, ghost.Environment)
 
 	return result
 }

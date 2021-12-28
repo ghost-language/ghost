@@ -56,7 +56,7 @@ func Start(in io.Reader, out io.Writer) {
 	}
 }
 
-func evaluate(engine *ghost.Engine, source string) {
+func evaluate(engine *ghost.Ghost, source string) {
 	engine.Source = source
 	result := engine.Execute()
 
