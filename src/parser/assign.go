@@ -6,7 +6,7 @@ import (
 )
 
 func (parser *Parser) assign() ast.StatementNode {
-	if parser.currentTokenTypeIs(token.IDENTIFIER) && parser.nextTokenTypeIs(token.ASSIGN) {
+	if parser.currentTokenIs(token.IDENTIFIER) && parser.nextTokenIs(token.ASSIGN) {
 		statement := &ast.Assign{
 			Name:  &ast.Identifier{Token: parser.currentToken, Value: parser.currentToken.Lexeme},
 			Token: parser.nextToken,

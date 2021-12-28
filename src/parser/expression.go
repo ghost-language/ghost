@@ -32,7 +32,7 @@ func (parser *Parser) parseExpression(precedence int) ast.ExpressionNode {
 func (parser *Parser) parseExpressionList(end token.Type) []ast.ExpressionNode {
 	list := []ast.ExpressionNode{}
 
-	if parser.nextTokenTypeIs(end) {
+	if parser.nextTokenIs(end) {
 		parser.readToken()
 
 		return list
@@ -42,7 +42,7 @@ func (parser *Parser) parseExpressionList(end token.Type) []ast.ExpressionNode {
 
 	list = append(list, parser.parseExpression(LOWEST))
 
-	for parser.nextTokenTypeIs(token.COMMA) {
+	for parser.nextTokenIs(token.COMMA) {
 		parser.readToken()
 		parser.readToken()
 		list = append(list, parser.parseExpression(LOWEST))

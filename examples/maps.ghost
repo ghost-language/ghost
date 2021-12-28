@@ -1,9 +1,18 @@
-profile := {
-    "name": "Soma",
-    "age": 3,
-    "breed": "Shiba Inu"
+// profile := {
+//     "name": "Soma",
+//     "age": 3,
+//     "breed": "Shiba Inu"
+// }
+
+// print(profile["name"])
+// print(profile["age"])
+// print(profile["breed"])
+
+ghost := {
+    // "name": "Ghost",
+    "handler": function(x) { return x * x }
 }
 
-print(profile["name"])
-print(profile["age"])
-print(profile["breed"])
+// print(ghost["name"])
+// print(ghost["value"])
+// print(ghost["handler"](10))

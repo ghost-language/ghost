@@ -8,7 +8,7 @@ import (
 func (parser *Parser) functionStatement() ast.ExpressionNode {
 	expression := &ast.Function{Token: parser.currentToken}
 
-	if !parser.nextTokenTypeIs(token.LEFTPAREN) {
+	if !parser.nextTokenIs(token.LEFTPAREN) {
 		parser.readToken()
 		expression.Name = &ast.Identifier{Token: parser.currentToken, Value: parser.currentToken.Lexeme}
 	}
@@ -28,7 +28,7 @@ func (parser *Parser) functionParameters() (map[string]ast.ExpressionNode, []*as
 	defaults := make(map[string]ast.ExpressionNode)
 	parameters := []*ast.Identifier{}
 
-	if parser.nextTokenTypeIs(token.RIGHTPAREN) {
+	if parser.nextTokenIs(token.RIGHTPAREN) {
 		parser.readToken()
 
 		return defaults, parameters

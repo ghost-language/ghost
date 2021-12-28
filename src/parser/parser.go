@@ -165,7 +165,7 @@ func (parser *Parser) readToken() {
 
 // // isAtEnd checks if we've run out of tokens to parse.
 func (parser *Parser) isAtEnd() bool {
-	return parser.currentTokenTypeIs(token.EOF)
+	return parser.currentTokenIs(token.EOF)
 }
 
 func (parser *Parser) nextError(tt token.Type) {
@@ -176,16 +176,16 @@ func (parser *Parser) nextError(tt token.Type) {
 	parser.errors = append(parser.errors, message)
 }
 
-func (parser *Parser) currentTokenTypeIs(tt token.Type) bool {
+func (parser *Parser) currentTokenIs(tt token.Type) bool {
 	return parser.currentToken.Type == tt
 }
 
-func (parser *Parser) nextTokenTypeIs(tt token.Type) bool {
+func (parser *Parser) nextTokenIs(tt token.Type) bool {
 	return parser.nextToken.Type == tt
 }
 
 func (parser *Parser) expectNextType(tt token.Type) bool {
-	if parser.nextTokenTypeIs(tt) {
+	if parser.nextTokenIs(tt) {
 		parser.readToken()
 		return true
 	}

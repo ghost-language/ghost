@@ -11,7 +11,7 @@ func (parser *Parser) blockStatement() *ast.Block {
 
 	parser.readToken()
 
-	for !parser.currentTokenTypeIs(token.RIGHTBRACE) && !parser.isAtEnd() {
+	for !parser.currentTokenIs(token.RIGHTBRACE) && !parser.isAtEnd() {
 		statement := parser.statement()
 
 		if statement != nil {

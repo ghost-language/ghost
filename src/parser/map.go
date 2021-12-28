@@ -2,6 +2,7 @@ package parser
 
 import (
 	"ghostlang.org/x/ghost/ast"
+	"ghostlang.org/x/ghost/log"
 	"ghostlang.org/x/ghost/token"
 )
 
@@ -9,7 +10,7 @@ func (parser *Parser) mapLiteral() ast.ExpressionNode {
 	mapLiteral := &ast.Map{Token: parser.currentToken}
 	mapLiteral.Pairs = make(map[ast.ExpressionNode]ast.ExpressionNode)
 
-	for !parser.nextTokenTypeIs(token.RIGHTBRACE) {
+	for !parser.nextTokenIs(token.RIGHTBRACE) {
 		parser.readToken()
 
 		key := parser.parseExpression(LOWEST)
@@ -24,7 +25,9 @@ func (parser *Parser) mapLiteral() ast.ExpressionNode {
 
 		mapLiteral.Pairs[key] = value
 
-		if !parser.nextTokenTypeIs(token.RIGHTBRACE) && !parser.expectNextType(token.COMMA) {
+		log.Debug("next token: %s", parser.nextToken.Lexeme)
+
+		if !parser.currentTokenIs(token.COMMA) || !parser.nextTokenIs(token.RIGHTBRACE) && !parser.expectNextType(token.COMMA) {
 			return nil
 		}
 	}

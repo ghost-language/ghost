@@ -25,7 +25,7 @@ func (parser *Parser) ifExpression() ast.ExpressionNode {
 
 	expression.Consequence = parser.blockStatement()
 
-	if parser.nextTokenTypeIs(token.ELSE) {
+	if parser.nextTokenIs(token.ELSE) {
 		parser.readToken()
 
 		if !parser.expectNextType(token.LEFTBRACE) {
