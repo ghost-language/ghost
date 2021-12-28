@@ -13,7 +13,7 @@ func (parser *Parser) functionStatement() ast.ExpressionNode {
 		expression.Name = &ast.Identifier{Token: parser.currentToken, Value: parser.currentToken.Lexeme}
 	}
 
-	if !parser.expectNextType(token.LEFTPAREN) {
+	if !parser.expectNextTokenIs(token.LEFTPAREN) {
 		return nil
 	}
 

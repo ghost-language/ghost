@@ -48,7 +48,7 @@ func (parser *Parser) parseExpressionList(end token.Type) []ast.ExpressionNode {
 		list = append(list, parser.parseExpression(LOWEST))
 	}
 
-	if !parser.expectNextType(end) {
+	if !parser.expectNextTokenIs(end) {
 		return nil
 	}
 

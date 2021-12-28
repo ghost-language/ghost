@@ -8,18 +8,18 @@ import (
 func (parser *Parser) ifExpression() ast.ExpressionNode {
 	expression := &ast.If{Token: parser.currentToken}
 
-	if !parser.expectNextType(token.LEFTPAREN) {
+	if !parser.expectNextTokenIs(token.LEFTPAREN) {
 		return nil
 	}
 
 	parser.readToken()
 	expression.Condition = parser.parseExpression(LOWEST)
 
-	if !parser.expectNextType(token.RIGHTPAREN) {
+	if !parser.expectNextTokenIs(token.RIGHTPAREN) {
 		return nil
 	}
 
-	if !parser.expectNextType(token.LEFTBRACE) {
+	if !parser.expectNextTokenIs(token.LEFTBRACE) {
 		return nil
 	}
 
@@ -28,7 +28,7 @@ func (parser *Parser) ifExpression() ast.ExpressionNode {
 	if parser.nextTokenIs(token.ELSE) {
 		parser.readToken()
 
-		if !parser.expectNextType(token.LEFTBRACE) {
+		if !parser.expectNextTokenIs(token.LEFTBRACE) {
 			return nil
 		}
 

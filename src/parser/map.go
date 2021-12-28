@@ -15,7 +15,7 @@ func (parser *Parser) mapLiteral() ast.ExpressionNode {
 
 		key := parser.parseExpression(LOWEST)
 
-		if !parser.expectNextType(token.COLON) {
+		if !parser.expectNextTokenIs(token.COLON) {
 			return nil
 		}
 
@@ -27,12 +27,12 @@ func (parser *Parser) mapLiteral() ast.ExpressionNode {
 
 		log.Debug("next token: %s", parser.nextToken.Lexeme)
 
-		if !parser.currentTokenIs(token.COMMA) || !parser.nextTokenIs(token.RIGHTBRACE) && !parser.expectNextType(token.COMMA) {
+		if !parser.currentTokenIs(token.COMMA) || !parser.nextTokenIs(token.RIGHTBRACE) && !parser.expectNextTokenIs(token.COMMA) {
 			return nil
 		}
 	}
 
-	if !parser.expectNextType(token.RIGHTBRACE) {
+	if !parser.expectNextTokenIs(token.RIGHTBRACE) {
 		return nil
 	}
 

@@ -11,7 +11,7 @@ func (parser *Parser) groupExpression() ast.ExpressionNode {
 
 	group := parser.parseExpression(LOWEST)
 
-	if !parser.expectNextType(token.RIGHTPAREN) {
+	if !parser.expectNextTokenIs(token.RIGHTPAREN) {
 		return nil
 	}
 

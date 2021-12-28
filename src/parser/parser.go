@@ -184,7 +184,7 @@ func (parser *Parser) nextTokenIs(tt token.Type) bool {
 	return parser.nextToken.Type == tt
 }
 
-func (parser *Parser) expectNextType(tt token.Type) bool {
+func (parser *Parser) expectNextTokenIs(tt token.Type) bool {
 	if parser.nextTokenIs(tt) {
 		parser.readToken()
 		return true

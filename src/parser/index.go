@@ -12,7 +12,7 @@ func (parser *Parser) indexExpression(left ast.ExpressionNode) ast.ExpressionNod
 
 	expression.Index = parser.parseExpression(LOWEST)
 
-	if !parser.expectNextType(token.RIGHTBRACKET) {
+	if !parser.expectNextTokenIs(token.RIGHTBRACKET) {
 		return nil
 	}
 
