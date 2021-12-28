@@ -22,3 +22,8 @@ func (number *Number) String() string {
 func (number *Number) Type() Type {
 	return NUMBER
 }
+
+// MapKey defines a unique hash value for use as a map key.
+func (number *Number) MapKey() MapKey {
+	return MapKey{Type: number.Type(), Value: uint64(number.Value.IntPart())}
+}

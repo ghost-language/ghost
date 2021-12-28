@@ -22,3 +22,16 @@ func (boolean *Boolean) String() string {
 func (boolean *Boolean) Type() Type {
 	return BOOLEAN
 }
+
+// MapKey defines a unique hash value for use as a map key.
+func (boolean *Boolean) MapKey() MapKey {
+	var value uint64
+
+	if boolean.Value {
+		value = 1
+	} else {
+		value = 0
+	}
+
+	return MapKey{Type: boolean.Type(), Value: value}
+}

@@ -10,6 +10,11 @@ type Object interface {
 	String() string
 }
 
+type MapKey struct {
+	Type  Type
+	Value uint64
+}
+
 type Visitor interface {
 	visitBoolean(*Boolean)
 	visitFunction(*Function)

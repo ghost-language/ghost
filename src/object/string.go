@@ -1,5 +1,7 @@
 package object
 
+import "hash/fnv"
+
 const STRING = "STRING"
 
 // String objects consist of a string value.
@@ -19,4 +21,13 @@ func (string *String) String() string {
 // Type returns the string object type.
 func (string *String) Type() Type {
 	return STRING
+}
+
+// MapKey defines a unique hash value for use as a map key.
+func (string *String) MapKey() MapKey {
+	hash := fnv.New64a()
+
+	hash.Write([]byte(string.Value))
+
+	return MapKey{Type: string.Type(), Value: hash.Sum64()}
 }
