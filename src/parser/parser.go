@@ -152,6 +152,8 @@ func (parser *Parser) Errors() []string {
 // previous, current, and next token values for consumption.
 func (parser *Parser) readToken() {
 	if !parser.isAtEnd() {
+		parser.position++
+
 		parser.previousToken = parser.currentToken
 		parser.currentToken = parser.nextToken
 
@@ -159,7 +161,6 @@ func (parser *Parser) readToken() {
 			parser.nextToken = parser.tokens[parser.position]
 		}
 
-		parser.position++
 	}
 }
 
@@ -170,7 +171,7 @@ func (parser *Parser) isAtEnd() bool {
 
 func (parser *Parser) nextError(tt token.Type) {
 	message := fmt.Sprintf(
-		"Line: %d: Expected next token to be %s, got: %s instead", parser.currentToken.Line, tt, parser.nextToken.Type,
+		"Line: %d: Expected next token to be %s, got: %s instead", parser.nextToken.Line, tt, parser.nextToken.Type,
 	)
 
 	parser.errors = append(parser.errors, message)
