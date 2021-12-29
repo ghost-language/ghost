@@ -40,7 +40,7 @@ func unwrapCall(tok token.Token, callee object.Object, arguments []object.Object
 		// to do, parse and return return values
 		return value.NULL, true
 	default:
-		log.Debug("found uncallable object: %s", callee.Type)
+		log.Debug("found uncallable object: %T", callee.Type)
 		return nil, false
 	}
 }

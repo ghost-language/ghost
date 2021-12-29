@@ -3,7 +3,6 @@ package scanner
 import (
 	"fmt"
 
-	"ghostlang.org/x/ghost/log"
 	"ghostlang.org/x/ghost/token"
 )
 
@@ -255,8 +254,6 @@ func (scanner *Scanner) scanIdentifier() string {
 // newToken grabs the current lexeme and creates a new token for it. In this
 // case, newToken is for tokens without a literal (native Go) value.
 func (scanner *Scanner) newToken(tokenType token.Type, literal interface{}) token.Token {
-	log.Debug("literal: %s", literal)
-
 	lexeme := fmt.Sprintf("%s", literal)
 
 	return token.Token{Type: tokenType, Lexeme: lexeme, Literal: literal, Line: scanner.line}
