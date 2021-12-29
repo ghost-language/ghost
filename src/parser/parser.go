@@ -152,8 +152,6 @@ func (parser *Parser) Errors() []string {
 // previous, current, and next token values for consumption.
 func (parser *Parser) readToken() {
 	if !parser.isAtEnd() {
-		parser.position++
-
 		parser.previousToken = parser.currentToken
 		parser.currentToken = parser.nextToken
 
@@ -161,6 +159,7 @@ func (parser *Parser) readToken() {
 			parser.nextToken = parser.tokens[parser.position]
 		}
 
+		parser.position++
 	}
 }
 
