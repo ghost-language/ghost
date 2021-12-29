@@ -55,21 +55,6 @@ func (scanner *Scanner) readCharacter() {
 	scanner.readPosition++
 }
 
-// ScanTokens transforms the source into an array of tokens. It works its way
-// through the source code, adding tokens until it runs out of characters.
-// Then it appends one final "end of file" token.
-// func (scanner *Scanner) ScanTokens() []token.Token {
-// 	for !scanner.isAtEnd() {
-// 		// We are at the beginning of the next lexeme.
-// 		scanner.start = scanner.current
-// 		scanner.ScanToken()
-// 	}
-
-// 	scanner.tokens = append(scanner.tokens, token.Token{Type: token.EOF, Literal: nil, Line: scanner.line})
-
-// 	return scanner.tokens
-// }
-
 // scanToken is responsible for scanning the current character and storing the
 // correct token type for it. This is the heart of our scanner.
 func (scanner *Scanner) ScanToken() token.Token {
@@ -309,42 +294,54 @@ func isDigit(character rune) bool {
 	return rune('0') <= character && character <= rune('9')
 }
 
+// isWhitespace tells us if the passed character is a whitespace character.
 func isWhitespace(character rune) bool {
 	return character == rune(' ') || character == rune('\t') || character == rune('\n') || character == rune('\r')
 }
 
+// isOperator tells us if the passed character is an operator.
 func isOperator(character rune) bool {
 	return character == rune('+') || character == rune('-') || character == rune('*') || character == rune('/') || character == rune('%')
 }
 
+// isComparison tells us if the passed character is a comparison.
 func isComparison(character rune) bool {
 	return character == rune('=') || character == rune('!') || character == rune('>') || character == rune('<')
 }
 
+// isCompound tells us if the passed character is a compound.
 func isCompound(character rune) bool {
 	return character == rune('.') || character == rune(',') || character == rune('\'') || character == rune('"') || character == rune(';') || character == rune(':')
 }
 
+// isBrace tells us if the passed character is a brace.
 func isBrace(character rune) bool {
 	return character == rune('{') || character == rune('}')
 }
 
+// isBracket tells us if the passed character is a bracket.
 func isBracket(character rune) bool {
 	return character == rune('[') || character == rune(']')
 }
 
+// isParenthesis tells us if the passed character is a parenthesis.
 func isParenthesis(character rune) bool {
 	return character == rune('(') || character == rune(')')
 }
 
+// isEmpty tells us if the passed character is empty.
 func isEmpty(character rune) bool {
 	return character == rune(0)
 }
 
+// isIdentifier tells us if the passed character can be used in a valid identifier.
 func isIdentifier(character rune) bool {
 	return !isDigit(character) && !isWhitespace(character) && !isBrace(character) && !isBracket(character) && !isParenthesis(character) && !isOperator(character) && !isCompound(character) && !isComparison(character) && !isEmpty(character)
 }
 
+// lookupIdentifier looks up the string in the list of keywords and returns its
+// correct token type. If not found, then we're dealing with an identifier and
+// return the identifier type.
 func lookupIdentifier(identifier string) token.Type {
 	if token, ok := keywords[identifier]; ok {
 		return token
@@ -352,8 +349,6 @@ func lookupIdentifier(identifier string) token.Type {
 
 	return token.IDENTIFIER
 }
-
-//
 
 // match acts as a conditional advance, only consuming the current character if
 // it's what we're looking for in "expected".
