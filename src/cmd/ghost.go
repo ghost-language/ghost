@@ -13,7 +13,6 @@ import (
 	"ghostlang.org/x/ghost/ghost"
 	"ghostlang.org/x/ghost/log"
 	"ghostlang.org/x/ghost/repl"
-	"ghostlang.org/x/ghost/scanner"
 	"ghostlang.org/x/ghost/version"
 )
 
@@ -94,12 +93,13 @@ func main() {
 		elapsed := time.Since(start)
 
 		if flagTokens {
-			scanner := scanner.New(ghost.Source)
-			tokens := scanner.ScanTokens()
+			log.Info("coming soon")
+			// scanner := scanner.New(ghost.Source)
+			// tokens := scanner.ScanTokens()
 
-			for index, token := range tokens {
-				log.Info("[%03d] - %s: %s", index, token.Type, token.Lexeme)
-			}
+			// for index, token := range tokens {
+			// 	log.Info("[%03d] - %s: %s", index, token.Type, token.Lexeme)
+			// }
 		}
 
 		log.Info("(executed in: %s)\n", elapsed)

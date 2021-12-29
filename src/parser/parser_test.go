@@ -18,8 +18,7 @@ func TestAssignStatement(t *testing.T) {
 
 	for _, tt := range tests {
 		scanner := scanner.New(tt.input)
-		tokens := scanner.ScanTokens()
-		parser := New(tokens)
+		parser := New(scanner)
 		program := parser.Parse()
 
 		failIfParserHasErrors(t, parser)
@@ -55,8 +54,7 @@ func TestBooleanLiteral(t *testing.T) {
 
 	for _, tt := range tests {
 		scanner := scanner.New(tt.input)
-		tokens := scanner.ScanTokens()
-		parser := New(tokens)
+		parser := New(scanner)
 		program := parser.Parse()
 
 		failIfParserHasErrors(t, parser)
@@ -93,8 +91,7 @@ func TestIdentifierLiteral(t *testing.T) {
 
 	for _, tt := range tests {
 		scanner := scanner.New(tt.input)
-		tokens := scanner.ScanTokens()
-		parser := New(tokens)
+		parser := New(scanner)
 		program := parser.Parse()
 
 		failIfParserHasErrors(t, parser)
@@ -130,8 +127,7 @@ func TestIfExpressions(t *testing.T) {
 
 	for _, tt := range tests {
 		scanner := scanner.New(tt.input)
-		tokens := scanner.ScanTokens()
-		parser := New(tokens)
+		parser := New(scanner)
 		program := parser.Parse()
 
 		failIfParserHasErrors(t, parser)
@@ -175,8 +171,7 @@ func TestInfixExpressions(t *testing.T) {
 
 	for _, tt := range tests {
 		scanner := scanner.New(tt.input)
-		tokens := scanner.ScanTokens()
-		parser := New(tokens)
+		parser := New(scanner)
 		program := parser.Parse()
 
 		failIfParserHasErrors(t, parser)
@@ -223,8 +218,7 @@ func TestNumberLiteral(t *testing.T) {
 
 	for _, tt := range tests {
 		scanner := scanner.New(tt.input)
-		tokens := scanner.ScanTokens()
-		parser := New(tokens)
+		parser := New(scanner)
 		program := parser.Parse()
 
 		failIfParserHasErrors(t, parser)
@@ -263,8 +257,7 @@ func TestPrefixExpressions(t *testing.T) {
 
 	for _, tt := range tests {
 		scanner := scanner.New(tt.input)
-		tokens := scanner.ScanTokens()
-		parser := New(tokens)
+		parser := New(scanner)
 		program := parser.Parse()
 
 		failIfParserHasErrors(t, parser)
@@ -305,8 +298,7 @@ func TestStringLiteral(t *testing.T) {
 
 	for _, tt := range tests {
 		scanner := scanner.New(tt.input)
-		tokens := scanner.ScanTokens()
-		parser := New(tokens)
+		parser := New(scanner)
 		program := parser.Parse()
 
 		failIfParserHasErrors(t, parser)
@@ -337,8 +329,7 @@ func TestListLiteral(t *testing.T) {
 	input := `[1, 4, 6]`
 
 	scanner := scanner.New(input)
-	tokens := scanner.ScanTokens()
-	parser := New(tokens)
+	parser := New(scanner)
 	program := parser.Parse()
 
 	failIfParserHasErrors(t, parser)
@@ -372,8 +363,7 @@ func TestIndexExpressions(t *testing.T) {
 	input := `example[1 + 1]`
 
 	scanner := scanner.New(input)
-	tokens := scanner.ScanTokens()
-	parser := New(tokens)
+	parser := New(scanner)
 	program := parser.Parse()
 
 	failIfParserHasErrors(t, parser)
@@ -399,8 +389,7 @@ func TestMapLiteralsWithStringKeys(t *testing.T) {
 	input := `{"one": 1, "two": 2, "three": 3}`
 
 	scanner := scanner.New(input)
-	tokens := scanner.ScanTokens()
-	parser := New(tokens)
+	parser := New(scanner)
 	program := parser.Parse()
 
 	failIfParserHasErrors(t, parser)
@@ -444,8 +433,7 @@ func TestEmptyMapLiterals(t *testing.T) {
 	input := `{}`
 
 	scanner := scanner.New(input)
-	tokens := scanner.ScanTokens()
-	parser := New(tokens)
+	parser := New(scanner)
 	program := parser.Parse()
 
 	failIfParserHasErrors(t, parser)

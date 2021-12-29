@@ -35,8 +35,7 @@ func (ghost *Ghost) resetWorkingDirectory() {
 
 func (ghost *Ghost) Execute() object.Object {
 	scanner := scanner.New(ghost.Source)
-	tokens := scanner.ScanTokens()
-	parser := parser.New(tokens)
+	parser := parser.New(scanner)
 	program := parser.Parse()
 
 	if len(parser.Errors()) != 0 {

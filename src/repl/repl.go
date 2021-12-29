@@ -40,7 +40,7 @@ func Start(in io.Reader, out io.Writer) {
 		f.Close()
 	}
 
-	engine := ghost.New()
+	ghost := ghost.New()
 
 	for {
 		source, err := line.Prompt(prompt)
@@ -49,16 +49,16 @@ func Start(in io.Reader, out io.Writer) {
 			log.Info("Exiting...")
 			os.Exit(1)
 		} else {
-			evaluate(engine, source)
+			evaluate(ghost, source)
 
 			line.AppendHistory(source)
 		}
 	}
 }
 
-func evaluate(engine *ghost.Ghost, source string) {
-	engine.Source = source
-	result := engine.Execute()
+func evaluate(ghost *ghost.Ghost, source string) {
+	ghost.Source = source
+	result := ghost.Execute()
 
 	if result != nil {
 		log.Info(result.String())

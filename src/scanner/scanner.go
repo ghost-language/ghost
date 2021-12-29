@@ -35,12 +35,12 @@ var keywords = map[string]token.Type{
 }
 
 // New creates a new scanner instance.
-func New(source string) Scanner {
+func New(source string) *Scanner {
 	scanner := Scanner{source: []rune(source), line: 1}
 
 	scanner.readCharacter()
 
-	return scanner
+	return &scanner
 }
 
 // readCharacter reads the current character and advance the readPosition.

@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"ghostlang.org/x/ghost/ast"
+	"ghostlang.org/x/ghost/scanner"
 	"ghostlang.org/x/ghost/token"
 )
 
@@ -50,9 +51,8 @@ type (
 // Parser holds a slice of tokens, its position, and errors
 // as well as the prefix, infix, and postfix parse functions.
 type Parser struct {
-	tokens   []token.Token
-	position int
-	errors   []string
+	scanner *scanner.Scanner
+	errors  []string
 
 	previousToken token.Token
 	currentToken  token.Token
@@ -64,10 +64,9 @@ type Parser struct {
 }
 
 // New creates a new parser instance.
-func New(tokens []token.Token) *Parser {
+func New(scanner *scanner.Scanner) *Parser {
 	parser := &Parser{
-		tokens:           tokens,
-		position:         0,
+		scanner:          scanner,
 		errors:           []string{},
 		prefixParserFns:  make(map[token.Type]prefixParserFn),
 		infixParserFns:   make(map[token.Type]infixParserFn),
@@ -151,16 +150,9 @@ func (parser *Parser) Errors() []string {
 // readToken advances the parser through the list of tokens, setting the
 // previous, current, and next token values for consumption.
 func (parser *Parser) readToken() {
-	if !parser.isAtEnd() {
-		parser.previousToken = parser.currentToken
-		parser.currentToken = parser.nextToken
-
-		if parser.position >= 0 && parser.position < len(parser.tokens) {
-			parser.nextToken = parser.tokens[parser.position]
-		}
-
-		parser.position++
-	}
+	parser.previousToken = parser.currentToken
+	parser.currentToken = parser.nextToken
+	parser.nextToken = parser.scanner.ScanToken()
 }
 
 // // isAtEnd checks if we've run out of tokens to parse.

@@ -40,11 +40,10 @@ func benchmark(source string) (scanTime time.Duration, parseTime time.Duration, 
 
 	env := object.NewEnvironment()
 	scanner := scanner.New(source)
-	tokens := scanner.ScanTokens()
 	scanTime = time.Since(start)
 
 	parseStart := time.Now()
-	parser := parser.New(tokens)
+	parser := parser.New(scanner)
 	program := parser.Parse()
 	parseTime = time.Since(parseStart)
 
