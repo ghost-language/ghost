@@ -14,7 +14,7 @@ func TestScanTokens(t *testing.T) {
 			expectedLexeme string
 		}
 	}{
-		`( ) [ ] { } , . - + ; * % ? : > < >= <= ! != = == := "hello world" 42 3.14 6.67428e-11 foo foobar true false class whilefoo`,
+		`( ) [ ] { } , . - + ; * % ? : > < >= <= ! != = == := "hello world" 42 3.14 6.67428e-11 foo foobar true false class whilefoo こんにちは 世界`,
 		[]struct {
 			expectedType   token.Type
 			expectedLexeme string
@@ -43,7 +43,7 @@ func TestScanTokens(t *testing.T) {
 			{token.EQUAL, "="},
 			{token.EQUALEQUAL, "=="},
 			{token.ASSIGN, ":="},
-			{token.STRING, "\"hello world\""},
+			{token.STRING, "hello world"},
 			{token.NUMBER, "42"},
 			{token.NUMBER, "3.14"},
 			{token.NUMBER, "6.67428e-11"},
@@ -53,27 +53,23 @@ func TestScanTokens(t *testing.T) {
 			{token.FALSE, "false"},
 			{token.CLASS, "class"},
 			{token.IDENTIFIER, "whilefoo"},
+			{token.IDENTIFIER, "こんにちは"},
+			{token.IDENTIFIER, "世界"},
+			{token.EOF, ""},
 		},
 	}
 
 	scanner := New(test.input)
-	tokens := scanner.ScanTokens()
 
-	if len(test.expected) != len(tokens)-1 {
-		t.Fatalf("number of tokens is wrong. expected=%d, got=%d", len(test.expected), len(tokens)-1)
-	}
+	for _, tok := range test.expected {
+		token := scanner.ScanToken()
 
-	for i, tok := range test.expected {
-		if tok.expectedType != tokens[i].Type {
-			t.Fatalf("token type is wrong. expected=%q, got=%q", tok.expectedType, tokens[i].Type)
+		if tok.expectedType != token.Type {
+			t.Fatalf("token type is wrong. expected=%q, got=%q", tok.expectedType, token.Type)
 		}
 
-		if tok.expectedLexeme != tokens[i].Lexeme {
-			t.Fatalf("token lexeme is wrong. expected=%q, got=%q", tok.expectedLexeme, tokens[i].Lexeme)
+		if tok.expectedLexeme != token.Lexeme {
+			t.Fatalf("token lexeme is wrong. expected=%q, got=%q", tok.expectedLexeme, token.Lexeme)
 		}
-	}
-
-	if tokens[len(tokens)-1].Type != token.EOF {
-		t.Fatalf("last token is not EOF")
 	}
 }

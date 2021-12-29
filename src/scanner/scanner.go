@@ -3,19 +3,17 @@ package scanner
 import (
 	"fmt"
 
-	"ghostlang.org/x/ghost/error"
 	"ghostlang.org/x/ghost/log"
 	"ghostlang.org/x/ghost/token"
-	"github.com/shopspring/decimal"
 )
 
 // Scanner transforms our source code into tokens.
 type Scanner struct {
-	source  string
-	start   int
-	current int
-	line    int
-	tokens  []token.Token
+	source       []rune // raw source to be scanned
+	character    rune   // current character being scanned
+	position     int    // current position in source (pointing to current character)
+	readPosition int    // current reading position in source (point to next character)
+	line         int    // current line being scanned
 }
 
 // keywords contains a list of all reserved keywords.
@@ -38,307 +36,350 @@ var keywords = map[string]token.Type{
 
 // New creates a new scanner instance.
 func New(source string) Scanner {
-	scanner := Scanner{source: source, line: 1}
+	scanner := Scanner{source: []rune(source), line: 1}
+
+	scanner.readCharacter()
 
 	return scanner
+}
+
+// readCharacter reads the current character and advance the readPosition.
+// It also checks if we've reached the end of our source.
+func (scanner *Scanner) readCharacter() {
+	if scanner.readPosition >= len(scanner.source) {
+		scanner.character = rune(0)
+	} else {
+		scanner.character = scanner.source[scanner.readPosition]
+	}
+
+	scanner.position = scanner.readPosition
+	scanner.readPosition++
 }
 
 // ScanTokens transforms the source into an array of tokens. It works its way
 // through the source code, adding tokens until it runs out of characters.
 // Then it appends one final "end of file" token.
-func (scanner *Scanner) ScanTokens() []token.Token {
-	for !scanner.isAtEnd() {
-		// We are at the beginning of the next lexeme.
-		scanner.start = scanner.current
-		scanner.ScanToken()
-	}
+// func (scanner *Scanner) ScanTokens() []token.Token {
+// 	for !scanner.isAtEnd() {
+// 		// We are at the beginning of the next lexeme.
+// 		scanner.start = scanner.current
+// 		scanner.ScanToken()
+// 	}
 
-	scanner.tokens = append(scanner.tokens, token.Token{Type: token.EOF, Literal: nil, Line: scanner.line})
+// 	scanner.tokens = append(scanner.tokens, token.Token{Type: token.EOF, Literal: nil, Line: scanner.line})
 
-	return scanner.tokens
-}
+// 	return scanner.tokens
+// }
 
 // scanToken is responsible for scanning the current character and storing the
 // correct token type for it. This is the heart of our scanner.
-func (scanner *Scanner) ScanToken() {
-	c := scanner.advance()
+func (scanner *Scanner) ScanToken() token.Token {
+	var scannedToken token.Token
 
-	switch c {
-	case '(':
-		scanner.addToken(token.LEFTPAREN)
-	case ')':
-		scanner.addToken(token.RIGHTPAREN)
-	case '[':
-		scanner.addToken(token.LEFTBRACKET)
-	case ']':
-		scanner.addToken(token.RIGHTBRACKET)
-	case '{':
-		scanner.addToken(token.LEFTBRACE)
-	case '}':
-		scanner.addToken(token.RIGHTBRACE)
-	case ',':
-		scanner.addToken(token.COMMA)
-	case '.':
-		scanner.addToken(token.DOT)
-	case '-':
-		scanner.addToken(token.MINUS)
-	case '+':
-		scanner.addToken(token.PLUS)
-	case ';':
-		scanner.addToken(token.SEMICOLON)
-	case '*':
-		scanner.addToken(token.STAR)
-	case '%':
-		scanner.addToken(token.PERCENT)
-	case '?':
-		scanner.addToken(token.QUESTION)
-	case ':':
+	scanner.skipWhitespace()
+
+	switch scanner.character {
+	case rune('('):
+		scannedToken = scanner.newToken(token.LEFTPAREN, "(")
+	case rune(')'):
+		scannedToken = scanner.newToken(token.RIGHTPAREN, ")")
+	case rune('['):
+		scannedToken = scanner.newToken(token.LEFTBRACKET, "[")
+	case rune(']'):
+		scannedToken = scanner.newToken(token.RIGHTBRACKET, "]")
+	case rune('{'):
+		scannedToken = scanner.newToken(token.LEFTBRACE, "{")
+	case rune('}'):
+		scannedToken = scanner.newToken(token.RIGHTBRACE, "}")
+	case rune(','):
+		scannedToken = scanner.newToken(token.COMMA, ",")
+	case rune('.'):
+		scannedToken = scanner.newToken(token.DOT, ".")
+	case rune('-'):
+		scannedToken = scanner.newToken(token.MINUS, "-")
+	case rune('+'):
+		scannedToken = scanner.newToken(token.PLUS, "+")
+	case rune(';'):
+		scannedToken = scanner.newToken(token.SEMICOLON, ";")
+	case rune('*'):
+		scannedToken = scanner.newToken(token.STAR, "*")
+	case rune('%'):
+		scannedToken = scanner.newToken(token.PERCENT, "%")
+	case rune('?'):
+		scannedToken = scanner.newToken(token.QUESTION, "?")
+	case rune(':'):
 		if scanner.match('=') {
-			scanner.addToken(token.ASSIGN)
+			scannedToken = scanner.newToken(token.ASSIGN, ":=")
 		} else {
-			scanner.addToken(token.COLON)
+			scannedToken = scanner.newToken(token.COLON, ":")
 		}
-	case '!':
+	case rune('!'):
 		if scanner.match('=') {
-			scanner.addToken(token.BANGEQUAL)
+			scannedToken = scanner.newToken(token.BANGEQUAL, "!=")
 		} else {
-			scanner.addToken(token.BANG)
+			scannedToken = scanner.newToken(token.BANG, "!")
 		}
-	case '=':
+	case rune('='):
 		if scanner.match('=') {
-			scanner.addToken(token.EQUALEQUAL)
+			scannedToken = scanner.newToken(token.EQUALEQUAL, "==")
 		} else {
-			scanner.addToken(token.EQUAL)
+			scannedToken = scanner.newToken(token.EQUAL, "=")
 		}
-	case '<':
+	case rune('<'):
 		if scanner.match('=') {
-			scanner.addToken(token.LESSEQUAL)
+			scannedToken = scanner.newToken(token.LESSEQUAL, "<=")
 		} else {
-			scanner.addToken(token.LESS)
+			scannedToken = scanner.newToken(token.LESS, "<")
 		}
-	case '>':
+	case rune('>'):
 		if scanner.match('=') {
-			scanner.addToken(token.GREATEREQUAL)
+			scannedToken = scanner.newToken(token.GREATEREQUAL, ">=")
 		} else {
-			scanner.addToken(token.GREATER)
+			scannedToken = scanner.newToken(token.GREATER, ">")
 		}
-	case '/':
+	case rune('#'):
+		scanner.skipSingleLineComment()
+
+		return scanner.ScanToken()
+	case rune('/'):
 		if scanner.match('/') {
-			// A comment goes until the end of the line. Comments are lexemes
-			// but they aren't meaningful, so we don't want to deal with them
-			// and simply wish to discard them here.
-			for scanner.peek() != '\n' && !scanner.isAtEnd() {
-				scanner.advance()
-			}
-		} else {
-			scanner.addToken(token.SLASH)
-		}
-	case ' ', '\r', '\t':
-		// Ignore whitespace
-	case '\n':
-		scanner.line++
-	case '"':
-		scanner.scanString()
-	default:
-		if scanner.isDigit(c) {
-			scanner.scanNumber()
-		} else if scanner.isAlpha(c) {
-			scanner.scanIdentifier()
-		} else {
-			err := error.Error{
-				Reason:  error.Syntax,
-				Message: fmt.Sprintf("unexpected parsing error on line %d", scanner.line),
-			}
+			scanner.skipSingleLineComment()
 
-			log.Error(err.Reason, err.Message)
+			return scanner.ScanToken()
+		} else if scanner.match('*') {
+			scanner.skipMultiLineComment()
+
+			return scanner.ScanToken()
+		} else {
+			scannedToken = scanner.newToken(token.SLASH, "/")
 		}
+	case rune('\n'):
+		scanner.line++
+	case rune('"'):
+		value := scanner.scanString('"')
+
+		scannedToken = scanner.newToken(token.STRING, value)
+	case rune('\''):
+		value := scanner.scanString('\'')
+
+		scannedToken = scanner.newToken(token.STRING, value)
+	case 0:
+		scannedToken = scanner.newToken(token.EOF, "")
+	default:
+		if isDigit(scanner.character) {
+			number := scanner.scanNumber()
+
+			return scanner.newToken(token.NUMBER, number)
+		}
+
+		identifier := scanner.scanIdentifier()
+
+		return scanner.newToken(lookupIdentifier(identifier), identifier)
 	}
+
+	scanner.readCharacter()
+
+	return scannedToken
 }
 
-// scanString consumes characters until it hits either the closing " or end of
+// scanString consumes characters until it hits either the closing or end of
 // file. If we run to the end of the file without a closing ", we report an
 // error.
-func (scanner *Scanner) scanString() {
-	for scanner.peek() != '"' && !scanner.isAtEnd() {
-		if scanner.peek() == '\n' {
-			scanner.line++
-		}
+func (scanner *Scanner) scanString(closing rune) string {
+	position := scanner.position + 1
 
-		scanner.advance()
+	for {
+		scanner.readCharacter()
+
+		if scanner.character == closing || scanner.isAtEnd() {
+			break
+		}
 	}
 
-	if scanner.isAtEnd() {
-		err := error.Error{
-			Reason:  error.Syntax,
-			Message: fmt.Sprintf("unexpected end of string on line %d", scanner.line),
-		}
-
-		log.Error(err.Reason, err.Message)
-		return
-	}
-
-	// The closing ".
-	scanner.advance()
-
-	// Extract and trim the surrounding quotes for our literal value.
-	literal := scanner.source[scanner.start+1 : scanner.current-1]
-
-	scanner.addTokenWithLiteral(token.STRING, literal)
+	return string(scanner.source[position:scanner.position])
 }
 
 // scanNumber consumes all digits for the integer part of the literal, and then
 // the fractional part if we encounter a decimal point (.) followed by at least
 // one digit. If we do have a fractional part, we consume all remaining digits.
-func (scanner *Scanner) scanNumber() {
-	for scanner.isDigit(scanner.peek()) {
-		scanner.advance()
+func (scanner *Scanner) scanNumber() string {
+	position := scanner.position
+
+	for isDigit(scanner.character) {
+		scanner.readCharacter()
 	}
 
 	// Look for a fractional part.
-	if scanner.peek() == '.' && scanner.isDigit(scanner.peekNext()) {
+	if scanner.character == rune('.') && isDigit(scanner.peekCharacter()) {
 		// Consume the "."
-		scanner.advance()
+		scanner.readCharacter()
 
-		for scanner.isDigit(scanner.peek()) {
-			scanner.advance()
+		for isDigit(scanner.character) {
+			scanner.readCharacter()
 		}
 	}
 
 	// Look for a scientific notion part.
-	if scanner.peek() == 'e' {
+	if scanner.character == rune('e') {
 		// Consume the "e"
-		scanner.advance()
+		scanner.readCharacter()
 
-		if scanner.peek() == '-' {
+		if scanner.character == rune('-') {
 			// Consume the "-"
-			scanner.advance()
+			scanner.readCharacter()
 		}
 
-		if scanner.isDigit(scanner.peek()) {
-			for scanner.isDigit(scanner.peek()) {
-				scanner.advance()
-			}
-		} else {
-			err := error.Error{
-				Reason:  error.Syntax,
-				Message: fmt.Sprintf("exponent has no digits on line %d", scanner.line),
-			}
-
-			log.Error(err.Reason, err.Message)
-			return
+		for isDigit(scanner.character) {
+			scanner.readCharacter()
 		}
 	}
 
-	literal := scanner.source[scanner.start:scanner.current]
-	number, err := decimal.NewFromString(literal)
-
-	if err != nil {
-		err := error.Error{
-			Reason:  error.Syntax,
-			Message: fmt.Sprintf("invalid number format on line %d", scanner.line),
-		}
-
-		log.Error(err.Reason, err.Message)
-	} else {
-		scanner.addTokenWithLiteral(token.NUMBER, number)
-	}
+	return string(scanner.source[position:scanner.position])
 }
 
 // scanIdentifier consumes characters until it runs out of alphanumeric
 // characters.
-func (scanner *Scanner) scanIdentifier() {
-	for scanner.isAlphaNumeric(scanner.peek()) {
-		scanner.advance()
+func (scanner *Scanner) scanIdentifier() string {
+	position := scanner.position
+
+	for isIdentifier(scanner.character) {
+		scanner.readCharacter()
 	}
 
-	literal := scanner.source[scanner.start:scanner.current]
-	keyword, ok := keywords[literal]
-
-	if ok {
-		scanner.addToken(keyword)
-	} else {
-		scanner.addToken(token.IDENTIFIER)
-	}
+	return string(scanner.source[position:scanner.position])
 }
 
 // =============================================================================
 // Helper methods
 
-// addToken grabs the current lexeme and creates a new token for it. In this
-// case, addToken is for tokens without a literal (native Go) value.
-func (scanner *Scanner) addToken(tokenType token.Type) {
-	scanner.addTokenWithLiteral(tokenType, nil)
+// newToken grabs the current lexeme and creates a new token for it. In this
+// case, newToken is for tokens without a literal (native Go) value.
+func (scanner *Scanner) newToken(tokenType token.Type, literal interface{}) token.Token {
+	log.Debug("literal: %s", literal)
+
+	lexeme := fmt.Sprintf("%s", literal)
+
+	return token.Token{Type: tokenType, Lexeme: lexeme, Literal: literal, Line: scanner.line}
 }
 
-// addTokenWithLiteral grabs the current lexeme and creates a new token of the
-// passed type and literal (native Go) value.
-func (scanner *Scanner) addTokenWithLiteral(tokenType token.Type, literal interface{}) {
-	lexeme := scanner.source[scanner.start:scanner.current]
-	scanner.tokens = append(scanner.tokens, token.Token{Type: tokenType, Lexeme: lexeme, Literal: literal, Line: scanner.line})
+// skipSingleLineComment consumes and reads characters until it reaches the end
+// of the line. Comments are lexemes but they aren't meaningful, so we simply
+// discard them here.
+func (scanner *Scanner) skipSingleLineComment() {
+	for scanner.character != '\n' && !scanner.isAtEnd() {
+		scanner.readCharacter()
+	}
+
+	scanner.skipWhitespace()
+}
+
+// skipMultiLineComment consumes and reads characters until it reaches either
+// the end of our source or the closing comment delimiter (*/). Comments are
+// lexemes but they aren't meaningful, so we simply discard them here.
+func (scanner *Scanner) skipMultiLineComment() {
+	endOfComment := false
+
+	for !endOfComment {
+		if scanner.isAtEnd() {
+			endOfComment = true
+		}
+
+		if scanner.character == rune('*') && scanner.match('/') {
+			endOfComment = true
+			scanner.readCharacter()
+		}
+
+		scanner.readCharacter()
+	}
+
+	scanner.skipWhitespace()
+}
+
+// skipWhitespace consumes and reads whitespace characters.
+func (scanner *Scanner) skipWhitespace() {
+	for isWhitespace(scanner.character) {
+		scanner.readCharacter()
+	}
 }
 
 // isAtEnd tells us if we've consumed all the characters in our raw source code.
 func (scanner *Scanner) isAtEnd() bool {
-	return scanner.current >= len(scanner.source)
+	return scanner.character == 0
 }
 
 // isDigit tells us if the passed character is a number.
-func (scanner *Scanner) isDigit(c byte) bool {
-	return c >= '0' && c <= '9'
+func isDigit(character rune) bool {
+	return rune('0') <= character && character <= rune('9')
 }
 
-// isAlpha tells us if the passed character is an alphabetic character.
-func (scanner *Scanner) isAlpha(c byte) bool {
-	return (c >= 'a' && c <= 'z') ||
-		(c >= 'A' && c <= 'Z') ||
-		c == '_'
+func isWhitespace(character rune) bool {
+	return character == rune(' ') || character == rune('\t') || character == rune('\n') || character == rune('\r')
 }
 
-// isAlphaNumeric tells us if the passed character is either an alphabetic or
-// numeric character.
-func (scanner *Scanner) isAlphaNumeric(c byte) bool {
-	return scanner.isAlpha(c) || scanner.isDigit(c)
+func isOperator(character rune) bool {
+	return character == rune('+') || character == rune('-') || character == rune('*') || character == rune('/') || character == rune('%')
 }
 
-// advance consumes the next character in our raw source code and returns it.
-func (scanner *Scanner) advance() byte {
-	scanner.current++
-
-	return scanner.source[scanner.current-1]
+func isComparison(character rune) bool {
+	return character == rune('=') || character == rune('!') || character == rune('>') || character == rune('<')
 }
+
+func isCompound(character rune) bool {
+	return character == rune('.') || character == rune(',') || character == rune('\'') || character == rune('"') || character == rune(';') || character == rune(':')
+}
+
+func isBrace(character rune) bool {
+	return character == rune('{') || character == rune('}')
+}
+
+func isBracket(character rune) bool {
+	return character == rune('[') || character == rune(']')
+}
+
+func isParenthesis(character rune) bool {
+	return character == rune('(') || character == rune(')')
+}
+
+func isEmpty(character rune) bool {
+	return character == rune(0)
+}
+
+func isIdentifier(character rune) bool {
+	return !isDigit(character) && !isWhitespace(character) && !isBrace(character) && !isBracket(character) && !isParenthesis(character) && !isOperator(character) && !isCompound(character) && !isComparison(character) && !isEmpty(character)
+}
+
+func lookupIdentifier(identifier string) token.Type {
+	if token, ok := keywords[identifier]; ok {
+		return token
+	}
+
+	return token.IDENTIFIER
+}
+
+//
 
 // match acts as a conditional advance, only consuming the current character if
 // it's what we're looking for in "expected".
-func (scanner *Scanner) match(expected byte) bool {
+func (scanner *Scanner) match(expected rune) bool {
 	if scanner.isAtEnd() {
 		return false
 	}
 
-	if scanner.source[scanner.current] != expected {
+	if scanner.peekCharacter() != expected {
 		return false
 	}
 
-	scanner.current++
+	scanner.readCharacter()
 
 	return true
 }
 
-// peek looks at the current unconsumed character. We use this to lookahead,
+// peekCharacter looks at the next upcoming character. We use this to lookahead,
 // useful to check for multi-character tokens.
-func (scanner *Scanner) peek() byte {
-	if scanner.isAtEnd() {
-		return 0
+func (scanner *Scanner) peekCharacter() rune {
+	if scanner.readPosition >= len(scanner.source) {
+		return rune(0)
 	}
 
-	return scanner.source[scanner.current]
-}
-
-// peekNext operates in a similar manner to peek() however, it instead looks at
-// the next upcoming character in our raw source code.
-func (scanner *Scanner) peekNext() byte {
-	if scanner.current+1 >= len(scanner.source) {
-		return 0
-	}
-
-	return scanner.source[scanner.current+1]
+	return scanner.source[scanner.readPosition]
 }
