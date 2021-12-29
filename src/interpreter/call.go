@@ -31,7 +31,7 @@ func unwrapCall(tok token.Token, callee object.Object, arguments []object.Object
 			return result, true
 		}
 
-		return value.NULL, true
+		return nil, true
 	case *object.Function:
 		functionEnvironment := createFunctionEnvironment(callee, arguments)
 
