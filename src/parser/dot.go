@@ -7,8 +7,6 @@ import (
 )
 
 func (parser *Parser) dotExpression(left ast.ExpressionNode) ast.ExpressionNode {
-	log.Debug("parsing dot expression")
-
 	currentToken := parser.currentToken
 	currentPrecedence := parser.currentTokenPrecedence()
 
@@ -16,7 +14,6 @@ func (parser *Parser) dotExpression(left ast.ExpressionNode) ast.ExpressionNode 
 
 	if parser.nextTokenIs(token.LEFTPAREN) {
 		// Method
-		log.Debug("parsing method")
 		expression := &ast.Method{Token: currentToken, Left: left}
 		expression.Method = parser.parseExpression(currentPrecedence)
 
@@ -28,7 +25,7 @@ func (parser *Parser) dotExpression(left ast.ExpressionNode) ast.ExpressionNode 
 	}
 
 	// Property
-	log.Debug("parsing property")
+	log.Debug("properties TBD...")
 	expression := &ast.Null{}
 
 	return expression

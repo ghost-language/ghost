@@ -7,7 +7,7 @@ const LIBRARY_MODULE = "LIBRARY_MODULE"
 // LibraryModule objects consist of a slice of LibraryFunctions.
 type LibraryModule struct {
 	Name    string
-	Methods []*LibraryFunction
+	Methods map[string]*LibraryFunction
 }
 
 func (object *LibraryModule) Accept(v Visitor) {

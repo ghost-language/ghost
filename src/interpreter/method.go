@@ -2,7 +2,6 @@ package interpreter
 
 import (
 	"ghostlang.org/x/ghost/ast"
-	"ghostlang.org/x/ghost/log"
 	"ghostlang.org/x/ghost/object"
 )
 
@@ -24,14 +23,14 @@ func evaluateMethod(node *ast.Method, env *object.Environment) (object.Object, b
 		method := node.Method.(*ast.Identifier)
 		module := left.(*object.LibraryModule)
 
-		// libraryModule, ok := library.Modules[module.Name]
-
 		if !ok {
 			return nil, false
 		}
 
-		log.Debug("module: %s, method: %s, library: %q", module.Name, method.Value, module.Methods)
+		if function, ok := module.Methods[method.Value]; ok {
+			return unwrapCall(node.Token, function, arguments, env)
+		}
 	}
 
-	return unwrapCall(node.Token, left, arguments, env)
+	return nil, false
 }

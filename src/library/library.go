@@ -22,6 +22,6 @@ func RegisterFunction(name string, function object.GoFunction) {
 	Functions[name] = &object.LibraryFunction{Name: name, Function: function}
 }
 
-func RegisterModule(name string, methods []*object.LibraryFunction) {
+func RegisterModule(name string, methods map[string]*object.LibraryFunction) {
 	Modules[name] = &object.LibraryModule{Name: name, Methods: methods}
 }
