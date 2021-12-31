@@ -7,6 +7,10 @@ import (
 )
 
 func evaluateIdentifier(node *ast.Identifier, env *object.Environment) (object.Object, bool) {
+	if libraryModule, ok := library.Modules[node.Value]; ok {
+		return libraryModule, true
+	}
+
 	if libraryFunction, ok := library.Functions[node.Value]; ok {
 		return libraryFunction, true
 	}
