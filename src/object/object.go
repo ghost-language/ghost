@@ -19,6 +19,7 @@ type Visitor interface {
 	visitBoolean(*Boolean)
 	visitFunction(*Function)
 	visitLibraryFunction(*LibraryFunction)
+	visitLibraryModule(*LibraryModule)
 	visitList(*List)
 	visitMap(*Map)
 	visitNull(*Null)
