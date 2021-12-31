@@ -19,6 +19,10 @@ func (parser *Parser) functionStatement() ast.ExpressionNode {
 
 	expression.Defaults, expression.Parameters = parser.functionParameters()
 
+	if !parser.expectNextTokenIs(token.LEFTBRACE) {
+		return nil
+	}
+
 	expression.Body = parser.blockStatement()
 
 	return expression
