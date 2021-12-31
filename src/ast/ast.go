@@ -31,6 +31,7 @@ type Visitor interface {
 	visitPrefix(*Prefix)
 	visitProgram(*Program)
 	visitString(*String)
+	visitWhile(*While)
 }
 
 type Visitable interface {

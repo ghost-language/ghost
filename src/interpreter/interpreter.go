@@ -48,6 +48,8 @@ func Evaluate(node ast.Node, env *object.Environment) (object.Object, bool) {
 		return evaluatePrefix(node, env)
 	case *ast.String:
 		return evaluateString(node, env)
+	case *ast.While:
+		return evaluateWhile(node, env)
 	case nil:
 		return nil, false
 	default:

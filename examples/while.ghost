@@ -1,0 +1,15 @@
+glossary := [
+    "abductive reasoning",
+    "algorithm",
+    "approximation error",
+    "artificial neural network",
+    "autonomous robot"
+]
+
+index := 0
+
+while (index < 5) {
+    print(glossary[index])
+
+    index := index + 1
+}
