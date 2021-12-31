@@ -1,0 +1,16 @@
+package modules
+
+import (
+	"ghostlang.org/x/ghost/object"
+	"ghostlang.org/x/ghost/version"
+)
+
+var Ghost = map[string]*object.LibraryFunction{}
+
+func init() {
+	Ghost = RegisterMethod(Ghost, "version", ghostVersion)
+}
+
+func ghostVersion(args ...object.Object) object.Object {
+	return &object.String{Value: version.Version}
+}
