@@ -119,37 +119,51 @@ func TestIdentifierLiteral(t *testing.T) {
 }
 
 func TestIfExpressions(t *testing.T) {
-	tests := []struct {
-		input string
-	}{
-		{"if (true) { print(true) }"},
+	input := `if (x < y) { x }`
+
+	scanner := scanner.New(input)
+	parser := New(scanner)
+	program := parser.Parse()
+
+	failIfParserHasErrors(t, parser)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("program.Statements does not contain 1 statement. got=%d", len(program.Statements))
 	}
 
-	for _, tt := range tests {
-		scanner := scanner.New(tt.input)
-		parser := New(scanner)
-		program := parser.Parse()
+	statement, ok := program.Statements[0].(*ast.Expression)
 
-		failIfParserHasErrors(t, parser)
-
-		if len(program.Statements) != 1 {
-			t.Fatalf("program.Statements does not contain 1 statement. got=%d", len(program.Statements))
-		}
-
-		statement, ok := program.Statements[0].(*ast.Expression)
-
-		if !ok {
-			t.Fatalf("program.Statements[0] is not ast.Expression. got=%T", program.Statements[0])
-		}
-
-		ifExpression, ok := statement.Expression.(*ast.If)
-
-		if !ok {
-			t.Fatalf("statement is not ast.If. got=%T", statement.Expression)
-		}
-
-		_ = ifExpression
+	if !ok {
+		t.Fatalf("program.Statements[0] is not ast.Expression. got=%T", program.Statements[0])
 	}
+
+	expression, ok := statement.Expression.(*ast.If)
+
+	if !ok {
+		t.Fatalf("statement is not ast.If. got=%T", statement.Expression)
+	}
+
+	if len(expression.Consequence.Statements) != 1 {
+		t.Errorf("consequence is not 1 statement. got=%d", len(expression.Consequence.Statements))
+	}
+
+	consequence, ok := expression.Consequence.Statements[0].(*ast.Expression)
+
+	if !ok {
+		t.Fatalf("Consequence.Statements[0] is not ast.Expression. got=%T", expression.Consequence.Statements[0])
+	}
+
+	if !isIdentifier(t, consequence.Expression, "x") {
+		return
+	}
+
+	if expression.Alternative != nil {
+		t.Errorf("expression.Alternative was not nil. got=%+v", expression.Alternative)
+	}
+}
+
+func TestIfElseExpression(t *testing.T) {
+
 }
 
 func TestInfixExpressions(t *testing.T) {
