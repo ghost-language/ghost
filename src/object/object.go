@@ -5,7 +5,8 @@ type Type string
 
 // Object is the interface for all object values.
 type Object interface {
-	Visitable
+	HasMethods
+	HasVisitor
 	Type() Type
 	String() string
 }
@@ -31,8 +32,14 @@ type Mappable interface {
 	MapKey() MapKey
 }
 
-type Visitable interface {
+type HasMethods interface {
+	Method(method string, args []Object) (Object, bool)
+}
+
+type HasVisitor interface {
 	Accept(Visitor)
 }
 
 type GoFunction func(args ...Object) Object
+
+type ObjectMethod func(value interface{}, args ...Object) (Object, bool)

@@ -11,10 +11,9 @@ import (
 var Math = map[string]*object.LibraryFunction{}
 
 func init() {
-	rand.Seed(time.Now().UnixNano())
-
 	Math = RegisterMethod(Math, "pi", mathPi)
 	Math = RegisterMethod(Math, "random", mathRandom)
+	Math = RegisterMethod(Math, "seed", mathSeed)
 }
 
 func mathPi(args ...object.Object) object.Object {
@@ -45,4 +44,18 @@ func mathRandom(args ...object.Object) object.Object {
 	}
 
 	return &object.Number{Value: decimal.NewFromFloat(number)}
+}
+
+func mathSeed(args ...object.Object) object.Object {
+	var seed int64
+
+	if len(args) == 1 && args[0].Type() == object.NUMBER {
+		seed = args[0].(*object.Number).Value.IntPart()
+	} else {
+		seed = time.Now().UnixNano()
+	}
+
+	rand.Seed(seed)
+
+	return nil
 }

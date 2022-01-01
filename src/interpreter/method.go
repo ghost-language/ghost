@@ -18,14 +18,16 @@ func evaluateMethod(node *ast.Method, env *object.Environment) (object.Object, b
 		return nil, false
 	}
 
+	result, ok := left.Method(node.Method.(*ast.Identifier).Value, arguments)
+
+	if ok {
+		return result, true
+	}
+
 	switch left.(type) {
 	case *object.LibraryModule:
 		method := node.Method.(*ast.Identifier)
 		module := left.(*object.LibraryModule)
-
-		if !ok {
-			return nil, false
-		}
 
 		if function, ok := module.Methods[method.Value]; ok {
 			return unwrapCall(node.Token, function, arguments, env)

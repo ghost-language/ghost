@@ -25,3 +25,7 @@ func (mapObject *Map) String() string {
 func (mapObject *Map) Type() Type {
 	return MAP
 }
+
+func (mapObject *Map) Method(method string, args []Object) (Object, bool) {
+	return nil, false
+}

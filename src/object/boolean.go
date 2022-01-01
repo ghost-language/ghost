@@ -35,3 +35,7 @@ func (boolean *Boolean) MapKey() MapKey {
 
 	return MapKey{Type: boolean.Type(), Value: value}
 }
+
+func (boolean *Boolean) Method(method string, args []Object) (Object, bool) {
+	return nil, false
+}

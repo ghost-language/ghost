@@ -27,3 +27,7 @@ func (function *Function) String() string {
 func (function *Function) Type() Type {
 	return FUNCTION
 }
+
+func (function *Function) Method(method string, args []Object) (Object, bool) {
+	return nil, false
+}

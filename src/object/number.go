@@ -27,3 +27,32 @@ func (number *Number) Type() Type {
 func (number *Number) MapKey() MapKey {
 	return MapKey{Type: number.Type(), Value: uint64(number.Value.IntPart())}
 }
+
+func (number *Number) Method(method string, args []Object) (Object, bool) {
+	switch method {
+	case "round":
+		return number.round(args)
+	case "toString":
+		return number.toString(args)
+	}
+
+	return nil, false
+}
+
+func (number *Number) toString(args []Object) (Object, bool) {
+	return &String{Value: number.Value.String()}, true
+}
+
+func (number *Number) round(args []Object) (Object, bool) {
+	places := &Number{Value: decimal.NewFromInt(0)}
+
+	if len(args) == 1 {
+		if args[0].Type() != NUMBER {
+			return nil, false
+		}
+
+		places = args[0].(*Number)
+	}
+
+	return &Number{Value: number.Value.Round(int32(places.Value.IntPart()))}, true
+}

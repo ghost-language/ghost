@@ -23,3 +23,7 @@ func (libraryModule *LibraryModule) String() string {
 func (libraryModule *LibraryModule) Type() Type {
 	return LIBRARY_MODULE
 }
+
+func (libraryModule *LibraryModule) Method(method string, args []Object) (Object, bool) {
+	return nil, false
+}

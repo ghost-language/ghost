@@ -23,3 +23,7 @@ func (libraryFunction *LibraryFunction) String() string {
 func (libraryFunction *LibraryFunction) Type() Type {
 	return LIBRARY_FUNCTION
 }
+
+func (libraryFunction *LibraryFunction) Method(method string, args []Object) (Object, bool) {
+	return nil, false
+}

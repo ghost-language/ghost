@@ -37,3 +37,7 @@ func (list *List) String() string {
 func (list *List) Type() Type {
 	return LIST
 }
+
+func (list *List) Method(method string, args []Object) (Object, bool) {
+	return nil, false
+}

@@ -18,3 +18,7 @@ func (null *Null) String() string {
 func (null *Null) Type() Type {
 	return NULL
 }
+
+func (null *Null) Method(method string, args []Object) (Object, bool) {
+	return nil, false
+}
