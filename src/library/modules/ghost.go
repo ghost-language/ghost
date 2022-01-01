@@ -8,7 +8,7 @@ import (
 var Ghost = map[string]*object.LibraryFunction{}
 
 func init() {
-	Ghost = RegisterMethod(Ghost, "version", ghostVersion)
+	RegisterMethod(Ghost, "version", ghostVersion)
 }
 
 func ghostVersion(args ...object.Object) object.Object {

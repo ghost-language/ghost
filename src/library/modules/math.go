@@ -11,9 +11,9 @@ import (
 var Math = map[string]*object.LibraryFunction{}
 
 func init() {
-	Math = RegisterMethod(Math, "pi", mathPi)
-	Math = RegisterMethod(Math, "random", mathRandom)
-	Math = RegisterMethod(Math, "seed", mathSeed)
+	RegisterMethod(Math, "pi", mathPi)
+	RegisterMethod(Math, "random", mathRandom)
+	RegisterMethod(Math, "seed", mathSeed)
 }
 
 func mathPi(args ...object.Object) object.Object {
