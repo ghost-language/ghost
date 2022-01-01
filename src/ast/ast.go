@@ -18,6 +18,7 @@ type Visitor interface {
 	visitBoolean(*Boolean)
 	visitCall(*Call)
 	visitExpression(*Expression)
+	visitFor(*For)
 	visitFunction(*Function)
 	visitIdentifier(*Identifier)
 	visitIf(*If)

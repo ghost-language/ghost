@@ -21,3 +21,7 @@ func (environment *Environment) Set(name string, value Object) Object {
 
 	return value
 }
+
+func (environment *Environment) Delete(name string) {
+	delete(environment.store, name)
+}

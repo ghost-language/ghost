@@ -81,6 +81,48 @@ func TestBooleanLiteral(t *testing.T) {
 	}
 }
 
+func TestForExpression(t *testing.T) {
+	input := `for (x := 0; x < 10; x := x + 1) { x }`
+
+	scanner := scanner.New(input)
+	parser := New(scanner)
+	program := parser.Parse()
+
+	failIfParserHasErrors(t, parser)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("program.Statements does not contain 1 Statement. got=%d", len(program.Statements))
+	}
+
+	statement, ok := program.Statements[0].(*ast.Expression)
+
+	if !ok {
+		t.Fatalf("program.Statements[0] is not ast.Expression. got=%T", program.Statements[0])
+	}
+
+	expression, ok := statement.Expression.(*ast.For)
+
+	if !ok {
+		t.Fatalf("statement.Expression is not ast.For. got=%T", statement.Expression)
+	}
+
+	if !isIdentifier(t, expression.Identifier, "x") {
+		return
+	}
+
+	if _, ok = expression.Initializer.(*ast.Assign); !ok {
+		t.Fatalf("expression.Initializer is not ast.Assign. got=%T", expression.Initializer)
+	}
+
+	if _, ok = expression.Increment.(*ast.Assign); !ok {
+		t.Fatalf("expression.Increment is not ast.Assign. got=%T", expression.Increment)
+	}
+
+	if _, ok = expression.Block.Statements[0].(*ast.Expression); !ok {
+		t.Fatalf("expression.Block.Statements[0] is not ast.Expression. got=%T", expression.Block.Statements[0])
+	}
+}
+
 func TestIdentifierLiteral(t *testing.T) {
 	tests := []struct {
 		input    string
@@ -143,6 +185,10 @@ func TestIfExpressions(t *testing.T) {
 		t.Fatalf("statement is not ast.If. got=%T", statement.Expression)
 	}
 
+	if !isInfixExpression(t, expression.Condition, "x", "<", "y") {
+		return
+	}
+
 	if len(expression.Consequence.Statements) != 1 {
 		t.Errorf("consequence is not 1 statement. got=%d", len(expression.Consequence.Statements))
 	}
@@ -162,8 +208,62 @@ func TestIfExpressions(t *testing.T) {
 	}
 }
 
-func TestIfElseExpression(t *testing.T) {
+func TestIfElseExpressions(t *testing.T) {
+	input := `if (x < y) { x } else { y }`
 
+	scanner := scanner.New(input)
+	parser := New(scanner)
+	program := parser.Parse()
+
+	failIfParserHasErrors(t, parser)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("program.Statements does not contain 1 statement. got=%d", len(program.Statements))
+	}
+
+	statement, ok := program.Statements[0].(*ast.Expression)
+
+	if !ok {
+		t.Fatalf("program.Statements[0] is not ast.Expression. got=%T", program.Statements[0])
+	}
+
+	expression, ok := statement.Expression.(*ast.If)
+
+	if !ok {
+		t.Fatalf("statement is not ast.If. got=%T", statement.Expression)
+	}
+
+	if !isInfixExpression(t, expression.Condition, "x", "<", "y") {
+		return
+	}
+
+	if len(expression.Consequence.Statements) != 1 {
+		t.Errorf("consequence is not 1 statement. got=%d", len(expression.Consequence.Statements))
+	}
+
+	consequence, ok := expression.Consequence.Statements[0].(*ast.Expression)
+
+	if !ok {
+		t.Fatalf("Consequence.Statements[0] is not ast.Expression. got=%T", expression.Consequence.Statements[0])
+	}
+
+	if !isIdentifier(t, consequence.Expression, "x") {
+		return
+	}
+
+	if len(expression.Alternative.Statements) != 1 {
+		t.Errorf("expression.Alternative is not 1 statement. got=%d", len(expression.Alternative.Statements))
+	}
+
+	alternative, ok := expression.Alternative.Statements[0].(*ast.Expression)
+
+	if !ok {
+		t.Fatalf("Alternative.Statements[0] is not ast.Expression. got=%T", expression.Alternative.Statements[0])
+	}
+
+	if !isIdentifier(t, alternative.Expression, "y") {
+		return
+	}
 }
 
 func TestInfixExpressions(t *testing.T) {
@@ -177,6 +277,7 @@ func TestInfixExpressions(t *testing.T) {
 		{"5 - 5", 5, "-", 5},
 		{"5 * 5", 5, "*", 5},
 		{"5 / 5", 5, "/", 5},
+		{"5 % 5", 5, "%", 5},
 		{"5 > 5", 5, ">", 5},
 		{"5 < 5", 5, "<", 5},
 		{"5 == 5", 5, "==", 5},
@@ -488,20 +589,6 @@ func failIfParserHasErrors(t *testing.T, parser *Parser) {
 	t.FailNow()
 }
 
-func isNumberLiteral(t *testing.T, expression ast.ExpressionNode, value int64) bool {
-	number, ok := expression.(*ast.Number)
-
-	if !ok {
-		t.Errorf("expression is not ast.Number. got=%T", expression)
-	}
-
-	if number.Value.IntPart() != value {
-		t.Errorf("number.Value is not %d. got=%d", value, number.Value.IntPart())
-	}
-
-	return true
-}
-
 func isIdentifier(t *testing.T, expression ast.ExpressionNode, value string) bool {
 	identifier, ok := expression.(*ast.Identifier)
 
@@ -511,6 +598,61 @@ func isIdentifier(t *testing.T, expression ast.ExpressionNode, value string) boo
 
 	if identifier.Value != value {
 		t.Errorf("identifier.Value is not %s. got=%s", value, identifier.Value)
+	}
+
+	return true
+}
+
+func isInfixExpression(t *testing.T, expression ast.ExpressionNode, left interface{}, operator string, right interface{}) bool {
+	operatorExpression, ok := expression.(*ast.Infix)
+
+	if !ok {
+		t.Errorf("expression is not ast.Infix. got=%T(%s)", expression, expression)
+		return false
+	}
+
+	if !isLiteral(t, operatorExpression.Left, left) {
+		return false
+	}
+
+	if operatorExpression.Operator != operator {
+		t.Errorf("expression.Operator is not '%s'. got=%q", operator, operatorExpression.Operator)
+		return false
+	}
+
+	if !isLiteral(t, operatorExpression.Right, right) {
+		return false
+	}
+
+	return true
+}
+
+func isLiteral(t *testing.T, expression ast.ExpressionNode, expected interface{}) bool {
+	switch value := expected.(type) {
+	case int:
+		return isNumberLiteral(t, expression, int64(value))
+	case int64:
+		return isNumberLiteral(t, expression, int64(value))
+	case float64:
+		return isNumberLiteral(t, expression, int64(value))
+	case string:
+		return isIdentifier(t, expression, value)
+	}
+
+	t.Errorf("type of expression is not a literal. got=%T", expression)
+
+	return false
+}
+
+func isNumberLiteral(t *testing.T, expression ast.ExpressionNode, value int64) bool {
+	number, ok := expression.(*ast.Number)
+
+	if !ok {
+		t.Errorf("expression is not ast.Number. got=%T", expression)
+	}
+
+	if number.Value.IntPart() != value {
+		t.Errorf("number.Value is not %d. got=%d", value, number.Value.IntPart())
 	}
 
 	return true

@@ -14,7 +14,7 @@ func (parser *Parser) parseExpression(precedence int) ast.ExpressionNode {
 
 	leftExpression := prefix()
 
-	for precedence < parser.nextTokenPrecedence() {
+	for !parser.nextTokenIs(token.SEMICOLON) && precedence < parser.nextTokenPrecedence() {
 		infix := parser.infixParserFns[parser.nextToken.Type]
 
 		if infix == nil {
