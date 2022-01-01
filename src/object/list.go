@@ -38,6 +38,7 @@ func (list *List) Type() Type {
 	return LIST
 }
 
+// Method defines the set of methods available on list objects.
 func (list *List) Method(method string, args []Object) (Object, bool) {
 	return nil, false
 }

@@ -28,6 +28,7 @@ func (function *Function) Type() Type {
 	return FUNCTION
 }
 
+// Method defines the set of methods available on function objects.
 func (function *Function) Method(method string, args []Object) (Object, bool) {
 	return nil, false
 }

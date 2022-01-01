@@ -19,6 +19,7 @@ func (null *Null) Type() Type {
 	return NULL
 }
 
+// Method defines the set of methods available on null objects.
 func (null *Null) Method(method string, args []Object) (Object, bool) {
 	return nil, false
 }

@@ -36,6 +36,7 @@ func (boolean *Boolean) MapKey() MapKey {
 	return MapKey{Type: boolean.Type(), Value: value}
 }
 
+// Method defines the set of methods available on boolean objects.
 func (boolean *Boolean) Method(method string, args []Object) (Object, bool) {
 	return nil, false
 }

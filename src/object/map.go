@@ -26,6 +26,7 @@ func (mapObject *Map) Type() Type {
 	return MAP
 }
 
+// Method defines the set of methods available on map objects.
 func (mapObject *Map) Method(method string, args []Object) (Object, bool) {
 	return nil, false
 }

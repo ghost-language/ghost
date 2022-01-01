@@ -24,6 +24,7 @@ func (libraryModule *LibraryModule) Type() Type {
 	return LIBRARY_MODULE
 }
 
+// Method defines the set of methods available on library module objects.
 func (libraryModule *LibraryModule) Method(method string, args []Object) (Object, bool) {
 	return nil, false
 }

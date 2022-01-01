@@ -28,6 +28,7 @@ func (number *Number) MapKey() MapKey {
 	return MapKey{Type: number.Type(), Value: uint64(number.Value.IntPart())}
 }
 
+// Method defines the set of methods available on number objects.
 func (number *Number) Method(method string, args []Object) (Object, bool) {
 	switch method {
 	case "round":
@@ -38,6 +39,9 @@ func (number *Number) Method(method string, args []Object) (Object, bool) {
 
 	return nil, false
 }
+
+// =============================================================================
+// Object methods
 
 func (number *Number) toString(args []Object) (Object, bool) {
 	return &String{Value: number.Value.String()}, true
