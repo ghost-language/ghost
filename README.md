@@ -1,7 +1,8 @@
 # The Ghost Programming Language
+[![Test](https://github.com/ghost-language/ghost/actions/workflows/test.yml/badge.svg)](https://github.com/ghost-language/ghost/actions/workflows/test.yml)
 Ghost is a small, object-oriented, embeddable toy scripting language. While object-oriented, Ghost also supports procedural and functional programming styles as well.
 
-Ghost is dynamically typed, runs by a tree-walking interpreter, and has automatic memory management thanks to its implementation through the Go programming language. Ghost's implementation in Go has no dependencies.
+Ghost is dynamically typed, runs by a tree-walking interpreter, and has automatic memory management thanks to its implementation through the Go programming language.
 
 ## Status
 > Currently in active development. Not feature complete.
@@ -38,7 +39,7 @@ You may download the compiled binaries for your platform from our GitHub [releas
 $  git clone git@github.com:ghost-language/ghost.git
 $  cd ghost
 $  make
-   Ghost (dev-nightly)
+   Ghost (x.x)
    Press Ctrl + C to exit
 
 >>
@@ -52,7 +53,7 @@ Ghost includes a simple REPL to write and execute Ghost code directly in your te
 
 ```
 $  ghost
-   Ghost (dev-nightly)
+   Ghost (x.x)
    Press Ctrl + C to exit
 
 >>
