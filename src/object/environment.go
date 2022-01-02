@@ -7,6 +7,7 @@ import (
 
 type Environment struct {
 	store  map[string]Object
+	outer  *Environment
 	writer io.Writer
 }
 
@@ -16,8 +17,20 @@ func NewEnvironment() *Environment {
 	return &Environment{store: store, writer: os.Stdout}
 }
 
+func NewEnclosedEnvironment(outer *Environment) *Environment {
+	environment := NewEnvironment()
+	environment.outer = outer
+	environment.writer = outer.writer
+
+	return environment
+}
+
 func (environment *Environment) Get(name string) (Object, bool) {
 	object, ok := environment.store[name]
+
+	if !ok && environment.outer != nil {
+		object, ok = environment.outer.Get(name)
+	}
 
 	return object, ok
 }

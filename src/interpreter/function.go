@@ -21,7 +21,7 @@ func evaluateFunction(node *ast.Function, env *object.Environment) (object.Objec
 }
 
 func createFunctionEnvironment(function *object.Function, arguments []object.Object) *object.Environment {
-	env := object.NewEnvironment()
+	env := object.NewEnclosedEnvironment(function.Environment)
 
 	for key, val := range function.Defaults {
 		result, _ := Evaluate(val, env)

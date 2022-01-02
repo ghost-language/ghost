@@ -32,7 +32,7 @@ func (function *Function) Method(method string, args []Object) (Object, bool) {
 }
 
 func (function *Function) Evaluate(args []Object, writer io.Writer) (Object, bool) {
-	env := NewEnvironment()
+	env := function.environment(args)
 
 	if writer != nil {
 		env.SetWriter(writer)
@@ -41,4 +41,21 @@ func (function *Function) Evaluate(args []Object, writer io.Writer) (Object, boo
 	result, ok := evaluator(function.Body, env)
 
 	return result, ok
+}
+
+func (function *Function) environment(arguments []Object) *Environment {
+	env := NewEnclosedEnvironment(function.Environment)
+
+	for key, val := range function.Defaults {
+		result, _ := evaluator(val, env)
+		env.Set(key, result)
+	}
+
+	for index, parameter := range function.Parameters {
+		if index < len(arguments) {
+			env.Set(parameter.Value, arguments[index])
+		}
+	}
+
+	return env
 }

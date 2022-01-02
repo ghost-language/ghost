@@ -19,12 +19,10 @@ func init() {
 }
 
 func httpHandle(env *object.Environment, args ...object.Object) object.Object {
-	// path
 	if args[0].Type() != object.STRING {
 		return nil
 	}
 
-	// callback
 	if args[1].Type() != object.FUNCTION {
 		return nil
 	}
@@ -32,8 +30,13 @@ func httpHandle(env *object.Environment, args ...object.Object) object.Object {
 	path := args[0].(*object.String).Value
 
 	http.HandleFunc(path, func(writer http.ResponseWriter, request *http.Request) {
+		env.SetWriter(writer)
+
+		callbackArgs := make([]object.Object, 1)
+		// callbackArgs = append(callbackArgs, &object.String{Value: "bar"})
+
 		callback := args[1].(*object.Function)
-		callback.Evaluate(nil, writer)
+		callback.Evaluate(callbackArgs, writer)
 	})
 
 	return nil

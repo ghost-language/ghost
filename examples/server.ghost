@@ -1,5 +1,10 @@
+function test() {
+    print("test")
+}
+
 http.handle("/hello", function() {
-    print("hello!!!")
+    print("hello world")
+    test()
 })
 
 http.listen(3000, function() {
