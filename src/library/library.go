@@ -10,13 +10,13 @@ var Functions = map[string]*object.LibraryFunction{}
 var Modules = map[string]*object.LibraryModule{}
 
 func init() {
+	RegisterModule("console", modules.Console)
 	RegisterModule("ghost", modules.Ghost)
 	RegisterModule("http", modules.Http)
 	RegisterModule("math", modules.Math)
 	RegisterModule("os", modules.Os)
 
 	RegisterFunction("print", functions.Print)
-	RegisterFunction("readLine", functions.ReadLine)
 	RegisterFunction("type", functions.Type)
 }
 
