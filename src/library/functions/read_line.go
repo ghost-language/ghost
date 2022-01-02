@@ -8,7 +8,7 @@ import (
 	"ghostlang.org/x/ghost/object"
 )
 
-func ReadLine(args ...object.Object) object.Object {
+func ReadLine(env *object.Environment, args ...object.Object) object.Object {
 	reader := bufio.NewReader(os.Stdin)
 
 	if len(args) == 1 {

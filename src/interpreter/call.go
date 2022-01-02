@@ -27,7 +27,7 @@ func evaluateCall(node *ast.Call, env *object.Environment) (object.Object, bool)
 func unwrapCall(tok token.Token, callee object.Object, arguments []object.Object, env *object.Environment) (object.Object, bool) {
 	switch callee := callee.(type) {
 	case *object.LibraryFunction:
-		if result := callee.Function(arguments...); result != nil {
+		if result := callee.Function(env, arguments...); result != nil {
 			return result, true
 		}
 

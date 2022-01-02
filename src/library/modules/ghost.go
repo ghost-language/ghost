@@ -11,6 +11,6 @@ func init() {
 	RegisterMethod(Ghost, "version", ghostVersion)
 }
 
-func ghostVersion(args ...object.Object) object.Object {
+func ghostVersion(env *object.Environment, args ...object.Object) object.Object {
 	return &object.String{Value: version.Version}
 }

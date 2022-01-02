@@ -7,7 +7,7 @@ import (
 	"ghostlang.org/x/ghost/object"
 )
 
-func Print(args ...object.Object) object.Object {
+func Print(env *object.Environment, args ...object.Object) object.Object {
 	if len(args) > 0 {
 		str := make([]string, 0)
 
@@ -15,9 +15,9 @@ func Print(args ...object.Object) object.Object {
 			str = append(str, value.String())
 		}
 
-		fmt.Println(strings.Join(str, " "))
+		fmt.Fprintln(env.GetWriter(), strings.Join(str, " "))
 	} else {
-		fmt.Println()
+		fmt.Fprintln(env.GetWriter())
 	}
 
 	return nil

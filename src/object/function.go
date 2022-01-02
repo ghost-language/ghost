@@ -1,6 +1,8 @@
 package object
 
 import (
+	"io"
+
 	"ghostlang.org/x/ghost/ast"
 )
 
@@ -29,8 +31,13 @@ func (function *Function) Method(method string, args []Object) (Object, bool) {
 	return nil, false
 }
 
-func (function *Function) Evaluate(args []Object) (Object, bool) {
+func (function *Function) Evaluate(args []Object, writer io.Writer) (Object, bool) {
 	env := NewEnvironment()
+
+	if writer != nil {
+		env.SetWriter(writer)
+	}
+
 	result, ok := evaluator(function.Body, env)
 
 	return result, ok

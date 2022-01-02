@@ -2,7 +2,6 @@ package modules
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
@@ -19,7 +18,7 @@ func init() {
 	RegisterMethod(Http, "listen", httpListen)
 }
 
-func httpHandle(args ...object.Object) object.Object {
+func httpHandle(env *object.Environment, args ...object.Object) object.Object {
 	// path
 	if args[0].Type() != object.STRING {
 		return nil
@@ -32,14 +31,15 @@ func httpHandle(args ...object.Object) object.Object {
 
 	path := args[0].(*object.String).Value
 
-	http.HandleFunc(path, func(w http.ResponseWriter, req *http.Request) {
-		fmt.Fprintf(w, "hello\n")
+	http.HandleFunc(path, func(writer http.ResponseWriter, request *http.Request) {
+		callback := args[1].(*object.Function)
+		callback.Evaluate(nil, writer)
 	})
 
 	return nil
 }
 
-func httpListen(args ...object.Object) object.Object {
+func httpListen(env *object.Environment, args ...object.Object) object.Object {
 	if args[0].Type() != object.NUMBER {
 		return nil
 	}
@@ -77,7 +77,7 @@ func httpListen(args ...object.Object) object.Object {
 	if len(args) == 2 {
 		callback := args[1].(*object.Function)
 
-		callback.Evaluate(nil)
+		callback.Evaluate(nil, nil)
 	}
 
 	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {

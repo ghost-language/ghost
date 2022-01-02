@@ -1,13 +1,19 @@
 package object
 
+import (
+	"io"
+	"os"
+)
+
 type Environment struct {
-	store map[string]Object
+	store  map[string]Object
+	writer io.Writer
 }
 
 func NewEnvironment() *Environment {
 	store := make(map[string]Object)
 
-	return &Environment{store: store}
+	return &Environment{store: store, writer: os.Stdout}
 }
 
 func (environment *Environment) Get(name string) (Object, bool) {
@@ -24,4 +30,12 @@ func (environment *Environment) Set(name string, value Object) Object {
 
 func (environment *Environment) Delete(name string) {
 	delete(environment.store, name)
+}
+
+func (environment *Environment) SetWriter(writer io.Writer) {
+	environment.writer = writer
+}
+
+func (environment *Environment) GetWriter() io.Writer {
+	return environment.writer
 }

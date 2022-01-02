@@ -6,7 +6,7 @@ import (
 	"ghostlang.org/x/ghost/object"
 )
 
-func Type(args ...object.Object) object.Object {
+func Type(env *object.Environment, args ...object.Object) object.Object {
 	if len(args) != 1 {
 		// TODO: error
 		return nil

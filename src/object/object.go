@@ -29,7 +29,7 @@ type HasMethods interface {
 	Method(method string, args []Object) (Object, bool)
 }
 
-type GoFunction func(args ...Object) Object
+type GoFunction func(env *Environment, args ...Object) Object
 type ObjectMethod func(value interface{}, args ...Object) (Object, bool)
 
 func SetEvaluator(e func(node ast.Node, env *Environment) (Object, bool)) {

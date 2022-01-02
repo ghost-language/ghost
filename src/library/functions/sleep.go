@@ -7,7 +7,7 @@ import (
 	"ghostlang.org/x/ghost/value"
 )
 
-func Sleep(args ...object.Object) object.Object {
+func Sleep(env *object.Environment, args ...object.Object) object.Object {
 	if len(args) != 1 {
 		// TODO: error
 		return nil

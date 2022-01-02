@@ -1,5 +1,5 @@
 http.handle("/hello", function() {
-    print("hi there")
+    print("hello!!!")
 })
 
 http.listen(3000, function() {

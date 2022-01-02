@@ -24,7 +24,7 @@ func init() {
 }
 
 // mathAbs returns the absolute value of the referenced number.
-func mathAbs(args ...object.Object) object.Object {
+func mathAbs(env *object.Environment, args ...object.Object) object.Object {
 	if len(args) != 1 {
 		return nil
 	}
@@ -39,7 +39,7 @@ func mathAbs(args ...object.Object) object.Object {
 }
 
 // mathCos returns the cosine value of the referenced number.
-func mathCos(args ...object.Object) object.Object {
+func mathCos(env *object.Environment, args ...object.Object) object.Object {
 	if len(args) != 1 {
 		return nil
 	}
@@ -54,7 +54,7 @@ func mathCos(args ...object.Object) object.Object {
 }
 
 // mathisNegative returns true if the referenced number is negative.
-func mathIsNegative(args ...object.Object) object.Object {
+func mathIsNegative(env *object.Environment, args ...object.Object) object.Object {
 	if len(args) != 1 {
 		return nil
 	}
@@ -69,7 +69,7 @@ func mathIsNegative(args ...object.Object) object.Object {
 }
 
 // mathisPositive returns true if the referenced number is positive.
-func mathIsPositive(args ...object.Object) object.Object {
+func mathIsPositive(env *object.Environment, args ...object.Object) object.Object {
 	if len(args) != 1 {
 		return nil
 	}
@@ -84,7 +84,7 @@ func mathIsPositive(args ...object.Object) object.Object {
 }
 
 // mathisZero returns true if the referenced number is zero.
-func mathIsZero(args ...object.Object) object.Object {
+func mathIsZero(env *object.Environment, args ...object.Object) object.Object {
 	if len(args) != 1 {
 		return nil
 	}
@@ -99,7 +99,7 @@ func mathIsZero(args ...object.Object) object.Object {
 }
 
 // mathPi returns the value of pi.
-func mathPi(args ...object.Object) object.Object {
+func mathPi(env *object.Environment, args ...object.Object) object.Object {
 	pi, _ := decimal.NewFromString("3.14159265358979323846264338327950288419716939937510582097494459")
 
 	return &object.Number{Value: pi}
@@ -110,7 +110,7 @@ func mathPi(args ...object.Object) object.Object {
 // pseudo-random number will be returned in the range (0, a). When called with
 // two numbers (a, b), a pseudo-random number will be returned in the
 // range (a, b).
-func mathRandom(args ...object.Object) object.Object {
+func mathRandom(env *object.Environment, args ...object.Object) object.Object {
 	min := float64(0)
 	max := float64(0)
 
@@ -137,7 +137,7 @@ func mathRandom(args ...object.Object) object.Object {
 // mathSeed sets the referenced number as the seed for the pseudo-random
 // generator used by math.random(). If no value is passed, the current unix
 // nano timestamp will be used.
-func mathSeed(args ...object.Object) object.Object {
+func mathSeed(env *object.Environment, args ...object.Object) object.Object {
 	var seed int64
 
 	if len(args) == 1 && args[0].Type() == object.NUMBER {
@@ -152,7 +152,7 @@ func mathSeed(args ...object.Object) object.Object {
 }
 
 // mathSin returns the sine value of the referenced number.
-func mathSin(args ...object.Object) object.Object {
+func mathSin(env *object.Environment, args ...object.Object) object.Object {
 	if len(args) != 1 {
 		return nil
 	}
@@ -167,7 +167,7 @@ func mathSin(args ...object.Object) object.Object {
 }
 
 // mathTan returns the tangent value of the referenced number.
-func mathTan(args ...object.Object) object.Object {
+func mathTan(env *object.Environment, args ...object.Object) object.Object {
 	if len(args) != 1 {
 		return nil
 	}
