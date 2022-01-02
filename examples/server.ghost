@@ -1,5 +1,7 @@
+print("this should show in the console")
+
 function test() {
-    print("test")
+    print("this should should in the browser")
 }
 
 http.handle("/hello", function() {
