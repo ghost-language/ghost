@@ -1,8 +1,6 @@
 package ghost
 
 import (
-	"os"
-
 	"ghostlang.org/x/ghost/error"
 	"ghostlang.org/x/ghost/evaluator"
 	"ghostlang.org/x/ghost/interpreter"
@@ -14,10 +12,9 @@ import (
 
 type Ghost struct {
 	FatalError  bool
-	Source      string
+	source      string
 	Environment *object.Environment
 	File        string
-	Directory   string
 }
 
 func New() *Ghost {
@@ -25,17 +22,23 @@ func New() *Ghost {
 		Environment: object.NewEnvironment(),
 	}
 
-	ghost.resetWorkingDirectory()
-
 	return ghost
 }
 
-func (ghost *Ghost) resetWorkingDirectory() {
-	ghost.Directory, _ = os.Getwd()
+func (ghost *Ghost) SetDirectory(directory string) {
+	ghost.Environment.SetDirectory(directory)
+}
+
+func (ghost *Ghost) GetDirectory() string {
+	return ghost.Environment.GetDirectory()
+}
+
+func (ghost *Ghost) SetSource(source string) {
+	ghost.source = source
 }
 
 func (ghost *Ghost) Execute() object.Object {
-	scanner := scanner.New(ghost.Source)
+	scanner := scanner.New(ghost.source)
 	parser := parser.New(scanner)
 	program := parser.Parse()
 

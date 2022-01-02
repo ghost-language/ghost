@@ -6,9 +6,10 @@ import (
 )
 
 type Environment struct {
-	store  map[string]Object
-	outer  *Environment
-	writer io.Writer
+	store     map[string]Object
+	outer     *Environment
+	writer    io.Writer
+	directory string
 }
 
 func NewEnvironment() *Environment {
@@ -55,4 +56,12 @@ func (environment *Environment) SetWriter(writer io.Writer) {
 
 func (environment *Environment) GetWriter() io.Writer {
 	return environment.writer
+}
+
+func (environment *Environment) SetDirectory(directory string) {
+	environment.directory = directory
+}
+
+func (environment *Environment) GetDirectory() string {
+	return environment.directory
 }

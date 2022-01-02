@@ -13,6 +13,7 @@ func init() {
 	RegisterModule("console", modules.Console)
 	RegisterModule("ghost", modules.Ghost)
 	RegisterModule("http", modules.Http)
+	RegisterModule("io", modules.Io)
 	RegisterModule("math", modules.Math)
 	RegisterModule("os", modules.Os)
 

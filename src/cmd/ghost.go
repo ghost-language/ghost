@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path"
+	"path/filepath"
 	"time"
 
 	"ghostlang.org/x/ghost/error"
@@ -20,7 +21,7 @@ var (
 	flagHelp      bool
 	flagVersion   bool
 	flagBenchmark bool
-	flagTokens    bool
+	flagTime      bool
 )
 
 func init() {
@@ -33,7 +34,7 @@ func init() {
 	flag.BoolVar(&flagHelp, "h", false, "display help information")
 	flag.BoolVar(&flagVersion, "v", false, "display version information")
 	flag.BoolVar(&flagBenchmark, "b", false, "run benchmark tests against Ghost and Go")
-	flag.BoolVar(&flagTokens, "t", false, "display tokens of passed source file")
+	flag.BoolVar(&flagTime, "t", false, "display how long the program ran for")
 }
 
 func main() {
@@ -84,24 +85,17 @@ func main() {
 		io.Copy(sourceBuffer, sourceFile)
 		source := sourceBuffer.String()
 
-		// directory, _ := filepath.Abs(filepath.Dir(args[0]))
+		directory, _ := filepath.Abs(filepath.Dir(args[0]))
 
 		ghost := ghost.New()
-		ghost.Source = source
+		ghost.SetSource(source)
+		ghost.SetDirectory(directory)
 		ghost.Execute()
 
 		elapsed := time.Since(start)
 
-		if flagTokens {
-			log.Info("coming soon")
-			// scanner := scanner.New(ghost.Source)
-			// tokens := scanner.ScanTokens()
-
-			// for index, token := range tokens {
-			// 	log.Info("[%03d] - %s: %s", index, token.Type, token.Lexeme)
-			// }
+		if flagTime {
+			log.Info("(executed in: %s)\n", elapsed)
 		}
-
-		log.Info("(executed in: %s)\n", elapsed)
 	}
 }

@@ -1,0 +1,3 @@
+io.append("./log.txt", "message from ghost")
+
+console.log("Log file appended to.")

@@ -57,7 +57,11 @@ func Start(in io.Reader, out io.Writer) {
 }
 
 func evaluate(ghost *ghost.Ghost, source string) {
-	ghost.Source = source
+	directory, _ := os.Getwd()
+
+	ghost.SetSource(source)
+	ghost.SetDirectory(directory)
+
 	result := ghost.Execute()
 
 	if result != nil {
