@@ -12,7 +12,3 @@ type Function struct {
 	Defaults   map[string]ExpressionNode
 	Body       *Block
 }
-
-func (node *Function) Accept(v Visitor) {
-	v.visitFunction(node)
-}

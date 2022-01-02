@@ -7,7 +7,3 @@ type Identifier struct {
 	Token token.Token
 	Value string
 }
-
-func (node *Identifier) Accept(v Visitor) {
-	v.visitIdentifier(node)
-}

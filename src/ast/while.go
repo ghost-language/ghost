@@ -8,7 +8,3 @@ type While struct {
 	Condition   ExpressionNode
 	Consequence *Block
 }
-
-func (node *While) Accept(v Visitor) {
-	v.visitWhile(node)
-}

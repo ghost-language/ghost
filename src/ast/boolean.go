@@ -7,7 +7,3 @@ type Boolean struct {
 	Token token.Token
 	Value bool
 }
-
-func (node *Boolean) Accept(v Visitor) {
-	v.visitBoolean(node)
-}

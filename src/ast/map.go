@@ -7,7 +7,3 @@ type Map struct {
 	Token token.Token
 	Pairs map[ExpressionNode]ExpressionNode
 }
-
-func (node *Map) Accept(v Visitor) {
-	v.visitMap(node)
-}

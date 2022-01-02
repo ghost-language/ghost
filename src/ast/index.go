@@ -8,7 +8,3 @@ type Index struct {
 	Left  ExpressionNode
 	Index ExpressionNode
 }
-
-func (node *Index) Accept(v Visitor) {
-	v.visitIndex(node)
-}

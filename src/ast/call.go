@@ -8,7 +8,3 @@ type Call struct {
 	Callee    ExpressionNode
 	Arguments []ExpressionNode
 }
-
-func (node *Call) Accept(v Visitor) {
-	v.visitCall(node)
-}

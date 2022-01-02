@@ -7,7 +7,3 @@ type List struct {
 	Token    token.Token
 	Elements []ExpressionNode
 }
-
-func (node *List) Accept(v Visitor) {
-	v.visitList(node)
-}

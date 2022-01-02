@@ -11,7 +11,3 @@ type For struct {
 	Increment   StatementNode
 	Block       *Block
 }
-
-func (node *For) Accept(v Visitor) {
-	v.visitFor(node)
-}

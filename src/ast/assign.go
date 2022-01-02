@@ -8,7 +8,3 @@ type Assign struct {
 	Name  *Identifier
 	Value ExpressionNode
 }
-
-func (node *Assign) Accept(v Visitor) {
-	v.visitAssign(node)
-}

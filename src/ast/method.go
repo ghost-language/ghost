@@ -9,7 +9,3 @@ type Method struct {
 	Method    ExpressionNode
 	Arguments []ExpressionNode
 }
-
-func (node *Method) Accept(v Visitor) {
-	v.visitMethod(node)
-}
