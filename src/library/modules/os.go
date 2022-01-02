@@ -30,7 +30,7 @@ func osArgs(env *object.Environment, args ...object.Object) object.Object {
 }
 
 func osClock(env *object.Environment, args ...object.Object) object.Object {
-	seconds := decimal.NewFromInt(time.Now().Unix())
+	seconds := decimal.NewFromInt(time.Now().UnixNano())
 
 	return &object.Number{Value: seconds}
 }

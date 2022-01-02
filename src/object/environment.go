@@ -63,5 +63,11 @@ func (environment *Environment) SetDirectory(directory string) {
 }
 
 func (environment *Environment) GetDirectory() string {
-	return environment.directory
+	directory := environment.directory
+
+	if directory == "" && environment.outer != nil {
+		directory = environment.outer.GetDirectory()
+	}
+
+	return directory
 }

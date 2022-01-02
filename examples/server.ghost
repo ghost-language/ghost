@@ -1,12 +1,13 @@
-print("this should show in the console")
+http.handle("/", function() {
+    start := os.clock()
+    view := io.read("views/index.html")
 
-function test() {
-    print("this should should in the browser")
-}
+    print(view)
 
-http.handle("/hello", function() {
-    print("hello world")
-    test()
+    end := os.clock()
+    total := ((end - start) / 1e6).toString()
+
+    console.log("-->", total, "ms")
 })
 
 http.listen(3000, function() {
