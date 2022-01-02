@@ -1,0 +1,12 @@
+http.handle("/hello", function() {
+    print("hi there")
+})
+
+http.listen(3000, function() {
+    a := 3
+    b := 10
+    pi := math.pi().round(2)
+
+    print(a * b * pi)
+    print("Server started at http://localhost:3000 🌱")
+})

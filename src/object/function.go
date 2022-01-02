@@ -14,8 +14,8 @@ type Function struct {
 	Environment *Environment
 }
 
-func (object *Function) Accept(v Visitor) {
-	v.visitFunction(object)
+func (object *Function) Accept(v Visitor) (Object, bool) {
+	return v.VisitFunction(object)
 }
 
 // String represents the function object's value as a string.
@@ -31,4 +31,11 @@ func (function *Function) Type() Type {
 // Method defines the set of methods available on function objects.
 func (function *Function) Method(method string, args []Object) (Object, bool) {
 	return nil, false
+}
+
+func (function *Function) Evaluate(args []Object) (Object, bool) {
+	env := NewEnvironment()
+	result, ok := evaluator(function.Body, env)
+
+	return result, ok
 }

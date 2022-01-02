@@ -9,8 +9,8 @@ type Number struct {
 	Value decimal.Decimal
 }
 
-func (object *Number) Accept(v Visitor) {
-	v.visitNumber(object)
+func (object *Number) Accept(v Visitor) (Object, bool) {
+	return v.VisitNumber(object)
 }
 
 // String represents the number object's value as a string.

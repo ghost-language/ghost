@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"ghostlang.org/x/ghost/error"
+	"ghostlang.org/x/ghost/evaluator"
 	"ghostlang.org/x/ghost/interpreter"
 	"ghostlang.org/x/ghost/log"
 	"ghostlang.org/x/ghost/object"
@@ -42,6 +43,8 @@ func (ghost *Ghost) Execute() object.Object {
 		logParseErrors(parser.Errors())
 		return nil
 	}
+
+	evaluator.Register()
 
 	result, _ := interpreter.Evaluate(program, ghost.Environment)
 

@@ -5,8 +5,8 @@ const NULL = "NULL"
 // Null objects consist of a nil value.
 type Null struct{}
 
-func (object *Null) Accept(v Visitor) {
-	v.visitNull(object)
+func (object *Null) Accept(v Visitor) (Object, bool) {
+	return v.VisitNull(object)
 }
 
 // String represents the null object's value as a string.

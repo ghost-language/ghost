@@ -10,8 +10,8 @@ type LibraryFunction struct {
 	Function GoFunction
 }
 
-func (object *LibraryFunction) Accept(v Visitor) {
-	v.visitLibraryFunction(object)
+func (object *LibraryFunction) Accept(v Visitor) (Object, bool) {
+	return v.VisitLibraryFunction(object)
 }
 
 // String represents the library function's value as a string.

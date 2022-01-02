@@ -1,6 +1,9 @@
 package ast
 
+import "ghostlang.org/x/ghost/contract"
+
 type Node interface {
+	contract.AstNode
 	Visitable
 }
 

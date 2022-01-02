@@ -14,8 +14,8 @@ type List struct {
 	Elements []Object
 }
 
-func (object *List) Accept(v Visitor) {
-	v.visitList(object)
+func (object *List) Accept(v Visitor) (Object, bool) {
+	return v.VisitList(object)
 }
 
 // String represents the list object's value as a string.
