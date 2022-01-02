@@ -15,10 +15,6 @@ type String struct {
 	Value string
 }
 
-func (str *String) Accept(v Visitor) (Object, bool) {
-	return v.VisitString(str)
-}
-
 // String represents the string object's value as a string. So meta.
 func (str *String) String() string {
 	return str.Value

@@ -12,10 +12,6 @@ type MapPair struct {
 	Value Object
 }
 
-func (object *Map) Accept(v Visitor) (Object, bool) {
-	return v.VisitMap(object)
-}
-
 // String represents the map object's value as a string.
 func (mapObject *Map) String() string {
 	return "map"

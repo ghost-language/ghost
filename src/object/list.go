@@ -14,10 +14,6 @@ type List struct {
 	Elements []Object
 }
 
-func (object *List) Accept(v Visitor) (Object, bool) {
-	return v.VisitList(object)
-}
-
 // String represents the list object's value as a string.
 func (list *List) String() string {
 	var out bytes.Buffer

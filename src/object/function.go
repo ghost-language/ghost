@@ -14,10 +14,6 @@ type Function struct {
 	Environment *Environment
 }
 
-func (object *Function) Accept(v Visitor) (Object, bool) {
-	return v.VisitFunction(object)
-}
-
 // String represents the function object's value as a string.
 func (function *Function) String() string {
 	return "function"

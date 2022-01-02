@@ -10,7 +10,6 @@ type Type string
 // Object is the interface for all object values.
 type Object interface {
 	HasMethods
-	HasVisitor
 	Type() Type
 	String() string
 }
@@ -20,28 +19,12 @@ type MapKey struct {
 	Value uint64
 }
 
-type Visitor interface {
-	VisitBoolean(*Boolean) (Object, bool)
-	VisitFunction(*Function) (Object, bool)
-	VisitLibraryFunction(*LibraryFunction) (Object, bool)
-	VisitLibraryModule(*LibraryModule) (Object, bool)
-	VisitList(*List) (Object, bool)
-	VisitMap(*Map) (Object, bool)
-	VisitNull(*Null) (Object, bool)
-	VisitNumber(*Number) (Object, bool)
-	VisitString(*String) (Object, bool)
-}
-
 type Mappable interface {
 	MapKey() MapKey
 }
 
 type HasMethods interface {
 	Method(method string, args []Object) (Object, bool)
-}
-
-type HasVisitor interface {
-	Accept(Visitor) (Object, bool)
 }
 
 type GoFunction func(args ...Object) Object

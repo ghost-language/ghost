@@ -10,10 +10,6 @@ type LibraryModule struct {
 	Methods map[string]*LibraryFunction
 }
 
-func (object *LibraryModule) Accept(v Visitor) (Object, bool) {
-	return v.VisitLibraryModule(object)
-}
-
 // String represents the library module's value as a string.
 func (libraryModule *LibraryModule) String() string {
 	return fmt.Sprintf("library module {%s}", libraryModule.Name)

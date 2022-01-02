@@ -9,10 +9,6 @@ type Boolean struct {
 	Value bool
 }
 
-func (object *Boolean) Accept(v Visitor) (Object, bool) {
-	return v.VisitBoolean(object)
-}
-
 // String represents the boolean object's value as a string.
 func (boolean *Boolean) String() string {
 	return fmt.Sprintf("%t", boolean.Value)
