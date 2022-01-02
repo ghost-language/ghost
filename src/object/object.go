@@ -2,7 +2,6 @@ package object
 
 import (
 	"ghostlang.org/x/ghost/ast"
-	"ghostlang.org/x/ghost/contract"
 )
 
 // Type is the type of the object given as a string.
@@ -10,7 +9,6 @@ type Type string
 
 // Object is the interface for all object values.
 type Object interface {
-	contract.Object
 	HasMethods
 	HasVisitor
 	Type() Type

@@ -1,9 +1,6 @@
 package object
 
-import "ghostlang.org/x/ghost/contract"
-
 type Environment struct {
-	contract.Environment
 	store map[string]Object
 }
 

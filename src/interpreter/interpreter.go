@@ -4,14 +4,13 @@ import (
 	"fmt"
 
 	"ghostlang.org/x/ghost/ast"
-	"ghostlang.org/x/ghost/contract"
 	"ghostlang.org/x/ghost/error"
 	"ghostlang.org/x/ghost/log"
 	"ghostlang.org/x/ghost/object"
 	"ghostlang.org/x/ghost/value"
 )
 
-type Evaluator contract.Evaluator
+type Evaluator func(node ast.Node, env *object.Environment) (object.Object, bool)
 
 func Evaluate(node ast.Node, env *object.Environment) (object.Object, bool) {
 	switch node := node.(type) {
