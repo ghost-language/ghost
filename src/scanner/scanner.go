@@ -13,6 +13,7 @@ type Scanner struct {
 	position     int    // current position in source (pointing to current character)
 	readPosition int    // current reading position in source (point to next character)
 	line         int    // current line being scanned
+	column       int    // current column being scanned
 }
 
 // keywords contains a list of all reserved keywords.
@@ -35,7 +36,7 @@ var keywords = map[string]token.Type{
 
 // New creates a new scanner instance.
 func New(source string) *Scanner {
-	scanner := Scanner{source: []rune(source), line: 1}
+	scanner := Scanner{source: []rune(source), line: 1, column: 1}
 
 	scanner.readCharacter()
 
@@ -53,6 +54,7 @@ func (scanner *Scanner) readCharacter() {
 
 	scanner.position = scanner.readPosition
 	scanner.readPosition++
+	scanner.column++
 }
 
 // scanToken is responsible for scanning the current character and storing the
@@ -137,8 +139,6 @@ func (scanner *Scanner) ScanToken() token.Token {
 		} else {
 			scannedToken = scanner.newToken(token.SLASH, "/")
 		}
-	case rune('\n'):
-		scanner.line++
 	case rune('"'):
 		value := scanner.scanString('"')
 
@@ -262,6 +262,10 @@ func (scanner *Scanner) skipMultiLineComment() {
 	endOfComment := false
 
 	for !endOfComment {
+		if scanner.character == rune('\n') {
+			scanner.advanceLine()
+		}
+
 		if scanner.isAtEnd() {
 			endOfComment = true
 		}
@@ -280,6 +284,10 @@ func (scanner *Scanner) skipMultiLineComment() {
 // skipWhitespace consumes and reads whitespace characters.
 func (scanner *Scanner) skipWhitespace() {
 	for isWhitespace(scanner.character) {
+		if scanner.character == rune('\n') {
+			scanner.advanceLine()
+		}
+
 		scanner.readCharacter()
 	}
 }
@@ -287,6 +295,12 @@ func (scanner *Scanner) skipWhitespace() {
 // isAtEnd tells us if we've consumed all the characters in our raw source code.
 func (scanner *Scanner) isAtEnd() bool {
 	return scanner.character == 0
+}
+
+// advanceLine advances the scanner's line counter and resets the column.
+func (scanner *Scanner) advanceLine() {
+	scanner.line++
+	scanner.column = 1
 }
 
 // isDigit tells us if the passed character is a number.
