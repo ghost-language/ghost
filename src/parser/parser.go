@@ -166,7 +166,7 @@ func (parser *Parser) isAtEnd() bool {
 
 func (parser *Parser) nextError(tt token.Type) {
 	message := fmt.Sprintf(
-		"Line: %d: Expected next token to be %s, got: %s instead", parser.nextToken.Line, tt, parser.nextToken.Type,
+		"%d:%d: syntax error: expected next token to be %s, got: %s instead", parser.nextToken.Line, parser.nextToken.Column, tt, parser.nextToken.Type,
 	)
 
 	parser.errors = append(parser.errors, message)
