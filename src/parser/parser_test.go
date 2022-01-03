@@ -82,7 +82,7 @@ func TestBooleanLiteral(t *testing.T) {
 }
 
 func TestForExpression(t *testing.T) {
-	input := `for (x := 0; x < 10; x := x + 1) { x }`
+	input := `for (x := 0; x < 10; x := x + 1) { true }`
 
 	scanner := scanner.New(input)
 	parser := New(scanner)

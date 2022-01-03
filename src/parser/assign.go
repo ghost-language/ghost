@@ -12,11 +12,17 @@ func (parser *Parser) assign() ast.StatementNode {
 			Token: parser.nextToken,
 		}
 
-		// Read the IDENTIFIER and ASSIGN tokens
-		parser.readToken()
+		if !parser.expectNextTokenIs(token.ASSIGN) {
+			return nil
+		}
+
 		parser.readToken()
 
 		statement.Value = parser.parseExpression(LOWEST)
+
+		if parser.nextTokenIs(token.SEMICOLON) {
+			parser.readToken()
+		}
 
 		return statement
 	}
