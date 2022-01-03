@@ -66,62 +66,62 @@ func (scanner *Scanner) ScanToken() token.Token {
 
 	switch scanner.character {
 	case rune('('):
-		scannedToken = scanner.newToken(token.LEFTPAREN, "(")
+		scannedToken = scanner.newToken(token.LEFTPAREN, "(", 1)
 	case rune(')'):
-		scannedToken = scanner.newToken(token.RIGHTPAREN, ")")
+		scannedToken = scanner.newToken(token.RIGHTPAREN, ")", 1)
 	case rune('['):
-		scannedToken = scanner.newToken(token.LEFTBRACKET, "[")
+		scannedToken = scanner.newToken(token.LEFTBRACKET, "[", 1)
 	case rune(']'):
-		scannedToken = scanner.newToken(token.RIGHTBRACKET, "]")
+		scannedToken = scanner.newToken(token.RIGHTBRACKET, "]", 1)
 	case rune('{'):
-		scannedToken = scanner.newToken(token.LEFTBRACE, "{")
+		scannedToken = scanner.newToken(token.LEFTBRACE, "{", 1)
 	case rune('}'):
-		scannedToken = scanner.newToken(token.RIGHTBRACE, "}")
+		scannedToken = scanner.newToken(token.RIGHTBRACE, "}", 1)
 	case rune(','):
-		scannedToken = scanner.newToken(token.COMMA, ",")
+		scannedToken = scanner.newToken(token.COMMA, ",", 1)
 	case rune('.'):
-		scannedToken = scanner.newToken(token.DOT, ".")
+		scannedToken = scanner.newToken(token.DOT, ".", 1)
 	case rune('-'):
-		scannedToken = scanner.newToken(token.MINUS, "-")
+		scannedToken = scanner.newToken(token.MINUS, "-", 1)
 	case rune('+'):
-		scannedToken = scanner.newToken(token.PLUS, "+")
+		scannedToken = scanner.newToken(token.PLUS, "+", 1)
 	case rune(';'):
-		scannedToken = scanner.newToken(token.SEMICOLON, ";")
+		scannedToken = scanner.newToken(token.SEMICOLON, ";", 1)
 	case rune('*'):
-		scannedToken = scanner.newToken(token.STAR, "*")
+		scannedToken = scanner.newToken(token.STAR, "*", 1)
 	case rune('%'):
-		scannedToken = scanner.newToken(token.PERCENT, "%")
+		scannedToken = scanner.newToken(token.PERCENT, "%", 1)
 	case rune('?'):
-		scannedToken = scanner.newToken(token.QUESTION, "?")
+		scannedToken = scanner.newToken(token.QUESTION, "?", 1)
 	case rune(':'):
 		if scanner.match('=') {
-			scannedToken = scanner.newToken(token.ASSIGN, ":=")
+			scannedToken = scanner.newToken(token.ASSIGN, ":=", 2)
 		} else {
-			scannedToken = scanner.newToken(token.COLON, ":")
+			scannedToken = scanner.newToken(token.COLON, ":", 1)
 		}
 	case rune('!'):
 		if scanner.match('=') {
-			scannedToken = scanner.newToken(token.BANGEQUAL, "!=")
+			scannedToken = scanner.newToken(token.BANGEQUAL, "!=", 2)
 		} else {
-			scannedToken = scanner.newToken(token.BANG, "!")
+			scannedToken = scanner.newToken(token.BANG, "!", 1)
 		}
 	case rune('='):
 		if scanner.match('=') {
-			scannedToken = scanner.newToken(token.EQUALEQUAL, "==")
+			scannedToken = scanner.newToken(token.EQUALEQUAL, "==", 2)
 		} else {
-			scannedToken = scanner.newToken(token.EQUAL, "=")
+			scannedToken = scanner.newToken(token.EQUAL, "=", 1)
 		}
 	case rune('<'):
 		if scanner.match('=') {
-			scannedToken = scanner.newToken(token.LESSEQUAL, "<=")
+			scannedToken = scanner.newToken(token.LESSEQUAL, "<=", 2)
 		} else {
-			scannedToken = scanner.newToken(token.LESS, "<")
+			scannedToken = scanner.newToken(token.LESS, "<", 1)
 		}
 	case rune('>'):
 		if scanner.match('=') {
-			scannedToken = scanner.newToken(token.GREATEREQUAL, ">=")
+			scannedToken = scanner.newToken(token.GREATEREQUAL, ">=", 2)
 		} else {
-			scannedToken = scanner.newToken(token.GREATER, ">")
+			scannedToken = scanner.newToken(token.GREATER, ">", 1)
 		}
 	case rune('#'):
 		scanner.skipSingleLineComment()
@@ -137,28 +137,28 @@ func (scanner *Scanner) ScanToken() token.Token {
 
 			return scanner.ScanToken()
 		} else {
-			scannedToken = scanner.newToken(token.SLASH, "/")
+			scannedToken = scanner.newToken(token.SLASH, "/", 1)
 		}
 	case rune('"'):
 		value := scanner.scanString('"')
 
-		scannedToken = scanner.newToken(token.STRING, value)
+		scannedToken = scanner.newToken(token.STRING, value, len(value))
 	case rune('\''):
 		value := scanner.scanString('\'')
 
-		scannedToken = scanner.newToken(token.STRING, value)
+		scannedToken = scanner.newToken(token.STRING, value, len(value))
 	case 0:
-		scannedToken = scanner.newToken(token.EOF, "")
+		scannedToken = scanner.newToken(token.EOF, "", 1)
 	default:
 		if isDigit(scanner.character) {
 			number := scanner.scanNumber()
 
-			return scanner.newToken(token.NUMBER, number)
+			return scanner.newToken(token.NUMBER, number, len(number))
 		}
 
 		identifier := scanner.scanIdentifier()
 
-		return scanner.newToken(lookupIdentifier(identifier), identifier)
+		return scanner.newToken(lookupIdentifier(identifier), identifier, len(identifier)+1)
 	}
 
 	scanner.readCharacter()
@@ -238,10 +238,11 @@ func (scanner *Scanner) scanIdentifier() string {
 
 // newToken grabs the current lexeme and creates a new token for it. In this
 // case, newToken is for tokens without a literal (native Go) value.
-func (scanner *Scanner) newToken(tokenType token.Type, literal interface{}) token.Token {
+func (scanner *Scanner) newToken(tokenType token.Type, literal interface{}, length int) token.Token {
 	lexeme := fmt.Sprintf("%s", literal)
+	column := scanner.column - length
 
-	return token.Token{Type: tokenType, Lexeme: lexeme, Literal: literal, Line: scanner.line, Column: scanner.column}
+	return token.Token{Type: tokenType, Lexeme: lexeme, Literal: literal, Line: scanner.line, Column: column}
 }
 
 // skipSingleLineComment consumes and reads characters until it reaches the end

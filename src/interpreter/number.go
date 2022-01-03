@@ -37,6 +37,6 @@ func evaluateNumberInfix(node *ast.Infix, right object.Object, left object.Objec
 	case "!=":
 		return toBooleanValue(!rightValue.Equal(leftValue))
 	default:
-		return newError("%d:__: runtime error: unknown operator: %s %s %s", node.Token.Line, right.Type(), node.Operator, left.Type())
+		return newError("%d:%d: runtime error: unknown operator: %s %s %s", node.Token.Line, node.Token.Column, right.Type(), node.Operator, left.Type())
 	}
 }

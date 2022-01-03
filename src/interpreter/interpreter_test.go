@@ -13,15 +13,15 @@ func TestErrorHandling(t *testing.T) {
 		input           string
 		expectedMessage string
 	}{
-		{"5 + true", "1:__: runtime error: type mismatch: NUMBER + BOOLEAN"},
-		{"5 + true; 5", "1:__: runtime error: type mismatch: NUMBER + BOOLEAN"},
-		{"-true", "1:__: runtime error: unknown operator: -BOOLEAN"},
-		{"true + false", "1:__: runtime error: unknown operator: BOOLEAN + BOOLEAN"},
-		{"5; true + false; 5", "1:__: runtime error: unknown operator: BOOLEAN + BOOLEAN"},
-		{"if (10 > 1) { if (10 > 1) { return true + false } return 1 }", "1:__: runtime error: unknown operator: BOOLEAN + BOOLEAN"},
-		{"foobar", "1:__: runtime error: unknown identifier: foobar"},
-		{`"Hello" - "World"`, "1:__: runtime error: unknown operator: STRING - STRING"},
-		// {`{"name": "Ghost"}[function(x) { x }]`, "unusable as map key: FUNCTION"},
+		{"5 + true", "1:3: runtime error: type mismatch: NUMBER + BOOLEAN"},
+		{"5 + true; 5", "1:3: runtime error: type mismatch: NUMBER + BOOLEAN"},
+		{"-true", "1:1: runtime error: unknown operator: -BOOLEAN"},
+		{"true + false", "1:6: runtime error: unknown operator: BOOLEAN + BOOLEAN"},
+		{"5; true + false; 5", "1:9: runtime error: unknown operator: BOOLEAN + BOOLEAN"},
+		{"if (10 > 1) { if (10 > 1) { return true + false } return 1 }", "1:41: runtime error: unknown operator: BOOLEAN + BOOLEAN"},
+		{"foobar", "1:1: runtime error: unknown identifier: foobar"},
+		{`"Hello" - "World"`, "1:9: runtime error: unknown operator: STRING - STRING"},
+		{`{"name": "Ghost"}[function() { 123 }]`, "1:18: runtime error: unusable as map key: FUNCTION"},
 	}
 
 	for _, tt := range tests {

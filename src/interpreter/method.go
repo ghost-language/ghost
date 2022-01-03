@@ -32,5 +32,5 @@ func evaluateMethod(node *ast.Method, env *object.Environment) object.Object {
 		}
 	}
 
-	return newError("%d:__: runtime error: unknown method: %s.%s", node.Token.Line, left.String(), node.Method.(*ast.Identifier).Value)
+	return newError("%d:%d: runtime error: unknown method: %s.%s", node.Token.Line, node.Token.Column, left.String(), node.Method.(*ast.Identifier).Value)
 }

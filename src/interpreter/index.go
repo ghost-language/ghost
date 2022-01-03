@@ -27,7 +27,7 @@ func evaluateIndex(node *ast.Index, env *object.Environment) object.Object {
 	case left.Type() == object.MAP:
 		return evaluateMapIndex(node, left, index)
 	default:
-		return newError("%d:__: runtime error: index operator not supported: %s", node.Token.Line, left.Type())
+		return newError("%d:%d: runtime error: index operator not supported: %s", node.Token.Line, node.Token.Column, left.Type())
 	}
 }
 
@@ -49,9 +49,7 @@ func evaluateMapIndex(node *ast.Index, left, index object.Object) object.Object 
 	key, ok := index.(object.Mappable)
 
 	if !ok {
-		err := newError("%d:__: runtime error: unusuable as map key: %s", node.Token.Line, index.Type())
-
-		return err
+		return newError("%d:%d: runtime error: unusable as map key: %s", node.Token.Line, node.Token.Column, index.Type())
 	}
 
 	pair, ok := mapObject.Pairs[key.MapKey()]
