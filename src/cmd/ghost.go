@@ -10,7 +10,6 @@ import (
 	"path/filepath"
 	"time"
 
-	"ghostlang.org/x/ghost/error"
 	"ghostlang.org/x/ghost/ghost"
 	"ghostlang.org/x/ghost/log"
 	"ghostlang.org/x/ghost/repl"
@@ -70,12 +69,8 @@ func main() {
 		sourceFile, err := os.Open(args[0])
 
 		if err != nil {
-			err := error.Error{
-				Reason:  error.System,
-				Message: fmt.Sprintf("could not open source file %s: %s", args[0], err),
-			}
+			log.Error("system error: could not open source file %s: %s", args[0], err)
 
-			log.Error(err.Reason, err.Message)
 			os.Exit(1)
 		}
 

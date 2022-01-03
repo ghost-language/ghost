@@ -38,6 +38,6 @@ func unwrapCall(tok token.Token, callee object.Object, arguments []object.Object
 		// to do, parse and return return values
 		return value.NULL
 	default:
-		return newError("uncallable object: %s", callee.Type())
+		return newError("%d:__: runtime error: uncallable object: %s", tok.Line, callee.Type())
 	}
 }

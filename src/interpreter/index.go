@@ -21,17 +21,17 @@ func evaluateIndex(node *ast.Index, env *object.Environment) object.Object {
 
 	switch {
 	case left.Type() == object.STRING && index.Type() == object.NUMBER:
-		return evaluateStringIndex(left, index)
+		return evaluateStringIndex(node, left, index)
 	case left.Type() == object.LIST && index.Type() == object.NUMBER:
-		return evaluateListIndex(left, index)
+		return evaluateListIndex(node, left, index)
 	case left.Type() == object.MAP:
-		return evaluateMapIndex(left, index)
+		return evaluateMapIndex(node, left, index)
 	default:
-		return newError("index operator not supported: %s", left.Type())
+		return newError("%d:__: runtime error: index operator not supported: %s", node.Token.Line, left.Type())
 	}
 }
 
-func evaluateListIndex(left, index object.Object) object.Object {
+func evaluateListIndex(node *ast.Index, left, index object.Object) object.Object {
 	list := left.(*object.List)
 	idx := index.(*object.Number).Value.IntPart()
 	max := int64(len(list.Elements) - 1)
@@ -43,13 +43,13 @@ func evaluateListIndex(left, index object.Object) object.Object {
 	return list.Elements[idx]
 }
 
-func evaluateMapIndex(left, index object.Object) object.Object {
+func evaluateMapIndex(node *ast.Index, left, index object.Object) object.Object {
 	mapObject := left.(*object.Map)
 
 	key, ok := index.(object.Mappable)
 
 	if !ok {
-		err := newError("unusuable as map key: %s", index.Type())
+		err := newError("%d:__: runtime error: unusuable as map key: %s", node.Token.Line, index.Type())
 
 		return err
 	}
@@ -63,7 +63,7 @@ func evaluateMapIndex(left, index object.Object) object.Object {
 	return pair.Value
 }
 
-func evaluateStringIndex(left, index object.Object) object.Object {
+func evaluateStringIndex(node *ast.Index, left, index object.Object) object.Object {
 	str := left.(*object.String)
 	idx := index.(*object.Number).Value.IntPart()
 	max := int64(len(str.Value) - 1)

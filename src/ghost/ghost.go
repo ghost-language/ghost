@@ -1,7 +1,6 @@
 package ghost
 
 import (
-	"ghostlang.org/x/ghost/error"
 	"ghostlang.org/x/ghost/evaluator"
 	"ghostlang.org/x/ghost/interpreter"
 	"ghostlang.org/x/ghost/log"
@@ -52,12 +51,7 @@ func (ghost *Ghost) Execute() object.Object {
 	result := interpreter.Evaluate(program, ghost.Environment)
 
 	if err, ok := result.(*object.Error); ok {
-		err := error.Error{
-			Reason:  error.Runtime,
-			Message: err.Message,
-		}
-
-		log.Error(err.Reason, err.Message)
+		log.Error(err.Message)
 
 		return nil
 	}
@@ -67,11 +61,6 @@ func (ghost *Ghost) Execute() object.Object {
 
 func logParseErrors(errors []string) {
 	for _, message := range errors {
-		err := error.Error{
-			Reason:  error.Syntax,
-			Message: message,
-		}
-
-		log.Error(err.Reason, err.Message)
+		log.Error(message)
 	}
 }

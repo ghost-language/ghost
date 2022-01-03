@@ -19,5 +19,5 @@ func evaluateIdentifier(node *ast.Identifier, env *object.Environment) object.Ob
 		return identifier
 	}
 
-	return newError("unkown identifier: %s", node.Value)
+	return newError("%d:__: runtime error: unknown identifier: %s", node.Token.Line, node.Value)
 }

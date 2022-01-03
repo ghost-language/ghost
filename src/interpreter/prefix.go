@@ -28,7 +28,7 @@ func evaluatePrefix(node *ast.Prefix, env *object.Environment) object.Object {
 	case "-":
 		// Only works with number objects
 		if right.Type() != object.NUMBER {
-			return newError("unknown operator: -%s", right.Type())
+			return newError("%d:__: runtime error: unknown operator: -%s", node.Token.Line, right.Type())
 		}
 
 		numberValue := right.(*object.Number).Value.Neg()
@@ -36,5 +36,5 @@ func evaluatePrefix(node *ast.Prefix, env *object.Environment) object.Object {
 		return &object.Number{Value: numberValue}
 	}
 
-	return newError("unknown operator: %s%s", node.Operator, right.Type())
+	return newError("%d:__: runtime error: unknown operator: %s%s", node.Token.Line, node.Operator, right.Type())
 }

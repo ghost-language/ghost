@@ -2,9 +2,6 @@ package log
 
 import (
 	"fmt"
-	"os"
-
-	"ghostlang.org/x/ghost/error"
 )
 
 const (
@@ -26,19 +23,6 @@ func Info(str string, args ...interface{}) {
 	fmt.Println(AnsiGreen + fmt.Sprintf(str, args...) + AnsiReset)
 }
 
-func Error(reason int, str string, args ...interface{}) {
-	var state string
-
-	switch reason {
-	case error.Syntax:
-		state = "syntax error"
-	case error.Runtime:
-		state = "runtime error"
-	case error.System:
-		state = "system error"
-	default:
-		state = "error"
-	}
-
-	fmt.Fprintln(os.Stderr, AnsiRedBold+state+": "+AnsiRed+fmt.Sprintf(str, args...)+AnsiReset)
+func Error(str string, args ...interface{}) {
+	fmt.Println(AnsiRed + fmt.Sprintf(str, args...) + AnsiReset)
 }

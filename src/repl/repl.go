@@ -1,12 +1,10 @@
 package repl
 
 import (
-	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 
-	"ghostlang.org/x/ghost/error"
 	"ghostlang.org/x/ghost/ghost"
 	"ghostlang.org/x/ghost/log"
 	"github.com/peterh/liner"
@@ -29,12 +27,7 @@ func Start(in io.Reader, out io.Writer) {
 	}
 
 	if f, err := os.Create(history); err != nil {
-		err := error.Error{
-			Reason:  error.System,
-			Message: fmt.Sprintf("unable to write to history file: %s", err),
-		}
-
-		log.Error(err.Reason, err.Message)
+		log.Error("system error: unable to write to history file: %s", err)
 	} else {
 		line.WriteHistory(f)
 		f.Close()

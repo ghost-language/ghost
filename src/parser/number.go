@@ -1,10 +1,7 @@
 package parser
 
 import (
-	"fmt"
-
 	"ghostlang.org/x/ghost/ast"
-	"ghostlang.org/x/ghost/error"
 	"ghostlang.org/x/ghost/log"
 	"github.com/shopspring/decimal"
 )
@@ -15,12 +12,7 @@ func (parser *Parser) numberLiteral() ast.ExpressionNode {
 	value, err := decimal.NewFromString(parser.currentToken.Lexeme)
 
 	if err != nil {
-		err := error.Error{
-			Reason:  error.Syntax,
-			Message: fmt.Sprintf("could not parse %q as number on line %d", parser.currentToken.Lexeme, parser.currentToken.Line),
-		}
-
-		log.Error(err.Reason, err.Message)
+		log.Error("%d:__: syntax error: could not parse %q as number", parser.currentToken.Line, parser.currentToken.Lexeme)
 		return nil
 	}
 
