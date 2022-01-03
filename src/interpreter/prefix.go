@@ -6,39 +6,35 @@ import (
 	"ghostlang.org/x/ghost/value"
 )
 
-func evaluatePrefix(node *ast.Prefix, env *object.Environment) (object.Object, bool) {
-	right, ok := Evaluate(node.Right, env)
+func evaluatePrefix(node *ast.Prefix, env *object.Environment) object.Object {
+	right := Evaluate(node.Right, env)
 
-	if !ok {
-		return nil, false
+	if isError(right) {
+		return right
 	}
 
 	switch node.Operator {
 	case "!":
 		switch right {
 		case value.TRUE:
-			return value.FALSE, true
+			return value.FALSE
 		case value.FALSE:
-			return value.TRUE, true
+			return value.TRUE
 		case value.NULL:
-			return value.TRUE, true
+			return value.TRUE
 		default:
-			return value.FALSE, true
+			return value.FALSE
 		}
 	case "-":
 		// Only works with number objects
 		if right.Type() != object.NUMBER {
-			err := newError("unknown operator: -%s", right.Type())
-
-			return err, false
+			return newError("unknown operator: -%s", right.Type())
 		}
 
 		numberValue := right.(*object.Number).Value.Neg()
 
-		return &object.Number{Value: numberValue}, true
-	default:
-		err := newError("unknown operator: %s%s", node.Operator, right.Type())
-
-		return err, false
+		return &object.Number{Value: numberValue}
 	}
+
+	return newError("unknown operator: %s%s", node.Operator, right.Type())
 }

@@ -5,27 +5,25 @@ import (
 	"ghostlang.org/x/ghost/object"
 )
 
-func evaluateInfix(node *ast.Infix, env *object.Environment) (object.Object, bool) {
-	left, ok := Evaluate(node.Left, env)
+func evaluateInfix(node *ast.Infix, env *object.Environment) object.Object {
+	left := Evaluate(node.Left, env)
 
-	if !ok {
-		return nil, false
+	if isError(left) {
+		return left
 	}
 
-	right, ok := Evaluate(node.Right, env)
+	right := Evaluate(node.Right, env)
 
-	if !ok {
-		return nil, false
+	if isError(right) {
+		return right
 	}
 
 	switch {
 	case left.Type() == object.NUMBER && right.Type() == object.NUMBER:
 		return evaluateNumberInfix(node, left, right)
 	case left.Type() != right.Type():
-		err := newError("type mismatch: %s %s %s", left.Type(), node.Operator, right.Type())
-		return err, false
+		return newError("type mismatch: %s %s %s", left.Type(), node.Operator, right.Type())
 	default:
-		err := newError("unknown operator: %s %s %s", left.Type(), node.Operator, right.Type())
-		return err, false
+		return newError("unknown operator: %s %s %s", left.Type(), node.Operator, right.Type())
 	}
 }

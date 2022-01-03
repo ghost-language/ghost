@@ -4,7 +4,7 @@ import (
 	"ghostlang.org/x/ghost/ast"
 )
 
-var evaluator func(node ast.Node, env *Environment) (Object, bool)
+var evaluator func(node ast.Node, env *Environment) Object
 
 // Type is the type of the object given as a string.
 type Type string
@@ -32,6 +32,6 @@ type HasMethods interface {
 type GoFunction func(env *Environment, args ...Object) Object
 type ObjectMethod func(value interface{}, args ...Object) (Object, bool)
 
-func SetEvaluator(e func(node ast.Node, env *Environment) (Object, bool)) {
+func SetEvaluator(e func(node ast.Node, env *Environment) Object) {
 	evaluator = e
 }

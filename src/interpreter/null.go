@@ -6,6 +6,6 @@ import (
 	"ghostlang.org/x/ghost/value"
 )
 
-func evaluateNull(node *ast.Null, env *object.Environment) (object.Object, bool) {
-	return value.NULL, true
+func evaluateNull(node *ast.Null, env *object.Environment) object.Object {
+	return value.NULL
 }

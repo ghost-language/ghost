@@ -5,23 +5,21 @@ import (
 	"ghostlang.org/x/ghost/object"
 )
 
-func evaluateMethod(node *ast.Method, env *object.Environment) (object.Object, bool) {
-	left, ok := Evaluate(node.Left, env)
+func evaluateMethod(node *ast.Method, env *object.Environment) object.Object {
+	left := Evaluate(node.Left, env)
 
-	if !ok {
-		return nil, false
+	if isError(left) {
+		return left
 	}
 
-	arguments, ok := evaluateExpressions(node.Arguments, env)
+	arguments := evaluateExpressions(node.Arguments, env)
 
-	if !ok {
-		return nil, false
+	if len(arguments) == 1 && isError(arguments[0]) {
+		return arguments[0]
 	}
 
-	result, ok := left.Method(node.Method.(*ast.Identifier).Value, arguments)
-
-	if ok {
-		return result, true
+	if result, ok := left.Method(node.Method.(*ast.Identifier).Value, arguments); ok {
+		return result
 	}
 
 	switch left.(type) {
@@ -34,5 +32,5 @@ func evaluateMethod(node *ast.Method, env *object.Environment) (object.Object, b
 		}
 	}
 
-	return nil, false
+	return newError("unknown method: %s.%s", left.String(), node.Method.(*ast.Identifier).Value)
 }

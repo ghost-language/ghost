@@ -6,20 +6,18 @@ import (
 	"ghostlang.org/x/ghost/value"
 )
 
-func evaluateIf(node *ast.If, env *object.Environment) (object.Object, bool) {
-	condition, ok := Evaluate(node.Condition, env)
+func evaluateIf(node *ast.If, env *object.Environment) object.Object {
+	condition := Evaluate(node.Condition, env)
 
-	if !ok {
-		return nil, false
+	if isError(condition) {
+		return condition
 	}
 
-	conditionIsTrue := isTruthy(condition)
-
-	if conditionIsTrue {
+	if isTruthy(condition) {
 		return Evaluate(node.Consequence, env)
-	} else if node.Alternative != nil && !conditionIsTrue {
+	} else if node.Alternative != nil {
 		return Evaluate(node.Alternative, env)
 	}
 
-	return value.NULL, true
+	return value.NULL
 }

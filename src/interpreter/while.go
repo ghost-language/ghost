@@ -3,15 +3,14 @@ package interpreter
 import (
 	"ghostlang.org/x/ghost/ast"
 	"ghostlang.org/x/ghost/object"
-	"ghostlang.org/x/ghost/value"
 )
 
-func evaluateWhile(node *ast.While, env *object.Environment) (object.Object, bool) {
+func evaluateWhile(node *ast.While, env *object.Environment) object.Object {
 	for {
-		condition, ok := Evaluate(node.Condition, env)
+		condition := Evaluate(node.Condition, env)
 
-		if !ok {
-			return nil, false
+		if isError(condition) {
+			return condition
 		}
 
 		if isTruthy(condition) {
@@ -21,5 +20,5 @@ func evaluateWhile(node *ast.While, env *object.Environment) (object.Object, boo
 		}
 	}
 
-	return value.NULL, true
+	return nil
 }

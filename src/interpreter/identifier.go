@@ -6,22 +6,18 @@ import (
 	"ghostlang.org/x/ghost/object"
 )
 
-func evaluateIdentifier(node *ast.Identifier, env *object.Environment) (object.Object, bool) {
+func evaluateIdentifier(node *ast.Identifier, env *object.Environment) object.Object {
 	if libraryModule, ok := library.Modules[node.Value]; ok {
-		return libraryModule, true
+		return libraryModule
 	}
 
 	if libraryFunction, ok := library.Functions[node.Value]; ok {
-		return libraryFunction, true
+		return libraryFunction
 	}
 
-	value, ok := env.Get(node.Value)
-
-	if !ok {
-		err := newError("unkown identifier: %s", node.Value)
-
-		return err, false
+	if identifier, ok := env.Get(node.Value); ok {
+		return identifier
 	}
 
-	return value, true
+	return newError("unkown identifier: %s", node.Value)
 }

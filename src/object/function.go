@@ -32,16 +32,16 @@ func (function *Function) Method(method string, args []Object) (Object, bool) {
 }
 
 // Evaluate evaluates the function's body ast.Block and returns the result.
-func (function *Function) Evaluate(args []Object, writer io.Writer) (Object, bool) {
+func (function *Function) Evaluate(args []Object, writer io.Writer) Object {
 	env := function.environment(args)
 
 	if writer != nil {
 		env.SetWriter(writer)
 	}
 
-	result, ok := evaluator(function.Body, env)
+	result := evaluator(function.Body, env)
 
-	return result, ok
+	return result
 }
 
 // =============================================================================
@@ -51,7 +51,7 @@ func (function *Function) environment(arguments []Object) *Environment {
 	env := NewEnclosedEnvironment(function.Environment)
 
 	for key, val := range function.Defaults {
-		result, _ := evaluator(val, env)
+		result := evaluator(val, env)
 		env.Set(key, result)
 	}
 

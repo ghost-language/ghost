@@ -5,7 +5,7 @@ import (
 	"ghostlang.org/x/ghost/object"
 )
 
-func evaluateFunction(node *ast.Function, env *object.Environment) (object.Object, bool) {
+func evaluateFunction(node *ast.Function, env *object.Environment) object.Object {
 	function := &object.Function{
 		Parameters:  node.Parameters,
 		Defaults:    node.Defaults,
@@ -17,15 +17,14 @@ func evaluateFunction(node *ast.Function, env *object.Environment) (object.Objec
 		env.Set(node.Name.Value, function)
 	}
 
-	return function, true
+	return function
 }
 
 func createFunctionEnvironment(function *object.Function, arguments []object.Object) *object.Environment {
 	env := object.NewEnclosedEnvironment(function.Environment)
 
 	for key, val := range function.Defaults {
-		result, _ := Evaluate(val, env)
-		env.Set(key, result)
+		env.Set(key, Evaluate(val, env))
 	}
 
 	for index, parameter := range function.Parameters {

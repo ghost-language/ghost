@@ -49,7 +49,7 @@ func (ghost *Ghost) Execute() object.Object {
 
 	evaluator.Register()
 
-	result, _ := interpreter.Evaluate(program, ghost.Environment)
+	result := interpreter.Evaluate(program, ghost.Environment)
 
 	return result
 }

@@ -88,7 +88,7 @@ func evaluate(input string) object.Object {
 	program := parser.Parse()
 	env := object.NewEnvironment()
 
-	result, _ := Evaluate(program, env)
+	result := Evaluate(program, env)
 
 	return result
 }

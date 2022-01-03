@@ -5,6 +5,6 @@ import (
 	"ghostlang.org/x/ghost/object"
 )
 
-func evaluateBoolean(node *ast.Boolean, env *object.Environment) (object.Object, bool) {
-	return toBooleanValue(node.Value), true
+func evaluateBoolean(node *ast.Boolean, env *object.Environment) object.Object {
+	return toBooleanValue(node.Value)
 }

@@ -5,17 +5,17 @@ import (
 	"ghostlang.org/x/ghost/object"
 )
 
-func evaluateProgram(node *ast.Program, env *object.Environment) (object.Object, bool) {
+func evaluateProgram(node *ast.Program, env *object.Environment) object.Object {
 	var result object.Object
 
 	for _, statement := range node.Statements {
-		result, _ = Evaluate(statement, env)
+		result = Evaluate(statement, env)
 
 		switch result.(type) {
 		case *object.Error:
-			return result, false
+			return result
 		}
 	}
 
-	return result, true
+	return result
 }

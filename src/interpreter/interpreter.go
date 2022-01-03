@@ -4,17 +4,15 @@ import (
 	"fmt"
 
 	"ghostlang.org/x/ghost/ast"
-	"ghostlang.org/x/ghost/error"
-	"ghostlang.org/x/ghost/log"
 	"ghostlang.org/x/ghost/object"
 	"ghostlang.org/x/ghost/value"
 )
 
-type Evaluator func(node ast.Node, env *object.Environment) (object.Object, bool)
+type Evaluator func(node ast.Node, env *object.Environment) object.Object
 
 // Evaluate is the heart of our interpreter. It switches off between the various
 // AST node types and evaluates each accordingly and returns its value.
-func Evaluate(node ast.Node, env *object.Environment) (object.Object, bool) {
+func Evaluate(node ast.Node, env *object.Environment) object.Object {
 	switch node := node.(type) {
 	case *ast.Program:
 		return evaluateProgram(node, env)
@@ -56,21 +54,13 @@ func Evaluate(node ast.Node, env *object.Environment) (object.Object, bool) {
 		return evaluateString(node, env)
 	case *ast.While:
 		return evaluateWhile(node, env)
-	case nil:
-		return nil, false
-	default:
-		if node != nil {
-			err := error.Error{
-				Reason:  error.Runtime,
-				Message: fmt.Sprintf("unknown runtime node: %T", node),
-			}
-
-			log.Error(err.Reason, err.Message)
-		}
-
-		return nil, false
 	}
+
+	return nil
 }
+
+// =============================================================================
+// Helper functions
 
 // toBooleanValue converts the passed native boolean value into a boolean
 // object.
