@@ -51,6 +51,17 @@ func (ghost *Ghost) Execute() object.Object {
 
 	result := interpreter.Evaluate(program, ghost.Environment)
 
+	if err, ok := result.(*object.Error); ok {
+		err := error.Error{
+			Reason:  error.Runtime,
+			Message: err.Message,
+		}
+
+		log.Error(err.Reason, err.Message)
+
+		return nil
+	}
+
 	return result
 }
 
