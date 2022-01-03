@@ -12,6 +12,7 @@ import (
 var precedences = map[token.Type]int{
 	token.EQUALEQUAL:   EQUALS,
 	token.BANGEQUAL:    EQUALS,
+	token.IN:           EQUALS,
 	token.LESS:         LESSGREATER,
 	token.LESSEQUAL:    LESSGREATER,
 	token.GREATER:      LESSGREATER,

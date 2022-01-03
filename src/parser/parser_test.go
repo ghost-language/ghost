@@ -123,6 +123,40 @@ func TestForExpression(t *testing.T) {
 	}
 }
 
+func TestForInListExpression(t *testing.T) {
+	input := `for (x in bar) { true }`
+
+	scanner := scanner.New(input)
+	parser := New(scanner)
+	program := parser.Parse()
+
+	failIfParserHasErrors(t, parser)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("program.Statements does not contain 1 Statement. got=%d", len(program.Statements))
+	}
+
+	statement, ok := program.Statements[0].(*ast.Expression)
+
+	if !ok {
+		t.Fatalf("program.Statements[0] is not ast.Expression. got=%T", program.Statements[0])
+	}
+
+	expression, ok := statement.Expression.(*ast.ForIn)
+
+	if !ok {
+		t.Fatalf("statement.Expression is not ast.ForIn. got=%T", statement.Expression)
+	}
+
+	if !isIdentifier(t, expression.Value, "x") {
+		return
+	}
+
+	if _, ok = expression.Block.Statements[0].(*ast.Expression); !ok {
+		t.Fatalf("expression.Block.Statements[0] is not ast.Expression. got=%T", expression.Block.Statements[0])
+	}
+}
+
 func TestIdentifierLiteral(t *testing.T) {
 	tests := []struct {
 		input    string
