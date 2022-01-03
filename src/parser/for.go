@@ -66,8 +66,8 @@ func (parser *Parser) forInExpression(parent *ast.For) ast.ExpressionNode {
 		return nil
 	}
 
-	value := &ast.Identifier{Value: parser.currentToken.Lexeme}
-	key := &ast.Identifier{}
+	value := ast.Identifier{Value: parser.currentToken.Lexeme}
+	key := ast.Identifier{}
 
 	parser.readToken()
 
@@ -84,8 +84,8 @@ func (parser *Parser) forInExpression(parent *ast.For) ast.ExpressionNode {
 		parser.readToken()
 	}
 
-	expression.Key = key
-	expression.Value = value
+	expression.Key = &key
+	expression.Value = &value
 
 	if !parser.currentTokenIs(token.IN) {
 		return nil

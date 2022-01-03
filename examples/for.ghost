@@ -1,3 +1,20 @@
 for (x := 0; x < 10; x := x + 1) {
     print(x)
 }
+
+bob := ["b", "o", "b"]
+
+for (key, value in bob) {
+    print(key)
+    print(value)
+}
+
+foobar := {
+    "name": "Ghost",
+    "type": "Language"
+}
+
+for (key, value in foobar) {
+    print(key)
+    print(value)
+}

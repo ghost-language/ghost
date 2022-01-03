@@ -28,6 +28,8 @@ func Evaluate(node ast.Node, env *object.Environment) object.Object {
 		return Evaluate(node.Expression, env)
 	case *ast.For:
 		return evaluateFor(node, env)
+	case *ast.ForIn:
+		return evaluateForIn(node, env)
 	case *ast.Function:
 		return evaluateFunction(node, env)
 	case *ast.Identifier:
