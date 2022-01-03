@@ -72,5 +72,5 @@ func evaluateStringIndex(left, index object.Object) object.Object {
 		return value.NULL
 	}
 
-	return &object.String{Value: string(str.Value[idx])}
+	return &object.String{Value: string([]rune(str.Value)[idx])}
 }
