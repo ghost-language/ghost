@@ -241,7 +241,7 @@ func (scanner *Scanner) scanIdentifier() string {
 func (scanner *Scanner) newToken(tokenType token.Type, literal interface{}) token.Token {
 	lexeme := fmt.Sprintf("%s", literal)
 
-	return token.Token{Type: tokenType, Lexeme: lexeme, Literal: literal, Line: scanner.line}
+	return token.Token{Type: tokenType, Lexeme: lexeme, Literal: literal, Line: scanner.line, Column: scanner.column}
 }
 
 // skipSingleLineComment consumes and reads characters until it reaches the end

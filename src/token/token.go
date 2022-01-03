@@ -11,6 +11,7 @@ type Token struct {
 	Lexeme  string      // String representation of literal value
 	Literal interface{} // Native value in Go
 	Line    int         // Line of occurance
+	Column  int         // Column of occurance on line
 }
 
 func (token *Token) String() string {
