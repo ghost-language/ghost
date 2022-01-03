@@ -18,7 +18,9 @@ func evaluateIdentifier(node *ast.Identifier, env *object.Environment) (object.O
 	value, ok := env.Get(node.Value)
 
 	if !ok {
-		return nil, false
+		err := newError("unkown identifier: %s", node.Value)
+
+		return err, false
 	}
 
 	return value, true

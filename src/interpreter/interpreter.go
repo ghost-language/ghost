@@ -12,6 +12,8 @@ import (
 
 type Evaluator func(node ast.Node, env *object.Environment) (object.Object, bool)
 
+// Evaluate is the heart of our interpreter. It switches off between the various
+// AST node types and evaluates each accordingly and returns its value.
 func Evaluate(node ast.Node, env *object.Environment) (object.Object, bool) {
 	switch node := node.(type) {
 	case *ast.Program:
@@ -70,6 +72,8 @@ func Evaluate(node ast.Node, env *object.Environment) (object.Object, bool) {
 	}
 }
 
+// toBooleanValue converts the passed native boolean value into a boolean
+// object.
 func toBooleanValue(input bool) *object.Boolean {
 	if input {
 		return value.TRUE
@@ -78,6 +82,16 @@ func toBooleanValue(input bool) *object.Boolean {
 	return value.FALSE
 }
 
+// isError determines if the referenced object is an error.
+func isError(obj object.Object) bool {
+	if obj != nil {
+		return obj.Type() == object.ERROR
+	}
+
+	return false
+}
+
+// isTruthy determines if the referenced value is of a truthy value.
 func isTruthy(value object.Object) bool {
 	switch value := value.(type) {
 	case *object.Null:
@@ -89,4 +103,9 @@ func isTruthy(value object.Object) bool {
 	default:
 		return true
 	}
+}
+
+// newError returns a new error object.
+func newError(format string, a ...interface{}) *object.Error {
+	return &object.Error{Message: fmt.Sprintf(format, a...)}
 }

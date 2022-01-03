@@ -10,6 +10,11 @@ func evaluateBlock(node *ast.Block, env *object.Environment) (object.Object, boo
 
 	for _, statement := range node.Statements {
 		result, _ = Evaluate(statement, env)
+
+		switch result.(type) {
+		case *object.Error:
+			return result, false
+		}
 	}
 
 	return result, true

@@ -28,14 +28,17 @@ func evaluatePrefix(node *ast.Prefix, env *object.Environment) (object.Object, b
 	case "-":
 		// Only works with number objects
 		if right.Type() != object.NUMBER {
-			// TODO: error message
-			return nil, false
+			err := newError("unknown operator: -%s", right.Type())
+
+			return err, false
 		}
 
 		numberValue := right.(*object.Number).Value.Neg()
 
 		return &object.Number{Value: numberValue}, true
 	default:
-		return nil, false
+		err := newError("unknown operator: %s%s", node.Operator, right.Type())
+
+		return err, false
 	}
 }

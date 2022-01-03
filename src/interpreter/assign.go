@@ -6,10 +6,10 @@ import (
 )
 
 func evaluateAssign(node *ast.Assign, env *object.Environment) (object.Object, bool) {
-	value, ok := Evaluate(node.Value, env)
+	value, _ := Evaluate(node.Value, env)
 
-	if !ok {
-		return nil, false
+	if isError(value) {
+		return value, false
 	}
 
 	if node.Name != nil {

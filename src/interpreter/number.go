@@ -37,6 +37,8 @@ func evaluateNumberInfix(node *ast.Infix, right object.Object, left object.Objec
 	case "!=":
 		return toBooleanValue(!rightValue.Equal(leftValue)), true
 	default:
-		return nil, false
+		err := newError("unknown operator: %s %s %s", right.Type(), node.Operator, left.Type())
+
+		return err, false
 	}
 }

@@ -18,8 +18,9 @@ func evaluateMap(node *ast.Map, env *object.Environment) (object.Object, bool) {
 		mapKey, ok := key.(object.Mappable)
 
 		if !ok {
-			// TODO: error message
-			return nil, false
+			err := newError("unusable as map key: %s", key.Type())
+
+			return err, false
 		}
 
 		value, ok := Evaluate(valueNode, env)

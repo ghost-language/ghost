@@ -31,6 +31,7 @@ func (function *Function) Method(method string, args []Object) (Object, bool) {
 	return nil, false
 }
 
+// Evaluate evaluates the function's body ast.Block and returns the result.
 func (function *Function) Evaluate(args []Object, writer io.Writer) (Object, bool) {
 	env := function.environment(args)
 
@@ -42,6 +43,9 @@ func (function *Function) Evaluate(args []Object, writer io.Writer) (Object, boo
 
 	return result, ok
 }
+
+// =============================================================================
+// Helper methods
 
 func (function *Function) environment(arguments []Object) *Environment {
 	env := NewEnclosedEnvironment(function.Environment)

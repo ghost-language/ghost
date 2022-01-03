@@ -21,7 +21,11 @@ func evaluateInfix(node *ast.Infix, env *object.Environment) (object.Object, boo
 	switch {
 	case left.Type() == object.NUMBER && right.Type() == object.NUMBER:
 		return evaluateNumberInfix(node, left, right)
+	case left.Type() != right.Type():
+		err := newError("type mismatch: %s %s %s", left.Type(), node.Operator, right.Type())
+		return err, false
 	default:
-		return nil, false
+		err := newError("unknown operator: %s %s %s", left.Type(), node.Operator, right.Type())
+		return err, false
 	}
 }
