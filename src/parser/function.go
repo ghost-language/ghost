@@ -10,6 +10,7 @@ func (parser *Parser) functionStatement() ast.ExpressionNode {
 
 	if !parser.nextTokenIs(token.LEFTPAREN) {
 		parser.readToken()
+
 		expression.Name = &ast.Identifier{Token: parser.currentToken, Value: parser.currentToken.Lexeme}
 	}
 
@@ -38,7 +39,26 @@ func (parser *Parser) functionParameters() (map[string]ast.ExpressionNode, []*as
 		return defaults, parameters
 	}
 
-	// to do
+	parser.readToken()
+
+	for !parser.currentTokenIs(token.RIGHTPAREN) {
+		parameter := &ast.Identifier{Token: parser.currentToken, Value: parser.currentToken.Lexeme}
+		parameters = append(parameters, parameter)
+
+		parser.readToken()
+
+		if parser.currentTokenIs(token.ASSIGN) {
+			parser.readToken()
+
+			defaults[parameter.Value] = parser.expressionStatement()
+
+			parser.readToken()
+		}
+
+		if parser.currentTokenIs(token.COMMA) {
+			parser.readToken()
+		}
+	}
 
 	return defaults, parameters
 }

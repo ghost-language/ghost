@@ -1,5 +1,7 @@
-function foobar() {
+function foobar(x := "foo", y := "bar") {
     print("oh, hi there :)")
+    print(x)
+    print(y)
 }
 
-foobar()
+foobar(true)
