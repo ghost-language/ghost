@@ -10,9 +10,21 @@ import (
 var Ghost = map[string]*object.LibraryFunction{}
 
 func init() {
+	RegisterMethod(Ghost, "abort", ghostAbort)
 	RegisterMethod(Ghost, "execute", ghostExecute)
 	RegisterMethod(Ghost, "identifiers", ghostIdentifiers)
 	RegisterMethod(Ghost, "version", ghostVersion)
+}
+
+func ghostAbort(env *object.Environment, args ...object.Object) object.Object {
+	switch obj := args[0].(type) {
+	case *object.Null:
+		return nil
+	case *object.String:
+		return object.NewError(obj.Value)
+	}
+
+	return object.NewError("ghost.abort must contain either a null or string value")
 }
 
 func ghostExecute(env *object.Environment, args ...object.Object) object.Object {

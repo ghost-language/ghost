@@ -1,4 +1,12 @@
-console.log("An example in testing.")
+function test(description, callback) {
+    result := callback()
+
+    if (! result) {
+        ghost.abort(description + " ...FAILED")
+    }
+
+    console.log(description + " ...PASSED")
+}
 
 test("example test A", function() {
     return a == 1
