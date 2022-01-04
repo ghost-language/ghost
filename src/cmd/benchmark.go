@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"ghostlang.org/x/ghost/interpreter"
+	"ghostlang.org/x/ghost/evaluator"
 	"ghostlang.org/x/ghost/object"
 	"ghostlang.org/x/ghost/parser"
 	"ghostlang.org/x/ghost/scanner"
@@ -48,7 +48,7 @@ func benchmark(source string) (scanTime time.Duration, parseTime time.Duration, 
 	parseTime = time.Since(parseStart)
 
 	interpretStart := time.Now()
-	interpreter.Evaluate(program, env)
+	evaluator.Evaluate(program, env)
 	interpretTime = time.Since(interpretStart)
 	ghostTime = time.Since(start)
 

@@ -1,7 +1,7 @@
 package ghost
 
 import (
-	"ghostlang.org/x/ghost/interpreter"
+	"ghostlang.org/x/ghost/evaluator"
 	"ghostlang.org/x/ghost/library/modules"
 	"ghostlang.org/x/ghost/log"
 	"ghostlang.org/x/ghost/object"
@@ -48,7 +48,7 @@ func (ghost *Ghost) Execute() object.Object {
 		return nil
 	}
 
-	result := interpreter.Evaluate(program, ghost.Environment)
+	result := evaluator.Evaluate(program, ghost.Environment)
 
 	if err, ok := result.(*object.Error); ok {
 		log.Error(err.Message)
@@ -60,10 +60,10 @@ func (ghost *Ghost) Execute() object.Object {
 }
 
 func (ghost *Ghost) RegisterEvaluator() {
-	evaluator := interpreter.Evaluate
+	evaluatorInstance := evaluator.Evaluate
 
-	object.RegisterEvaluator(evaluator)
-	modules.RegisterEvaluator(evaluator)
+	object.RegisterEvaluator(evaluatorInstance)
+	modules.RegisterEvaluator(evaluatorInstance)
 }
 
 func logParseErrors(errors []string) {

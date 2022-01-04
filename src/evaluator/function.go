@@ -1,4 +1,4 @@
-package interpreter
+package evaluator
 
 import (
 	"ghostlang.org/x/ghost/ast"

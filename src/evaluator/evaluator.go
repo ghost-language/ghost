@@ -1,4 +1,4 @@
-package interpreter
+package evaluator
 
 import (
 	"fmt"
@@ -10,7 +10,7 @@ import (
 
 type Evaluator func(node ast.Node, env *object.Environment) object.Object
 
-// Evaluate is the heart of our interpreter. It switches off between the various
+// Evaluate is the heart of our evaluator. It switches off between the various
 // AST node types and evaluates each accordingly and returns its value.
 func Evaluate(node ast.Node, env *object.Environment) object.Object {
 	switch node := node.(type) {
