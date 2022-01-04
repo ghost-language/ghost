@@ -18,6 +18,7 @@ func init() {
 	RegisterModule("os", modules.Os)
 
 	RegisterFunction("print", functions.Print)
+	RegisterFunction("test", functions.Test)
 	RegisterFunction("type", functions.Type)
 }
 

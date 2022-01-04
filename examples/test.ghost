@@ -1,0 +1,9 @@
+console.log("An example in testing.")
+
+test("example test A", function() {
+    return a == 1
+})
+
+test("example test B", function() {
+    return 1 == 2
+})

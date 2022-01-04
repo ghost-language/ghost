@@ -36,3 +36,24 @@ func (boolean *Boolean) MapKey() MapKey {
 func (boolean *Boolean) Method(method string, args []Object) (Object, bool) {
 	return nil, false
 }
+
+func IsTrue(obj Object) bool {
+	return isTruthy(obj)
+}
+
+func IsFalse(obj Object) bool {
+	return !isTruthy(obj)
+}
+
+func isTruthy(value Object) bool {
+	switch value := value.(type) {
+	case *Null:
+		return false
+	case *Boolean:
+		return value.Value
+	case *String:
+		return len(value.Value) > 0
+	default:
+		return true
+	}
+}
