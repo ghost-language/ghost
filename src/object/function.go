@@ -51,8 +51,7 @@ func (function *Function) environment(arguments []Object) *Environment {
 	env := NewEnclosedEnvironment(function.Environment)
 
 	for key, val := range function.Defaults {
-		result := evaluator(val, env)
-		env.Set(key, result)
+		env.Set(key, evaluator(val, env))
 	}
 
 	for index, parameter := range function.Parameters {

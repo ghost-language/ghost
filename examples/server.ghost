@@ -1,8 +1,13 @@
-http.handle("/", function() {
+http.handle("/", function(request) {
     start := os.clock()
     view := io.read("views/index.html")
 
     print(view)
+
+    console.log("method:", request["method"])
+    console.log("host:", request["host"])
+    console.log("content length:", request["contentLength"])
+    console.log("body:", request["body"])
 
     end := os.clock()
     total := ((end - start) / 1e6).toString()

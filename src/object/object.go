@@ -32,6 +32,6 @@ type HasMethods interface {
 type GoFunction func(env *Environment, args ...Object) Object
 type ObjectMethod func(value interface{}, args ...Object) (Object, bool)
 
-func SetEvaluator(e func(node ast.Node, env *Environment) Object) {
+func RegisterEvaluator(e func(node ast.Node, env *Environment) Object) {
 	evaluator = e
 }

@@ -1,6 +1,7 @@
 package modules
 
 import (
+	"bytes"
 	"context"
 	"net/http"
 	"os"
@@ -32,8 +33,21 @@ func httpHandle(env *object.Environment, args ...object.Object) object.Object {
 	http.HandleFunc(path, func(writer http.ResponseWriter, request *http.Request) {
 		env.SetWriter(writer)
 
-		callbackArgs := make([]object.Object, 1)
-		// callbackArgs = append(callbackArgs, &object.String{Value: "bar"})
+		requestBodyBuf := new(bytes.Buffer)
+		requestBodyBuf.ReadFrom(request.Body)
+
+		httpRequest := object.NewMap(map[string]interface{}{
+			"method":        request.Method,
+			"host":          request.Host,
+			"contentLength": request.ContentLength,
+			"protocol":      request.Proto,
+			"protocolMajor": request.ProtoMajor,
+			"protocolMinor": request.ProtoMinor,
+			"body":          requestBodyBuf.String(),
+		})
+
+		callbackArgs := make([]object.Object, 0)
+		callbackArgs = append(callbackArgs, httpRequest)
 
 		callback := args[1].(*object.Function)
 		callback.Evaluate(callbackArgs, writer)

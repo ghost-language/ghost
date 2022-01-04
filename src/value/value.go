@@ -1,6 +1,8 @@
 package value
 
-import "ghostlang.org/x/ghost/object"
+import (
+	"ghostlang.org/x/ghost/object"
+)
 
 var (
 	// TRUE represents a true value.
