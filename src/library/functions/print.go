@@ -5,9 +5,10 @@ import (
 	"strings"
 
 	"ghostlang.org/x/ghost/object"
+	"ghostlang.org/x/ghost/token"
 )
 
-func Print(env *object.Environment, args ...object.Object) object.Object {
+func Print(env *object.Environment, tok token.Token, args ...object.Object) object.Object {
 	if len(args) > 0 {
 		str := make([]string, 0)
 

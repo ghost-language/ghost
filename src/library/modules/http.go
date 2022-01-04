@@ -10,6 +10,7 @@ import (
 
 	"ghostlang.org/x/ghost/log"
 	"ghostlang.org/x/ghost/object"
+	"ghostlang.org/x/ghost/token"
 )
 
 var Http = map[string]*object.LibraryFunction{}
@@ -19,7 +20,7 @@ func init() {
 	RegisterMethod(Http, "listen", httpListen)
 }
 
-func httpHandle(env *object.Environment, args ...object.Object) object.Object {
+func httpHandle(env *object.Environment, tok token.Token, args ...object.Object) object.Object {
 	if args[0].Type() != object.STRING {
 		return nil
 	}
@@ -56,7 +57,7 @@ func httpHandle(env *object.Environment, args ...object.Object) object.Object {
 	return nil
 }
 
-func httpListen(env *object.Environment, args ...object.Object) object.Object {
+func httpListen(env *object.Environment, tok token.Token, args ...object.Object) object.Object {
 	if args[0].Type() != object.NUMBER {
 		return nil
 	}

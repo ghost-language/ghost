@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"ghostlang.org/x/ghost/object"
+	"ghostlang.org/x/ghost/token"
 	"github.com/shopspring/decimal"
 )
 
@@ -18,7 +19,7 @@ func init() {
 	RegisterMethod(Os, "sleep", osSleep)
 }
 
-func osArgs(env *object.Environment, args ...object.Object) object.Object {
+func osArgs(env *object.Environment, tok token.Token, args ...object.Object) object.Object {
 	list := &object.List{}
 	arguments := os.Args[1:]
 
@@ -29,13 +30,13 @@ func osArgs(env *object.Environment, args ...object.Object) object.Object {
 	return list
 }
 
-func osClock(env *object.Environment, args ...object.Object) object.Object {
+func osClock(env *object.Environment, tok token.Token, args ...object.Object) object.Object {
 	seconds := decimal.NewFromInt(time.Now().UnixNano())
 
 	return &object.Number{Value: seconds}
 }
 
-func osExit(env *object.Environment, args ...object.Object) object.Object {
+func osExit(env *object.Environment, tok token.Token, args ...object.Object) object.Object {
 	var message string
 
 	if len(args) == 2 {
@@ -71,7 +72,7 @@ func osExit(env *object.Environment, args ...object.Object) object.Object {
 	return arg
 }
 
-func osSleep(env *object.Environment, args ...object.Object) object.Object {
+func osSleep(env *object.Environment, tok token.Token, args ...object.Object) object.Object {
 	if len(args) != 1 {
 		// TODO: error
 		return nil

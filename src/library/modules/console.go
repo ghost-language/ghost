@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"ghostlang.org/x/ghost/object"
+	"ghostlang.org/x/ghost/token"
 	"github.com/peterh/liner"
 )
 
@@ -18,7 +19,7 @@ func init() {
 	RegisterMethod(Console, "warn", consoleWarn)
 }
 
-func consoleError(env *object.Environment, args ...object.Object) object.Object {
+func consoleError(env *object.Environment, tok token.Token, args ...object.Object) object.Object {
 	values := make([]string, 0)
 
 	for _, value := range args {
@@ -30,7 +31,7 @@ func consoleError(env *object.Environment, args ...object.Object) object.Object 
 	return nil
 }
 
-func consoleInfo(env *object.Environment, args ...object.Object) object.Object {
+func consoleInfo(env *object.Environment, tok token.Token, args ...object.Object) object.Object {
 	values := make([]string, 0)
 
 	for _, value := range args {
@@ -42,7 +43,7 @@ func consoleInfo(env *object.Environment, args ...object.Object) object.Object {
 	return nil
 }
 
-func consoleLog(env *object.Environment, args ...object.Object) object.Object {
+func consoleLog(env *object.Environment, tok token.Token, args ...object.Object) object.Object {
 	values := make([]string, 0)
 
 	for _, value := range args {
@@ -54,7 +55,7 @@ func consoleLog(env *object.Environment, args ...object.Object) object.Object {
 	return nil
 }
 
-func consoleRead(env *object.Environment, args ...object.Object) object.Object {
+func consoleRead(env *object.Environment, tok token.Token, args ...object.Object) object.Object {
 	line := liner.NewLiner()
 	prompt := ""
 	defer line.Close()
@@ -68,7 +69,7 @@ func consoleRead(env *object.Environment, args ...object.Object) object.Object {
 	return &object.String{Value: string(value)}
 }
 
-func consoleWarn(env *object.Environment, args ...object.Object) object.Object {
+func consoleWarn(env *object.Environment, tok token.Token, args ...object.Object) object.Object {
 	values := make([]string, 0)
 
 	for _, value := range args {

@@ -6,6 +6,7 @@ import (
 	"path"
 
 	"ghostlang.org/x/ghost/object"
+	"ghostlang.org/x/ghost/token"
 )
 
 var Io = map[string]*object.LibraryFunction{}
@@ -16,7 +17,7 @@ func init() {
 	RegisterMethod(Io, "write", ioWrite)
 }
 
-func ioAppend(env *object.Environment, args ...object.Object) object.Object {
+func ioAppend(env *object.Environment, tok token.Token, args ...object.Object) object.Object {
 	path := path.Clean(env.GetDirectory() + "/" + args[0].(*object.String).Value)
 
 	file, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
@@ -32,7 +33,7 @@ func ioAppend(env *object.Environment, args ...object.Object) object.Object {
 	return nil
 }
 
-func ioRead(env *object.Environment, args ...object.Object) object.Object {
+func ioRead(env *object.Environment, tok token.Token, args ...object.Object) object.Object {
 	path := path.Clean(env.GetDirectory() + "/" + args[0].(*object.String).Value)
 	content, err := ioutil.ReadFile(path)
 
@@ -43,7 +44,7 @@ func ioRead(env *object.Environment, args ...object.Object) object.Object {
 	return &object.String{Value: string(content)}
 }
 
-func ioWrite(env *object.Environment, args ...object.Object) object.Object {
+func ioWrite(env *object.Environment, tok token.Token, args ...object.Object) object.Object {
 	path := path.Clean(env.GetDirectory() + "/" + args[0].(*object.String).Value)
 	contents := []byte(args[1].(*object.String).Value)
 	info, _ := os.Stat(path)

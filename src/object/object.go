@@ -2,6 +2,7 @@ package object
 
 import (
 	"ghostlang.org/x/ghost/ast"
+	"ghostlang.org/x/ghost/token"
 )
 
 var evaluator func(node ast.Node, env *Environment) Object
@@ -29,7 +30,7 @@ type HasMethods interface {
 	Method(method string, args []Object) (Object, bool)
 }
 
-type GoFunction func(env *Environment, args ...Object) Object
+type GoFunction func(env *Environment, tok token.Token, args ...Object) Object
 type ObjectMethod func(value interface{}, args ...Object) (Object, bool)
 
 func RegisterEvaluator(e func(node ast.Node, env *Environment) Object) {
