@@ -1,7 +1,12 @@
 function foobar(x := "foo", y := "bar") {
     print("oh, hi there :)")
     print(x)
+
+    return true
+
     print(y)
 }
 
-foobar(true)
+result := foobar()
+
+print(result)

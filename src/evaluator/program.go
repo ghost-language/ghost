@@ -11,9 +11,11 @@ func evaluateProgram(node *ast.Program, env *object.Environment) object.Object {
 	for _, statement := range node.Statements {
 		result = Evaluate(statement, env)
 
-		switch result.(type) {
+		switch statement := result.(type) {
 		case *object.Error:
-			return result
+			return statement
+		case *object.Return:
+			return statement.Value
 		}
 	}
 
