@@ -604,6 +604,36 @@ func TestEmptyMapLiterals(t *testing.T) {
 	}
 }
 
+func TestReturnStatements(t *testing.T) {
+	input := `
+		return 5
+		return 10
+		return 3.14
+	`
+
+	scanner := scanner.New(input)
+	parser := New(scanner)
+	program := parser.Parse()
+
+	failIfParserHasErrors(t, parser)
+
+	if len(program.Statements) != 3 {
+		t.Fatalf("program.Statements does not contain 3 statements. got=%d", len(program.Statements))
+	}
+
+	for _, statement := range program.Statements {
+		returnStatement, ok := statement.(*ast.Return)
+
+		if !ok {
+			t.Fatalf("statement is not ast.Return. got=%T", statement)
+		}
+
+		if returnStatement.Token.Lexeme != "return" {
+			t.Fatalf("returnStatement.Token.Lexeme is not 'return. got=%q", returnStatement.Token.Lexeme)
+		}
+	}
+}
+
 // =============================================================================
 // Helper methods
 
