@@ -3,6 +3,7 @@ package modules
 import (
 	"fmt"
 	"os"
+	"runtime"
 	"time"
 
 	"ghostlang.org/x/ghost/object"
@@ -18,6 +19,8 @@ func init() {
 	RegisterMethod(OsMethods, "clock", osClock)
 	RegisterMethod(OsMethods, "exit", osExit)
 	RegisterMethod(OsMethods, "sleep", osSleep)
+
+	RegisterProperty(OsProperties, "name", osName)
 }
 
 func osArgs(env *object.Environment, tok token.Token, args ...object.Object) object.Object {
@@ -88,4 +91,10 @@ func osSleep(env *object.Environment, tok token.Token, args ...object.Object) ob
 	time.Sleep(time.Duration(ms.Value.IntPart()) * time.Millisecond)
 
 	return nil
+}
+
+// Properties
+
+func osName(env *object.Environment, tok token.Token) object.Object {
+	return &object.String{Value: runtime.GOOS}
 }
