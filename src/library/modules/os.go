@@ -18,7 +18,6 @@ func init() {
 	RegisterMethod(OsMethods, "args", osArgs)
 	RegisterMethod(OsMethods, "clock", osClock)
 	RegisterMethod(OsMethods, "exit", osExit)
-	RegisterMethod(OsMethods, "sleep", osSleep)
 
 	RegisterProperty(OsProperties, "name", osName)
 }
@@ -74,23 +73,6 @@ func osExit(env *object.Environment, tok token.Token, args ...object.Object) obj
 	os.Exit(int(arg.Value.IntPart()))
 
 	return arg
-}
-
-func osSleep(env *object.Environment, tok token.Token, args ...object.Object) object.Object {
-	if len(args) != 1 {
-		// TODO: error
-		return nil
-	}
-
-	if args[0].Type() != object.NUMBER {
-		// TODO: error
-		return nil
-	}
-
-	ms := args[0].(*object.Number)
-	time.Sleep(time.Duration(ms.Value.IntPart()) * time.Millisecond)
-
-	return nil
 }
 
 // Properties
