@@ -1,9 +1,6 @@
 package modules
 
 import (
-	"math/rand"
-	"time"
-
 	"ghostlang.org/x/ghost/object"
 	"ghostlang.org/x/ghost/token"
 	"github.com/shopspring/decimal"
@@ -18,13 +15,12 @@ func init() {
 	RegisterMethod(MathMethods, "isNegative", mathIsNegative)
 	RegisterMethod(MathMethods, "isPositive", mathIsPositive)
 	RegisterMethod(MathMethods, "isZero", mathIsZero)
-	RegisterMethod(MathMethods, "random", mathRandom)
-	RegisterMethod(MathMethods, "seed", mathSeed)
 	RegisterMethod(MathMethods, "sin", mathSin)
 	RegisterMethod(MathMethods, "tan", mathTan)
 
 	RegisterProperty(MathProperties, "pi", mathPi)
 	RegisterProperty(MathProperties, "e", mathE)
+	RegisterProperty(MathProperties, "epsilon", mathEpsilon)
 	RegisterProperty(MathProperties, "tau", mathTau)
 }
 
@@ -103,52 +99,6 @@ func mathIsZero(env *object.Environment, tok token.Token, args ...object.Object)
 	return &object.Boolean{Value: number.Value.IsZero()}
 }
 
-// mathRandom when called without arguments returns a uniform pseudo-random real
-// number in the range (0, 1). When called with a single number value (a), a
-// pseudo-random number will be returned in the range (0, a). When called with
-// two numbers (a, b), a pseudo-random number will be returned in the
-// range (a, b).
-func mathRandom(env *object.Environment, tok token.Token, args ...object.Object) object.Object {
-	min := float64(0)
-	max := float64(0)
-
-	if len(args) > 0 {
-		max, _ = args[0].(*object.Number).Value.Float64()
-
-		if len(args) > 1 {
-			min = max
-			max, _ = args[1].(*object.Number).Value.Float64()
-		}
-	}
-
-	number := float64(0)
-
-	if max > 0 {
-		number = float64(min + rand.Float64()*(max-min))
-	} else {
-		number = rand.Float64()
-	}
-
-	return &object.Number{Value: decimal.NewFromFloat(number)}
-}
-
-// mathSeed sets the referenced number as the seed for the pseudo-random
-// generator used by math.random(). If no value is passed, the current unix
-// nano timestamp will be used.
-func mathSeed(env *object.Environment, tok token.Token, args ...object.Object) object.Object {
-	var seed int64
-
-	if len(args) == 1 && args[0].Type() == object.NUMBER {
-		seed = args[0].(*object.Number).Value.IntPart()
-	} else {
-		seed = time.Now().UnixNano()
-	}
-
-	rand.Seed(seed)
-
-	return nil
-}
-
 // mathSin returns the sine value of the referenced number.
 func mathSin(env *object.Environment, tok token.Token, args ...object.Object) object.Object {
 	if len(args) != 1 {
@@ -201,4 +151,13 @@ func mathTau(env *object.Environment, tok token.Token) object.Object {
 	tau, _ := decimal.NewFromString("6.283185307179586")
 
 	return &object.Number{Value: tau}
+}
+
+// mathEpsilon returns the value of ϵ, otherwise known as Epsilon. Epsilon
+// represents the difference between 1 and the smallest floating point number
+// greater than 1.
+func mathEpsilon(env *object.Environment, tok token.Token) object.Object {
+	epsilon, _ := decimal.NewFromString("2.2204460492503130808472633361816E-16")
+
+	return &object.Number{Value: epsilon}
 }

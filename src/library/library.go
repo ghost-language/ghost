@@ -16,6 +16,7 @@ func init() {
 	RegisterModule("io", modules.IoMethods, modules.IoProperties)
 	RegisterModule("math", modules.MathMethods, modules.MathProperties)
 	RegisterModule("os", modules.OsMethods, modules.OsProperties)
+	RegisterModule("random", modules.RandomMethods, modules.RandomProperties)
 	RegisterModule("time", modules.TimeMethods, modules.TimeProperties)
 
 	RegisterFunction("print", functions.Print)
