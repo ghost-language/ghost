@@ -9,19 +9,23 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-var Math = map[string]*object.LibraryFunction{}
+var MathMethods = map[string]*object.LibraryFunction{}
+var MathProperties = map[string]*object.LibraryProperty{}
 
 func init() {
-	RegisterMethod(Math, "abs", mathAbs)
-	RegisterMethod(Math, "cos", mathCos)
-	RegisterMethod(Math, "isNegative", mathIsNegative)
-	RegisterMethod(Math, "isPositive", mathIsPositive)
-	RegisterMethod(Math, "isZero", mathIsZero)
-	RegisterMethod(Math, "pi", mathPi)
-	RegisterMethod(Math, "random", mathRandom)
-	RegisterMethod(Math, "seed", mathSeed)
-	RegisterMethod(Math, "sin", mathSin)
-	RegisterMethod(Math, "tan", mathTan)
+	RegisterMethod(MathMethods, "abs", mathAbs)
+	RegisterMethod(MathMethods, "cos", mathCos)
+	RegisterMethod(MathMethods, "isNegative", mathIsNegative)
+	RegisterMethod(MathMethods, "isPositive", mathIsPositive)
+	RegisterMethod(MathMethods, "isZero", mathIsZero)
+	RegisterMethod(MathMethods, "random", mathRandom)
+	RegisterMethod(MathMethods, "seed", mathSeed)
+	RegisterMethod(MathMethods, "sin", mathSin)
+	RegisterMethod(MathMethods, "tan", mathTan)
+
+	RegisterProperty(MathProperties, "pi", mathPi)
+	RegisterProperty(MathProperties, "e", mathE)
+	RegisterProperty(MathProperties, "tau", mathTau)
 }
 
 // mathAbs returns the absolute value of the referenced number.
@@ -99,13 +103,6 @@ func mathIsZero(env *object.Environment, tok token.Token, args ...object.Object)
 	return &object.Boolean{Value: number.Value.IsZero()}
 }
 
-// mathPi returns the value of pi.
-func mathPi(env *object.Environment, tok token.Token, args ...object.Object) object.Object {
-	pi, _ := decimal.NewFromString("3.14159265358979323846264338327950288419716939937510582097494459")
-
-	return &object.Number{Value: pi}
-}
-
 // mathRandom when called without arguments returns a uniform pseudo-random real
 // number in the range (0, 1). When called with a single number value (a), a
 // pseudo-random number will be returned in the range (0, a). When called with
@@ -180,4 +177,28 @@ func mathTan(env *object.Environment, tok token.Token, args ...object.Object) ob
 	number := args[0].(*object.Number)
 
 	return &object.Number{Value: number.Value.Tan()}
+}
+
+// Properties
+
+// mathPi returns the value of π, othewise known as Pi.
+func mathPi(env *object.Environment, tok token.Token) object.Object {
+	pi, _ := decimal.NewFromString("3.141592653589793")
+
+	return &object.Number{Value: pi}
+}
+
+// mathE returns the value of e, otherwise known as Euler's number.
+func mathE(env *object.Environment, tok token.Token) object.Object {
+	e, _ := decimal.NewFromString("2.718281828459045")
+
+	return &object.Number{Value: e}
+}
+
+// mathTau returns the value of τ, otherwise known as Tau. Tau is a circle
+// constant equal to 2π, the ratio of a circle’s circumference to its radius.
+func mathTau(env *object.Environment, tok token.Token) object.Object {
+	tau, _ := decimal.NewFromString("6.283185307179586")
+
+	return &object.Number{Value: tau}
 }

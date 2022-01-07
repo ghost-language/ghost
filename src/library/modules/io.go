@@ -10,12 +10,13 @@ import (
 	"ghostlang.org/x/ghost/token"
 )
 
-var Io = map[string]*object.LibraryFunction{}
+var IoMethods = map[string]*object.LibraryFunction{}
+var IoProperties = map[string]*object.LibraryProperty{}
 
 func init() {
-	RegisterMethod(Io, "append", ioAppend)
-	RegisterMethod(Io, "read", ioRead)
-	RegisterMethod(Io, "write", ioWrite)
+	RegisterMethod(IoMethods, "append", ioAppend)
+	RegisterMethod(IoMethods, "read", ioRead)
+	RegisterMethod(IoMethods, "write", ioWrite)
 }
 
 func ioAppend(env *object.Environment, tok token.Token, args ...object.Object) object.Object {

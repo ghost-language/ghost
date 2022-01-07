@@ -10,13 +10,14 @@ import (
 	"ghostlang.org/x/ghost/version"
 )
 
-var Ghost = map[string]*object.LibraryFunction{}
+var GhostMethods = map[string]*object.LibraryFunction{}
+var GhostProperties = map[string]*object.LibraryProperty{}
 
 func init() {
-	RegisterMethod(Ghost, "abort", ghostAbort)
-	RegisterMethod(Ghost, "execute", ghostExecute)
-	RegisterMethod(Ghost, "identifiers", ghostIdentifiers)
-	RegisterMethod(Ghost, "version", ghostVersion)
+	RegisterMethod(GhostMethods, "abort", ghostAbort)
+	RegisterMethod(GhostMethods, "execute", ghostExecute)
+	RegisterMethod(GhostMethods, "identifiers", ghostIdentifiers)
+	RegisterMethod(GhostMethods, "version", ghostVersion)
 }
 
 func ghostAbort(env *object.Environment, tok token.Token, args ...object.Object) object.Object {

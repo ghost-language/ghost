@@ -10,13 +10,14 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-var Os = map[string]*object.LibraryFunction{}
+var OsMethods = map[string]*object.LibraryFunction{}
+var OsProperties = map[string]*object.LibraryProperty{}
 
 func init() {
-	RegisterMethod(Os, "args", osArgs)
-	RegisterMethod(Os, "clock", osClock)
-	RegisterMethod(Os, "exit", osExit)
-	RegisterMethod(Os, "sleep", osSleep)
+	RegisterMethod(OsMethods, "args", osArgs)
+	RegisterMethod(OsMethods, "clock", osClock)
+	RegisterMethod(OsMethods, "exit", osExit)
+	RegisterMethod(OsMethods, "sleep", osSleep)
 }
 
 func osArgs(env *object.Environment, tok token.Token, args ...object.Object) object.Object {

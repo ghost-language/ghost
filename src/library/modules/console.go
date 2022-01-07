@@ -9,14 +9,15 @@ import (
 	"github.com/peterh/liner"
 )
 
-var Console = map[string]*object.LibraryFunction{}
+var ConsoleMethods = map[string]*object.LibraryFunction{}
+var ConsoleProperties = map[string]*object.LibraryProperty{}
 
 func init() {
-	RegisterMethod(Console, "error", consoleError)
-	RegisterMethod(Console, "info", consoleInfo)
-	RegisterMethod(Console, "log", consoleLog)
-	RegisterMethod(Console, "read", consoleRead)
-	RegisterMethod(Console, "warn", consoleWarn)
+	RegisterMethod(ConsoleMethods, "error", consoleError)
+	RegisterMethod(ConsoleMethods, "info", consoleInfo)
+	RegisterMethod(ConsoleMethods, "log", consoleLog)
+	RegisterMethod(ConsoleMethods, "read", consoleRead)
+	RegisterMethod(ConsoleMethods, "warn", consoleWarn)
 }
 
 func consoleError(env *object.Environment, tok token.Token, args ...object.Object) object.Object {

@@ -2,7 +2,6 @@ package parser
 
 import (
 	"ghostlang.org/x/ghost/ast"
-	"ghostlang.org/x/ghost/log"
 	"ghostlang.org/x/ghost/token"
 )
 
@@ -25,8 +24,8 @@ func (parser *Parser) dotExpression(left ast.ExpressionNode) ast.ExpressionNode 
 	}
 
 	// Property
-	log.Debug("properties TBD...")
-	expression := &ast.Null{}
+	expression := &ast.Property{Token: currentToken, Left: left}
+	expression.Property = parser.parseExpression(currentPrecedence)
 
 	return expression
 }

@@ -7,8 +7,12 @@ import (
 
 var evaluate func(node ast.Node, env *object.Environment) object.Object
 
-func RegisterMethod(module map[string]*object.LibraryFunction, method string, function object.GoFunction) {
-	module[method] = &object.LibraryFunction{Name: method, Function: function}
+func RegisterMethod(methods map[string]*object.LibraryFunction, name string, function object.GoFunction) {
+	methods[name] = &object.LibraryFunction{Name: name, Function: function}
+}
+
+func RegisterProperty(properties map[string]*object.LibraryProperty, name string, property object.GoProperty) {
+	properties[name] = &object.LibraryProperty{Name: name, Property: property}
 }
 
 func RegisterEvaluator(e func(node ast.Node, env *object.Environment) object.Object) {

@@ -13,11 +13,12 @@ import (
 	"ghostlang.org/x/ghost/token"
 )
 
-var Http = map[string]*object.LibraryFunction{}
+var HttpMethods = map[string]*object.LibraryFunction{}
+var HttpProperties = map[string]*object.LibraryProperty{}
 
 func init() {
-	RegisterMethod(Http, "handle", httpHandle)
-	RegisterMethod(Http, "listen", httpListen)
+	RegisterMethod(HttpMethods, "handle", httpHandle)
+	RegisterMethod(HttpMethods, "listen", httpListen)
 }
 
 func httpHandle(env *object.Environment, tok token.Token, args ...object.Object) object.Object {

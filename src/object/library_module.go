@@ -6,8 +6,9 @@ const LIBRARY_MODULE = "LIBRARY_MODULE"
 
 // LibraryModule objects consist of a slice of LibraryFunctions.
 type LibraryModule struct {
-	Name    string
-	Methods map[string]*LibraryFunction
+	Name       string
+	Methods    map[string]*LibraryFunction
+	Properties map[string]*LibraryProperty
 }
 
 // String represents the library module's value as a string.

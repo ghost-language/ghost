@@ -31,6 +31,7 @@ type HasMethods interface {
 }
 
 type GoFunction func(env *Environment, tok token.Token, args ...Object) Object
+type GoProperty func(env *Environment, tok token.Token) Object
 type ObjectMethod func(value interface{}, args ...Object) (Object, bool)
 
 func RegisterEvaluator(e func(node ast.Node, env *Environment) Object) {

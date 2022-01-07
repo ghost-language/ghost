@@ -52,6 +52,8 @@ func Evaluate(node ast.Node, env *object.Environment) object.Object {
 		return evaluateNumber(node, env)
 	case *ast.Prefix:
 		return evaluatePrefix(node, env)
+	case *ast.Property:
+		return evaluateProperty(node, env)
 	case *ast.Return:
 		return evaluateReturn(node, env)
 	case *ast.String:

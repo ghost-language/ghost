@@ -30,6 +30,12 @@ func unwrapCall(tok token.Token, callee object.Object, arguments []object.Object
 		}
 
 		return nil
+	case *object.LibraryProperty:
+		if result := callee.Property(env, tok); result != nil {
+			return result
+		}
+
+		return nil
 	case *object.Function:
 		functionEnvironment := createFunctionEnvironment(callee, arguments)
 		evaluated := Evaluate(callee.Body, functionEnvironment)
