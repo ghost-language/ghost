@@ -1,7 +1,5 @@
 package object
 
-import "fmt"
-
 const LIBRARY_MODULE = "LIBRARY_MODULE"
 
 // LibraryModule objects consist of a slice of LibraryFunctions.
@@ -13,7 +11,7 @@ type LibraryModule struct {
 
 // String represents the library module's value as a string.
 func (libraryModule *LibraryModule) String() string {
-	return fmt.Sprintf("library module {%s}", libraryModule.Name)
+	return libraryModule.Name
 }
 
 // Type returns the library module object type.

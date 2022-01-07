@@ -17,7 +17,8 @@ func init() {
 	RegisterMethod(GhostMethods, "abort", ghostAbort)
 	RegisterMethod(GhostMethods, "execute", ghostExecute)
 	RegisterMethod(GhostMethods, "identifiers", ghostIdentifiers)
-	RegisterMethod(GhostMethods, "version", ghostVersion)
+
+	RegisterProperty(GhostProperties, "version", ghostVersion)
 }
 
 func ghostAbort(env *object.Environment, tok token.Token, args ...object.Object) object.Object {
@@ -69,10 +70,8 @@ func ghostIdentifiers(env *object.Environment, tok token.Token, args ...object.O
 	return &object.List{Elements: identifiers}
 }
 
-func ghostVersion(env *object.Environment, tok token.Token, args ...object.Object) object.Object {
-	if len(args) != 0 {
-		return object.NewError("%d:%d: runtime error: ghost.version() expects 0 arguments. got=%d", tok.Line, tok.Column, len(args))
-	}
+// Properties
 
+func ghostVersion(env *object.Environment, tok token.Token) object.Object {
 	return &object.String{Value: version.Version}
 }
