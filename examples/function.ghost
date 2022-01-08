@@ -1,9 +1,13 @@
 function foobar(x := "foo", y := "bar") {
-    print("oh, hi there :)")
+    print("foobar function called")
+    print(x == "foo")
+
+    if (x == "foo") {
+        print("x == foo")
+        return
+    }
+
     print(x)
-
-    return true
-
     print(y)
 }
 

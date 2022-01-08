@@ -14,9 +14,7 @@ func (parser *Parser) blockStatement() *ast.Block {
 	for !parser.currentTokenIs(token.RIGHTBRACE) && !parser.isAtEnd() {
 		statement := parser.statement()
 
-		if statement != nil {
-			block.Statements = append(block.Statements, statement)
-		}
+		block.Statements = append(block.Statements, statement)
 
 		parser.readToken()
 	}

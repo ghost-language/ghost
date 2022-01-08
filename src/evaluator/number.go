@@ -9,7 +9,7 @@ func evaluateNumber(node *ast.Number, env *object.Environment) object.Object {
 	return &object.Number{Value: node.Value}
 }
 
-func evaluateNumberInfix(node *ast.Infix, right object.Object, left object.Object) object.Object {
+func evaluateNumberInfix(node *ast.Infix, left object.Object, right object.Object) object.Object {
 	leftValue := left.(*object.Number).Value
 	rightValue := right.(*object.Number).Value
 

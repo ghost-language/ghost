@@ -8,3 +8,27 @@ import (
 func evaluateString(node *ast.String, env *object.Environment) object.Object {
 	return &object.String{Value: node.Value}
 }
+
+func evaluateStringInfix(node *ast.Infix, left object.Object, right object.Object) object.Object {
+	leftValue := left.String()
+	rightValue := right.String()
+
+	switch node.Operator {
+	case "+":
+		return &object.String{Value: leftValue + rightValue}
+	case "<":
+		return &object.Boolean{Value: leftValue < rightValue}
+	case "<=":
+		return &object.Boolean{Value: leftValue <= rightValue}
+	case ">":
+		return &object.Boolean{Value: leftValue > rightValue}
+	case ">=":
+		return &object.Boolean{Value: leftValue >= rightValue}
+	case "==":
+		return &object.Boolean{Value: leftValue == rightValue}
+	case "!=":
+		return &object.Boolean{Value: leftValue != rightValue}
+	default:
+		return newError("%d:%d: runtime error: unknown operator: %s %s %s", node.Token.Line, node.Token.Column, right.Type(), node.Operator, left.Type())
+	}
+}
