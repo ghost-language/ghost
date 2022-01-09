@@ -1,4 +1,8 @@
-class Dog {
+class Animal {
+    //
+}
+
+class Dog extends Animal {
     function speak() {
         print("bark!")
     }
@@ -6,4 +10,4 @@ class Dog {
 
 soma := Dog()
 
-soma.speak()
+print(soma)

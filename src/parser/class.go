@@ -12,6 +12,16 @@ func (parser *Parser) classStatement() ast.ExpressionNode {
 
 	class.Name = &ast.Identifier{Token: parser.currentToken, Value: parser.currentToken.Lexeme}
 
+	if parser.nextTokenIs(token.EXTENDS) {
+		parser.readToken()
+
+		if !parser.expectNextTokenIs(token.IDENTIFIER) {
+			return nil
+		}
+
+		class.Super = &ast.Identifier{Token: parser.currentToken, Value: parser.currentToken.Lexeme}
+	}
+
 	if !parser.expectNextTokenIs(token.LEFTBRACE) {
 		return nil
 	}

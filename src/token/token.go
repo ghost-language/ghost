@@ -57,6 +57,7 @@ const (
 	AND      = "and"
 	CLASS    = "class"
 	ELSE     = "else"
+	EXTENDS  = "extends"
 	FALSE    = "false"
 	FOR      = "for"
 	FUNCTION = "function"
