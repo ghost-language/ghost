@@ -1,7 +1,9 @@
 class Dog {
-    // coming soon...
+    function speak() {
+        print("bark!")
+    }
 }
 
 soma := Dog()
 
-print(soma)
+soma.speak()
