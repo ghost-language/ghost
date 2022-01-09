@@ -52,8 +52,11 @@ func unwrapCall(tok token.Token, callee object.Object, arguments []object.Object
 }
 
 func unwrapReturn(obj object.Object) object.Object {
-	if returnValue, ok := obj.(*object.Return); ok {
-		return returnValue.Value
+	switch value := obj.(type) {
+	case *object.Error:
+		return obj
+	case *object.Return:
+		return value.Value
 	}
 
 	return value.NULL
