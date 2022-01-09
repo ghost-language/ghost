@@ -6,8 +6,10 @@ const CLASS = "CLASS"
 
 // Class objects consist of a body and an environment.
 type Class struct {
-	Name  *ast.Identifier
-	Scope *Scope
+	Name        *ast.Identifier
+	Scope       *Scope
+	Environment *Environment
+	Super       *Class
 }
 
 // String represents the class object's value as a string.

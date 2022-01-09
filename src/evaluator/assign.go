@@ -13,7 +13,12 @@ func evaluateAssign(node *ast.Assign, scope *object.Scope) object.Object {
 	}
 
 	if node.Name != nil {
-		scope.Environment.Set(node.Name.Value, value)
+		switch this := scope.Self.(type) {
+		case *object.Class:
+			this.Environment.Set(node.Name.Value, value)
+		default:
+			scope.Environment.Set(node.Name.Value, value)
+		}
 	}
 
 	return nil

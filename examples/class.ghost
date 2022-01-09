@@ -3,11 +3,14 @@ class Animal {
 }
 
 class Dog extends Animal {
+    name := "Soma"
+
     function speak() {
+        print(this)
         print("bark!")
     }
 }
 
 soma := Dog()
 
-print(soma)
+soma.speak()
