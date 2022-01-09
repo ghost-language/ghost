@@ -6,7 +6,8 @@ const INSTANCE = "INSTANCE"
 
 // Instance objects consist of a body and an environment.
 type Instance struct {
-	Class *Class
+	Class       *Class
+	Environment *Environment
 }
 
 // String represents the instance object's value as a string.
