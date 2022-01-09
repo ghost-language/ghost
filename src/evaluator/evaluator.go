@@ -60,6 +60,8 @@ func Evaluate(node ast.Node, scope *object.Scope) object.Object {
 		return evaluateReturn(node, scope)
 	case *ast.String:
 		return evaluateString(node, scope)
+	case *ast.This:
+		return evaluateThis(node, scope)
 	case *ast.While:
 		return evaluateWhile(node, scope)
 	}
