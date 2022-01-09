@@ -25,6 +25,10 @@ func evaluateCall(node *ast.Call, env *object.Environment) object.Object {
 
 func unwrapCall(tok token.Token, callee object.Object, arguments []object.Object, env *object.Environment) object.Object {
 	switch callee := callee.(type) {
+	case *object.Class:
+		instance := &object.Instance{Class: callee}
+
+		return instance
 	case *object.LibraryFunction:
 		if result := callee.Function(env, tok, arguments...); result != nil {
 			return result

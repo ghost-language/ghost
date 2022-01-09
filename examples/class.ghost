@@ -1,0 +1,7 @@
+class Dog {
+    // coming soon...
+}
+
+soma := Dog()
+
+print(soma)

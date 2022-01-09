@@ -91,6 +91,7 @@ func New(scanner *scanner.Scanner) *Parser {
 	parser.registerPrefix(token.LEFTBRACE, parser.mapLiteral)
 	parser.registerPrefix(token.WHILE, parser.whileExpression)
 	parser.registerPrefix(token.FOR, parser.forExpression)
+	parser.registerPrefix(token.CLASS, parser.classStatement)
 
 	// Register all of our infix parse functions
 	parser.registerInfix(token.PLUS, parser.infixExpression)

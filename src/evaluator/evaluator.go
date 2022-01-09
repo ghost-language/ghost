@@ -24,6 +24,8 @@ func Evaluate(node ast.Node, env *object.Environment) object.Object {
 		return evaluateBoolean(node, env)
 	case *ast.Call:
 		return evaluateCall(node, env)
+	case *ast.Class:
+		return evaluateClass(node, env)
 	case *ast.Expression:
 		return Evaluate(node.Expression, env)
 	case *ast.For:

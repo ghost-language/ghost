@@ -79,6 +79,26 @@ func TestNumbers(t *testing.T) {
 	}
 }
 
+func TestClassStatement(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected string
+	}{
+		{`class Foo {}`, "Foo"},
+		{`class Foo {
+			function bar() {
+				true
+			}
+		}`, "Foo"},
+	}
+
+	for _, tt := range tests {
+		evaluated := evaluate(tt.input)
+
+		isClassObject(t, evaluated, tt.expected)
+	}
+}
+
 // =============================================================================
 // Helper functions
 
@@ -119,6 +139,22 @@ func isNumberObject(t *testing.T, obj object.Object, expected int64) bool {
 
 	if number.Value.IntPart() != expected {
 		t.Errorf("object has wrong value. got=%d, expected=%d", number.Value.IntPart(), expected)
+		return false
+	}
+
+	return true
+}
+
+func isClassObject(t *testing.T, obj object.Object, expected string) bool {
+	class, ok := obj.(*object.Class)
+
+	if !ok {
+		t.Errorf("object is not Class. got=%T (%+v", obj, obj)
+		return false
+	}
+
+	if class.Name.Value != expected {
+		t.Errorf("class has wrong name. got=%s, expected=%s", class.Name.Value, expected)
 		return false
 	}
 
