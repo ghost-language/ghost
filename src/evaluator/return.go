@@ -5,8 +5,8 @@ import (
 	"ghostlang.org/x/ghost/object"
 )
 
-func evaluateReturn(node *ast.Return, env *object.Environment) object.Object {
-	value := Evaluate(node.Value, env)
+func evaluateReturn(node *ast.Return, scope *object.Scope) object.Object {
+	value := Evaluate(node.Value, scope)
 
 	return &object.Return{Value: value}
 }

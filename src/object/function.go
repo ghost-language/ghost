@@ -10,10 +10,10 @@ const FUNCTION = "FUNCTION"
 
 // Function objects consist of a user-generated function.
 type Function struct {
-	Parameters  []*ast.Identifier
-	Body        *ast.Block
-	Defaults    map[string]ast.ExpressionNode
-	Environment *Environment
+	Parameters []*ast.Identifier
+	Body       *ast.Block
+	Defaults   map[string]ast.ExpressionNode
+	Scope      *Scope
 }
 
 // String represents the function object's value as a string.
@@ -33,13 +33,13 @@ func (function *Function) Method(method string, args []Object) (Object, bool) {
 
 // Evaluate evaluates the function's body ast.Block and returns the result.
 func (function *Function) Evaluate(args []Object, writer io.Writer) Object {
-	env := function.environment(args)
+	scope := function.scope(args)
 
 	if writer != nil {
-		env.SetWriter(writer)
+		scope.Environment.SetWriter(writer)
 	}
 
-	result := evaluator(function.Body, env)
+	result := evaluator(function.Body, scope)
 
 	return result
 }
@@ -47,18 +47,21 @@ func (function *Function) Evaluate(args []Object, writer io.Writer) Object {
 // =============================================================================
 // Helper methods
 
-func (function *Function) environment(arguments []Object) *Environment {
-	env := NewEnclosedEnvironment(function.Environment)
+func (function *Function) scope(arguments []Object) *Scope {
+	scope := &Scope{
+		Self:        function,
+		Environment: NewEnclosedEnvironment(function.Scope.Environment),
+	}
 
 	for key, val := range function.Defaults {
-		env.Set(key, evaluator(val, env))
+		scope.Environment.Set(key, evaluator(val, scope))
 	}
 
 	for index, parameter := range function.Parameters {
 		if index < len(arguments) {
-			env.Set(parameter.Value, arguments[index])
+			scope.Environment.Set(parameter.Value, arguments[index])
 		}
 	}
 
-	return env
+	return scope
 }

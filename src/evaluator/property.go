@@ -5,8 +5,8 @@ import (
 	"ghostlang.org/x/ghost/object"
 )
 
-func evaluateProperty(node *ast.Property, env *object.Environment) object.Object {
-	left := Evaluate(node.Left, env)
+func evaluateProperty(node *ast.Property, scope *object.Scope) object.Object {
+	left := Evaluate(node.Left, scope)
 
 	if isError(left) {
 		return left
@@ -18,7 +18,7 @@ func evaluateProperty(node *ast.Property, env *object.Environment) object.Object
 		module := left.(*object.LibraryModule)
 
 		if function, ok := module.Properties[property.Value]; ok {
-			return unwrapCall(node.Token, function, nil, env)
+			return unwrapCall(node.Token, function, nil, scope)
 		}
 	}
 

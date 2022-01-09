@@ -6,7 +6,7 @@ import (
 	"ghostlang.org/x/ghost/object"
 )
 
-func evaluateIdentifier(node *ast.Identifier, env *object.Environment) object.Object {
+func evaluateIdentifier(node *ast.Identifier, scope *object.Scope) object.Object {
 	if libraryModule, ok := library.Modules[node.Value]; ok {
 		return libraryModule
 	}
@@ -15,7 +15,7 @@ func evaluateIdentifier(node *ast.Identifier, env *object.Environment) object.Ob
 		return libraryFunction
 	}
 
-	if identifier, ok := env.Get(node.Value); ok {
+	if identifier, ok := scope.Environment.Get(node.Value); ok {
 		return identifier
 	}
 

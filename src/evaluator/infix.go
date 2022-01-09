@@ -6,14 +6,14 @@ import (
 	"ghostlang.org/x/ghost/object"
 )
 
-func evaluateInfix(node *ast.Infix, env *object.Environment) object.Object {
-	left := Evaluate(node.Left, env)
+func evaluateInfix(node *ast.Infix, scope *object.Scope) object.Object {
+	left := Evaluate(node.Left, scope)
 
 	if isError(left) {
 		return left
 	}
 
-	right := Evaluate(node.Right, env)
+	right := Evaluate(node.Right, scope)
 
 	if isError(right) {
 		return right

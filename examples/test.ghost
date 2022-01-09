@@ -1,17 +1,29 @@
-function test(description, callback) {
-    result := callback()
-
-    if (! result) {
-        ghost.abort(description + " ...FAILED")
-    }
-
-    console.log(description + " ...PASSED")
+function foo() {
+    print("foo")
+    print(ghost)
+    print(ghost.version)
+    ghost.abort()
 }
 
-test("example test A", function() {
-    return a == 1
-})
+print("hello")
+print(ghost)
+print(ghost.version)
+foo()
 
-test("example test B", function() {
-    return 1 == 2
-})
+// function test(description, callback) {
+//     result := callback()
+
+//     if (! result) {
+//         ghost.abort(description + " ...FAILED")
+//     }
+
+//     console.log(description + " ...PASSED")
+// }
+
+// test("example test A", function() {
+//     return a == 1
+// })
+
+// test("example test B", function() {
+//     return 1 == 2
+// })

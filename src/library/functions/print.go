@@ -8,7 +8,7 @@ import (
 	"ghostlang.org/x/ghost/token"
 )
 
-func Print(env *object.Environment, tok token.Token, args ...object.Object) object.Object {
+func Print(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
 	if len(args) > 0 {
 		str := make([]string, 0)
 
@@ -16,9 +16,9 @@ func Print(env *object.Environment, tok token.Token, args ...object.Object) obje
 			str = append(str, value.String())
 		}
 
-		fmt.Fprintln(env.GetWriter(), strings.Join(str, " "))
+		fmt.Fprintln(scope.Environment.GetWriter(), strings.Join(str, " "))
 	} else {
-		fmt.Fprintln(env.GetWriter())
+		fmt.Fprintln(scope.Environment.GetWriter())
 	}
 
 	return nil

@@ -5,15 +5,15 @@ import (
 	"ghostlang.org/x/ghost/object"
 )
 
-func evaluateAssign(node *ast.Assign, env *object.Environment) object.Object {
-	value := Evaluate(node.Value, env)
+func evaluateAssign(node *ast.Assign, scope *object.Scope) object.Object {
+	value := Evaluate(node.Value, scope)
 
 	if isError(value) {
 		return value
 	}
 
 	if node.Name != nil {
-		env.Set(node.Name.Value, value)
+		scope.Environment.Set(node.Name.Value, value)
 	}
 
 	return nil

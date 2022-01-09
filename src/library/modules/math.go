@@ -25,7 +25,7 @@ func init() {
 }
 
 // mathAbs returns the absolute value of the referenced number.
-func mathAbs(env *object.Environment, tok token.Token, args ...object.Object) object.Object {
+func mathAbs(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
 	if len(args) != 1 {
 		return nil
 	}
@@ -40,7 +40,7 @@ func mathAbs(env *object.Environment, tok token.Token, args ...object.Object) ob
 }
 
 // mathCos returns the cosine value of the referenced number.
-func mathCos(env *object.Environment, tok token.Token, args ...object.Object) object.Object {
+func mathCos(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
 	if len(args) != 1 {
 		return nil
 	}
@@ -55,7 +55,7 @@ func mathCos(env *object.Environment, tok token.Token, args ...object.Object) ob
 }
 
 // mathisNegative returns true if the referenced number is negative.
-func mathIsNegative(env *object.Environment, tok token.Token, args ...object.Object) object.Object {
+func mathIsNegative(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
 	if len(args) != 1 {
 		return nil
 	}
@@ -70,7 +70,7 @@ func mathIsNegative(env *object.Environment, tok token.Token, args ...object.Obj
 }
 
 // mathisPositive returns true if the referenced number is positive.
-func mathIsPositive(env *object.Environment, tok token.Token, args ...object.Object) object.Object {
+func mathIsPositive(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
 	if len(args) != 1 {
 		return nil
 	}
@@ -85,7 +85,7 @@ func mathIsPositive(env *object.Environment, tok token.Token, args ...object.Obj
 }
 
 // mathisZero returns true if the referenced number is zero.
-func mathIsZero(env *object.Environment, tok token.Token, args ...object.Object) object.Object {
+func mathIsZero(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
 	if len(args) != 1 {
 		return nil
 	}
@@ -100,7 +100,7 @@ func mathIsZero(env *object.Environment, tok token.Token, args ...object.Object)
 }
 
 // mathSin returns the sine value of the referenced number.
-func mathSin(env *object.Environment, tok token.Token, args ...object.Object) object.Object {
+func mathSin(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
 	if len(args) != 1 {
 		return nil
 	}
@@ -115,7 +115,7 @@ func mathSin(env *object.Environment, tok token.Token, args ...object.Object) ob
 }
 
 // mathTan returns the tangent value of the referenced number.
-func mathTan(env *object.Environment, tok token.Token, args ...object.Object) object.Object {
+func mathTan(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
 	if len(args) != 1 {
 		return nil
 	}
@@ -132,14 +132,14 @@ func mathTan(env *object.Environment, tok token.Token, args ...object.Object) ob
 // Properties
 
 // mathPi returns the value of π, othewise known as Pi.
-func mathPi(env *object.Environment, tok token.Token) object.Object {
+func mathPi(scope *object.Scope, tok token.Token) object.Object {
 	pi, _ := decimal.NewFromString("3.141592653589793")
 
 	return &object.Number{Value: pi}
 }
 
 // mathE returns the value of e, otherwise known as Euler's number.
-func mathE(env *object.Environment, tok token.Token) object.Object {
+func mathE(scope *object.Scope, tok token.Token) object.Object {
 	e, _ := decimal.NewFromString("2.718281828459045")
 
 	return &object.Number{Value: e}
@@ -147,7 +147,7 @@ func mathE(env *object.Environment, tok token.Token) object.Object {
 
 // mathTau returns the value of τ, otherwise known as Tau. Tau is a circle
 // constant equal to 2π, the ratio of a circle’s circumference to its radius.
-func mathTau(env *object.Environment, tok token.Token) object.Object {
+func mathTau(scope *object.Scope, tok token.Token) object.Object {
 	tau, _ := decimal.NewFromString("6.283185307179586")
 
 	return &object.Number{Value: tau}
@@ -156,7 +156,7 @@ func mathTau(env *object.Environment, tok token.Token) object.Object {
 // mathEpsilon returns the value of ϵ, otherwise known as Epsilon. Epsilon
 // represents the difference between 1 and the smallest floating point number
 // greater than 1.
-func mathEpsilon(env *object.Environment, tok token.Token) object.Object {
+func mathEpsilon(scope *object.Scope, tok token.Token) object.Object {
 	epsilon, _ := decimal.NewFromString("2.2204460492503130808472633361816E-16")
 
 	return &object.Number{Value: epsilon}

@@ -27,7 +27,7 @@ func init() {
 	RegisterProperty(TimeProperties, "year", timeYear)
 }
 
-func timeSleep(env *object.Environment, tok token.Token, args ...object.Object) object.Object {
+func timeSleep(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
 	if len(args) != 1 {
 		// TODO: error
 		return nil
@@ -44,7 +44,7 @@ func timeSleep(env *object.Environment, tok token.Token, args ...object.Object) 
 	return nil
 }
 
-func timeNow(env *object.Environment, tok token.Token, args ...object.Object) object.Object {
+func timeNow(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
 	if len(args) != 0 {
 		// TODO: error
 		return nil
@@ -57,61 +57,61 @@ func timeNow(env *object.Environment, tok token.Token, args ...object.Object) ob
 
 // properties
 
-func timeNanosecond(env *object.Environment, tok token.Token) object.Object {
+func timeNanosecond(scope *object.Scope, tok token.Token) object.Object {
 	nanosecond := decimal.NewFromFloat(0.00001)
 
 	return &object.Number{Value: nanosecond}
 }
 
-func timeMicrosecond(env *object.Environment, tok token.Token) object.Object {
+func timeMicrosecond(scope *object.Scope, tok token.Token) object.Object {
 	microsecond := decimal.NewFromFloat(0.0001)
 
 	return &object.Number{Value: microsecond}
 }
 
-func timeMillisecond(env *object.Environment, tok token.Token) object.Object {
+func timeMillisecond(scope *object.Scope, tok token.Token) object.Object {
 	millisecond := decimal.NewFromFloat(0.001)
 
 	return &object.Number{Value: millisecond}
 }
 
-func timeSecond(env *object.Environment, tok token.Token) object.Object {
+func timeSecond(scope *object.Scope, tok token.Token) object.Object {
 	second := decimal.NewFromInt(1)
 
 	return &object.Number{Value: second}
 }
 
-func timeMinute(env *object.Environment, tok token.Token) object.Object {
+func timeMinute(scope *object.Scope, tok token.Token) object.Object {
 	minute := decimal.NewFromInt(60)
 
 	return &object.Number{Value: minute}
 }
 
-func timeHour(env *object.Environment, tok token.Token) object.Object {
+func timeHour(scope *object.Scope, tok token.Token) object.Object {
 	hour := decimal.NewFromInt(3600)
 
 	return &object.Number{Value: hour}
 }
 
-func timeDay(env *object.Environment, tok token.Token) object.Object {
+func timeDay(scope *object.Scope, tok token.Token) object.Object {
 	day := decimal.NewFromInt(86400)
 
 	return &object.Number{Value: day}
 }
 
-func timeWeek(env *object.Environment, tok token.Token) object.Object {
+func timeWeek(scope *object.Scope, tok token.Token) object.Object {
 	week := decimal.NewFromInt(604800)
 
 	return &object.Number{Value: week}
 }
 
-func timeMonth(env *object.Environment, tok token.Token) object.Object {
+func timeMonth(scope *object.Scope, tok token.Token) object.Object {
 	month := decimal.NewFromInt(2592000)
 
 	return &object.Number{Value: month}
 }
 
-func timeYear(env *object.Environment, tok token.Token) object.Object {
+func timeYear(scope *object.Scope, tok token.Token) object.Object {
 	year := decimal.NewFromInt(31536000)
 
 	return &object.Number{Value: year}

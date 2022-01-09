@@ -7,43 +7,43 @@ import (
 	"ghostlang.org/x/ghost/value"
 )
 
-func evaluateCall(node *ast.Call, env *object.Environment) object.Object {
-	callee := Evaluate(node.Callee, env)
+func evaluateCall(node *ast.Call, scope *object.Scope) object.Object {
+	callee := Evaluate(node.Callee, scope)
 
 	if isError(callee) {
 		return callee
 	}
 
-	arguments := evaluateExpressions(node.Arguments, env)
+	arguments := evaluateExpressions(node.Arguments, scope)
 
 	if len(arguments) == 1 && isError(arguments[0]) {
 		return arguments[0]
 	}
 
-	return unwrapCall(node.Token, callee, arguments, env)
+	return unwrapCall(node.Token, callee, arguments, scope)
 }
 
-func unwrapCall(tok token.Token, callee object.Object, arguments []object.Object, env *object.Environment) object.Object {
+func unwrapCall(tok token.Token, callee object.Object, arguments []object.Object, scope *object.Scope) object.Object {
 	switch callee := callee.(type) {
 	case *object.Class:
 		instance := &object.Instance{Class: callee}
 
 		return instance
 	case *object.LibraryFunction:
-		if result := callee.Function(env, tok, arguments...); result != nil {
+		if result := callee.Function(scope, tok, arguments...); result != nil {
 			return result
 		}
 
 		return nil
 	case *object.LibraryProperty:
-		if result := callee.Property(env, tok); result != nil {
+		if result := callee.Property(scope, tok); result != nil {
 			return result
 		}
 
 		return nil
 	case *object.Function:
-		functionEnvironment := createFunctionEnvironment(callee, arguments)
-		evaluated := Evaluate(callee.Body, functionEnvironment)
+		functionScope := createFunctionScope(callee, arguments)
+		evaluated := Evaluate(callee.Body, functionScope)
 
 		return unwrapReturn(evaluated)
 	default:

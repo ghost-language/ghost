@@ -6,33 +6,33 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-func evaluateForIn(node *ast.ForIn, env *object.Environment) object.Object {
-	iterable := Evaluate(node.Iterable, env)
+func evaluateForIn(node *ast.ForIn, scope *object.Scope) object.Object {
+	iterable := Evaluate(node.Iterable, scope)
 
-	existingKey, keyExisted := env.Get(node.Key.Value)
-	existingValue, valueExisted := env.Get(node.Value.Value)
+	existingKey, keyExisted := scope.Environment.Get(node.Key.Value)
+	existingValue, valueExisted := scope.Environment.Get(node.Value.Value)
 
 	defer func() {
 		if keyExisted {
-			env.Set(node.Key.Value, existingKey)
+			scope.Environment.Set(node.Key.Value, existingKey)
 		} else {
-			env.Delete(node.Key.Value)
+			scope.Environment.Delete(node.Key.Value)
 		}
 
 		if valueExisted {
-			env.Set(node.Value.Value, existingValue)
+			scope.Environment.Set(node.Value.Value, existingValue)
 		} else {
-			env.Delete(node.Value.Value)
+			scope.Environment.Delete(node.Value.Value)
 		}
 	}()
 
 	switch obj := iterable.(type) {
 	case *object.List:
 		for k, v := range obj.Elements {
-			env.Set(node.Key.Value, &object.Number{Value: decimal.NewFromInt(int64(k))})
-			env.Set(node.Value.Value, v)
+			scope.Environment.Set(node.Key.Value, &object.Number{Value: decimal.NewFromInt(int64(k))})
+			scope.Environment.Set(node.Value.Value, v)
 
-			block := Evaluate(node.Block, env)
+			block := Evaluate(node.Block, scope)
 
 			if isError(block) {
 				return block
@@ -42,10 +42,10 @@ func evaluateForIn(node *ast.ForIn, env *object.Environment) object.Object {
 		return nil
 	case *object.Map:
 		for _, pair := range obj.Pairs {
-			env.Set(node.Key.Value, pair.Key)
-			env.Set(node.Value.Value, pair.Value)
+			scope.Environment.Set(node.Key.Value, pair.Key)
+			scope.Environment.Set(node.Value.Value, pair.Value)
 
-			block := Evaluate(node.Block, env)
+			block := Evaluate(node.Block, scope)
 
 			if isError(block) {
 				return block

@@ -5,14 +5,14 @@ import (
 	"ghostlang.org/x/ghost/object"
 )
 
-func evaluateMethod(node *ast.Method, env *object.Environment) object.Object {
-	left := Evaluate(node.Left, env)
+func evaluateMethod(node *ast.Method, scope *object.Scope) object.Object {
+	left := Evaluate(node.Left, scope)
 
 	if isError(left) {
 		return left
 	}
 
-	arguments := evaluateExpressions(node.Arguments, env)
+	arguments := evaluateExpressions(node.Arguments, scope)
 
 	if len(arguments) == 1 && isError(arguments[0]) {
 		return arguments[0]
@@ -28,7 +28,7 @@ func evaluateMethod(node *ast.Method, env *object.Environment) object.Object {
 		module := left.(*object.LibraryModule)
 
 		if function, ok := module.Methods[method.Value]; ok {
-			return unwrapCall(node.Token, function, arguments, env)
+			return unwrapCall(node.Token, function, arguments, scope)
 		}
 	}
 

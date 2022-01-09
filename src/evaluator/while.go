@@ -5,16 +5,16 @@ import (
 	"ghostlang.org/x/ghost/object"
 )
 
-func evaluateWhile(node *ast.While, env *object.Environment) object.Object {
+func evaluateWhile(node *ast.While, scope *object.Scope) object.Object {
 	for {
-		condition := Evaluate(node.Condition, env)
+		condition := Evaluate(node.Condition, scope)
 
 		if isError(condition) {
 			return condition
 		}
 
 		if isTruthy(condition) {
-			Evaluate(node.Consequence, env)
+			Evaluate(node.Consequence, scope)
 		} else {
 			break
 		}

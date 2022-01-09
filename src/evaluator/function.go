@@ -5,33 +5,36 @@ import (
 	"ghostlang.org/x/ghost/object"
 )
 
-func evaluateFunction(node *ast.Function, env *object.Environment) object.Object {
+func evaluateFunction(node *ast.Function, scope *object.Scope) object.Object {
 	function := &object.Function{
-		Parameters:  node.Parameters,
-		Defaults:    node.Defaults,
-		Body:        node.Body,
-		Environment: env,
+		Parameters: node.Parameters,
+		Defaults:   node.Defaults,
+		Body:       node.Body,
+		Scope:      scope,
 	}
 
 	if node.Name != nil {
-		env.Set(node.Name.Value, function)
+		scope.Environment.Set(node.Name.Value, function)
 	}
 
 	return function
 }
 
-func createFunctionEnvironment(function *object.Function, arguments []object.Object) *object.Environment {
-	env := object.NewEnclosedEnvironment(function.Environment)
+func createFunctionScope(function *object.Function, arguments []object.Object) *object.Scope {
+	scope := &object.Scope{
+		Self:        function,
+		Environment: object.NewEnclosedEnvironment(function.Scope.Environment),
+	}
 
 	for key, val := range function.Defaults {
-		env.Set(key, Evaluate(val, env))
+		scope.Environment.Set(key, Evaluate(val, scope))
 	}
 
 	for index, parameter := range function.Parameters {
 		if index < len(arguments) {
-			env.Set(parameter.Value, arguments[index])
+			scope.Environment.Set(parameter.Value, arguments[index])
 		}
 	}
 
-	return env
+	return scope
 }

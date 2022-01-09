@@ -5,18 +5,18 @@ import (
 	"ghostlang.org/x/ghost/object"
 )
 
-func evaluateFor(node *ast.For, env *object.Environment) object.Object {
-	existingIdentifier, identifierExisted := env.Get(node.Identifier.Value)
+func evaluateFor(node *ast.For, scope *object.Scope) object.Object {
+	existingIdentifier, identifierExisted := scope.Environment.Get(node.Identifier.Value)
 
 	defer func() {
 		if identifierExisted {
-			env.Set(node.Identifier.Value, existingIdentifier)
+			scope.Environment.Set(node.Identifier.Value, existingIdentifier)
 		} else {
-			env.Delete(node.Identifier.Value)
+			scope.Environment.Delete(node.Identifier.Value)
 		}
 	}()
 
-	initializer := Evaluate(node.Initializer, env)
+	initializer := Evaluate(node.Initializer, scope)
 
 	if isError(initializer) {
 		return initializer
@@ -25,20 +25,20 @@ func evaluateFor(node *ast.For, env *object.Environment) object.Object {
 	loop := true
 
 	for loop {
-		condition := Evaluate(node.Condition, env)
+		condition := Evaluate(node.Condition, scope)
 
 		if isError(condition) {
 			return condition
 		}
 
 		if isTruthy(condition) {
-			err := Evaluate(node.Block, env)
+			err := Evaluate(node.Block, scope)
 
 			if isError(err) {
 				return err
 			}
 
-			err = Evaluate(node.Increment, env)
+			err = Evaluate(node.Increment, scope)
 
 			if isError(err) {
 				return err

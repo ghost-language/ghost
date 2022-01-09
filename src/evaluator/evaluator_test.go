@@ -106,9 +106,11 @@ func evaluate(input string) object.Object {
 	scanner := scanner.New(input)
 	parser := parser.New(scanner)
 	program := parser.Parse()
-	env := object.NewEnvironment()
+	scope := &object.Scope{
+		Environment: object.NewEnvironment(),
+	}
 
-	result := Evaluate(program, env)
+	result := Evaluate(program, scope)
 
 	return result
 }

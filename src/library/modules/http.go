@@ -21,7 +21,7 @@ func init() {
 	RegisterMethod(HttpMethods, "listen", httpListen)
 }
 
-func httpHandle(env *object.Environment, tok token.Token, args ...object.Object) object.Object {
+func httpHandle(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
 	if args[0].Type() != object.STRING {
 		return nil
 	}
@@ -33,7 +33,7 @@ func httpHandle(env *object.Environment, tok token.Token, args ...object.Object)
 	path := args[0].(*object.String).Value
 
 	http.HandleFunc(path, func(writer http.ResponseWriter, request *http.Request) {
-		env.SetWriter(writer)
+		scope.Environment.SetWriter(writer)
 
 		requestBodyBuf := new(bytes.Buffer)
 		requestBodyBuf.ReadFrom(request.Body)
@@ -58,7 +58,7 @@ func httpHandle(env *object.Environment, tok token.Token, args ...object.Object)
 	return nil
 }
 
-func httpListen(env *object.Environment, tok token.Token, args ...object.Object) object.Object {
+func httpListen(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
 	if args[0].Type() != object.NUMBER {
 		return nil
 	}

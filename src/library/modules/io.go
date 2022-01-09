@@ -19,7 +19,7 @@ func init() {
 	RegisterMethod(IoMethods, "write", ioWrite)
 }
 
-func ioAppend(env *object.Environment, tok token.Token, args ...object.Object) object.Object {
+func ioAppend(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
 	if len(args) != 2 {
 		return object.NewError("%d:%d: runtime error: io.append() expects 2 arguments. got=%d", tok.Line, tok.Column, len(args))
 	}
@@ -36,7 +36,7 @@ func ioAppend(env *object.Environment, tok token.Token, args ...object.Object) o
 		return object.NewError("%d:%d: runtime error: io.append() expects second argument to be of type 'string'. got=%s", tok.Line, tok.Column, strings.ToLower(string(args[1].Type())))
 	}
 
-	cleanPath := path.Clean(env.GetDirectory() + "/" + basePath.Value)
+	cleanPath := path.Clean(scope.Environment.GetDirectory() + "/" + basePath.Value)
 
 	file, err := os.OpenFile(cleanPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 
@@ -51,7 +51,7 @@ func ioAppend(env *object.Environment, tok token.Token, args ...object.Object) o
 	return nil
 }
 
-func ioRead(env *object.Environment, tok token.Token, args ...object.Object) object.Object {
+func ioRead(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
 	if len(args) != 1 {
 		return object.NewError("%d:%d: runtime error: io.read() expects 1 argument. got=%d", tok.Line, tok.Column, len(args))
 	}
@@ -62,7 +62,7 @@ func ioRead(env *object.Environment, tok token.Token, args ...object.Object) obj
 		return object.NewError("%d:%d: runtime error: io.read() expects first argument to be of type 'string'. got=%s", tok.Line, tok.Column, strings.ToLower(string(args[0].Type())))
 	}
 
-	path := path.Clean(env.GetDirectory() + "/" + basePath.Value)
+	path := path.Clean(scope.Environment.GetDirectory() + "/" + basePath.Value)
 	content, err := ioutil.ReadFile(path)
 
 	if err != nil {
@@ -72,7 +72,7 @@ func ioRead(env *object.Environment, tok token.Token, args ...object.Object) obj
 	return &object.String{Value: string(content)}
 }
 
-func ioWrite(env *object.Environment, tok token.Token, args ...object.Object) object.Object {
+func ioWrite(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
 	if len(args) != 2 {
 		return object.NewError("%d:%d: runtime error: io.write() expects 2 arguments. got=%d", tok.Line, tok.Column, len(args))
 	}
@@ -89,7 +89,7 @@ func ioWrite(env *object.Environment, tok token.Token, args ...object.Object) ob
 		return object.NewError("%d:%d: runtime error: io.write() expects second argument to be of type 'string'. got=%s", tok.Line, tok.Column, strings.ToLower(string(args[1].Type())))
 	}
 
-	path := path.Clean(env.GetDirectory() + "/" + basePath.Value)
+	path := path.Clean(scope.Environment.GetDirectory() + "/" + basePath.Value)
 	contents := []byte(content.Value)
 	info, err := os.Stat(path)
 

@@ -5,11 +5,11 @@ import (
 	"ghostlang.org/x/ghost/object"
 )
 
-func evaluateBlock(node *ast.Block, env *object.Environment) object.Object {
+func evaluateBlock(node *ast.Block, scope *object.Scope) object.Object {
 	var result object.Object
 
 	for _, statement := range node.Statements {
-		result = Evaluate(statement, env)
+		result = Evaluate(statement, scope)
 
 		if result != nil {
 			switch statement := result.(type) {

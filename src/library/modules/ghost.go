@@ -21,7 +21,7 @@ func init() {
 	RegisterProperty(GhostProperties, "version", ghostVersion)
 }
 
-func ghostAbort(env *object.Environment, tok token.Token, args ...object.Object) object.Object {
+func ghostAbort(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
 	if len(args) != 1 {
 		return object.NewError("%d:%d: runtime error: ghost.abort() expects 1 argument. got=%d", tok.Line, tok.Column, len(args))
 	}
@@ -36,7 +36,7 @@ func ghostAbort(env *object.Environment, tok token.Token, args ...object.Object)
 	return object.NewError("%d:%d: runtime error: ghost.abort() expects the first argument to be of type 'null' or 'string'. got=%s", tok.Line, tok.Column, strings.ToLower(string(args[0].Type())))
 }
 
-func ghostExecute(env *object.Environment, tok token.Token, args ...object.Object) object.Object {
+func ghostExecute(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
 	if len(args) != 1 {
 		return object.NewError("%d:%d: runtime error: ghost.execute() expects 1 argument. got=%d", tok.Line, tok.Column, len(args))
 	}
@@ -51,17 +51,17 @@ func ghostExecute(env *object.Environment, tok token.Token, args ...object.Objec
 	parser := parser.New(scanner)
 	program := parser.Parse()
 
-	return evaluate(program, env)
+	return evaluate(program, scope)
 }
 
-func ghostIdentifiers(env *object.Environment, tok token.Token, args ...object.Object) object.Object {
+func ghostIdentifiers(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
 	if len(args) != 0 {
 		return object.NewError("%d:%d: runtime error: ghost.identifiers() expects 0 arguments. got=%d", tok.Line, tok.Column, len(args))
 	}
 
 	identifiers := []object.Object{}
 
-	store := env.All()
+	store := scope.Environment.All()
 
 	for identifier := range store {
 		identifiers = append(identifiers, &object.String{Value: identifier})
@@ -72,6 +72,6 @@ func ghostIdentifiers(env *object.Environment, tok token.Token, args ...object.O
 
 // Properties
 
-func ghostVersion(env *object.Environment, tok token.Token) object.Object {
+func ghostVersion(scope *object.Scope, tok token.Token) object.Object {
 	return &object.String{Value: version.Version}
 }

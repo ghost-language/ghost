@@ -5,7 +5,7 @@ import (
 	"ghostlang.org/x/ghost/object"
 )
 
-func evaluateString(node *ast.String, env *object.Environment) object.Object {
+func evaluateString(node *ast.String, scope *object.Scope) object.Object {
 	return &object.String{Value: node.Value}
 }
 

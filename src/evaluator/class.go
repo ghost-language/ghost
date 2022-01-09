@@ -5,13 +5,13 @@ import (
 	"ghostlang.org/x/ghost/object"
 )
 
-func evaluateClass(node *ast.Class, env *object.Environment) object.Object {
+func evaluateClass(node *ast.Class, scope *object.Scope) object.Object {
 	class := &object.Class{
-		Name:        node.Name,
-		Environment: object.NewEnvironment(),
+		Name:  node.Name,
+		Scope: scope,
 	}
 
-	env.Set(node.Name.Value, class)
+	scope.Environment.Set(node.Name.Value, class)
 
 	return class
 }

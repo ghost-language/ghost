@@ -38,7 +38,10 @@ func nativeHelloWorld() time.Duration {
 func benchmark(source string) (scanTime time.Duration, parseTime time.Duration, interpretTime time.Duration, ghostTime time.Duration) {
 	start := time.Now()
 
-	env := object.NewEnvironment()
+	scope := &object.Scope{
+		Environment: object.NewEnvironment(),
+	}
+
 	scanner := scanner.New(source)
 	scanTime = time.Since(start)
 
@@ -48,7 +51,7 @@ func benchmark(source string) (scanTime time.Duration, parseTime time.Duration, 
 	parseTime = time.Since(parseStart)
 
 	interpretStart := time.Now()
-	evaluator.Evaluate(program, env)
+	evaluator.Evaluate(program, scope)
 	interpretTime = time.Since(interpretStart)
 	ghostTime = time.Since(start)
 

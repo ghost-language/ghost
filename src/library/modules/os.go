@@ -22,7 +22,7 @@ func init() {
 	RegisterProperty(OsProperties, "name", osName)
 }
 
-func osArgs(env *object.Environment, tok token.Token, args ...object.Object) object.Object {
+func osArgs(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
 	list := &object.List{}
 	arguments := os.Args[1:]
 
@@ -33,13 +33,13 @@ func osArgs(env *object.Environment, tok token.Token, args ...object.Object) obj
 	return list
 }
 
-func osClock(env *object.Environment, tok token.Token, args ...object.Object) object.Object {
+func osClock(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
 	seconds := decimal.NewFromInt(time.Now().UnixNano())
 
 	return &object.Number{Value: seconds}
 }
 
-func osExit(env *object.Environment, tok token.Token, args ...object.Object) object.Object {
+func osExit(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
 	var message string
 
 	if len(args) == 2 {
@@ -77,6 +77,6 @@ func osExit(env *object.Environment, tok token.Token, args ...object.Object) obj
 
 // Properties
 
-func osName(env *object.Environment, tok token.Token) object.Object {
+func osName(scope *object.Scope, tok token.Token) object.Object {
 	return &object.String{Value: runtime.GOOS}
 }

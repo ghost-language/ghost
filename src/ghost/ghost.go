@@ -10,15 +10,19 @@ import (
 )
 
 type Ghost struct {
-	FatalError  bool
-	source      string
-	Environment *object.Environment
-	File        string
+	FatalError bool
+	source     string
+	File       string
+	Scope      *object.Scope
 }
 
 func New() *Ghost {
-	ghost := &Ghost{
+	scope := &object.Scope{
 		Environment: object.NewEnvironment(),
+	}
+
+	ghost := &Ghost{
+		Scope: scope,
 	}
 
 	ghost.RegisterEvaluator()
@@ -27,11 +31,11 @@ func New() *Ghost {
 }
 
 func (ghost *Ghost) SetDirectory(directory string) {
-	ghost.Environment.SetDirectory(directory)
+	ghost.Scope.Environment.SetDirectory(directory)
 }
 
 func (ghost *Ghost) GetDirectory() string {
-	return ghost.Environment.GetDirectory()
+	return ghost.Scope.Environment.GetDirectory()
 }
 
 func (ghost *Ghost) SetSource(source string) {
@@ -48,7 +52,7 @@ func (ghost *Ghost) Execute() object.Object {
 		return nil
 	}
 
-	result := evaluator.Evaluate(program, ghost.Environment)
+	result := evaluator.Evaluate(program, ghost.Scope)
 
 	if err, ok := result.(*object.Error); ok {
 		log.Error(err.Message)

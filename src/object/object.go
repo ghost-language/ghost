@@ -5,7 +5,7 @@ import (
 	"ghostlang.org/x/ghost/token"
 )
 
-var evaluator func(node ast.Node, env *Environment) Object
+var evaluator func(node ast.Node, scope *Scope) Object
 
 // Type is the type of the object given as a string.
 type Type string
@@ -30,10 +30,10 @@ type HasMethods interface {
 	Method(method string, args []Object) (Object, bool)
 }
 
-type GoFunction func(env *Environment, tok token.Token, args ...Object) Object
-type GoProperty func(env *Environment, tok token.Token) Object
+type GoFunction func(scope *Scope, tok token.Token, args ...Object) Object
+type GoProperty func(scope *Scope, tok token.Token) Object
 type ObjectMethod func(value interface{}, args ...Object) (Object, bool)
 
-func RegisterEvaluator(e func(node ast.Node, env *Environment) Object) {
+func RegisterEvaluator(e func(node ast.Node, scope *Scope) Object) {
 	evaluator = e
 }

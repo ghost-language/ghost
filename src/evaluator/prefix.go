@@ -6,8 +6,8 @@ import (
 	"ghostlang.org/x/ghost/value"
 )
 
-func evaluatePrefix(node *ast.Prefix, env *object.Environment) object.Object {
-	right := Evaluate(node.Right, env)
+func evaluatePrefix(node *ast.Prefix, scope *object.Scope) object.Object {
+	right := Evaluate(node.Right, scope)
 
 	if isError(right) {
 		return right

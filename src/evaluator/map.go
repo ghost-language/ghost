@@ -5,11 +5,11 @@ import (
 	"ghostlang.org/x/ghost/object"
 )
 
-func evaluateMap(node *ast.Map, env *object.Environment) object.Object {
+func evaluateMap(node *ast.Map, scope *object.Scope) object.Object {
 	pairs := make(map[object.MapKey]object.MapPair)
 
 	for keyNode, valueNode := range node.Pairs {
-		key := Evaluate(keyNode, env)
+		key := Evaluate(keyNode, scope)
 
 		if isError(key) {
 			return key
@@ -21,7 +21,7 @@ func evaluateMap(node *ast.Map, env *object.Environment) object.Object {
 			return newError("%d:%d: runtime error: unusable as map key: %s", node.Token.Line, node.Token.Column, key.Type())
 		}
 
-		value := Evaluate(valueNode, env)
+		value := Evaluate(valueNode, scope)
 
 		if isError(value) {
 			return value

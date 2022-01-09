@@ -5,11 +5,11 @@ import (
 	"ghostlang.org/x/ghost/object"
 )
 
-func evaluateExpressions(expressions []ast.ExpressionNode, env *object.Environment) []object.Object {
+func evaluateExpressions(expressions []ast.ExpressionNode, scope *object.Scope) []object.Object {
 	var result []object.Object
 
 	for _, expression := range expressions {
-		evaluated := Evaluate(expression, env)
+		evaluated := Evaluate(expression, scope)
 
 		if isError(evaluated) {
 			return []object.Object{evaluated}

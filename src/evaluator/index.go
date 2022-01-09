@@ -6,14 +6,14 @@ import (
 	"ghostlang.org/x/ghost/value"
 )
 
-func evaluateIndex(node *ast.Index, env *object.Environment) object.Object {
-	left := Evaluate(node.Left, env)
+func evaluateIndex(node *ast.Index, scope *object.Scope) object.Object {
+	left := Evaluate(node.Left, scope)
 
 	if isError(left) {
 		return left
 	}
 
-	index := Evaluate(node.Index, env)
+	index := Evaluate(node.Index, scope)
 
 	if isError(index) {
 		return index
