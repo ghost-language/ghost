@@ -1,16 +1,9 @@
-class Animal {
-    //
-}
-
-class Dog extends Animal {
-    name := "Soma"
-
-    function speak() {
-        print(this)
-        print("bark!")
+class CoffeeMaker {
+    function brew(coffee := "americano") {
+        print("Enjoy your cup of " + coffee)
     }
 }
 
-soma := Dog()
+maker := CoffeeMaker()
 
-soma.speak()
+maker.brew("espresso")
