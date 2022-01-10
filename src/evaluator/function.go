@@ -25,21 +25,18 @@ func evaluateFunction(node *ast.Function, scope *object.Scope) object.Object {
 	return function
 }
 
-func createFunctionScope(function *object.Function, arguments []object.Object) *object.Scope {
-	scope := &object.Scope{
-		Self:        function,
-		Environment: object.NewEnclosedEnvironment(function.Scope.Environment),
-	}
+func createFunctionEnvironment(function *object.Function, arguments []object.Object) *object.Environment {
+	env := object.NewEnclosedEnvironment(function.Scope.Environment)
 
 	for key, val := range function.Defaults {
-		scope.Environment.Set(key, Evaluate(val, scope))
+		env.Set(key, Evaluate(val, function.Scope))
 	}
 
 	for index, parameter := range function.Parameters {
 		if index < len(arguments) {
-			scope.Environment.Set(parameter.Value, arguments[index])
+			env.Set(parameter.Value, arguments[index])
 		}
 	}
 
-	return scope
+	return env
 }

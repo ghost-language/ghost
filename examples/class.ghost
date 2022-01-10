@@ -1,9 +1,18 @@
 class CoffeeMaker {
-    function brew(coffee := "americano") {
-        print("Enjoy your cup of " + coffee)
+    coffee := "espresso"
+
+    function calibrate() {
+        print("Calibrating machine...")
+
+        return this
+    }
+
+    function brew() {
+        print("Brewing " + this.coffee + "...")
+        print("Enjoy.")
     }
 }
 
 maker := CoffeeMaker()
 
-maker.brew("espresso")
+maker.calibrate().brew()

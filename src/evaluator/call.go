@@ -42,7 +42,8 @@ func unwrapCall(tok token.Token, callee object.Object, arguments []object.Object
 
 		return nil
 	case *object.Function:
-		functionScope := createFunctionScope(callee, arguments)
+		functionEnvironment := createFunctionEnvironment(callee, arguments)
+		functionScope := &object.Scope{Self: callee, Environment: functionEnvironment}
 		evaluated := Evaluate(callee.Body, functionScope)
 
 		return unwrapReturn(evaluated)

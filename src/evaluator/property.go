@@ -13,6 +13,13 @@ func evaluateProperty(node *ast.Property, scope *object.Scope) object.Object {
 	}
 
 	switch left.(type) {
+	case *object.Instance:
+		property := node.Property.(*ast.Identifier)
+		instance := left.(*object.Instance)
+
+		if value, ok := instance.Class.Environment.Get(property.Value); ok {
+			return value
+		}
 	case *object.LibraryModule:
 		property := node.Property.(*ast.Identifier)
 		module := left.(*object.LibraryModule)

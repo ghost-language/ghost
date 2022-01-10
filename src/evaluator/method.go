@@ -22,18 +22,12 @@ func evaluateMethod(node *ast.Method, scope *object.Scope) object.Object {
 		return result
 	}
 
-	switch left.(type) {
+	switch receiver := left.(type) {
 	case *object.Instance:
 		method := node.Method.(*ast.Identifier)
-		instance := left.(*object.Instance)
+		evaluated := evaluateInstanceMethod(node, receiver, method.Value, arguments)
 
-		function, ok := instance.Class.Environment.Get(method.Value)
-
-		if !ok {
-			return object.NewError("%d:%d: runtime error: undefined method %s for class %s", node.Token.Line, node.Token.Column, method.Value, instance.Class.Name.Value)
-		}
-
-		return unwrapCall(node.Token, function, arguments, scope)
+		return unwrapReturn(evaluated)
 	case *object.LibraryModule:
 		method := node.Method.(*ast.Identifier)
 		module := left.(*object.LibraryModule)
@@ -44,4 +38,22 @@ func evaluateMethod(node *ast.Method, scope *object.Scope) object.Object {
 	}
 
 	return newError("%d:%d: runtime error: unknown method: %s.%s", node.Token.Line, node.Token.Column, left.String(), node.Method.(*ast.Identifier).Value)
+}
+
+func evaluateInstanceMethod(node *ast.Method, receiver *object.Instance, name string, arguments []object.Object) object.Object {
+	method, ok := receiver.Class.Environment.Get(name)
+
+	if !ok {
+		return object.NewError("%d:%d: runtime error: undefined method %s for class %s", node.Token.Line, node.Token.Column, name, receiver.Class.Name.Value)
+	}
+
+	switch method := method.(type) {
+	case *object.Function:
+		env := createFunctionEnvironment(method, arguments)
+		scope := &object.Scope{Self: receiver, Environment: env}
+
+		return Evaluate(method.Body, scope)
+	default:
+		return object.NewError("%d:%d: runtime error: invalid type %T in class %s", node.Token.Line, node.Token.Column, method, receiver.Class.Name.Value)
+	}
 }
