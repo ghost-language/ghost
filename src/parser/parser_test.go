@@ -33,8 +33,8 @@ func TestAssignStatement(t *testing.T) {
 			t.Fatalf("program.Statements[0] is not ast.Assign. got=%T", program.Statements[0])
 		}
 
-		if assign.Name.Value != tt.identifier {
-			t.Fatalf("assign.Name is not '%s'. got=%s", tt.identifier, assign.Name.Value)
+		if assign.Name.(*ast.Identifier).Value != tt.identifier {
+			t.Fatalf("assign.Name is not '%s'. got=%s", tt.identifier, assign.Name.(*ast.Identifier).Value)
 		}
 
 		if !isNumberLiteral(t, assign.Value, tt.value) {

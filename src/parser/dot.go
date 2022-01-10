@@ -27,5 +27,8 @@ func (parser *Parser) dotExpression(left ast.ExpressionNode) ast.ExpressionNode 
 	expression := &ast.Property{Token: currentToken, Left: left}
 	expression.Property = parser.parseExpression(currentPrecedence)
 
+	parser.previousProperty = expression
+	parser.previousIndex = nil
+
 	return expression
 }

@@ -60,6 +60,9 @@ type Parser struct {
 	currentToken  token.Token
 	nextToken     token.Token
 
+	previousIndex    *ast.Index
+	previousProperty *ast.Property
+
 	prefixParserFns  map[token.Type]prefixParserFn
 	infixParserFns   map[token.Type]infixParserFn
 	postfixParserFns map[token.Type]postfixParserFn

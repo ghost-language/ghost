@@ -6,26 +6,61 @@ import (
 )
 
 func (parser *Parser) assign() ast.StatementNode {
-	if parser.currentTokenIs(token.IDENTIFIER) && parser.nextTokenIs(token.ASSIGN) {
-		statement := &ast.Assign{
-			Name:  &ast.Identifier{Token: parser.currentToken, Value: parser.currentToken.Lexeme},
-			Token: parser.nextToken,
-		}
+	statement := &ast.Assign{Token: parser.currentToken}
 
-		if !parser.expectNextTokenIs(token.ASSIGN) {
-			return nil
-		}
+	if parser.currentTokenIs(token.IDENTIFIER) {
+		statement.Name = &ast.Identifier{Token: parser.currentToken, Value: parser.currentToken.Lexeme}
+	} else if parser.currentTokenIs(token.ASSIGN) {
+		// index or property assignment
 
-		parser.readToken()
+		if parser.previousIndex != nil {
+			// foo["bar"] := true
+			statement.Name = parser.previousIndex
 
-		statement.Value = parser.parseExpression(LOWEST)
-
-		if parser.nextTokenIs(token.SEMICOLON) {
 			parser.readToken()
+
+			statement.Value = parser.parseExpression(LOWEST)
+
+			parser.previousIndex = nil
+
+			if parser.nextTokenIs(token.SEMICOLON) {
+				parser.readToken()
+			}
+
+			return statement
 		}
 
-		return statement
+		if parser.previousProperty != nil {
+			// foo.bar := true
+			statement.Name = parser.previousProperty
+
+			parser.readToken()
+
+			statement.Value = parser.parseExpression(LOWEST)
+
+			parser.previousProperty = nil
+
+			if parser.nextTokenIs(token.SEMICOLON) {
+				parser.readToken()
+			}
+
+			return statement
+		}
 	}
 
-	return nil
+	if !parser.nextTokenIs(token.ASSIGN) {
+		return nil
+	}
+
+	parser.readToken()
+	statement.Token = parser.currentToken
+	parser.readToken()
+
+	statement.Value = parser.parseExpression(LOWEST)
+
+	if parser.nextTokenIs(token.SEMICOLON) {
+		parser.readToken()
+	}
+
+	return statement
 }

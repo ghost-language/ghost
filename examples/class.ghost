@@ -8,6 +8,7 @@ class CoffeeMaker {
     }
 
     function brew() {
+        this.coffee := "abc"
         print("Brewing " + this.coffee + "...")
         print("Enjoy.")
     }

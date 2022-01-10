@@ -9,3 +9,7 @@ type StatementNode interface {
 type ExpressionNode interface {
 	Node
 }
+
+type AssignmentNode interface {
+	Node
+}

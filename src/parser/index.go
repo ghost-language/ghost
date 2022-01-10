@@ -16,5 +16,8 @@ func (parser *Parser) indexExpression(left ast.ExpressionNode) ast.ExpressionNod
 		return nil
 	}
 
+	parser.previousIndex = expression
+	parser.previousProperty = nil
+
 	return expression
 }
