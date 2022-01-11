@@ -1,6 +1,7 @@
 package modules
 
 import (
+	"plugin"
 	"strings"
 
 	"ghostlang.org/x/ghost/object"
@@ -16,6 +17,7 @@ var GhostProperties = map[string]*object.LibraryProperty{}
 func init() {
 	RegisterMethod(GhostMethods, "abort", ghostAbort)
 	RegisterMethod(GhostMethods, "execute", ghostExecute)
+	RegisterMethod(GhostMethods, "extend", ghostExtend)
 	RegisterMethod(GhostMethods, "identifiers", ghostIdentifiers)
 
 	RegisterProperty(GhostProperties, "version", ghostVersion)
@@ -52,6 +54,34 @@ func ghostExecute(scope *object.Scope, tok token.Token, args ...object.Object) o
 	program := parser.Parse()
 
 	return evaluate(program, scope)
+}
+
+func ghostExtend(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
+	if len(args) != 1 {
+		return object.NewError("%d:%d: runtime error: ghost.extend() expects 1 argument. got=%d", tok.Line, tok.Column, len(args))
+	}
+
+	path, ok := args[0].(*object.String)
+
+	if !ok {
+		return object.NewError("%d:%d: runtime error: ghost.extend() expects the first argument to be of type 'string'. got=%s", tok.Line, tok.Column, strings.ToLower(string(args[0].Type())))
+	}
+
+	extension, err := plugin.Open(path.Value)
+
+	if err != nil {
+		return object.NewError("%d:%d: runtime error: ghost.extend() failed opening plugin: %s", tok.Line, tok.Column, err)
+	}
+
+	register, err := extension.Lookup("Register")
+
+	if err != nil {
+		return object.NewError("%d:%d: runtime error: plugin '%s' does not contain Register function: %s", tok.Line, tok.Column, path.Value, err)
+	}
+
+	register.(func())()
+
+	return nil
 }
 
 func ghostIdentifiers(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
