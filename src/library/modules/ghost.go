@@ -1,6 +1,7 @@
 package modules
 
 import (
+	"path"
 	"plugin"
 	"strings"
 
@@ -61,13 +62,15 @@ func ghostExtend(scope *object.Scope, tok token.Token, args ...object.Object) ob
 		return object.NewError("%d:%d: runtime error: ghost.extend() expects 1 argument. got=%d", tok.Line, tok.Column, len(args))
 	}
 
-	path, ok := args[0].(*object.String)
+	basePath, ok := args[0].(*object.String)
 
 	if !ok {
 		return object.NewError("%d:%d: runtime error: ghost.extend() expects the first argument to be of type 'string'. got=%s", tok.Line, tok.Column, strings.ToLower(string(args[0].Type())))
 	}
 
-	extension, err := plugin.Open(path.Value)
+	path := path.Clean(scope.Environment.GetDirectory() + "/" + basePath.Value)
+
+	extension, err := plugin.Open(path)
 
 	if err != nil {
 		return object.NewError("%d:%d: runtime error: ghost.extend() failed opening plugin: %s", tok.Line, tok.Column, err)
@@ -76,7 +79,7 @@ func ghostExtend(scope *object.Scope, tok token.Token, args ...object.Object) ob
 	register, err := extension.Lookup("Register")
 
 	if err != nil {
-		return object.NewError("%d:%d: runtime error: plugin '%s' does not contain Register function: %s", tok.Line, tok.Column, path.Value, err)
+		return object.NewError("%d:%d: runtime error: plugin '%s' does not contain Register function: %s", tok.Line, tok.Column, path, err)
 	}
 
 	register.(func())()

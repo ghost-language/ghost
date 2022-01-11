@@ -1,0 +1,5 @@
+print("Ghost Plugin Example")
+
+ghost.extend("./plugins/greeter.so")
+
+greet()
