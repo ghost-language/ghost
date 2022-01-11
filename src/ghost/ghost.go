@@ -2,11 +2,14 @@ package ghost
 
 import (
 	"ghostlang.org/x/ghost/evaluator"
+	"ghostlang.org/x/ghost/library"
 	"ghostlang.org/x/ghost/library/modules"
 	"ghostlang.org/x/ghost/log"
 	"ghostlang.org/x/ghost/object"
 	"ghostlang.org/x/ghost/parser"
 	"ghostlang.org/x/ghost/scanner"
+	"ghostlang.org/x/ghost/value"
+	"ghostlang.org/x/ghost/version"
 )
 
 type Ghost struct {
@@ -15,6 +18,20 @@ type Ghost struct {
 	File       string
 	Scope      *object.Scope
 }
+
+var (
+	// Version represents the current version.
+	Version = version.Version
+
+	// NULL represents a null value.
+	NULL = value.NULL
+
+	// TRUE represents a true value.
+	TRUE = value.TRUE
+
+	// FALSE represents a false value.
+	FALSE = value.FALSE
+)
 
 func New() *Ghost {
 	scope := &object.Scope{
@@ -25,7 +42,7 @@ func New() *Ghost {
 		Scope: scope,
 	}
 
-	ghost.RegisterEvaluator()
+	ghost.registerEvaluator()
 
 	return ghost
 }
@@ -63,7 +80,15 @@ func (ghost *Ghost) Execute() object.Object {
 	return result
 }
 
-func (ghost *Ghost) RegisterEvaluator() {
+func (ghost *Ghost) RegisterFunction(name string, function object.GoFunction) {
+	library.RegisterFunction(name, function)
+}
+
+func (ghost *Ghost) RegisterModule(name string, methods map[string]*object.LibraryFunction, properties map[string]*object.LibraryProperty) {
+	library.RegisterModule(name, methods, properties)
+}
+
+func (ghost *Ghost) registerEvaluator() {
 	evaluatorInstance := evaluator.Evaluate
 
 	object.RegisterEvaluator(evaluatorInstance)
