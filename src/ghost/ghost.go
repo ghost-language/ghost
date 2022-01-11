@@ -80,11 +80,11 @@ func (ghost *Ghost) Execute() object.Object {
 	return result
 }
 
-func (ghost *Ghost) RegisterFunction(name string, function object.GoFunction) {
+func RegisterFunction(name string, function object.GoFunction) {
 	library.RegisterFunction(name, function)
 }
 
-func (ghost *Ghost) RegisterModule(name string, methods map[string]*object.LibraryFunction, properties map[string]*object.LibraryProperty) {
+func RegisterModule(name string, methods map[string]*object.LibraryFunction, properties map[string]*object.LibraryProperty) {
 	library.RegisterModule(name, methods, properties)
 }
 
