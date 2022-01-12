@@ -1,6 +1,10 @@
 package object
 
-import "fmt"
+import (
+	"fmt"
+
+	"ghostlang.org/x/ghost/token"
+)
 
 const INSTANCE = "INSTANCE"
 
@@ -23,4 +27,33 @@ func (instance *Instance) Type() Type {
 // Method defines the set of methods available on instance objects.
 func (instance *Instance) Method(method string, args []Object) (Object, bool) {
 	return nil, false
+}
+
+func (instance *Instance) Call(name string, arguments []Object, tok token.Token) Object {
+	if function, ok := instance.Environment.Get(name); ok {
+		if method, ok := function.(*Function); ok {
+			functionEnvironment := createMethodEnvironment(method, arguments)
+			functionScope := &Scope{Self: instance, Environment: functionEnvironment}
+
+			return evaluator(method.Body, functionScope)
+		}
+	}
+
+	return NewError("%d:%d: runtime error: unknown method '%s' on class %s", tok.Line, tok.Column, name, instance.Class.Name.Value)
+}
+
+func createMethodEnvironment(method *Function, arguments []Object) *Environment {
+	env := NewEnclosedEnvironment(method.Scope.Environment)
+
+	for key, val := range method.Defaults {
+		env.Set(key, evaluator(val, method.Scope))
+	}
+
+	for index, parameter := range method.Parameters {
+		if index < len(arguments) {
+			env.Set(parameter.Value, arguments[index])
+		}
+	}
+
+	return env
 }

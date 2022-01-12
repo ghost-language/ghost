@@ -30,6 +30,16 @@ func (environment *Environment) All() map[string]Object {
 	return environment.store
 }
 
+func (environment *Environment) Has(name string) bool {
+	_, ok := environment.store[name]
+
+	if !ok && environment.outer != nil {
+		_, ok = environment.outer.Get(name)
+	}
+
+	return ok
+}
+
 func (environment *Environment) Get(name string) (Object, bool) {
 	object, ok := environment.store[name]
 

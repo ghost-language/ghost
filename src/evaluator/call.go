@@ -26,18 +26,11 @@ func evaluateCall(node *ast.Call, scope *object.Scope) object.Object {
 func unwrapCall(tok token.Token, callee object.Object, arguments []object.Object, scope *object.Scope) object.Object {
 	switch callee := callee.(type) {
 	case *object.Class:
-		instance := &object.Instance{Class: callee, Environment: object.NewEnvironment()}
+		instance := &object.Instance{Class: callee, Environment: object.NewEnclosedEnvironment(callee.Environment)}
 
-		// if function, ok := instance.Class.Environment.Get("constructor"); ok {
-		// 	constructor := function.(*object.Function)
-		// 	// constructor.(*object.Function).Evaluate(arguments, scope.Environment.GetWriter())
-
-		// 	functionEnvironment := createFunctionEnvironment(constructor, arguments)
-		// 	functionScope := &object.Scope{Self: instance, Environment: functionEnvironment}
-		// 	evaluated := Evaluate(constructor.Body, functionScope)
-
-		// 	return unwrapReturn(evaluated)
-		// }
+		if ok := instance.Environment.Has("constructor"); ok {
+			instance.Call("constructor", arguments, tok)
+		}
 
 		return instance
 	case *object.LibraryFunction:

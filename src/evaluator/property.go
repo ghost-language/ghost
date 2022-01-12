@@ -18,7 +18,7 @@ func evaluateProperty(node *ast.Property, scope *object.Scope) object.Object {
 		property := node.Property.(*ast.Identifier)
 		instance := left.(*object.Instance)
 
-		if value, ok := instance.Class.Environment.Get(property.Value); ok {
+		if value, ok := instance.Environment.Get(property.Value); ok {
 			return value
 		}
 	case *object.LibraryModule:

@@ -81,7 +81,7 @@ func evaluatePropertyAssignment(node *ast.Property, assignmentValue object.Objec
 
 	switch obj := left.(type) {
 	case *object.Instance:
-		obj.Class.Environment.Set(node.Property.(*ast.Identifier).Value, assignmentValue)
+		obj.Environment.Set(node.Property.(*ast.Identifier).Value, assignmentValue)
 
 		return nil
 	case *object.Map:

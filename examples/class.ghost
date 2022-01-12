@@ -1,10 +1,11 @@
 class CoffeeMaker {
     coffee := "espresso"
 
-    // function constructor() {
-    //     print("coffee maker constructor called")
-    //     print(this)
-    // }
+    function constructor() {
+        print("coffee maker constructor called")
+
+        this.coffee := "test"
+    }
 
     function setCoffee(coffee) {
         this.coffee := coffee
