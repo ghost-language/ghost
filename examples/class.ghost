@@ -1,6 +1,10 @@
 class CoffeeMaker {
     coffee := "espresso"
 
+    function constructor() {
+        print("coffee maker constructor called")
+    }
+
     function calibrate() {
         print("Calibrating machine...")
 
