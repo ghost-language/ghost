@@ -1,8 +1,15 @@
 class CoffeeMaker {
     coffee := "espresso"
 
-    function constructor() {
-        print("coffee maker constructor called")
+    // function constructor() {
+    //     print("coffee maker constructor called")
+    //     print(this)
+    // }
+
+    function setCoffee(coffee) {
+        this.coffee := coffee
+
+        return this
     }
 
     function calibrate() {
@@ -12,12 +19,13 @@ class CoffeeMaker {
     }
 
     function brew() {
-        this.coffee := "abc"
         print("Brewing " + this.coffee + "...")
         print("Enjoy.")
     }
 }
 
-maker := CoffeeMaker()
+latteMaker := CoffeeMaker()
+espressoMaker := CoffeeMaker()
 
-maker.calibrate().brew()
+latteMaker.setCoffee('latte').calibrate().brew()
+espressoMaker.calibrate().brew()

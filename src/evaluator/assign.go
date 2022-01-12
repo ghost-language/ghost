@@ -2,6 +2,7 @@ package evaluator
 
 import (
 	"ghostlang.org/x/ghost/ast"
+	"ghostlang.org/x/ghost/log"
 	"ghostlang.org/x/ghost/object"
 	"ghostlang.org/x/ghost/value"
 )
@@ -28,7 +29,12 @@ func evaluateAssign(node *ast.Assign, scope *object.Scope) object.Object {
 }
 
 func evaluateIdentifierAssignment(node *ast.Identifier, value object.Object, scope *object.Scope) object.Object {
-	scope.Environment.Set(node.Value, value)
+	switch this := scope.Self.(type) {
+	case *object.Class:
+		this.Environment.Set(node.Value, value)
+	default:
+		scope.Environment.Set(node.Value, value)
+	}
 
 	return nil
 }
@@ -74,6 +80,10 @@ func evaluatePropertyAssignment(node *ast.Property, assignmentValue object.Objec
 	left := Evaluate(node.Left, scope)
 
 	switch obj := left.(type) {
+	case *object.Instance:
+		obj.Class.Environment.Set(node.Property.(*ast.Identifier).Value, assignmentValue)
+
+		return nil
 	case *object.Map:
 		key := &object.String{Value: node.Property.(*ast.Identifier).Value}
 		hashed := key.MapKey()
@@ -82,6 +92,8 @@ func evaluatePropertyAssignment(node *ast.Property, assignmentValue object.Objec
 
 		return nil
 	}
+
+	log.Error("%d:%d: runtime error: can only assign properties to maps, got %s", node.Token.Line, node.Token.Column, left.Type())
 
 	return object.NewError("%d:%d: runtime error: can only assign properties to maps, got %s", node.Token.Line, node.Token.Column, left.Type())
 }

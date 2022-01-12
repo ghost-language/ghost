@@ -28,9 +28,16 @@ func unwrapCall(tok token.Token, callee object.Object, arguments []object.Object
 	case *object.Class:
 		instance := &object.Instance{Class: callee, Environment: object.NewEnvironment()}
 
-		if constructor, ok := instance.Class.Environment.Get("constructor"); ok {
-			constructor.(*object.Function).Evaluate(arguments, scope.Environment.GetWriter())
-		}
+		// if function, ok := instance.Class.Environment.Get("constructor"); ok {
+		// 	constructor := function.(*object.Function)
+		// 	// constructor.(*object.Function).Evaluate(arguments, scope.Environment.GetWriter())
+
+		// 	functionEnvironment := createFunctionEnvironment(constructor, arguments)
+		// 	functionScope := &object.Scope{Self: instance, Environment: functionEnvironment}
+		// 	evaluated := Evaluate(constructor.Body, functionScope)
+
+		// 	return unwrapReturn(evaluated)
+		// }
 
 		return instance
 	case *object.LibraryFunction:
