@@ -2,6 +2,7 @@ package object
 
 import (
 	"hash/fnv"
+	"regexp"
 	"strings"
 	"unicode/utf8"
 
@@ -37,10 +38,16 @@ func (str *String) MapKey() MapKey {
 // Method defines the set of methods available on string objects.
 func (str *String) Method(method string, args []Object) (Object, bool) {
 	switch method {
+	case "find":
+		return str.find(args)
+	case "findAll":
+		return str.findAll(args)
 	case "endsWith":
 		return str.endsWith(args)
 	case "length":
 		return str.length(args)
+	case "matches":
+		return str.matches(args)
 	case "replace":
 		return str.replace(args)
 	case "split":
@@ -69,6 +76,30 @@ func (str *String) Method(method string, args []Object) (Object, bool) {
 // =============================================================================
 // Object methods
 
+func (str *String) find(args []Object) (Object, bool) {
+	re := regexp.MustCompile(str.Value)
+
+	found := re.FindStringSubmatch(args[0].(*String).Value)
+
+	if len(found) > 0 {
+		return &String{Value: found[1]}, true
+	}
+
+	return &String{}, true
+}
+
+func (str *String) findAll(args []Object) (Object, bool) {
+	re := regexp.MustCompile(str.Value)
+	list := &List{}
+	found := re.FindStringSubmatch(args[0].(*String).Value)
+
+	for _, f := range found {
+		list.Elements = append(list.Elements, &String{Value: f})
+	}
+
+	return list, true
+}
+
 func (str *String) endsWith(args []Object) (Object, bool) {
 	hasSuffix := strings.HasSuffix(str.Value, args[0].(*String).Value)
 
@@ -79,6 +110,16 @@ func (str *String) length(args []Object) (Object, bool) {
 	length := &Number{Value: decimal.NewFromInt(int64(utf8.RuneCountInString(str.Value)))}
 
 	return length, true
+}
+
+func (str *String) matches(args []Object) (Object, bool) {
+	matches, err := regexp.Match(str.Value, []byte(args[0].(*String).Value))
+
+	if err != nil {
+		return &Error{Message: err.Error()}, false
+	}
+
+	return &Boolean{Value: matches}, true
 }
 
 func (str *String) replace(args []Object) (Object, bool) {
