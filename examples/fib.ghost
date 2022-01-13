@@ -1,0 +1,44 @@
+// Fibonacci function using recursion.
+function fib(number) {
+    if (number <= 1) {
+        return number
+    }
+
+    return fib(number - 1) + fib(number - 2)
+}
+
+// Fibonacci function using dynamic programming.
+function fibTwo(number) {
+    f := []
+    i := 0
+
+    f[0] := 0
+    f[1] := 1
+
+    for (i := 2; i <= number; i := i + 1) {
+        f[i] := f[i - 1] + f[i - 2]
+    }
+
+    return f[number]
+}
+
+// Fibonacci function using a space optimized approach.
+function fibThree(number) {
+    a := 0
+    b := 1
+    c := 1
+
+    if (number == 0) {
+        return a
+    }
+
+    for (i := 2; i <= number; i := i + 1) {
+        c := a + b
+        a := b
+        b := c
+    }
+
+    return b
+}
+
+print(fibThree(9))
