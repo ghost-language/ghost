@@ -1,6 +1,7 @@
 package object
 
 import (
+	"fmt"
 	"hash/fnv"
 	"regexp"
 	"strings"
@@ -42,6 +43,8 @@ func (str *String) Method(method string, args []Object) (Object, bool) {
 		return str.find(args)
 	case "findAll":
 		return str.findAll(args)
+	case "format":
+		return str.format(args)
 	case "endsWith":
 		return str.endsWith(args)
 	case "length":
@@ -98,6 +101,16 @@ func (str *String) findAll(args []Object) (Object, bool) {
 	}
 
 	return list, true
+}
+
+func (str *String) format(args []Object) (Object, bool) {
+	list := []interface{}{}
+
+	for _, value := range args {
+		list = append(list, value.String())
+	}
+
+	return &String{Value: fmt.Sprintf(str.Value, list...)}, true
 }
 
 func (str *String) endsWith(args []Object) (Object, bool) {
