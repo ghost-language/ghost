@@ -84,13 +84,25 @@ func (scanner *Scanner) ScanToken() token.Token {
 	case rune('.'):
 		scannedToken = scanner.newToken(token.DOT, ".", 1)
 	case rune('-'):
-		scannedToken = scanner.newToken(token.MINUS, "-", 1)
+		if scanner.match('=') {
+			scannedToken = scanner.newToken(token.MINUSEQUAL, "-=", 2)
+		} else {
+			scannedToken = scanner.newToken(token.MINUS, "-", 1)
+		}
 	case rune('+'):
-		scannedToken = scanner.newToken(token.PLUS, "+", 1)
+		if scanner.match('=') {
+			scannedToken = scanner.newToken(token.PLUSEQUAL, "+=", 2)
+		} else {
+			scannedToken = scanner.newToken(token.PLUS, "+", 1)
+		}
 	case rune(';'):
 		scannedToken = scanner.newToken(token.SEMICOLON, ";", 1)
 	case rune('*'):
-		scannedToken = scanner.newToken(token.STAR, "*", 1)
+		if scanner.match('=') {
+			scannedToken = scanner.newToken(token.STAREQUAL, "*=", 2)
+		} else {
+			scannedToken = scanner.newToken(token.STAR, "*", 1)
+		}
 	case rune('%'):
 		scannedToken = scanner.newToken(token.PERCENT, "%", 1)
 	case rune('?'):
@@ -138,6 +150,8 @@ func (scanner *Scanner) ScanToken() token.Token {
 			scanner.skipMultiLineComment()
 
 			return scanner.ScanToken()
+		} else if scanner.match('=') {
+			scannedToken = scanner.newToken(token.SLASHEQUAL, "/=", 2)
 		} else {
 			scannedToken = scanner.newToken(token.SLASH, "/", 1)
 		}

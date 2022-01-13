@@ -47,6 +47,10 @@ const (
 	GREATEREQUAL = ">="
 	LESS         = "<"
 	LESSEQUAL    = "<="
+	PLUSEQUAL    = "+="
+	MINUSEQUAL   = "-="
+	STAREQUAL    = "*="
+	SLASHEQUAL   = "/="
 
 	// literals
 	IDENTIFIER = "IDENTIFIER"
