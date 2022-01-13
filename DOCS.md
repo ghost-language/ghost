@@ -1,5 +1,63 @@
 # Documentation
 
+## Error Handling
+- Syntax errors
+- Runtime errors
+- Line and column are reported for every error
+
+## Classes
+
+### Defining
+```dart
+class CoffeeMaker {
+    //
+}
+```
+
+### Constructor
+```dart
+class CoffeeMaker {
+    function constructor() {
+        print("Calibrating your coffee maker.")
+    }
+}
+
+maker := CoffeeMaker()
+```
+
+### Methods
+```dart
+class CoffeeMaker {
+    function brew() {
+        print("Your coffee is now brewing.")
+    }
+}
+```
+
+### this
+```dart
+class CoffeeMaker {
+    function constructor(recipe := "americano") {
+        this.recipe := recipe
+    }
+
+    function setRecipe(recipe) {
+        this.recipe := recipe
+
+        // Returning 'this' allows you to chain methods
+        return this
+    }
+
+    function brew() {
+        print("Brewing and making your %s.".format(this.recipe))
+    }
+}
+
+maker := CoffeeMaker()
+
+maker.setRecipe("latte").brew()
+```
+
 ## Values
 
 ### Lists
