@@ -10,6 +10,8 @@ import (
 
 // precedences contains a list of tokens mapped to their precedence level.
 var precedences = map[token.Type]int{
+	token.OR:           OR,
+	token.AND:          AND,
 	token.EQUALEQUAL:   EQUALS,
 	token.BANGEQUAL:    EQUALS,
 	token.IN:           EQUALS,
@@ -112,6 +114,8 @@ func New(scanner *scanner.Scanner) *Parser {
 	parser.registerInfix(token.LEFTPAREN, parser.callExpression)
 	parser.registerInfix(token.LEFTBRACKET, parser.indexExpression)
 	parser.registerInfix(token.DOT, parser.dotExpression)
+	parser.registerInfix(token.AND, parser.infixExpression)
+	parser.registerInfix(token.OR, parser.infixExpression)
 
 	// Read the first two tokens, so currentToken and nextToken are both set.
 	parser.readToken()
