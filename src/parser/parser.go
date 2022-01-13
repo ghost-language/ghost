@@ -27,6 +27,10 @@ var precedences = map[token.Type]int{
 	token.LEFTPAREN:    CALL,
 	token.LEFTBRACKET:  INDEX,
 	token.DOT:          INDEX,
+	token.PLUSEQUAL:    SUM,
+	token.MINUSEQUAL:   SUM,
+	token.STAREQUAL:    PRODUCT,
+	token.SLASHEQUAL:   PRODUCT,
 }
 
 // The following list of constants define the available precedence levels.
@@ -116,6 +120,10 @@ func New(scanner *scanner.Scanner) *Parser {
 	parser.registerInfix(token.DOT, parser.dotExpression)
 	parser.registerInfix(token.AND, parser.infixExpression)
 	parser.registerInfix(token.OR, parser.infixExpression)
+	parser.registerInfix(token.PLUSEQUAL, parser.compoundExpression)
+	parser.registerInfix(token.MINUSEQUAL, parser.compoundExpression)
+	parser.registerInfix(token.STAREQUAL, parser.compoundExpression)
+	parser.registerInfix(token.SLASHEQUAL, parser.compoundExpression)
 
 	// Read the first two tokens, so currentToken and nextToken are both set.
 	parser.readToken()
