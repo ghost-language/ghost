@@ -64,6 +64,7 @@ const (
 	EXTENDS  = "extends"
 	FALSE    = "false"
 	FOR      = "for"
+	FROM     = "from"
 	FUNCTION = "function"
 	IF       = "if"
 	IMPORT   = "import"
