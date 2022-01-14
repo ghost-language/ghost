@@ -1,0 +1,3 @@
+import "hello"
+
+print("greeting module runs hello")
