@@ -66,6 +66,7 @@ const (
 	FOR      = "for"
 	FUNCTION = "function"
 	IF       = "if"
+	IMPORT   = "import"
 	IN       = "in"
 	NULL     = "null"
 	OR       = "or"
