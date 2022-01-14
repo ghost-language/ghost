@@ -1,0 +1,3 @@
+print("start c")
+// import "a"
+print("end c")

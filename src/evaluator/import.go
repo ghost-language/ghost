@@ -31,9 +31,9 @@ func evaluateImport(node *ast.Import, scope *object.Scope) object.Object {
 		return nil
 	}
 
-	evaluateFile(filename, node.Token, scope)
-
 	addImported(filename)
+
+	evaluateFile(filename, node.Token, scope)
 
 	return nil
 }
@@ -52,6 +52,8 @@ func evaluateImportFrom(node *ast.ImportFrom, scope *object.Scope) object.Object
 		return nil
 	}
 
+	addImported(filename)
+
 	moduleScope := evaluateFile(filename, node.Token, scope)
 
 	value, ok := moduleScope.(*object.Scope).Environment.Get(node.Identifier.Value)
@@ -61,8 +63,6 @@ func evaluateImportFrom(node *ast.ImportFrom, scope *object.Scope) object.Object
 	}
 
 	scope.Environment.Set(node.Identifier.Value, value)
-
-	addImported(filename)
 
 	return nil
 }
