@@ -97,6 +97,23 @@ maker.setRecipe("latte").brew()
 - `trimEnd()`
 - `trimStart()`
 
+## Modularity
+Ghost employs a simple module system to split and organize code into self-contained files.
+
+Every ghost file is its own module with its own scope. Importing a file into another does not explicitely merge its scope. For example, two modules can define the same top-level variable with the same name without causing any name collision.
+
+### Shared Imports
+Ghost keeps track of every file it imports. Importing a module in multiple locations will not execute or load that module every time. The first encounter of the imported module will be the only time its loaded and evaluated.
+
+### Importing Imperatively
+To import a file imperatively, simply use the `import` statement:
+
+```dart
+import "beverages"
+```
+
+This will evaluate the module and run it, but it will not bind any new variables.
+
 ## Standard Library
 ### Functions
 - `print()`
