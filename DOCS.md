@@ -105,6 +105,40 @@ Every ghost file is its own module with its own scope. Importing a file into ano
 ### Shared Imports
 Ghost keeps track of every file it imports. Importing a module in multiple locations will not execute or load that module every time. The first encounter of the imported module will be the only time its loaded and evaluated.
 
+### Cyclic Imports
+Cyclic imports for the most part are "supported" by Ghost, though they should still be considered a code smell if you ever come across them. Because Ghost keeps track of the modules it imports, it's effectively able to short-circuit itself on cyclic imports:
+
+```typescript
+// main.ghost
+import "a"
+
+// a.ghost
+print("start a")
+import "b"
+print("end a")
+
+// b.ghost
+print("start b")
+import "c"
+print("end b")
+
+// c.ghost
+print("start c")
+import "a"
+print("end c")
+```
+
+When running the above program, you'll find that it prints the correct output and does not get stuck in an infinite loop:
+
+```
+start a
+start b
+start c
+end c
+end b
+end a
+```
+
 ### Importing Imperatively
 To import a file imperatively, simply use the `import` statement:
 
