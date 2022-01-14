@@ -40,6 +40,8 @@ func Evaluate(node ast.Node, scope *object.Scope) object.Object {
 		return evaluateIdentifier(node, scope)
 	case *ast.If:
 		return evaluateIf(node, scope)
+	case *ast.Import:
+		return evaluateImport(node, scope)
 	case *ast.Index:
 		return evaluateIndex(node, scope)
 	case *ast.Infix:

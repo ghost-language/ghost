@@ -6,3 +6,9 @@ if (true) {
 } else {
     print("false :(")
 }
+
+class Animal {
+    function speak() {
+        print("Animals speaks.")
+    }
+}

@@ -14,7 +14,5 @@ func (parser *Parser) importStatement() ast.ExpressionNode {
 
 	statement.Path = &ast.String{Token: parser.currentToken, Value: parser.currentToken.Literal.(string)}
 
-	parser.readToken()
-
 	return statement
 }
