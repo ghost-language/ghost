@@ -1,0 +1,5 @@
+import "nested/greeting"
+import Animal from "animal"
+
+dog := Animal()
+dog.speak()

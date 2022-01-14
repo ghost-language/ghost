@@ -1,4 +1,0 @@
-import "nested/greeting"
-import "hello"
-
-print("main module")

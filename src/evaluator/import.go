@@ -38,6 +38,35 @@ func evaluateImport(node *ast.Import, scope *object.Scope) object.Object {
 	return nil
 }
 
+func evaluateImportFrom(node *ast.ImportFrom, scope *object.Scope) object.Object {
+	addSearchPath(scope.Environment.GetDirectory())
+
+	filename := findFile(node.Path.Value)
+
+	if filename == "" {
+		return object.NewError("%d:%d: runtime error: no file found at '%s.ghost'", node.Token.Line, node.Token.Column, node.Path.Value)
+	}
+
+	// Have we imported this file before? If so, we don't need to do anything
+	if hasImported(filename) {
+		return nil
+	}
+
+	moduleScope := evaluateFile(filename, node.Token, scope)
+
+	value, ok := moduleScope.(*object.Scope).Environment.Get(node.Identifier.Value)
+
+	if !ok {
+		return object.NewError("%d:%d: runtime error: identifier '%s' not found in module '%s.ghost'", node.Token.Line, node.Token.Column, node.Identifier.Value, node.Path.Value)
+	}
+
+	scope.Environment.Set(node.Identifier.Value, value)
+
+	addImported(filename)
+
+	return nil
+}
+
 func evaluateFile(file string, tok token.Token, scope *object.Scope) object.Object {
 	source, err := ioutil.ReadFile(file)
 
@@ -59,7 +88,9 @@ func evaluateFile(file string, tok token.Token, scope *object.Scope) object.Obje
 
 	newScope := &object.Scope{Self: scope.Self, Environment: object.NewEnvironment()}
 
-	return Evaluate(program, newScope)
+	Evaluate(program, newScope)
+
+	return newScope
 }
 
 func findFile(name string) string {
