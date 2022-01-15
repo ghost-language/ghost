@@ -22,13 +22,26 @@ func (parser *Parser) importStatement() ast.ExpressionNode {
 func (parser *Parser) importFromStatement(parent *ast.Import) ast.ExpressionNode {
 	statement := &ast.ImportFrom{Token: parent.Token}
 
+	statement.Identifiers = make(map[string]*ast.Identifier)
+
 	if !parser.currentTokenIs(token.IDENTIFIER) {
 		return nil
 	}
 
-	statement.Identifier = &ast.Identifier{Value: parser.currentToken.Lexeme}
+	for !parser.currentTokenIs(token.FROM) {
+		identifier := &ast.Identifier{Value: parser.currentToken.Lexeme}
+		alias := parser.currentToken.Lexeme
 
-	if !parser.expectNextTokenIs(token.FROM) {
+		parser.readToken()
+
+		statement.Identifiers[alias] = identifier
+
+		if parser.currentTokenIs(token.COMMA) {
+			parser.readToken()
+		}
+	}
+
+	if !parser.currentTokenIs(token.FROM) {
 		return nil
 	}
 

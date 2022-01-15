@@ -59,6 +59,7 @@ const (
 
 	// keywords
 	AND      = "and"
+	AS       = "as"
 	CLASS    = "class"
 	ELSE     = "else"
 	EXTENDS  = "extends"

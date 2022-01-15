@@ -14,7 +14,7 @@ func TestScanTokens(t *testing.T) {
 			expectedLexeme string
 		}
 	}{
-		`( ) [ ] { } , . - + ; * % ? : > < >= <= ! != = == := "hello world" 42 3.14 6.67428e-11 foo foobar true false class whilefoo こんにちは 世界 += -= *= /= import from`,
+		`( ) [ ] { } , . - + ; * % ? : > < >= <= ! != = == := "hello world" 42 3.14 6.67428e-11 foo foobar true false class whilefoo こんにちは 世界 += -= *= /= import from as`,
 		[]struct {
 			expectedType   token.Type
 			expectedLexeme string
@@ -61,6 +61,7 @@ func TestScanTokens(t *testing.T) {
 			{token.SLASHEQUAL, "/="},
 			{token.IMPORT, "import"},
 			{token.FROM, "from"},
+			{token.AS, "as"},
 			{token.EOF, ""},
 		},
 	}

@@ -57,13 +57,15 @@ func evaluateImportFrom(node *ast.ImportFrom, scope *object.Scope) object.Object
 	if hasImported(filename) {
 		moduleScope := imported[filename]
 
-		value, ok := moduleScope.Environment.Get(node.Identifier.Value)
+		for alias, identifier := range node.Identifiers {
+			value, ok := moduleScope.Environment.Get(identifier.Value)
 
-		if !ok {
-			return object.NewError("%d:%d: runtime error: identifier '%s' not found in module '%s.ghost'", node.Token.Line, node.Token.Column, node.Identifier.Value, node.Path.Value)
+			if !ok {
+				return object.NewError("%d:%d: runtime error: identifier '%s' not found in module '%s.ghost'", node.Token.Line, node.Token.Column, identifier.Value, node.Path.Value)
+			}
+
+			scope.Environment.Set(alias, value)
 		}
-
-		scope.Environment.Set(node.Identifier.Value, value)
 
 		return nil
 	}
@@ -72,13 +74,15 @@ func evaluateImportFrom(node *ast.ImportFrom, scope *object.Scope) object.Object
 
 	moduleScope := evaluateFile(filename, node.Token, scope)
 
-	value, ok := moduleScope.(*object.Scope).Environment.Get(node.Identifier.Value)
+	for alias, identifier := range node.Identifiers {
+		value, ok := moduleScope.(*object.Scope).Environment.Get(identifier.Value)
 
-	if !ok {
-		return object.NewError("%d:%d: runtime error: identifier '%s' not found in module '%s.ghost'", node.Token.Line, node.Token.Column, node.Identifier.Value, node.Path.Value)
+		if !ok {
+			return object.NewError("%d:%d: runtime error: identifier '%s' not found in module '%s.ghost'", node.Token.Line, node.Token.Column, identifier.Value, node.Path.Value)
+		}
+
+		scope.Environment.Set(alias, value)
 	}
-
-	scope.Environment.Set(node.Identifier.Value, value)
 
 	addImported(filename, moduleScope.(*object.Scope))
 

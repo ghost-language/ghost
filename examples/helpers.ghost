@@ -1,0 +1,15 @@
+function strUpper() {
+    print("strUpper called")
+}
+
+function strLower() {
+    print("strLower called")
+}
+
+function strReverse() {
+    //
+}
+
+function isString() {
+    //
+}

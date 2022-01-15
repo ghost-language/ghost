@@ -19,6 +19,7 @@ type Scanner struct {
 // keywords contains a list of all reserved keywords.
 var keywords = map[string]token.Type{
 	"and":      token.AND,
+	"as":       token.AS,
 	"class":    token.CLASS,
 	"else":     token.ELSE,
 	"extends":  token.EXTENDS,
