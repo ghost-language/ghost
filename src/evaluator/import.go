@@ -15,7 +15,11 @@ import (
 )
 
 var searchPaths []string
-var imported []string
+var imported map[string]*object.Scope
+
+func init() {
+	imported = make(map[string]*object.Scope)
+}
 
 func evaluateImport(node *ast.Import, scope *object.Scope) object.Object {
 	addSearchPath(scope.Environment.GetDirectory())
@@ -31,9 +35,11 @@ func evaluateImport(node *ast.Import, scope *object.Scope) object.Object {
 		return nil
 	}
 
-	addImported(filename)
+	addImported(filename, nil)
 
-	evaluateFile(filename, node.Token, scope)
+	moduleScope := evaluateFile(filename, node.Token, scope)
+
+	addImported(filename, moduleScope.(*object.Scope))
 
 	return nil
 }
@@ -49,10 +55,20 @@ func evaluateImportFrom(node *ast.ImportFrom, scope *object.Scope) object.Object
 
 	// Have we imported this file before? If so, we don't need to do anything
 	if hasImported(filename) {
+		moduleScope := imported[filename]
+
+		value, ok := moduleScope.Environment.Get(node.Identifier.Value)
+
+		if !ok {
+			return object.NewError("%d:%d: runtime error: identifier '%s' not found in module '%s.ghost'", node.Token.Line, node.Token.Column, node.Identifier.Value, node.Path.Value)
+		}
+
+		scope.Environment.Set(node.Identifier.Value, value)
+
 		return nil
 	}
 
-	addImported(filename)
+	addImported(filename, nil)
 
 	moduleScope := evaluateFile(filename, node.Token, scope)
 
@@ -63,6 +79,8 @@ func evaluateImportFrom(node *ast.ImportFrom, scope *object.Scope) object.Object
 	}
 
 	scope.Environment.Set(node.Identifier.Value, value)
+
+	addImported(filename, moduleScope.(*object.Scope))
 
 	return nil
 }
@@ -111,21 +129,14 @@ func addSearchPath(path string) {
 	searchPaths = append(searchPaths, path)
 }
 
-func addImported(path string) {
-	imported = append(imported, path)
+func addImported(path string, scope *object.Scope) {
+	imported[path] = scope
 }
 
 func hasImported(path string) bool {
-	var result bool = false
+	_, ok := imported[path]
 
-	for _, x := range imported {
-		if x == path {
-			result = true
-			break
-		}
-	}
-
-	return result
+	return ok
 }
 
 func fileExists(file string) bool {

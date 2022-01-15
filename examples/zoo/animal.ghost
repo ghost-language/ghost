@@ -1,0 +1,9 @@
+class Animal {
+    function constructor(breed := "bear") {
+        this.breed := breed
+    }
+
+    function speak() {
+        print("> %s roars.".format(this.breed))
+    }
+}
