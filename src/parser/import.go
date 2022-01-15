@@ -34,6 +34,14 @@ func (parser *Parser) importFromStatement(parent *ast.Import) ast.ExpressionNode
 
 		parser.readToken()
 
+		if parser.currentTokenIs(token.AS) {
+			parser.readToken()
+
+			alias = parser.currentToken.Lexeme
+
+			parser.readToken()
+		}
+
 		statement.Identifiers[alias] = identifier
 
 		if parser.currentTokenIs(token.COMMA) {
