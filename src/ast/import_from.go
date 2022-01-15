@@ -7,4 +7,5 @@ type ImportFrom struct {
 	Token       token.Token
 	Path        *String
 	Identifiers map[string]*Identifier
+	Everything  bool
 }

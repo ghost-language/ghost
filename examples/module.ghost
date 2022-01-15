@@ -1,9 +1,9 @@
 import "nested/greeting"
 import Animal from "animal"
-import strUpper as upper, strLower from "helpers"
+import * from "helpers"
 
 dog := Animal()
 dog.speak()
 
-upper()
+strUpper()
 strLower()

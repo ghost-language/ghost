@@ -24,7 +24,11 @@ func (parser *Parser) importFromStatement(parent *ast.Import) ast.ExpressionNode
 
 	statement.Identifiers = make(map[string]*ast.Identifier)
 
-	if !parser.currentTokenIs(token.IDENTIFIER) {
+	if parser.currentTokenIs(token.STAR) {
+		statement.Everything = true
+
+		parser.readToken()
+	} else if !parser.currentTokenIs(token.IDENTIFIER) {
 		return nil
 	}
 

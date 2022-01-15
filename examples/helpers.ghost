@@ -7,9 +7,9 @@ function strLower() {
 }
 
 function strReverse() {
-    //
+    print("strReverse")
 }
 
 function isString() {
-    //
+    print("isString")
 }
