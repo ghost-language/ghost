@@ -41,10 +41,23 @@ func evaluateMethod(node *ast.Method, scope *object.Scope) object.Object {
 }
 
 func evaluateInstanceMethod(node *ast.Method, receiver *object.Instance, name string, arguments []object.Object) object.Object {
+	class := receiver.Class
 	method, ok := receiver.Class.Environment.Get(name)
 
 	if !ok {
-		return object.NewError("%d:%d: runtime error: undefined method %s for class %s", node.Token.Line, node.Token.Column, name, receiver.Class.Name.Value)
+		for class != nil {
+			method, ok = class.Environment.Get(name)
+
+			if !ok {
+				class = class.Super
+
+				if class == nil {
+					return object.NewError("%d:%d: runtime error: undefined method %s for class %s", node.Token.Line, node.Token.Column, name, receiver.Class.Name.Value)
+				}
+			} else {
+				class = nil
+			}
+		}
 	}
 
 	switch method := method.(type) {

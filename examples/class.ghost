@@ -1,6 +1,6 @@
 class CoffeeMaker {
-    function constructor(coffee) {
-        this.coffee := coffee
+    function constructor() {
+        this.coffee := "coffee"
     }
 
     function brew() {
@@ -8,6 +8,14 @@ class CoffeeMaker {
     }
 }
 
-maker := CoffeeMaker('coffee')
+class EspressoMaker extends CoffeeMaker {
+    function constructor() {
+        this.coffee := "espresso"
+    }
+}
 
-maker.brew()
+coffee := CoffeeMaker()
+coffee.brew()
+
+espresso := EspressoMaker()
+espresso.brew()
