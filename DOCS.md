@@ -105,6 +105,22 @@ Every ghost file is its own module with its own scope. Importing a file into ano
 ### Shared Imports
 Ghost keeps track of every file it imports. Importing a module in multiple locations will not execute or load that module every time. The first encounter of the imported module will be the only time its loaded and evaluated.
 
+### Binding Variables
+All top-level variables within a module are exportable. To actually _import_ data, you may specify any number of identifiers in your import statement:
+
+```typescript
+import Request, Response from "http"
+```
+
+The above will _import_ and _bind_ the values `Request` and `Response` from the `http` module. This will make `Request` and `Response` available in your file.
+
+#### Aliases
+You may import a variable under a different name using `as`:
+
+```typescript
+import str as isString from "helpers"
+```
+
 ### Cyclic Imports
 Cyclic imports for the most part are "supported" by Ghost, though they should still be considered a code smell if you ever come across them. Because Ghost keeps track of the modules it imports, it's effectively able to short-circuit itself on cyclic imports:
 
