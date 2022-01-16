@@ -147,6 +147,32 @@ func TestForInExpressions(t *testing.T) {
 	}
 }
 
+func TestRangeExpressions(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected interface{}
+	}{
+		{`1 .. 0`, []int{}},
+		{`-1 .. 0`, []int{-1, 0}},
+		{`1 .. 1`, []int{1}},
+		{`1 .. 5`, []int{1, 2, 3, 4, 5}},
+	}
+
+	for _, tt := range tests {
+		result := evaluate(tt.input)
+
+		list, ok := result.(*object.List)
+
+		if !ok {
+			t.Errorf("object not List. got=%T (+%v)", result, result)
+		}
+
+		if len(list.Elements) != len(tt.expected.([]int)) {
+			t.Errorf("wrong number of elements. wanted=%d, got=%d", len(tt.expected.([]int)), len(list.Elements))
+		}
+	}
+}
+
 // =============================================================================
 // Helper functions
 

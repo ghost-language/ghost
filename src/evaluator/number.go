@@ -3,6 +3,7 @@ package evaluator
 import (
 	"ghostlang.org/x/ghost/ast"
 	"ghostlang.org/x/ghost/object"
+	"github.com/shopspring/decimal"
 )
 
 func evaluateNumber(node *ast.Number, scope *object.Scope) object.Object {
@@ -36,6 +37,26 @@ func evaluateNumberInfix(node *ast.Infix, left object.Object, right object.Objec
 		return toBooleanValue(leftValue.Equal(rightValue))
 	case "!=":
 		return toBooleanValue(!leftValue.Equal(rightValue))
+	case "..":
+		numbers := make([]object.Object, 0)
+		one := decimal.NewFromInt(1)
+		number := leftValue
+
+		if leftValue.GreaterThan(rightValue) {
+			return &object.List{Elements: numbers}
+		}
+
+		for {
+			numbers = append(numbers, &object.Number{Value: number})
+
+			if number.GreaterThanOrEqual(rightValue) {
+				break
+			}
+
+			number = number.Add(one)
+		}
+
+		return &object.List{Elements: numbers}
 	}
 
 	return newError("%d:%d: runtime error: unknown operator: %s %s %s", node.Token.Line, node.Token.Column, right.Type(), node.Operator, left.Type())
