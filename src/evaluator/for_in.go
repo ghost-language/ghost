@@ -59,5 +59,5 @@ func evaluateForIn(node *ast.ForIn, scope *object.Scope) object.Object {
 		return nil
 	}
 
-	return newError("%d:%d: runtime error: unusable as for loop: %T", node.Token.Line, node.Token.Column, iterable)
+	return newError("%d:%d:%s: runtime error: unusable as for loop: %T", node.Token.Line, node.Token.Column, node.Token.File, iterable)
 }

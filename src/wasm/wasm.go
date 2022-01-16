@@ -18,7 +18,7 @@ func ghost(this js.Value, i []js.Value) interface{} {
 	scope := &object.Scope{Environment: object.NewEnvironment()}
 	scope.Environment.SetWriter(&buf)
 
-	scanner := scanner.New(code)
+	scanner := scanner.New(code, "wasm.ghost")
 	parser := parser.New(scanner)
 	program := parser.Parse()
 

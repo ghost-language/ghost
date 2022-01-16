@@ -52,7 +52,7 @@ func unwrapCall(tok token.Token, callee object.Object, arguments []object.Object
 
 		return unwrapReturn(evaluated)
 	default:
-		return newError("%d:%d: runtime error: uncallable object: %s", tok.Line, tok.Column, callee.Type())
+		return newError("%d:%d:%s: runtime error: uncallable object: %s", tok.Line, tok.Column, tok.File, callee.Type())
 	}
 }
 

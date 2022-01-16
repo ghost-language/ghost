@@ -37,7 +37,7 @@ func evaluateMethod(node *ast.Method, scope *object.Scope) object.Object {
 		}
 	}
 
-	return newError("%d:%d: runtime error: unknown method: %s.%s", node.Token.Line, node.Token.Column, left.String(), node.Method.(*ast.Identifier).Value)
+	return newError("%d:%d:%s: runtime error: unknown method: %s.%s", node.Token.Line, node.Token.Column, node.Token.File, left.String(), node.Method.(*ast.Identifier).Value)
 }
 
 func evaluateInstanceMethod(node *ast.Method, receiver *object.Instance, name string, arguments []object.Object) object.Object {
@@ -52,7 +52,7 @@ func evaluateInstanceMethod(node *ast.Method, receiver *object.Instance, name st
 				class = class.Super
 
 				if class == nil {
-					return object.NewError("%d:%d: runtime error: undefined method %s for class %s", node.Token.Line, node.Token.Column, name, receiver.Class.Name.Value)
+					return object.NewError("%d:%d:%s: runtime error: undefined method %s for class %s", node.Token.Line, node.Token.Column, node.Token.File, name, receiver.Class.Name.Value)
 				}
 			} else {
 				class = nil
@@ -67,6 +67,6 @@ func evaluateInstanceMethod(node *ast.Method, receiver *object.Instance, name st
 
 		return Evaluate(method.Body, scope)
 	default:
-		return object.NewError("%d:%d: runtime error: invalid type %T in class %s", node.Token.Line, node.Token.Column, method, receiver.Class.Name.Value)
+		return object.NewError("%d:%d:%s: runtime error: invalid type %T in class %s", node.Token.Line, node.Token.Column, node.Token.File, method, receiver.Class.Name.Value)
 	}
 }

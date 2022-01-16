@@ -53,6 +53,7 @@ func evaluate(ghost *ghost.Ghost, source string) {
 	directory, _ := os.Getwd()
 
 	ghost.SetSource(source)
+	ghost.SetFile("repl.ghost")
 	ghost.SetDirectory(directory)
 
 	result := ghost.Execute()

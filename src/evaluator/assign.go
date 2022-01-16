@@ -2,7 +2,6 @@ package evaluator
 
 import (
 	"ghostlang.org/x/ghost/ast"
-	"ghostlang.org/x/ghost/log"
 	"ghostlang.org/x/ghost/object"
 	"ghostlang.org/x/ghost/value"
 )
@@ -23,7 +22,7 @@ func evaluateAssign(node *ast.Assign, scope *object.Scope) object.Object {
 		return evaluatePropertyAssignment(assignment, value, scope)
 	}
 
-	object.NewError("%d:%d: runtime error: cannot assign variable to a %T", node.Token.Line, node.Token.Column, node.Name)
+	object.NewError("%d:%d:%s: runtime error: cannot assign variable to a %T", node.Token.Line, node.Token.Column, node.Token.File, node.Name)
 
 	return nil
 }
@@ -49,7 +48,7 @@ func evaluateIndexAssignment(node *ast.Index, assignmentValue object.Object, sco
 		elements := obj.Elements
 
 		if idx < 0 {
-			return object.NewError("%d:%d: runtime error: index out of range: %d", node.Token.Line, node.Token.Column, idx)
+			return object.NewError("%d:%d:%s: runtime error: index out of range: %d", node.Token.Line, node.Token.Column, node.Token.File, idx)
 		}
 
 		if idx >= len(elements) {
@@ -65,7 +64,7 @@ func evaluateIndexAssignment(node *ast.Index, assignmentValue object.Object, sco
 		key, ok := index.(object.Mappable)
 
 		if !ok {
-			return object.NewError("%d:%d: runtime error: unusable as a map key: %s", node.Token.Line, node.Token.Column, index.Type())
+			return object.NewError("%d:%d:%s: runtime error: unusable as a map key: %s", node.Token.Line, node.Token.Column, node.Token.File, index.Type())
 		}
 
 		hashed := key.MapKey()
@@ -93,7 +92,5 @@ func evaluatePropertyAssignment(node *ast.Property, assignmentValue object.Objec
 		return nil
 	}
 
-	log.Error("%d:%d: runtime error: can only assign properties to maps, got %s", node.Token.Line, node.Token.Column, left.Type())
-
-	return object.NewError("%d:%d: runtime error: can only assign properties to maps, got %s", node.Token.Line, node.Token.Column, left.Type())
+	return object.NewError("%d:%d:%s: runtime error: can only assign properties to maps, got %s", node.Token.Line, node.Token.Column, node.Token.File, left.Type())
 }

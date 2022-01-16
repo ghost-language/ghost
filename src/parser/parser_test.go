@@ -17,7 +17,7 @@ func TestAssignStatement(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		scanner := scanner.New(tt.input)
+		scanner := scanner.New(tt.input, "test.ghost")
 		parser := New(scanner)
 		program := parser.Parse()
 
@@ -53,7 +53,7 @@ func TestBooleanLiteral(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		scanner := scanner.New(tt.input)
+		scanner := scanner.New(tt.input, "test.ghost")
 		parser := New(scanner)
 		program := parser.Parse()
 
@@ -84,7 +84,7 @@ func TestBooleanLiteral(t *testing.T) {
 func TestForExpression(t *testing.T) {
 	input := `for (x := 0; x < 10; x := x + 1) { true }`
 
-	scanner := scanner.New(input)
+	scanner := scanner.New(input, "test.ghost")
 	parser := New(scanner)
 	program := parser.Parse()
 
@@ -126,7 +126,7 @@ func TestForExpression(t *testing.T) {
 func TestForInListExpression(t *testing.T) {
 	input := `for (x in bar) { true }`
 
-	scanner := scanner.New(input)
+	scanner := scanner.New(input, "test.ghost")
 	parser := New(scanner)
 	program := parser.Parse()
 
@@ -166,7 +166,7 @@ func TestIdentifierLiteral(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		scanner := scanner.New(tt.input)
+		scanner := scanner.New(tt.input, "test.ghost")
 		parser := New(scanner)
 		program := parser.Parse()
 
@@ -197,7 +197,7 @@ func TestIdentifierLiteral(t *testing.T) {
 func TestIfExpressions(t *testing.T) {
 	input := `if (x < y) { x }`
 
-	scanner := scanner.New(input)
+	scanner := scanner.New(input, "test.ghost")
 	parser := New(scanner)
 	program := parser.Parse()
 
@@ -245,7 +245,7 @@ func TestIfExpressions(t *testing.T) {
 func TestIfElseExpressions(t *testing.T) {
 	input := `if (x < y) { x } else { y }`
 
-	scanner := scanner.New(input)
+	scanner := scanner.New(input, "test.ghost")
 	parser := New(scanner)
 	program := parser.Parse()
 
@@ -320,7 +320,7 @@ func TestInfixExpressions(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		scanner := scanner.New(tt.input)
+		scanner := scanner.New(tt.input, "test.ghost")
 		parser := New(scanner)
 		program := parser.Parse()
 
@@ -367,7 +367,7 @@ func TestNumberLiteral(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		scanner := scanner.New(tt.input)
+		scanner := scanner.New(tt.input, "test.ghost")
 		parser := New(scanner)
 		program := parser.Parse()
 
@@ -406,7 +406,7 @@ func TestPrefixExpressions(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		scanner := scanner.New(tt.input)
+		scanner := scanner.New(tt.input, "test.ghost")
 		parser := New(scanner)
 		program := parser.Parse()
 
@@ -447,7 +447,7 @@ func TestStringLiteral(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		scanner := scanner.New(tt.input)
+		scanner := scanner.New(tt.input, "test.ghost")
 		parser := New(scanner)
 		program := parser.Parse()
 
@@ -478,7 +478,7 @@ func TestStringLiteral(t *testing.T) {
 func TestListLiteral(t *testing.T) {
 	input := `[1, 4, 6]`
 
-	scanner := scanner.New(input)
+	scanner := scanner.New(input, "test.ghost")
 	parser := New(scanner)
 	program := parser.Parse()
 
@@ -512,7 +512,7 @@ func TestListLiteral(t *testing.T) {
 func TestIndexExpressions(t *testing.T) {
 	input := `example[1 + 1]`
 
-	scanner := scanner.New(input)
+	scanner := scanner.New(input, "test.ghost")
 	parser := New(scanner)
 	program := parser.Parse()
 
@@ -538,7 +538,7 @@ func TestIndexExpressions(t *testing.T) {
 func TestMapLiteralsWithStringKeys(t *testing.T) {
 	input := `{"one": 1, "two": 2, "three": 3}`
 
-	scanner := scanner.New(input)
+	scanner := scanner.New(input, "test.ghost")
 	parser := New(scanner)
 	program := parser.Parse()
 
@@ -582,7 +582,7 @@ func TestMapLiteralsWithStringKeys(t *testing.T) {
 func TestEmptyMapLiterals(t *testing.T) {
 	input := `{}`
 
-	scanner := scanner.New(input)
+	scanner := scanner.New(input, "test.ghost")
 	parser := New(scanner)
 	program := parser.Parse()
 
@@ -612,7 +612,7 @@ func TestReturnStatements(t *testing.T) {
 		return 3.14
 	`
 
-	scanner := scanner.New(input)
+	scanner := scanner.New(input, "test.ghost")
 	parser := New(scanner)
 	program := parser.Parse()
 

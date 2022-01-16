@@ -13,17 +13,17 @@ func TestErrorHandling(t *testing.T) {
 		input           string
 		expectedMessage string
 	}{
-		{"5 + true", "1:3: runtime error: type mismatch: NUMBER + BOOLEAN"},
-		{"5 + true; 5", "1:3: runtime error: type mismatch: NUMBER + BOOLEAN"},
-		{"-true", "1:1: runtime error: unknown operator: -BOOLEAN"},
-		{"true + false", "1:6: runtime error: unknown operator: BOOLEAN + BOOLEAN"},
-		{"5; true + false; 5", "1:9: runtime error: unknown operator: BOOLEAN + BOOLEAN"},
-		{"if (10 > 1) { if (10 > 1) { return true + false } return 1 }", "1:41: runtime error: unknown operator: BOOLEAN + BOOLEAN"},
-		{"foobar", "1:1: runtime error: unknown identifier: foobar"},
-		{`"Hello" - "World"`, "1:9: runtime error: unknown operator: STRING - STRING"},
-		{`{"name": "Ghost"}[function() { 123 }]`, "1:18: runtime error: unusable as map key: FUNCTION"},
-		{`function foo() { a } foo()`, "1:18: runtime error: unknown identifier: a"},
-		{`class Test { function foo() { a } } test := Test() test.foo()`, "1:31: runtime error: unknown identifier: a"},
+		{"5 + true", "1:3:test.ghost: runtime error: type mismatch: NUMBER + BOOLEAN"},
+		{"5 + true; 5", "1:3:test.ghost: runtime error: type mismatch: NUMBER + BOOLEAN"},
+		{"-true", "1:1:test.ghost: runtime error: unknown operator: -BOOLEAN"},
+		{"true + false", "1:6:test.ghost: runtime error: unknown operator: BOOLEAN + BOOLEAN"},
+		{"5; true + false; 5", "1:9:test.ghost: runtime error: unknown operator: BOOLEAN + BOOLEAN"},
+		{"if (10 > 1) { if (10 > 1) { return true + false } return 1 }", "1:41:test.ghost: runtime error: unknown operator: BOOLEAN + BOOLEAN"},
+		{"foobar", "1:1:test.ghost: runtime error: unknown identifier: foobar"},
+		{`"Hello" - "World"`, "1:9:test.ghost: runtime error: unknown operator: STRING - STRING"},
+		{`{"name": "Ghost"}[function() { 123 }]`, "1:18:test.ghost: runtime error: unusable as map key: FUNCTION"},
+		{`function foo() { a } foo()`, "1:18:test.ghost: runtime error: unknown identifier: a"},
+		{`class Test { function foo() { a } } test := Test() test.foo()`, "1:31:test.ghost: runtime error: unknown identifier: a"},
 	}
 
 	for _, tt := range tests {
@@ -110,9 +110,9 @@ func TestForExpressions(t *testing.T) {
 		input    string
 		expected interface{}
 	}{
-		{`x := 10; for (x := y; x > 0; x := x - 1) { x }`, "1:20: runtime error: unknown identifier: y"},
-		{`for (x := 0; x < 10; x := x + 1) { y }`, "1:36: runtime error: unknown identifier: y"},
-		{`bar := true; for (x := 0; x < 10; x := x + 1) { y; print(bar) }`, "1:49: runtime error: unknown identifier: y"},
+		{`x := 10; for (x := y; x > 0; x := x - 1) { x }`, "1:20:test.ghost: runtime error: unknown identifier: y"},
+		{`for (x := 0; x < 10; x := x + 1) { y }`, "1:36:test.ghost: runtime error: unknown identifier: y"},
+		{`bar := true; for (x := 0; x < 10; x := x + 1) { y; print(bar) }`, "1:49:test.ghost: runtime error: unknown identifier: y"},
 	}
 
 	for _, tt := range tests {
@@ -132,7 +132,7 @@ func TestForInExpressions(t *testing.T) {
 		input    string
 		expected interface{}
 	}{
-		{`list := [1, 2, 3]; for(x in lists) { x }`, "1:29: runtime error: unknown identifier: lists"},
+		{`list := [1, 2, 3]; for(x in lists) { x }`, "1:29:test.ghost: runtime error: unknown identifier: lists"},
 	}
 
 	for _, tt := range tests {
@@ -177,7 +177,7 @@ func TestRangeExpressions(t *testing.T) {
 // Helper functions
 
 func evaluate(input string) object.Object {
-	scanner := scanner.New(input)
+	scanner := scanner.New(input, "test.ghost")
 	parser := parser.New(scanner)
 	program := parser.Parse()
 	scope := &object.Scope{

@@ -50,7 +50,7 @@ func ghostExecute(scope *object.Scope, tok token.Token, args ...object.Object) o
 		return object.NewError("%d:%d: runtime error: ghost.execute() expects the first argument to be of type 'string'. got=%s", tok.Line, tok.Column, strings.ToLower(string(args[0].Type())))
 	}
 
-	scanner := scanner.New(source.Value)
+	scanner := scanner.New(source.Value, tok.File)
 	parser := parser.New(scanner)
 	program := parser.Parse()
 

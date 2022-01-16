@@ -9,6 +9,7 @@ import (
 // Scanner transforms our source code into tokens.
 type Scanner struct {
 	source       []rune // raw source to be scanned
+	file         string // file that contains the source being scanned
 	character    rune   // current character being scanned
 	position     int    // current position in source (pointing to current character)
 	readPosition int    // current reading position in source (point to next character)
@@ -40,8 +41,8 @@ var keywords = map[string]token.Type{
 }
 
 // New creates a new scanner instance.
-func New(source string) *Scanner {
-	scanner := Scanner{source: []rune(source), line: 1, column: 1}
+func New(source string, file string) *Scanner {
+	scanner := Scanner{source: []rune(source), file: file, line: 1, column: 1}
 
 	scanner.readCharacter()
 
@@ -265,7 +266,9 @@ func (scanner *Scanner) newToken(tokenType token.Type, literal interface{}, leng
 	lexeme := fmt.Sprintf("%s", literal)
 	column := scanner.column - length
 
-	return token.Token{Type: tokenType, Lexeme: lexeme, Literal: literal, Line: scanner.line, Column: column}
+	// log.Debug("file: %s", scanner.file)
+
+	return token.Token{Type: tokenType, Lexeme: lexeme, Literal: literal, Line: scanner.line, Column: column, File: scanner.file}
 }
 
 // skipSingleLineComment consumes and reads characters until it reaches the end

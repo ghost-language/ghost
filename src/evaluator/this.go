@@ -10,5 +10,5 @@ func evaluateThis(node *ast.This, scope *object.Scope) object.Object {
 		return scope.Self
 	}
 
-	return object.NewError("%d:%d: runtime error: cannot call 'this' outside of scope", node.Token.Line, node.Token.Column)
+	return object.NewError("%d:%d:%s: runtime error: cannot call 'this' outside of scope", node.Token.Line, node.Token.Column, node.Token.File)
 }

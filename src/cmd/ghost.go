@@ -8,6 +8,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"ghostlang.org/x/ghost/ghost"
@@ -81,9 +82,12 @@ func main() {
 		source := sourceBuffer.String()
 
 		directory, _ := filepath.Abs(filepath.Dir(args[0]))
+		fullPath, _ := filepath.Abs(args[0])
+		currentFile := strings.Replace(fullPath, directory+"/", "", 1)
 
 		ghost := ghost.New()
 		ghost.SetSource(source)
+		ghost.SetFile(currentFile)
 		ghost.SetDirectory(directory)
 		ghost.Execute()
 

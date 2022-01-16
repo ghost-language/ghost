@@ -1,3 +1,5 @@
-print("start c")
+print(foo)
+
+// print("start c")
 // import "a"
-print("end c")
+// print("end c")

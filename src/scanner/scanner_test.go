@@ -67,7 +67,7 @@ func TestScanTokens(t *testing.T) {
 		},
 	}
 
-	scanner := New(test.input)
+	scanner := New(test.input, "test.ghost")
 
 	for _, tok := range test.expected {
 		token := scanner.ScanToken()

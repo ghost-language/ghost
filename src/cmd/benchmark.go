@@ -42,7 +42,7 @@ func benchmark(source string) (scanTime time.Duration, parseTime time.Duration, 
 		Environment: object.NewEnvironment(),
 	}
 
-	scanner := scanner.New(source)
+	scanner := scanner.New(source, "benchmark.ghost")
 	scanTime = time.Since(start)
 
 	parseStart := time.Now()

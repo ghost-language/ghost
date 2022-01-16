@@ -26,8 +26,8 @@ func evaluateInfix(node *ast.Infix, scope *object.Scope) object.Object {
 	case left.Type() == object.STRING:
 		return evaluateStringInfix(node, left, right)
 	case left.Type() != right.Type():
-		return newError("%d:%d: runtime error: type mismatch: %s %s %s", node.Token.Line, node.Token.Column, left.Type(), node.Operator, right.Type())
+		return newError("%d:%d:%s: runtime error: type mismatch: %s %s %s", node.Token.Line, node.Token.Column, node.Token.File, left.Type(), node.Operator, right.Type())
 	}
 
-	return newError("%d:%d: runtime error: unknown operator: %s %s %s", node.Token.Line, node.Token.Column, left.Type(), node.Operator, right.Type())
+	return newError("%d:%d:%s: runtime error: unknown operator: %s %s %s", node.Token.Line, node.Token.Column, node.Token.File, left.Type(), node.Operator, right.Type())
 }

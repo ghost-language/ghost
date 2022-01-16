@@ -15,7 +15,7 @@ import (
 type Ghost struct {
 	FatalError bool
 	source     string
-	File       string
+	file       string
 	Scope      *object.Scope
 }
 
@@ -59,8 +59,12 @@ func (ghost *Ghost) SetSource(source string) {
 	ghost.source = source
 }
 
+func (ghost *Ghost) SetFile(file string) {
+	ghost.file = file
+}
+
 func (ghost *Ghost) Execute() object.Object {
-	scanner := scanner.New(ghost.source)
+	scanner := scanner.New(ghost.source, ghost.file)
 	parser := parser.New(scanner)
 	program := parser.Parse()
 

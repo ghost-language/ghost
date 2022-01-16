@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"ghostlang.org/x/ghost/ast"
 	"ghostlang.org/x/ghost/log"
@@ -27,7 +28,7 @@ func evaluateImport(node *ast.Import, scope *object.Scope) object.Object {
 	filename := findFile(node.Path.Value)
 
 	if filename == "" {
-		return object.NewError("%d:%d: runtime error: no file found at '%s.ghost'", node.Token.Line, node.Token.Column, node.Path.Value)
+		return object.NewError("%d:%d:%s: runtime error: no file found at '%s.ghost'", node.Token.Line, node.Token.Column, node.Token.File, node.Path.Value)
 	}
 
 	// Have we imported this file before? If so, we don't need to do anything
@@ -38,6 +39,10 @@ func evaluateImport(node *ast.Import, scope *object.Scope) object.Object {
 	addImported(filename, nil)
 
 	moduleScope := evaluateFile(filename, node.Token, scope)
+
+	if isError(moduleScope) {
+		return moduleScope
+	}
 
 	addImported(filename, moduleScope.(*object.Scope))
 
@@ -50,7 +55,7 @@ func evaluateImportFrom(node *ast.ImportFrom, scope *object.Scope) object.Object
 	filename := findFile(node.Path.Value)
 
 	if filename == "" {
-		return object.NewError("%d:%d: runtime error: no file found at '%s.ghost'", node.Token.Line, node.Token.Column, node.Path.Value)
+		return object.NewError("%d:%d:%s: runtime error: no file found at '%s.ghost'", node.Token.Line, node.Token.Column, node.Token.File, node.Path.Value)
 	}
 
 	// Have we imported this file before? If so, we don't need to do anything
@@ -65,7 +70,7 @@ func evaluateImportFrom(node *ast.ImportFrom, scope *object.Scope) object.Object
 			value, ok := moduleScope.Environment.Get(identifier.Value)
 
 			if !ok {
-				return object.NewError("%d:%d: runtime error: identifier '%s' not found in module '%s.ghost'", node.Token.Line, node.Token.Column, identifier.Value, node.Path.Value)
+				return object.NewError("%d:%d:%s: runtime error: identifier '%s' not found in module '%s.ghost'", node.Token.Line, node.Token.Column, node.Token.File, identifier.Value, node.Path.Value)
 			}
 
 			scope.Environment.Set(alias, value)
@@ -86,7 +91,7 @@ func evaluateImportFrom(node *ast.ImportFrom, scope *object.Scope) object.Object
 		value, ok := moduleScope.(*object.Scope).Environment.Get(identifier.Value)
 
 		if !ok {
-			return object.NewError("%d:%d: runtime error: identifier '%s' not found in module '%s.ghost'", node.Token.Line, node.Token.Column, identifier.Value, node.Path.Value)
+			return object.NewError("%d:%d:%s: runtime error: identifier '%s' not found in module '%s.ghost'", node.Token.Line, node.Token.Column, node.Token.File, identifier.Value, node.Path.Value)
 		}
 
 		scope.Environment.Set(alias, value)
@@ -109,10 +114,13 @@ func evaluateFile(file string, tok token.Token, scope *object.Scope) object.Obje
 	source, err := ioutil.ReadFile(file)
 
 	if err != nil {
-		return object.NewError("%d:%d: runtime error: %s", tok.Line, tok.Column, err)
+		return object.NewError("%d:%d:%s: runtime error: %s", tok.Line, tok.Column, tok.File, err)
 	}
 
-	scanner := scanner.New(string(source))
+	directory := scope.Environment.GetDirectory()
+	currentFile := strings.Replace(file, directory+"/", "", 1)
+
+	scanner := scanner.New(string(source), currentFile)
 	parser := parser.New(scanner)
 	program := parser.Parse()
 
@@ -125,8 +133,13 @@ func evaluateFile(file string, tok token.Token, scope *object.Scope) object.Obje
 	}
 
 	newScope := &object.Scope{Self: scope.Self, Environment: object.NewEnvironment()}
+	newScope.Environment.SetDirectory(scope.Environment.GetDirectory())
 
-	Evaluate(program, newScope)
+	result := Evaluate(program, newScope)
+
+	if isError(result) {
+		return result
+	}
 
 	return newScope
 }

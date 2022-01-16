@@ -18,7 +18,7 @@ func evaluateMap(node *ast.Map, scope *object.Scope) object.Object {
 		mapKey, ok := key.(object.Mappable)
 
 		if !ok {
-			return newError("%d:%d: runtime error: unusable as map key: %s", node.Token.Line, node.Token.Column, key.Type())
+			return newError("%d:%d:%s: runtime error: unusable as map key: %s", node.Token.Line, node.Token.Column, node.Token.File, key.Type())
 		}
 
 		value := Evaluate(valueNode, scope)

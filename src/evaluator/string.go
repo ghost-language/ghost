@@ -30,5 +30,5 @@ func evaluateStringInfix(node *ast.Infix, left object.Object, right object.Objec
 		return &object.Boolean{Value: leftValue != rightValue}
 	}
 
-	return newError("%d:%d: runtime error: unknown operator: %s %s %s", node.Token.Line, node.Token.Column, right.Type(), node.Operator, left.Type())
+	return newError("%d:%d:%s: runtime error: unknown operator: %s %s %s", node.Token.Line, node.Token.Column, node.Token.File, right.Type(), node.Operator, left.Type())
 }
