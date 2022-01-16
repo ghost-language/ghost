@@ -1,39 +1,38 @@
 # This is an example goreleaser.yaml file with some sane defaults.
 # Make sure to check the documentation at http://goreleaser.com
 builds:
-  - main: ./
+  - main: ./src/
     binary: ghost
     id: "cli"
-    goos: ['linux', 'darwin', 'windows']
-    goarch: ['386', 'amd64', 'arm', 'arm64']
+    goos: ["linux", "darwin", "windows"]
+    goarch: ["386", "amd64", "arm", "arm64"]
     env:
       - CGO_ENABLED=0
   - main: ./wasm
     binary: ghost
     id: "wasm"
-    goos: ['js']
-    goarch: ['wasm']
+    goos: ["js"]
+    goarch: ["wasm"]
     env:
       - CGO_ENABLED=0
 archives:
   - format_overrides:
-    - goos: 'windows'
-      format: 'zip'
-    files: ['LICENSE', 'README.md']
+      - goos: "windows"
+        format: "zip"
+    files: ["LICENSE", "README.md"]
 checksum:
-  name_template: 'checksums.txt'
+  name_template: "checksums.txt"
 snapshot:
   name_template: "{{ .Tag }}-next"
 changelog:
   sort: asc
   filters:
     exclude:
-      - '^docs:'
-      - '^test:'
+      - "^docs:"
+      - "^test:"
       - '(?i)\breadme\b'
 brews:
-  -
-    name: ghost
+  - name: ghost
     tap:
       owner: ghost-language
       name: homebrew-ghost
