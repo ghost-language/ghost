@@ -105,6 +105,48 @@ func TestClassStatement(t *testing.T) {
 	}
 }
 
+func TestForExpressions(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected interface{}
+	}{
+		{`x := 10; for (x := y; x > 0; x := x - 1) { x }`, "1:20: runtime error: unknown identifier: y"},
+		{`for (x := 0; x < 10; x := x + 1) { y }`, "1:36: runtime error: unknown identifier: y"},
+		{`bar := true; for (x := 0; x < 10; x := x + 1) { y; print(bar) }`, "1:49: runtime error: unknown identifier: y"},
+	}
+
+	for _, tt := range tests {
+		result := evaluate(tt.input)
+		number, ok := tt.expected.(int64)
+
+		if ok {
+			isNumberObject(t, result, number)
+		} else {
+			isErrorObject(t, result, tt.expected.(string))
+		}
+	}
+}
+
+func TestForInExpressions(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected interface{}
+	}{
+		{`list := [1, 2, 3]; for(x in lists) { x }`, "1:29: runtime error: unknown identifier: lists"},
+	}
+
+	for _, tt := range tests {
+		result := evaluate(tt.input)
+		number, ok := tt.expected.(int64)
+
+		if ok {
+			isNumberObject(t, result, number)
+		} else {
+			isErrorObject(t, result, tt.expected.(string))
+		}
+	}
+}
+
 // =============================================================================
 // Helper functions
 

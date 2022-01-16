@@ -12,10 +12,10 @@ func evaluateBlock(node *ast.Block, scope *object.Scope) object.Object {
 		result = Evaluate(statement, scope)
 
 		if result != nil {
-			switch statement := result.(type) {
-			case *object.Error:
-			case *object.Return:
-				return statement
+			resultType := result.Type()
+
+			if resultType == object.ERROR || resultType == object.RETURN {
+				return result
 			}
 		}
 	}

@@ -8,9 +8,11 @@ class Beverage {
                 print("false")
             }
 
-            if (i == 4) {
-                foundMatch := true
-            }
+            print("wat")
+
+            // if (i == 4) {
+            //     foundMatch := true
+            // }
         }
     }
 }

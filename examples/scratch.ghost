@@ -1,0 +1,23 @@
+bar := true
+list := [1, 2, 3]
+
+// for (i in list) {
+//     if (foo == true) {
+//         print("foo is true")
+//     }
+
+//     if (bar == true) {
+//         print("bar is true")
+//     }
+// }
+
+for (i := 0; i < 10; i := i + 1) {
+    foo
+    // if (foo == true) {
+    //     print("foo is true")
+    // }
+
+    // if (bar == true) {
+    //     print("bar is true")
+    // }
+}

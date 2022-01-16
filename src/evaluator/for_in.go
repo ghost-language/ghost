@@ -9,6 +9,10 @@ import (
 func evaluateForIn(node *ast.ForIn, scope *object.Scope) object.Object {
 	iterable := Evaluate(node.Iterable, scope)
 
+	if isError(iterable) {
+		return iterable
+	}
+
 	existingKey, keyExisted := scope.Environment.Get(node.Key.Value)
 	existingValue, valueExisted := scope.Environment.Get(node.Value.Value)
 
