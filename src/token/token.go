@@ -12,6 +12,7 @@ type Token struct {
 	Literal interface{} // Native value in Go
 	Line    int         // Line of occurance
 	Column  int         // Column of occurance on line
+	File    string      // File of occurance
 }
 
 func (token *Token) String() string {
