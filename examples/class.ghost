@@ -1,21 +1,19 @@
-class CoffeeMaker {
-    function constructor() {
-        this.coffee := "coffee"
-    }
+class Beverage {
+    function serve() {
+        foundMatch := false
+        tests := [1, 2, 3, 4, 5]
 
-    function brew() {
-        print('Enjoy your cup of ' + this.coffee)
+        for (i in tests) {
+            if (1 + 2 == 3 and foundMath == false) {
+                print("false")
+            }
+
+            if (i == 4) {
+                foundMatch := true
+            }
+        }
     }
 }
 
-class EspressoMaker extends CoffeeMaker {
-    function constructor() {
-        this.coffee := "espresso"
-    }
-}
-
-coffee := CoffeeMaker()
-coffee.brew()
-
-espresso := EspressoMaker()
-espresso.brew()
+beverage := Beverage()
+beverage.serve()
