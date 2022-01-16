@@ -18,7 +18,7 @@ func evaluateClass(node *ast.Class, scope *object.Scope) object.Object {
 		identifier, ok := scope.Environment.Get(node.Super.Value)
 
 		if !ok {
-			object.NewError("%d:%d: runtime error: identifier '%s' not found in '%s'", node.Super.Token.Line, node.Super.Token.Column, scope.Self.String())
+			object.NewError("%d:%d: runtime error: identifier '%s' not found in '%s'", node.Super.Token.Line, node.Super.Token.Column, node.Super.Value, scope.Self.String())
 		}
 
 		super, ok := identifier.(*object.Class)

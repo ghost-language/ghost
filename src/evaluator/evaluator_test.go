@@ -22,6 +22,8 @@ func TestErrorHandling(t *testing.T) {
 		{"foobar", "1:1: runtime error: unknown identifier: foobar"},
 		{`"Hello" - "World"`, "1:9: runtime error: unknown operator: STRING - STRING"},
 		{`{"name": "Ghost"}[function() { 123 }]`, "1:18: runtime error: unusable as map key: FUNCTION"},
+		{`function foo() { a } foo()`, "1:18: runtime error: unknown identifier: a"},
+		{`class Test { function foo() { a } } test := Test() test.foo()`, "1:31: runtime error: unknown identifier: a"},
 	}
 
 	for _, tt := range tests {
