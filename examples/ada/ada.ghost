@@ -1,6 +1,23 @@
 class Ada {
     function constructor() {
         this.knowledge = []
+        this.reflections := {
+            "am": "are",
+            "was": "were",
+            "i": "you",
+            "i'd": "you would",
+            "i've": "you have",
+            "i'll": "you will",
+            "my": "your",
+            "are": "am",
+            "you've": "I have",
+            "you'll": "I will",
+            "you're": "I am",
+            "your": "my",
+            "yours": "mine",
+            "you": "I",
+            "me": "you"
+        }
     }
 
     function greet() {
@@ -23,14 +40,29 @@ class Ada {
                 matches := knowledge.pattern.findAll(input.toLowerCase())
                 response := knowledge.responses[random.range(knowledge.responses.length())]
 
-                // for (index, match in matches) {
-                //     response := response.replace()
-                // }
+                for (index, match in matches) {
+                    response := response.replace("{%s}".format(index), this.reflect(match))
+                }
 
                 print("== %s".format(response))
             }
         }
 
         // print(input)
+    }
+
+    /**
+     * Reflect on the user's input.
+     */
+    function reflect(input) {
+        words := input.split(" ")
+
+        for (index, word in words) {
+            if (this.reflections[word]) {
+                words[index] := this.reflections[word]
+            }
+        }
+
+        return words.join(" ")
     }
 }
