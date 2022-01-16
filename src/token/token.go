@@ -22,7 +22,6 @@ const (
 	// single-character tokens
 	COLON        = ":"
 	COMMA        = ","
-	DOT          = "."
 	LEFTBRACE    = "{"
 	LEFTBRACKET  = "["
 	LEFTPAREN    = "("
@@ -40,6 +39,8 @@ const (
 	// one or two character tokens
 	BANG         = "!"
 	BANGEQUAL    = "!="
+	DOT          = "."
+	DOTDOT       = ".."
 	EQUAL        = "="
 	EQUALEQUAL   = "=="
 	ASSIGN       = ":="
