@@ -1,6 +1,8 @@
 class Ada {
+    knowledge := []
+    reflections := {}
+
     function constructor() {
-        this.knowledge = []
         this.reflections := {
             "am": "are",
             "was": "were",
@@ -47,8 +49,6 @@ class Ada {
                 print("== %s".format(response))
             }
         }
-
-        // print(input)
     }
 
     /**
