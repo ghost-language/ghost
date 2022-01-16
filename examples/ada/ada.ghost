@@ -1,0 +1,36 @@
+class Ada {
+    function constructor() {
+        this.knowledge = []
+    }
+
+    function greet() {
+        this.respond('hello')
+    }
+
+    function load(module) {
+        this.knowledge := module
+
+        return this
+    }
+
+    function respond(input) {
+        foundMatch := false
+
+        // Loop through the knowledge base
+        for (knowledge in this.knowledge) {
+            if (knowledge.pattern.matches(input.toLowerCase()) and foundMatch == false) {
+                foundMatch := true
+                matches := knowledge.pattern.findAll(input.toLowerCase())
+                response := knowledge.responses[random.range(knowledge.responses.length())]
+
+                // for (index, match in matches) {
+                //     response := response.replace()
+                // }
+
+                print("== %s".format(response))
+            }
+        }
+
+        // print(input)
+    }
+}

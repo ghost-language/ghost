@@ -1,12 +1,14 @@
 package modules
 
 import (
+	"bufio"
 	"fmt"
+	"os"
 	"strings"
 
 	"ghostlang.org/x/ghost/object"
 	"ghostlang.org/x/ghost/token"
-	"github.com/peterh/liner"
+	"ghostlang.org/x/ghost/value"
 )
 
 var ConsoleMethods = map[string]*object.LibraryFunction{}
@@ -57,17 +59,21 @@ func consoleLog(scope *object.Scope, tok token.Token, args ...object.Object) obj
 }
 
 func consoleRead(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
-	line := liner.NewLiner()
-	prompt := ""
-	defer line.Close()
+	scanner := bufio.NewScanner(os.Stdin)
 
 	if len(args) == 1 {
-		prompt = args[0].(*object.String).Value + " "
+		prompt := args[0].(*object.String).Value
+
+		fmt.Print(prompt)
 	}
 
-	value, _ := line.Prompt(prompt)
+	val := scanner.Scan()
 
-	return &object.String{Value: string(value)}
+	if !val {
+		return value.NULL
+	}
+
+	return &object.String{Value: scanner.Text()}
 }
 
 func consoleWarn(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {

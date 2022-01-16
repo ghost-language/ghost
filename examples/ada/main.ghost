@@ -1,0 +1,24 @@
+import Ada from 'ada'
+import therapist from 'modules/therapist'
+
+version := '0.3'
+
+print("=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=")
+print("  Ada:   v%s".format(version))
+print("  Ghost: v%s".format(ghost.version))
+print()
+print("  Ada is a rudimentary AI based on ELIZA.")
+print("  Speak with Ada in plain English, and they will reply.")
+print("=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=")
+print()
+
+ada := Ada()
+
+ada.load(therapist)
+ada.greet()
+
+while (true) {
+    text := console.read("> ")
+
+    ada.respond(text)
+}
