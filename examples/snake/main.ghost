@@ -1,0 +1,23 @@
+import Game from 'game'
+
+game := Game(1280, 720)
+
+window.create(game.getWidth(), game.getHeight(), "Snake")
+window.setTargetFPS(60)
+
+while (!window.shouldClose()) {
+    game.update()
+
+
+    draw.begin()
+
+    draw.clearBackground()
+
+    text.draw("FPS: %s".format(window.FPS), 10, 10, 20)
+
+    game.draw()
+
+    draw.end()
+}
+
+window.close()

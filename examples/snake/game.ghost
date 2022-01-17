@@ -1,0 +1,30 @@
+import Snake from 'snake'
+
+class Game {
+    width := 0
+    height := 0
+    snake := null
+    // snakePosition := null
+
+    function constructor(width, height) {
+        this.width := width
+        this.height := height
+        this.snake := Snake()
+    }
+
+    function update() {
+        this.snake.update()
+    }
+
+    function draw() {
+        this.snake.draw()
+    }
+
+    function getWidth() {
+        return this.width
+    }
+
+    function getHeight() {
+        return this.height
+    }
+}
