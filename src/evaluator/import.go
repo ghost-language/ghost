@@ -84,7 +84,11 @@ func evaluateImportFrom(node *ast.ImportFrom, scope *object.Scope) object.Object
 	moduleScope := evaluateFile(filename, node.Token, scope)
 
 	if node.Everything {
-		return importEverything(node, scope, moduleScope.(*object.Scope))
+		importEverything(node, scope, moduleScope.(*object.Scope))
+
+		addImported(filename, moduleScope.(*object.Scope))
+
+		return nil
 	}
 
 	for alias, identifier := range node.Identifiers {
@@ -103,6 +107,8 @@ func evaluateImportFrom(node *ast.ImportFrom, scope *object.Scope) object.Object
 }
 
 func importEverything(node *ast.ImportFrom, scope *object.Scope, moduleScope *object.Scope) object.Object {
+	log.Debug("importing everything")
+
 	for alias, value := range moduleScope.Environment.All() {
 		scope.Environment.Set(alias, value)
 	}

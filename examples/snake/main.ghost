@@ -13,8 +13,6 @@ while (!window.shouldClose()) {
 
     draw.clearBackground()
 
-    text.draw("FPS: %s".format(window.FPS), 10, 10, 20)
-
     game.draw()
 
     draw.end()

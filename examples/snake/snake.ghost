@@ -3,66 +3,49 @@ import * from 'utilities'
 class Snake {
     x := 0
     y := 0
+    frames := 0
+    canMove := false
+    paused := false
 
     directionX := 0
     directionY := 0
-
-    up := false
-    down := false
-    left := false
-    right := false
 
     function constructor() {
         //
     }
 
     function update() {
-        if (keyboard.wasPressed(key.a)) {
-            console.log("a pressed")
-            this.left := true
-            this.right := false
+        if (keyboard.wasPressed(key.a) and this.canMove) {
+            this.directionX := -1
+            this.directionY := 0
+            this.canMove := false
         }
 
         if (keyboard.wasPressed(key.d)) {
-            console.log("d pressed")
-            this.left := false
-            this.right := true
+            this.directionX := 1
+            this.directionY := 0
+            this.canMove := false
         }
 
         if (keyboard.wasPressed(key.w)) {
-            console.log("w pressed")
-            this.up := true
-            this.down := false
+            this.directionX := 0
+            this.directionY := -1
+            this.canMove := false
         }
 
         if (keyboard.wasPressed(key.s)) {
-            console.log("s pressed")
-            this.up := false
-            this.down := true
-        }
-
-        if (this.up) {
-            this.directionX := 0
-            this.directionY := -1
-        }
-
-        if (this.down) {
             this.directionX := 0
             this.directionY := 1
+            this.canMove := false
         }
 
-        if (this.left) {
-            this.directionX := -1
-            this.directionY := 0
+        if (this.frames % 5 == 0) {
+            this.x := this.x + this.directionX
+            this.y := this.y + this.directionY
+            this.canMove := true
         }
 
-        if (this.right) {
-            this.directionX := 1
-            this.directionY := 0
-        }
-
-        this.x := this.x + (this.directionX / 2)
-        this.y := this.y + (this.directionY / 2)
+        this.frames := this.frames + 1
     }
 
     function draw() {

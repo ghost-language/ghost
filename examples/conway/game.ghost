@@ -6,6 +6,7 @@ class Game {
     cols := 0
     rows := 0
     grid := []
+    generation := 0
 
     function constructor() {
         random.seed()
@@ -30,6 +31,18 @@ class Game {
 
             console.log("Spawning life...")
             this.grid := this.spawnLife(this.grid)
+
+            this.generation := 0
+        }
+
+        if (this.generation >= 200) {
+            console.log("Generating world...")
+            this.grid := this.generateGrid()
+
+            console.log("Spawning life...")
+            this.grid := this.spawnLife(this.grid)
+
+            this.generation := 0
         }
     }
 
@@ -39,6 +52,7 @@ class Game {
         draw.clearBackground()
 
         text.draw("FPS: %s".format(window.FPS), 10, 10, 20)
+        text.draw("Generation: %s".format(this.generation), 10, 30, 20)
 
         rows := 0 .. this.rows
         cols := 0 .. this.cols
@@ -80,6 +94,7 @@ class Game {
         }
 
         this.grid := next
+        this.generation := this.generation + 1
 
         draw.end()
     }
