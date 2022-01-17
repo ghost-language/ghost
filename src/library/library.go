@@ -18,6 +18,10 @@ func init() {
 	RegisterModule("os", modules.OsMethods, modules.OsProperties)
 	RegisterModule("random", modules.RandomMethods, modules.RandomProperties)
 	RegisterModule("time", modules.TimeMethods, modules.TimeProperties)
+	RegisterModule("window", modules.WindowMethods, modules.WindowProperties)
+	RegisterModule("draw", modules.DrawMethods, modules.DrawProperties)
+	RegisterModule("text", modules.TextMethods, modules.TextProperties)
+	RegisterModule("keyboard", modules.KeyboardMethods, modules.KeyboardProperties)
 
 	RegisterFunction("print", functions.Print)
 	RegisterFunction("type", functions.Type)
