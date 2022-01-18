@@ -107,8 +107,6 @@ func evaluateImportFrom(node *ast.ImportFrom, scope *object.Scope) object.Object
 }
 
 func importEverything(node *ast.ImportFrom, scope *object.Scope, moduleScope *object.Scope) object.Object {
-	log.Debug("importing everything")
-
 	for alias, value := range moduleScope.Environment.All() {
 		scope.Environment.Set(alias, value)
 	}
