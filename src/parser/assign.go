@@ -10,11 +10,11 @@ func (parser *Parser) assign() ast.StatementNode {
 
 	if parser.currentTokenIs(token.IDENTIFIER) {
 		statement.Name = &ast.Identifier{Token: parser.currentToken, Value: parser.currentToken.Lexeme}
-	} else if parser.currentTokenIs(token.ASSIGN) {
+	} else if parser.currentTokenIs(token.EQUAL) {
 		// index or property assignment
 
 		if parser.previousIndex != nil {
-			// foo["bar"] := true
+			// foo["bar"] = true
 			statement.Name = parser.previousIndex
 
 			parser.readToken()
@@ -31,7 +31,7 @@ func (parser *Parser) assign() ast.StatementNode {
 		}
 
 		if parser.previousProperty != nil {
-			// foo.bar := true
+			// foo.bar = true
 			statement.Name = parser.previousProperty
 
 			parser.readToken()
@@ -48,7 +48,7 @@ func (parser *Parser) assign() ast.StatementNode {
 		}
 	}
 
-	if !parser.nextTokenIs(token.ASSIGN) {
+	if !parser.nextTokenIs(token.EQUAL) {
 		return nil
 	}
 

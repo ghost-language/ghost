@@ -116,11 +116,7 @@ func (scanner *Scanner) ScanToken() token.Token {
 	case rune('?'):
 		scannedToken = scanner.newToken(token.QUESTION, "?", 1)
 	case rune(':'):
-		if scanner.match('=') {
-			scannedToken = scanner.newToken(token.ASSIGN, ":=", 2)
-		} else {
-			scannedToken = scanner.newToken(token.COLON, ":", 1)
-		}
+		scannedToken = scanner.newToken(token.COLON, ":", 1)
 	case rune('!'):
 		if scanner.match('=') {
 			scannedToken = scanner.newToken(token.BANGEQUAL, "!=", 2)

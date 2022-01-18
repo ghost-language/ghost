@@ -13,7 +13,7 @@ func TestAssignStatement(t *testing.T) {
 		identifier string
 		value      int64
 	}{
-		{`a := 5`, "a", 5},
+		{`a = 5`, "a", 5},
 	}
 
 	for _, tt := range tests {
@@ -82,7 +82,7 @@ func TestBooleanLiteral(t *testing.T) {
 }
 
 func TestForExpression(t *testing.T) {
-	input := `for (x := 0; x < 10; x := x + 1) { true }`
+	input := `for (x = 0; x < 10; x = x + 1) { true }`
 
 	scanner := scanner.New(input, "test.ghost")
 	parser := New(scanner)

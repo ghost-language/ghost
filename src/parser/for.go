@@ -18,7 +18,7 @@ func (parser *Parser) forExpression() ast.ExpressionNode {
 		return nil
 	}
 
-	if !parser.nextTokenIs(token.ASSIGN) {
+	if !parser.nextTokenIs(token.EQUAL) {
 		return parser.forInExpression(expression)
 	}
 

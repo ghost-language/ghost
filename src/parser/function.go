@@ -47,7 +47,7 @@ func (parser *Parser) functionParameters() (map[string]ast.ExpressionNode, []*as
 
 		parser.readToken()
 
-		if parser.currentTokenIs(token.ASSIGN) {
+		if parser.currentTokenIs(token.EQUAL) {
 			parser.readToken()
 
 			defaults[parameter.Value] = parser.expressionStatement()

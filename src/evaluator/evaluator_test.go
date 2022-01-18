@@ -23,7 +23,7 @@ func TestErrorHandling(t *testing.T) {
 		{`"Hello" - "World"`, "1:9:test.ghost: runtime error: unknown operator: STRING - STRING"},
 		{`{"name": "Ghost"}[function() { 123 }]`, "1:18:test.ghost: runtime error: unusable as map key: FUNCTION"},
 		{`function foo() { a } foo()`, "1:18:test.ghost: runtime error: unknown identifier: a"},
-		{`class Test { function foo() { a } } test := Test() test.foo()`, "1:31:test.ghost: runtime error: unknown identifier: a"},
+		{`class Test { function foo() { a } } test = Test() test.foo()`, "1:31:test.ghost: runtime error: unknown identifier: a"},
 	}
 
 	for _, tt := range tests {
@@ -38,11 +38,11 @@ func TestAssign(t *testing.T) {
 		input    string
 		expected int64
 	}{
-		{"a := 5; a", 5},
-		{"a := 5 * 5; a", 25},
-		{"a := 5; b := a; b", 5},
-		{"a := 5; b := a; c := a + b + 5; c", 15},
-		{"a := 5; a := 10; a", 10},
+		{"a = 5; a", 5},
+		{"a = 5 * 5; a", 25},
+		{"a = 5; b = a; b", 5},
+		{"a = 5; b = a; c = a + b + 5; c", 15},
+		{"a = 5; a = 10; a", 10},
 	}
 
 	for _, tt := range tests {
@@ -72,10 +72,10 @@ func TestNumbers(t *testing.T) {
 		{"3 * 3 * 3 + 10", 37},
 		{"3 * (3 * 3) + 10", 37},
 		{"(5 + 10 * 2 + 15 / 3) * 2 + -10", 50},
-		{"x := 5; x += 1; x", 6},
-		{"x := 5; x -= 1; x", 4},
-		{"x := 5; x *= 2; x", 10},
-		{"x := 10; x /= 2; x", 5},
+		{"x = 5; x += 1; x", 6},
+		{"x = 5; x -= 1; x", 4},
+		{"x = 5; x *= 2; x", 10},
+		{"x = 10; x /= 2; x", 5},
 	}
 
 	for _, tt := range tests {
@@ -110,9 +110,9 @@ func TestForExpressions(t *testing.T) {
 		input    string
 		expected interface{}
 	}{
-		{`x := 10; for (x := y; x > 0; x := x - 1) { x }`, "1:20:test.ghost: runtime error: unknown identifier: y"},
-		{`for (x := 0; x < 10; x := x + 1) { y }`, "1:36:test.ghost: runtime error: unknown identifier: y"},
-		{`bar := true; for (x := 0; x < 10; x := x + 1) { y; print(bar) }`, "1:49:test.ghost: runtime error: unknown identifier: y"},
+		{`x = 10; for (x = y; x > 0; x = x - 1) { x }`, "1:18:test.ghost: runtime error: unknown identifier: y"},
+		{`for (x = 0; x < 10; x = x + 1) { y }`, "1:34:test.ghost: runtime error: unknown identifier: y"},
+		{`bar = true; for (x = 0; x < 10; x = x + 1) { y; print(bar) }`, "1:46:test.ghost: runtime error: unknown identifier: y"},
 	}
 
 	for _, tt := range tests {
@@ -132,7 +132,7 @@ func TestForInExpressions(t *testing.T) {
 		input    string
 		expected interface{}
 	}{
-		{`list := [1, 2, 3]; for(x in lists) { x }`, "1:29:test.ghost: runtime error: unknown identifier: lists"},
+		{`list = [1, 2, 3]; for(x in lists) { x }`, "1:28:test.ghost: runtime error: unknown identifier: lists"},
 	}
 
 	for _, tt := range tests {

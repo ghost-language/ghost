@@ -44,7 +44,6 @@ const (
 	DOTDOT       = ".."
 	EQUAL        = "="
 	EQUALEQUAL   = "=="
-	ASSIGN       = ":="
 	GREATER      = ">"
 	GREATEREQUAL = ">="
 	LESS         = "<"

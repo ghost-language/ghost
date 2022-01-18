@@ -26,7 +26,7 @@ build-windows: clean
 
 test:
 	cd src && \
-	go test -v -race `go list ./... | grep -v "/wasm"` | sed ''/PASS/s//$$(printf "\033[32mPASS\033[0m")/'' | sed ''/FAIL/s//$$(printf "\033[31mFAIL\033[0m")/''
+	go test -v -race -timeout 5s `go list ./... | grep -v "/wasm"` | sed ''/PASS/s//$$(printf "\033[32mPASS\033[0m")/'' | sed ''/FAIL/s//$$(printf "\033[31mFAIL\033[0m")/''
 
 clean:
 	@rm -rf dist/mac
