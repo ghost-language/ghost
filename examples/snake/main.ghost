@@ -1,6 +1,6 @@
 import Game from 'game'
 
-game := Game(1280, 720)
+game = Game(1280, 720)
 
 window.create(game.getWidth(), game.getHeight(), "Snake")
 window.setTargetFPS(60)

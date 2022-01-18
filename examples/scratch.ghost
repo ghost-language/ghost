@@ -1,5 +1,5 @@
-bar := true
-list := [1, 2, 3]
+bar = true
+list = [1, 2, 3]
 
 // for (i in list) {
 //     if (foo == true) {
@@ -11,7 +11,7 @@ list := [1, 2, 3]
 //     }
 // }
 
-for (i := 0; i < 10; i := i + 1) {
+for (i = 0; i < 10; i = i + 1) {
     foo
     // if (foo == true) {
     //     print("foo is true")

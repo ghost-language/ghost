@@ -1,4 +1,4 @@
-key := {
+key = {
     "space": 32,
     "escape": 256,
     "enter": 257,

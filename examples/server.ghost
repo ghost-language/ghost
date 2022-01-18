@@ -1,6 +1,6 @@
 http.handle("/", function(request) {
-    start := os.clock()
-    view := io.read("views/index.html")
+    start = os.clock()
+    view = io.read("views/index.html")
 
     print(view)
 
@@ -9,8 +9,8 @@ http.handle("/", function(request) {
     console.log("content length:", request["contentLength"])
     console.log("body:", request["body"])
 
-    end := os.clock()
-    total := ((end - start) / 1e6).toString()
+    end = os.clock()
+    total = ((end - start) / 1e6).toString()
 
     console.log("-->", total, "ms")
 })

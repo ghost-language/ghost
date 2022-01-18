@@ -1,4 +1,4 @@
-profile := {
+profile = {
     "name": "Soma",
     "age": 3,
     "breed": "Shiba Inu"

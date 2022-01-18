@@ -1,9 +1,9 @@
 class Ada {
-    knowledge := []
-    reflections := {}
+    knowledge = []
+    reflections = {}
 
     function constructor() {
-        this.reflections := {
+        this.reflections = {
             "am": "are",
             "was": "were",
             "i": "you",
@@ -27,23 +27,23 @@ class Ada {
     }
 
     function load(module) {
-        this.knowledge := module
+        this.knowledge = module
 
         return this
     }
 
     function respond(input) {
-        foundMatch := false
+        foundMatch = false
 
         // Loop through the knowledge base
         for (knowledge in this.knowledge) {
             if (knowledge.pattern.matches(input.toLowerCase()) and foundMatch == false) {
-                foundMatch := true
-                matches := knowledge.pattern.findAll(input.toLowerCase())
-                response := knowledge.responses[random.range(knowledge.responses.length())]
+                foundMatch = true
+                matches = knowledge.pattern.findAll(input.toLowerCase())
+                response = knowledge.responses[random.range(knowledge.responses.length())]
 
                 for (index, match in matches) {
-                    response := response.replace("{%s}".format(index), this.reflect(match))
+                    response = response.replace("{%s}".format(index), this.reflect(match))
                 }
 
                 print("== %s".format(response))
@@ -55,11 +55,11 @@ class Ada {
      * Reflect on the user's input.
      */
     function reflect(input) {
-        words := input.split(" ")
+        words = input.split(" ")
 
         for (index, word in words) {
             if (this.reflections[word]) {
-                words[index] := this.reflections[word]
+                words[index] = this.reflections[word]
             }
         }
 

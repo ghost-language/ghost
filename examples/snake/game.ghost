@@ -2,20 +2,20 @@ import Snake from 'snake'
 import * from 'utilities'
 
 class Game {
-    width := 0
-    height := 0
-    snake := null
-    paused := false
+    width = 0
+    height = 0
+    snake = null
+    paused = false
 
     function constructor(width, height) {
-        this.width := width
-        this.height := height
-        this.snake := Snake()
+        this.width = width
+        this.height = height
+        this.snake = Snake()
     }
 
     function update() {
         if (keyboard.wasPressed(key.p)) {
-            this.paused := !this.paused
+            this.paused = !this.paused
         }
 
         if (!this.paused) {

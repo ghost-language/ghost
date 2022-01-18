@@ -1,5 +1,5 @@
 function test(description, callback) {
-    result := callback()
+    result = callback()
 
     if (!result) {
         ghost.abort(description + " ...FAILED")

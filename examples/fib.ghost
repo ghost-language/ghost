@@ -9,14 +9,14 @@ function fib(number) {
 
 // Fibonacci function using dynamic programming.
 function fibTwo(number) {
-    f := []
-    i := 0
+    f = []
+    i = 0
 
-    f[0] := 0
-    f[1] := 1
+    f[0] = 0
+    f[1] = 1
 
-    for (i := 2; i <= number; i := i + 1) {
-        f[i] := f[i - 1] + f[i - 2]
+    for (i = 2; i <= number; i = i + 1) {
+        f[i] = f[i - 1] + f[i - 2]
     }
 
     return f[number]
@@ -24,18 +24,18 @@ function fibTwo(number) {
 
 // Fibonacci function using a space optimized approach.
 function fibThree(number) {
-    a := 0
-    b := 1
-    c := 1
+    a = 0
+    b = 1
+    c = 1
 
     if (number == 0) {
         return a
     }
 
-    for (i := 2; i <= number; i := i + 1) {
-        c := a + b
-        a := b
-        b := c
+    for (i = 2; i <= number; i = i + 1) {
+        c = a + b
+        a = b
+        b = c
     }
 
     return b

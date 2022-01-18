@@ -1,15 +1,15 @@
-for (x := 0; x < 10; x := x + 1) {
+for (x = 0; x < 10; x = x + 1) {
     print(x)
 }
 
-bob := ["b", "o", "b"]
+bob = ["b", "o", "b"]
 
 for (key, value in bob) {
     print(key)
     print(value)
 }
 
-foobar := {
+foobar = {
     "name": "Ghost",
     "type": "Language"
 }

@@ -1,7 +1,7 @@
 import Ada from 'ada'
 import therapist from 'modules/therapist'
 
-version := '0.3'
+version = '0.3'
 
 print("=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=")
 print("  Ada:   v%s".format(version))
@@ -12,13 +12,13 @@ print("  Speak with Ada in plain English, and they will reply.")
 print("=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=")
 print()
 
-ada := Ada()
+ada = Ada()
 
 ada.load(therapist)
 ada.greet()
 
 while (true) {
-    text := console.read("> ")
+    text = console.read("> ")
 
     ada.respond(text)
 }

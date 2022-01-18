@@ -1,14 +1,14 @@
 import * from 'utilities'
 
 class Snake {
-    x := 0
-    y := 0
-    frames := 0
-    canMove := false
-    paused := false
+    x = 0
+    y = 0
+    frames = 0
+    canMove = false
+    paused = false
 
-    directionX := 0
-    directionY := 0
+    directionX = 0
+    directionY = 0
 
     function constructor() {
         //
@@ -16,36 +16,36 @@ class Snake {
 
     function update() {
         if (keyboard.wasPressed(key.a) and this.canMove) {
-            this.directionX := -1
-            this.directionY := 0
-            this.canMove := false
+            this.directionX = -1
+            this.directionY = 0
+            this.canMove = false
         }
 
         if (keyboard.wasPressed(key.d)) {
-            this.directionX := 1
-            this.directionY := 0
-            this.canMove := false
+            this.directionX = 1
+            this.directionY = 0
+            this.canMove = false
         }
 
         if (keyboard.wasPressed(key.w)) {
-            this.directionX := 0
-            this.directionY := -1
-            this.canMove := false
+            this.directionX = 0
+            this.directionY = -1
+            this.canMove = false
         }
 
         if (keyboard.wasPressed(key.s)) {
-            this.directionX := 0
-            this.directionY := 1
-            this.canMove := false
+            this.directionX = 0
+            this.directionY = 1
+            this.canMove = false
         }
 
         if (this.frames % 5 == 0) {
-            this.x := this.x + this.directionX
-            this.y := this.y + this.directionY
-            this.canMove := true
+            this.x = this.x + this.directionX
+            this.y = this.y + this.directionY
+            this.canMove = true
         }
 
-        this.frames := this.frames + 1
+        this.frames = this.frames + 1
     }
 
     function draw() {

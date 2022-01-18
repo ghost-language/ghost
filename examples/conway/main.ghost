@@ -1,6 +1,6 @@
 import Game from 'game'
 
-game := Game()
+game = Game()
 
 window.create(800, 600, "Conway's Game of Life")
 window.setTargetFPS(60)

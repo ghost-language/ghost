@@ -1,4 +1,4 @@
-function foobar(x := "foo", y := "bar") {
+function foobar(x = "foo", y = "bar") {
     print("foobar function called")
     print(x == "foo")
 
@@ -11,6 +11,6 @@ function foobar(x := "foo", y := "bar") {
     print(y)
 }
 
-result := foobar()
+result = foobar()
 
 print(result)

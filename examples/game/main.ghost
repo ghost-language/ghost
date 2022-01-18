@@ -1,6 +1,6 @@
 import Game from 'game'
 
-game := Game()
+game = Game()
 
 window.create(1920, 1080, "Game Example")
 window.setTargetFPS(60)

@@ -3,8 +3,8 @@ import Person from "person"
 
 class Zoo {
     function visit() {
-        lion := Animal("Lion")
-        visitor := Person()
+        lion = Animal("Lion")
+        visitor = Person()
 
         lion.speak()
         visitor.speak()

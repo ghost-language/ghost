@@ -1,7 +1,7 @@
 class Beverage {
     function serve() {
-        foundMatch := false
-        tests := [1, 2, 3, 4, 5]
+        foundMatch = false
+        tests = [1, 2, 3, 4, 5]
 
         for (i in tests) {
             if (1 + 2 == 3 and foundMath == false) {
@@ -11,11 +11,11 @@ class Beverage {
             print("wat")
 
             // if (i == 4) {
-            //     foundMatch := true
+            //     foundMatch = true
             // }
         }
     }
 }
 
-beverage := Beverage()
+beverage = Beverage()
 beverage.serve()

@@ -1,6 +1,6 @@
 import "animal"
 import Zoo from "zoo"
 
-zoo := Zoo()
+zoo = Zoo()
 
 zoo.visit()

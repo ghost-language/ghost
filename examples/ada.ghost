@@ -1,9 +1,9 @@
 // WIP: not complete
 
 class Ada {
-    knowledge := []
+    knowledge = []
 
-    reflections := {
+    reflections = {
         "am": "are",
         "was": "were",
         "i": "you",
@@ -22,24 +22,24 @@ class Ada {
     }
 
     function load(knowledge) {
-        this.knowledge := knowledge
+        this.knowledge = knowledge
 
         return this
     }
 
-    function respond(text := "") {
+    function respond(text = "") {
         print("responding to: " + text + "...")
-        foundMatch := false
+        foundMatch = false
 
         // Loop through our collected knowledge base.
         for (knowledge in this.knowledge) {
             if (knowledge.pattern.matches(text.toLowerCase()) and foundMatch == false) {
-                foundMatch := true
-                matches    := knowledge.pattern.findAll(text.toLowerCase())
-                response   := knowledge.responses[random.range(knowledge.responses.length())]
+                foundMatch = true
+                matches    = knowledge.pattern.findAll(text.toLowerCase())
+                response   = knowledge.responses[random.range(knowledge.responses.length())]
 
                 for (index, match in matches) {
-                    response := response.replace("{" + index + "}", this.reflect(match))
+                    response = response.replace("{" + index + "}", this.reflect(match))
                 }
 
                 print("== " + response)
@@ -48,11 +48,11 @@ class Ada {
     }
 
     function reflect(text) {
-        words := text.split(" ")
+        words = text.split(" ")
 
         for (index, word in words) {
             if (this.reflections[word]) {
-                words[index] := this.reflections[word]
+                words[index] = this.reflections[word]
             }
         }
 
@@ -60,7 +60,7 @@ class Ada {
     }
 }
 
-version := "0.3"
+version = "0.3"
 
 print("=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=")
 print("  Ada:   v" + version)
@@ -71,7 +71,7 @@ print("  Speak with Ada in plain English, and they will reply.")
 print("=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=")
 print()
 
-ada := Ada()
+ada = Ada()
 
 ada.load([
     "one",

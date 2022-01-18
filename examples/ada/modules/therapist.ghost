@@ -1,4 +1,4 @@
-therapist := [
+therapist = [
     {
         "pattern": "i need (.*)",
         "responses": [

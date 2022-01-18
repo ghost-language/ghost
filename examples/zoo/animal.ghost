@@ -1,6 +1,6 @@
 class Animal {
-    function constructor(breed := "bear") {
-        this.breed := breed
+    function constructor(breed = "bear") {
+        this.breed = breed
     }
 
     function speak() {
