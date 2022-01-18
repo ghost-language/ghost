@@ -30,6 +30,13 @@ class Game {
             text.draw("Paused", 10, 30, 20)
         }
 
+        // Draw grid
+        for (i in 0..(1280 / 20) + 1) {
+            for (j in 0..(720 / 20) + 1) {
+                draw.rectangleOutline(i * 20, j * 20, 20, 20)
+            }
+        }
+
         this.snake.draw()
     }
 

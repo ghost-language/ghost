@@ -22,6 +22,7 @@ func init() {
 	RegisterModule("draw", modules.DrawMethods, modules.DrawProperties)
 	RegisterModule("text", modules.TextMethods, modules.TextProperties)
 	RegisterModule("keyboard", modules.KeyboardMethods, modules.KeyboardProperties)
+	RegisterModule("color", modules.ColorMethods, modules.ColorProperties)
 
 	RegisterFunction("print", functions.Print)
 	RegisterFunction("type", functions.Type)

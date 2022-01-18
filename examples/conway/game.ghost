@@ -1,7 +1,7 @@
 import * from 'utilities'
 
 class Game {
-    resolution = 10
+    resolution = 5
     gridSize = 12
     cols = 0
     rows = 0
@@ -11,8 +11,8 @@ class Game {
     function constructor() {
         random.seed()
 
-        this.cols = 800 / this.resolution
-        this.rows = 600 / this.resolution
+        this.cols = 800 / (this.resolution * 2)
+        this.rows = 600 / (this.resolution * 2)
 
         console.log("cols: %s".format(this.cols))
         console.log("rows: %s".format(this.rows))
@@ -63,7 +63,7 @@ class Game {
                 y = j * this.gridSize
 
                 if (this.grid[i][j] == 1) {
-                    draw.rectangle(x, y, this.resolution, this.resolution)
+                    draw.circle(x, y, this.resolution)
                 }
             }
         }
