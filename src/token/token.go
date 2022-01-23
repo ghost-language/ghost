@@ -61,6 +61,7 @@ const (
 	// keywords
 	AND      = "and"
 	AS       = "as"
+	CASE     = "case"
 	CLASS    = "class"
 	ELSE     = "else"
 	EXTENDS  = "extends"
@@ -76,6 +77,7 @@ const (
 	PRINT    = "print"
 	RETURN   = "return"
 	SUPER    = "super"
+	SWITCH   = "switch"
 	THIS     = "this"
 	TRUE     = "true"
 	WHILE    = "while"
