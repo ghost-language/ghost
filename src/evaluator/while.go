@@ -14,7 +14,14 @@ func evaluateWhile(node *ast.While, scope *object.Scope) object.Object {
 		}
 
 		if isTruthy(condition) {
-			Evaluate(node.Consequence, scope)
+			evaluated := Evaluate(node.Consequence, scope)
+
+			switch value := evaluated.(type) {
+			case *object.Error:
+				return value
+			case *object.Return:
+				return value.Value
+			}
 		} else {
 			break
 		}

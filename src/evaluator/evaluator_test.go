@@ -173,6 +173,31 @@ func TestRangeExpressions(t *testing.T) {
 	}
 }
 
+func TestWhileExpressions(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected interface{}
+	}{
+		{`while (false) { }`, nil},
+		{`n = 0; while (n < 10) { n = n + 1 }; n`, 10},
+		{"n = 10; while (n > 0) { n = n - 1 }; n", 0},
+		{"n = 0; while (n < 10) { n = n + 1 }", nil},
+		{"n = 10; while (n > 0) { n = n - 1 }", nil},
+		{"while (true) { return 10 }", 10},
+	}
+
+	for _, tt := range tests {
+		result := evaluate(tt.input)
+		number, ok := tt.expected.(int)
+
+		if ok {
+			isNumberObject(t, result, int64(number))
+		} else {
+			isNil(t, result)
+		}
+	}
+}
+
 // =============================================================================
 // Helper functions
 
@@ -215,6 +240,15 @@ func isNumberObject(t *testing.T, obj object.Object, expected int64) bool {
 
 	if number.Value.IntPart() != expected {
 		t.Errorf("object has wrong value. got=%d, expected=%d", number.Value.IntPart(), expected)
+		return false
+	}
+
+	return true
+}
+
+func isNil(t *testing.T, obj object.Object) bool {
+	if obj != nil {
+		t.Errorf("object is not nil. got=%T (%+v", obj, obj)
 		return false
 	}
 
