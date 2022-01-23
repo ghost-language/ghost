@@ -1,21 +1,8 @@
 class Beverage {
     function serve() {
-        foundMatch = false
-        tests = [1, 2, 3, 4, 5]
-
-        for (i in tests) {
-            if (1 + 2 == 3 and foundMath == false) {
-                print("false")
-            }
-
-            print("wat")
-
-            // if (i == 4) {
-            //     foundMatch = true
-            // }
-        }
+        print("serving beverage...")
     }
 }
 
-beverage = Beverage()
+beverage = Beverage.new()
 beverage.serve()

@@ -23,7 +23,7 @@ func TestErrorHandling(t *testing.T) {
 		{`"Hello" - "World"`, "1:9:test.ghost: runtime error: unknown operator: STRING - STRING"},
 		{`{"name": "Ghost"}[function() { 123 }]`, "1:18:test.ghost: runtime error: unusable as map key: FUNCTION"},
 		{`function foo() { a } foo()`, "1:18:test.ghost: runtime error: unknown identifier: a"},
-		{`class Test { function foo() { a } } test = Test() test.foo()`, "1:31:test.ghost: runtime error: unknown identifier: a"},
+		{`class Test { function foo() { a } } test = Test.new() test.foo()`, "1:31:test.ghost: runtime error: unknown identifier: a"},
 	}
 
 	for _, tt := range tests {

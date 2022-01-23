@@ -24,5 +24,16 @@ func (class *Class) Type() Type {
 
 // Method defines the set of methods available on class objects.
 func (class *Class) Method(method string, args []Object) (Object, bool) {
+	switch method {
+	case "new":
+		instance := &Instance{Class: class, Environment: NewEnclosedEnvironment(class.Environment)}
+
+		if ok := instance.Environment.Has("constructor"); ok {
+			instance.Call("constructor", args, class.Name.Token)
+		}
+
+		return instance, true
+	}
+
 	return nil, false
 }
