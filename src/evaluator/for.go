@@ -42,7 +42,7 @@ func evaluateFor(node *ast.For, scope *object.Scope) object.Object {
 				case *object.Continue:
 					//
 				case *object.Break:
-					return value.NULL
+					return nil
 				}
 			}
 

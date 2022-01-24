@@ -3,7 +3,6 @@ package evaluator
 import (
 	"ghostlang.org/x/ghost/ast"
 	"ghostlang.org/x/ghost/object"
-	"ghostlang.org/x/ghost/value"
 	"github.com/shopspring/decimal"
 )
 
@@ -46,7 +45,7 @@ func evaluateForIn(node *ast.ForIn, scope *object.Scope) object.Object {
 				case *object.Continue:
 					//
 				case *object.Break:
-					return value.NULL
+					return nil
 				}
 			}
 		}
@@ -66,7 +65,7 @@ func evaluateForIn(node *ast.ForIn, scope *object.Scope) object.Object {
 				case *object.Continue:
 					//
 				case *object.Break:
-					return value.NULL
+					return nil
 				}
 			}
 		}
