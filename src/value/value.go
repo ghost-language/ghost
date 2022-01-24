@@ -13,4 +13,10 @@ var (
 
 	// NULL represents a null value.
 	NULL = &object.Null{}
+
+	// BREAK represents a break value.
+	BREAK = &object.Break{}
+
+	// CONTINUE represents a continue value.
+	CONTINUE = &object.Continue{}
 )

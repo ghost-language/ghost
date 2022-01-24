@@ -183,7 +183,7 @@ func TestWhileExpressions(t *testing.T) {
 		{"n = 10; while (n > 0) { n = n - 1 }; n", 0},
 		{"n = 0; while (n < 10) { n = n + 1 }", nil},
 		{"n = 10; while (n > 0) { n = n - 1 }", nil},
-		{"while (true) { return 10 }", 10},
+		{"while (true) { break }", nil},
 	}
 
 	for _, tt := range tests {

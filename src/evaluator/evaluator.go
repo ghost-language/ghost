@@ -22,12 +22,16 @@ func Evaluate(node ast.Node, scope *object.Scope) object.Object {
 		return evaluateBlock(node, scope)
 	case *ast.Boolean:
 		return evaluateBoolean(node, scope)
+	case *ast.Break:
+		return evaluateBreak(node, scope)
 	case *ast.Call:
 		return evaluateCall(node, scope)
 	case *ast.Class:
 		return evaluateClass(node, scope)
 	case *ast.Compound:
 		return evaluateCompound(node, scope)
+	case *ast.Continue:
+		return evaluateContinue(node, scope)
 	case *ast.Expression:
 		return Evaluate(node.Expression, scope)
 	case *ast.For:
@@ -94,6 +98,15 @@ func toBooleanValue(input bool) *object.Boolean {
 func isError(obj object.Object) bool {
 	if obj != nil {
 		return obj.Type() == object.ERROR
+	}
+
+	return false
+}
+
+// isTerminator determines if the referenced object is an error, break, or continue.
+func isTerminator(obj object.Object) bool {
+	if obj != nil {
+		return obj.Type() == object.ERROR || obj.Type() == object.BREAK || obj.Type() == object.CONTINUE
 	}
 
 	return false

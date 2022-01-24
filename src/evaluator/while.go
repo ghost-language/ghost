@@ -16,11 +16,15 @@ func evaluateWhile(node *ast.While, scope *object.Scope) object.Object {
 		if isTruthy(condition) {
 			evaluated := Evaluate(node.Consequence, scope)
 
-			switch value := evaluated.(type) {
-			case *object.Error:
-				return value
-			case *object.Return:
-				return value.Value
+			if isTerminator(evaluated) {
+				switch val := evaluated.(type) {
+				case *object.Error:
+					return val
+				case *object.Continue:
+					//
+				case *object.Break:
+					return nil
+				}
 			}
 		} else {
 			break
