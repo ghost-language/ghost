@@ -21,8 +21,10 @@ type Scanner struct {
 var keywords = map[string]token.Type{
 	"and":      token.AND,
 	"as":       token.AS,
+	"break":    token.BREAK,
 	"case":     token.CASE,
 	"class":    token.CLASS,
+	"continue": token.CONTINUE,
 	"else":     token.ELSE,
 	"extends":  token.EXTENDS,
 	"false":    token.FALSE,

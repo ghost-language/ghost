@@ -61,8 +61,10 @@ const (
 	// keywords
 	AND      = "and"
 	AS       = "as"
+	BREAK    = "break"
 	CASE     = "case"
 	CLASS    = "class"
+	CONTINUE = "continue"
 	ELSE     = "else"
 	EXTENDS  = "extends"
 	FALSE    = "false"
