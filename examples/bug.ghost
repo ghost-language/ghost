@@ -1,7 +1,6 @@
 function returnFromWhile() {
     while (true) {
         print("loop")
-
         break
     }
 }

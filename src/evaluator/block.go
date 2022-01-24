@@ -14,7 +14,7 @@ func evaluateBlock(node *ast.Block, scope *object.Scope) object.Object {
 		if result != nil {
 			resultType := result.Type()
 
-			if resultType == object.ERROR || resultType == object.RETURN {
+			if resultType == object.ERROR || resultType == object.RETURN || resultType == object.CONTINUE || resultType == object.BREAK {
 				return result
 			}
 		}
