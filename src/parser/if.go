@@ -28,6 +28,20 @@ func (parser *Parser) ifExpression() ast.ExpressionNode {
 	if parser.nextTokenIs(token.ELSE) {
 		parser.readToken()
 
+		if parser.nextTokenIs(token.IF) {
+			parser.readToken()
+
+			expression.Alternative = &ast.Block{
+				Statements: []ast.StatementNode{
+					&ast.Expression{
+						Expression: parser.ifExpression(),
+					},
+				},
+			}
+
+			return expression
+		}
+
 		if !parser.expectNextTokenIs(token.LEFTBRACE) {
 			return nil
 		}
