@@ -1,0 +1,11 @@
+value = true
+
+switch (value) {
+    case false: {
+        print("false.")
+    }
+
+    case true: {
+        print("true.")
+    }
+}

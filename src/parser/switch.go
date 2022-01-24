@@ -29,7 +29,6 @@ func (parser *Parser) switchStatement() ast.ExpressionNode {
 		return nil
 	}
 
-	// do we need this guy?
 	parser.readToken()
 
 	for !parser.currentTokenIs(token.RIGHTBRACE) {
@@ -56,6 +55,10 @@ func (parser *Parser) switchStatement() ast.ExpressionNode {
 			}
 		}
 
+		if !parser.expectNextTokenIs(token.COLON) {
+			return nil
+		}
+
 		if !parser.expectNextTokenIs(token.LEFTBRACE) {
 			return nil
 		}
@@ -63,7 +66,7 @@ func (parser *Parser) switchStatement() ast.ExpressionNode {
 		// parse the block
 		switchCase.Body = parser.blockStatement()
 
-		if !parser.expectNextTokenIs(token.RIGHTBRACE) {
+		if !parser.currentTokenIs(token.RIGHTBRACE) {
 			return nil
 		}
 
