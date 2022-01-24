@@ -3,6 +3,7 @@ package evaluator
 import (
 	"ghostlang.org/x/ghost/ast"
 	"ghostlang.org/x/ghost/object"
+	"ghostlang.org/x/ghost/value"
 	"github.com/shopspring/decimal"
 )
 
@@ -38,8 +39,15 @@ func evaluateForIn(node *ast.ForIn, scope *object.Scope) object.Object {
 
 			block := Evaluate(node.Block, scope)
 
-			if isError(block) {
-				return block
+			if isTerminator(block) {
+				switch val := block.(type) {
+				case *object.Error:
+					return val
+				case *object.Continue:
+					//
+				case *object.Break:
+					return value.NULL
+				}
 			}
 		}
 
@@ -51,8 +59,15 @@ func evaluateForIn(node *ast.ForIn, scope *object.Scope) object.Object {
 
 			block := Evaluate(node.Block, scope)
 
-			if isError(block) {
-				return block
+			if isTerminator(block) {
+				switch val := block.(type) {
+				case *object.Error:
+					return val
+				case *object.Continue:
+					//
+				case *object.Break:
+					return value.NULL
+				}
 			}
 		}
 

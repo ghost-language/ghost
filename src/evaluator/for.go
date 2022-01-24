@@ -35,8 +35,15 @@ func evaluateFor(node *ast.For, scope *object.Scope) object.Object {
 		if isTruthy(condition) {
 			err := Evaluate(node.Block, scope)
 
-			if isError(err) {
-				return err
+			if isTerminator(err) {
+				switch val := err.(type) {
+				case *object.Error:
+					return val
+				case *object.Continue:
+					//
+				case *object.Break:
+					return value.NULL
+				}
 			}
 
 			err = Evaluate(node.Increment, scope)

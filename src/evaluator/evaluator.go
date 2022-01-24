@@ -103,6 +103,15 @@ func isError(obj object.Object) bool {
 	return false
 }
 
+// isTerminator determines if the referenced object is an error, break, or continue.
+func isTerminator(obj object.Object) bool {
+	if obj != nil {
+		return obj.Type() == object.ERROR || obj.Type() == object.BREAK || obj.Type() == object.CONTINUE
+	}
+
+	return false
+}
+
 // isTruthy determines if the referenced value is of a truthy value.
 func isTruthy(value object.Object) bool {
 	switch value := value.(type) {

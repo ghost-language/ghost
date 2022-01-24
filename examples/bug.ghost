@@ -1,8 +1,8 @@
 function returnFromWhile() {
     while (true) {
         print("loop")
-        // We never return here
-        return "returned from inside while"
+
+        break
     }
 }
 
