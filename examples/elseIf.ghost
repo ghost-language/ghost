@@ -1,0 +1,13 @@
+direction = 'up'
+
+if (direction == 'left') {
+    print("left.")
+} else if (direction == 'right') {
+    print("right.")
+} else if (direction == 'up') {
+    print("up.")
+} else if (direction == 'down') {
+    print("down.")
+} else {
+    print("unknown direction")
+}
