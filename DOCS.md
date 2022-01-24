@@ -108,6 +108,26 @@ maker.setRecipe("latte").brew()
 - `trimEnd()`
 - `trimStart()`
 
+## Switch Statements
+
+The `switch` statement evaluates an expression, matching the expression's value to a `case` clause, and executes statements associated with that `case`, as well as statements in cases that follow the matching `case`.
+
+```typescript
+beverage = "coffee"
+
+switch (beverage) {
+    case "water" {
+        print("Water is $0.75 per bottle.")
+    }
+    case "juice" {
+        print("Juice is $1.25 per bottle.")
+    }
+    case "coffee", "latte" {
+        print("Coffee and lattes are $2.75 per 12oz.")
+    }
+}
+```
+
 ## Modularity
 
 Ghost employs a simple module system to split and organize code into self-contained files.

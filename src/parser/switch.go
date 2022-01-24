@@ -55,10 +55,6 @@ func (parser *Parser) switchStatement() ast.ExpressionNode {
 			}
 		}
 
-		if !parser.expectNextTokenIs(token.COLON) {
-			return nil
-		}
-
 		if !parser.expectNextTokenIs(token.LEFTBRACE) {
 			return nil
 		}
