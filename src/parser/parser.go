@@ -32,6 +32,7 @@ var precedences = map[token.Type]int{
 	token.STAREQUAL:    PRODUCT,
 	token.SLASHEQUAL:   PRODUCT,
 	token.DOTDOT:       RANGE,
+	token.QUESTION:     TERNARY,
 }
 
 // The following list of constants define the available precedence levels.
@@ -40,6 +41,7 @@ const (
 	LOWEST
 	OR
 	AND
+	TERNARY
 	RANGE
 	EQUALS
 	LESSGREATER
@@ -73,6 +75,8 @@ type Parser struct {
 	prefixParserFns  map[token.Type]prefixParserFn
 	infixParserFns   map[token.Type]infixParserFn
 	postfixParserFns map[token.Type]postfixParserFn
+
+	inTernaryExpression bool
 }
 
 // New creates a new parser instance.
@@ -130,6 +134,7 @@ func New(scanner *scanner.Scanner) *Parser {
 	parser.registerInfix(token.MINUSEQUAL, parser.compoundExpression)
 	parser.registerInfix(token.STAREQUAL, parser.compoundExpression)
 	parser.registerInfix(token.SLASHEQUAL, parser.compoundExpression)
+	parser.registerInfix(token.QUESTION, parser.ternaryExpression)
 
 	// Read the first two tokens, so currentToken and nextToken are both set.
 	parser.readToken()
