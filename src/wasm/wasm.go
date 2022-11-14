@@ -15,12 +15,10 @@ func ghost(this js.Value, i []js.Value) interface{} {
 	var buf bytes.Buffer
 
 	code := i[0].String()
-	scope := &object.Scope{Environment: object.NewEnvironment()}
+	scope := object.NewScope(object.NewEnvironment())
 	scope.Environment.SetWriter(&buf)
 
-	scanner := scanner.New(code, "wasm.ghost")
-	parser := parser.New(scanner)
-	program := parser.Parse()
+	program := parser.Parse(scanner.Scan(code, "wasm.ghost"))
 
 	result := evaluator.Evaluate(program, scope)
 
