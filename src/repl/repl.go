@@ -20,17 +20,17 @@ func Start(in io.Reader, out io.Writer) {
 	defer line.Close()
 
 	line.SetCtrlCAborts(true)
+	line.SetTabCompletionStyle(liner.TabPrints)
 
-	if f, err := os.Open(history); err == nil {
-		line.ReadHistory(f)
-		f.Close()
-	}
-
-	if f, err := os.Create(history); err != nil {
-		log.Error("system error: unable to write to history file: %s", err)
-	} else {
-		line.WriteHistory(f)
-		f.Close()
+	_, err := os.Open(history)
+	if err != nil {
+		f, err := os.Create(history)
+		if err != nil {
+			log.Error("system error: unable to write to history file: %s", err)
+		} else {
+			line.WriteHistory(f)
+			f.Close()
+		}
 	}
 
 	ghost := ghost.New()

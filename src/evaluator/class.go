@@ -18,13 +18,13 @@ func evaluateClass(node *ast.Class, scope *object.Scope) object.Object {
 		identifier, ok := scope.Environment.Get(node.Super.Value)
 
 		if !ok {
-			object.NewError("%d:%d:%s: runtime error: identifier '%s' not found in '%s'", node.Super.Token.Line, node.Super.Token.Column, node.Super.Token.File, node.Super.Value, scope.Self.String())
+			return object.NewError("%d:%d:%s: runtime error: identifier '%s' not found in '%s'", node.Super.Token.Line, node.Super.Token.Column, node.Super.Token.File, node.Super.Value, scope.Self.String())
 		}
 
 		super, ok := identifier.(*object.Class)
 
 		if !ok {
-			object.NewError("%d:%d:%s: runtime error: referenced identifier in extends not a class, got=%T", node.Super.Token.Line, node.Super.Token.Column, node.Super.Token.File, super)
+			return object.NewError("%d:%d:%s: runtime error: referenced identifier in extends not a class, got=%T", node.Super.Token.Line, node.Super.Token.Column, node.Super.Token.File, super)
 		}
 
 		class.Super = super
