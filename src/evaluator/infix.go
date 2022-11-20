@@ -23,7 +23,7 @@ func evaluateInfix(node *ast.Infix, scope *object.Scope) object.Object {
 		return evaluateBooleanInfix(node, left, right)
 	case left.Type() == object.NUMBER && right.Type() == object.NUMBER:
 		return evaluateNumberInfix(node, left, right)
-	case left.Type() == object.STRING:
+	case left.Type() == object.STRING && right.Type() == object.STRING:
 		return evaluateStringInfix(node, left, right)
 	case left.Type() != right.Type():
 		return newError("%d:%d:%s: runtime error: type mismatch: %s %s %s", node.Token.Line, node.Token.Column, node.Token.File, left.Type(), node.Operator, right.Type())
