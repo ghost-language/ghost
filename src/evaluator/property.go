@@ -41,5 +41,5 @@ func evaluateProperty(node *ast.Property, scope *object.Scope) object.Object {
 		return pair.Value
 	}
 
-	return newError("%d:%d:%s: runtime error: unknown property: %s.%s", node.Token.Line, node.Token.Column, node.Token.File, left.String(), node.Property.(*ast.Identifier).Value)
+	return newError("%d:%d:%s: runtime error: unknown property: %s.%s", node.Token.Line, node.Token.Column, node.Token.File, left.String(), node.Property.(*ast.Number).Value)
 }
