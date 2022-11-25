@@ -48,6 +48,10 @@ func (parser *Parser) parseExpressionList(end token.Type) []ast.ExpressionNode {
 		list = append(list, parser.parseExpression(LOWEST))
 	}
 
+func (parser *Parser) parseRegexp() ast.ExpressionNode {
+	return &ast.Regexp{Token: parser.currentToken, Value: parser.currentToken.Literal}
+}
+
 	if !parser.expectNextTokenIs(end) {
 		return nil
 	}
