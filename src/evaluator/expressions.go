@@ -1,10 +1,17 @@
 package evaluator
 
 import (
-	"ghostlang.org/x/ghost/ast"
-	"ghostlang.org/x/ghost/object"
+	"ghostlang.org/x/ghost/ast",
+        "ghostlang.org/x/ghost/object",
 	"regexp"
 )
+
+type Regexp struct {
+	Value *regexp.Regexp
+}
+
+func (r *Regexp) Type() object.ObjectType { return object.RegexpType }
+func (r *Regexp) Inspect() string { return r.Value.String() }
 
 func evaluateExpressions(expressions []ast.ExpressionNode, scope *object.Scope) []object.Object {
 	var result []object.Object
@@ -34,10 +41,3 @@ func evaluateExpressions(expressions []ast.ExpressionNode, scope *object.Scope) 
 
 	return result
 }
-
-type Regexp struct {
-	Value *regexp.Regexp
-}
-
-func (r *Regexp) Type() object.ObjectType { return object.RegexpType }
-func (r *Regexp) Inspect() string { return r.Value.String() }
