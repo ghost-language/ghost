@@ -2,15 +2,19 @@ package evaluator
 
 import (
 	"ghostlang.org/x/ghost/ast"
-        "ghostlang.org/x/ghost/object"
+	"ghostlang.org/x/ghost/object"
 	"regexp"
 )
 
+// Regexp is a custom object type that wraps a regular expression pattern
 type Regexp struct {
 	Value *regexp.Regexp
 }
 
+// Type returns the type of the `Regexp` object
 func (r *Regexp) Type() object.ObjectType { return object.RegexpType }
+
+// Inspect returns a string representation of the `Regexp` object
 func (r *Regexp) Inspect() string { return r.Value.String() }
 
 func evaluateExpressions(expressions []ast.ExpressionNode, scope *object.Scope) []object.Object {
