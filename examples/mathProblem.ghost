@@ -1,0 +1,47 @@
+class MathProblem {
+    function generateProblem() {
+        num1 = random.range(1, 10)
+        num2 = random.range(1, 10)
+
+        operator = random.choice(["+", "-", "*"])
+
+        problem = num1 + " " + operator + " " + num2
+
+        return problem
+    }
+
+    function checkAnswer(userAnswer) {
+        correctAnswer = eval(this.generateProblem())
+
+        if (userAnswer == correctAnswer) {
+            return true
+        } else {
+            return false
+        }
+    }
+}
+
+print("Welcome to Math Challenge!")
+print("==========================")
+
+problem = MathProblem()
+userScore = 0
+
+for (i = 0; i < 10; i = i + 1) {
+    currentProblem = problem.generateProblem()
+
+    print("Problem #" + (i + 1) + ": " + currentProblem)
+
+    userAnswer = console.read("What is the answer? ")
+
+    if (problem.checkAnswer(userAnswer)) {
+        print("Correct!")
+        userScore = userScore + 1
+    } else {
+        print("Incorrect.")
+    }
+
+    print("--------------------------")
+}
+
+print("You got " + userScore + " out of 10 problems correct.")
