@@ -1,0 +1,32 @@
+function isPrime(number) {
+    if (number <= 1) {
+        return false
+    }
+
+    for (i = 2; i * i <= number; i = i + 1) {
+        if (number % i == 0) {
+            return false
+        }
+    }
+
+    return true
+}
+
+function getPrimeNumbers(limit) {
+    primes = []
+
+    for (number = 2; number <= limit; number = number + 1) {
+        if (isPrime(number)) {
+            primes.push(number)
+        }
+    }
+
+    return primes
+}
+
+limit = 50
+primeNumbers = getPrimeNumbers(limit)
+
+for (index, prime in primeNumbers) {
+    print(prime)
+}
