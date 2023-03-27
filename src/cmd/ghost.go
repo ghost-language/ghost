@@ -47,12 +47,12 @@ func main() {
 
 	if flagHelp {
 		helpCommand()
-		os.Exit(2)
+		os.Exit(0)
 	}
 
 	if flagBenchmark {
 		benchmarkCommand()
-		os.Exit(2)
+		os.Exit(0)
 	}
 
 	args := flag.Args()
@@ -78,11 +78,29 @@ func main() {
 		defer sourceFile.Close()
 
 		sourceBuffer := bytes.NewBuffer(nil)
-		io.Copy(sourceBuffer, sourceFile)
+		_, err = io.Copy(sourceBuffer, sourceFile)
+
+		if err != nil {
+			log.Error("system error: could not read source file %s: %s", args[0], err)
+			os.Exit(1)
+		}
+
 		source := sourceBuffer.String()
 
-		directory, _ := filepath.Abs(filepath.Dir(args[0]))
-		fullPath, _ := filepath.Abs(args[0])
+		directory, err := filepath.Abs(filepath.Dir(args[0]))
+
+		if err != nil {
+			log.Error("system error: could not get absolute directory path: %s", err)
+			os.Exit(1)
+		}
+
+		fullPath, err := filepath.Abs(args[0])
+
+		if err != nil {
+			log.Error("system error: could not get absolute file path: %s", err)
+			os.Exit(1)
+		}
+
 		currentFile := strings.Replace(fullPath, directory+"/", "", 1)
 
 		ghost := ghost.New()
