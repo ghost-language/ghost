@@ -1,0 +1,8 @@
+print("Hello world!")
+print("The screen will clear itself in 3 seconds.")
+
+time.sleep(3000)
+
+console.clear()
+
+print("The screen has been cleared.")

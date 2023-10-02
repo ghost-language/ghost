@@ -1,0 +1,48 @@
+player = { 'x': 5, 'y': 5 }
+grid = { 'width': 40, 'height': 20 }
+
+class Game {
+  function constructor() {
+    // 
+  }
+
+  function draw() {
+    for (i = 1; i <= grid.height; i = i + 1) {
+      for (j = 1; j <= grid.width; j = j + 1) {
+        if (i == player.y and j == player.x) {
+          console.print('@')
+        } else {
+          console.print('.')
+        }
+      }
+
+      console.newLine()
+    }
+  }
+
+  function update() {
+    input = console.read()
+
+    if (input == 'w') {
+      player.y = player.y - 1
+    } else if (input == 's') {
+      player.y = player.y + 1
+    } else if (input == 'a') {
+      player.x = player.x - 1
+    } else if (input == 'd') {
+      player.x = player.x + 1
+    }
+  }
+
+  function run() {
+    while (true) {
+      console.clear()
+
+      this.draw()
+      this.update()
+    }
+  }
+}
+
+game = Game.new()
+game.run()
