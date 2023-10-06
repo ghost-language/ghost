@@ -1,8 +1,7 @@
 # This is an example goreleaser.yaml file with some sane defaults.
 # Make sure to check the documentation at http://goreleaser.com
 builds:
-  - dir: ./src
-    main: ./cmd
+  - main: ./cmd
     binary: ghost
     id: "cli"
     goos: ["linux", "darwin", "windows"]
@@ -23,6 +22,7 @@ changelog:
   filters:
     exclude:
       - "^docs:"
+      - "^examples:"
       - "^test:"
       - '(?i)\breadme\b'
 brews:
