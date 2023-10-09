@@ -70,15 +70,14 @@ func (ghost *Ghost) Execute() object.Object {
 
 	if len(parser.Errors()) != 0 {
 		logParseErrors(parser.Errors())
-		return nil
+
+		return object.NewError(parser.Errors()[0])
 	}
 
 	result := evaluator.Evaluate(program, ghost.Scope)
 
-	if err, ok := result.(*object.Error); ok {
-		log.Error(err.Message)
-
-		return nil
+	if object.IsError(result) {
+		log.Error(result.(*object.Error).Message)
 	}
 
 	return result
@@ -90,6 +89,11 @@ func RegisterFunction(name string, function object.GoFunction) {
 
 func RegisterModule(name string, methods map[string]*object.LibraryFunction, properties map[string]*object.LibraryProperty) {
 	library.RegisterModule(name, methods, properties)
+}
+
+// Create a new function called "Call" that will call the passed function with the (optional) passed arguments.
+func (ghost *Ghost) Call(function string, args []object.Object) object.Object {
+	return ghost.Scope.Environment.Call(function, args, nil)
 }
 
 func (ghost *Ghost) registerEvaluator() {

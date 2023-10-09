@@ -1,6 +1,9 @@
 package evaluator
 
 import (
+	"fmt"
+	"os"
+
 	"ghostlang.org/x/ghost/ast"
 	"ghostlang.org/x/ghost/object"
 )
@@ -26,6 +29,13 @@ func evaluateMethod(node *ast.Method, scope *object.Scope) object.Object {
 	case *object.Instance:
 		method := node.Method.(*ast.Identifier)
 		evaluated := evaluateInstanceMethod(node, receiver, method.Value, arguments)
+
+		if isError(evaluated) {
+			fmt.Printf("%d:%d:%s: runtime error: undefined method '%s' for class %s\n", node.Token.Line, node.Token.Column, node.Token.File, method.Value, receiver.Class.Name.Value)
+			os.Exit(1)
+
+			// return object.NewError("%d:%d:%s: runtime error: undefined method %s for class %s", node.Token.Line, node.Token.Column, node.Token.File, method.Value, receiver.Class.Name.Value)
+		}
 
 		return unwrapReturn(evaluated)
 	case *object.LibraryModule:
