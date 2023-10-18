@@ -18,13 +18,13 @@ func evaluateProperty(node *ast.Property, scope *object.Scope) object.Object {
 		property := node.Property.(*ast.Identifier)
 		instance := left.(*object.Instance)
 
-		val, ok := instance.Environment.Get(property.Value)
-
-		if ok {
-			return val
+		if !instance.Environment.Has(property.Value) {
+			instance.Environment.Set(property.Value, value.NULL)
 		}
 
-		return newError("%d:%d:%s: runtime error: unknown property: %s.%s", node.Token.Line, node.Token.Column, node.Token.File, instance.Class.Name.Value, property.Value)
+		val, _ := instance.Environment.Get(property.Value)
+
+		return val
 	case *object.LibraryModule:
 		property := node.Property.(*ast.Identifier)
 		module := left.(*object.LibraryModule)

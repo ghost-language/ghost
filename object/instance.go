@@ -32,10 +32,10 @@ func (instance *Instance) Method(method string, args []Object) (Object, bool) {
 func (instance *Instance) Call(name string, arguments []Object, tok token.Token) Object {
 	if function, ok := instance.Environment.Get(name); ok {
 		if method, ok := function.(*Function); ok {
-			functionEnvironment := createMethodEnvironment(method, arguments)
-			functionScope := &Scope{Self: instance, Environment: functionEnvironment}
+			methodEnvironment := createMethodEnvironment(method, arguments)
+			methodScope := &Scope{Self: instance, Environment: methodEnvironment}
 
-			return evaluator(method.Body, functionScope)
+			return evaluator(method.Body, methodScope)
 		}
 	}
 
