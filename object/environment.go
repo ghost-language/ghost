@@ -81,3 +81,14 @@ func (environment *Environment) GetDirectory() string {
 
 	return directory
 }
+
+// create a new function "Call" that can be used to call a function within the environment.
+func (environment *Environment) Call(function string, args []Object, writer io.Writer) Object {
+	if object, ok := environment.Get(function); ok {
+		if function, ok := object.(*Function); ok {
+			return function.Evaluate(args, writer)
+		}
+	}
+
+	return NewError("function not found: %s", function)
+}

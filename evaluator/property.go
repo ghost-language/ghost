@@ -18,9 +18,13 @@ func evaluateProperty(node *ast.Property, scope *object.Scope) object.Object {
 		property := node.Property.(*ast.Identifier)
 		instance := left.(*object.Instance)
 
-		if value, ok := instance.Environment.Get(property.Value); ok {
-			return value
+		if !instance.Environment.Has(property.Value) {
+			instance.Environment.Set(property.Value, value.NULL)
 		}
+
+		val, _ := instance.Environment.Get(property.Value)
+
+		return val
 	case *object.LibraryModule:
 		property := node.Property.(*ast.Identifier)
 		module := left.(*object.LibraryModule)
@@ -28,6 +32,8 @@ func evaluateProperty(node *ast.Property, scope *object.Scope) object.Object {
 		if function, ok := module.Properties[property.Value]; ok {
 			return unwrapCall(node.Token, function, nil, scope)
 		}
+
+		return newError("%d:%d:%s: runtime error: unknown property: %s.%s", node.Token.Line, node.Token.Column, node.Token.File, module.Name, property.Value)
 	case *object.Map:
 		property := &object.String{Value: node.Property.(*ast.Identifier).Value}
 		mapObj := left.(*object.Map)
@@ -41,5 +47,5 @@ func evaluateProperty(node *ast.Property, scope *object.Scope) object.Object {
 		return pair.Value
 	}
 
-	return newError("%d:%d:%s: runtime error: unknown property: %s.%s", node.Token.Line, node.Token.Column, node.Token.File, left.String(), node.Property.(*ast.Number).Value)
+	return nil
 }

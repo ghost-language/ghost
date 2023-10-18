@@ -18,7 +18,9 @@ func evaluateMethod(node *ast.Method, scope *object.Scope) object.Object {
 		return arguments[0]
 	}
 
-	if result, ok := left.Method(node.Method.(*ast.Identifier).Value, arguments); ok {
+	result, _ := left.Method(node.Method.(*ast.Identifier).Value, arguments)
+
+	if isError(result) {
 		return result
 	}
 
@@ -26,6 +28,10 @@ func evaluateMethod(node *ast.Method, scope *object.Scope) object.Object {
 	case *object.Instance:
 		method := node.Method.(*ast.Identifier)
 		evaluated := evaluateInstanceMethod(node, receiver, method.Value, arguments)
+
+		if isError(evaluated) {
+			return evaluated
+		}
 
 		return unwrapReturn(evaluated)
 	case *object.LibraryModule:
@@ -37,7 +43,7 @@ func evaluateMethod(node *ast.Method, scope *object.Scope) object.Object {
 		}
 	}
 
-	return newError("%d:%d:%s: runtime error: unknown method: %s.%s", node.Token.Line, node.Token.Column, node.Token.File, left.String(), node.Method.(*ast.Identifier).Value)
+	return result
 }
 
 func evaluateInstanceMethod(node *ast.Method, receiver *object.Instance, name string, arguments []object.Object) object.Object {
