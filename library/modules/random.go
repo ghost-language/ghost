@@ -9,17 +9,18 @@ import (
 	"github.com/shopspring/decimal"
 )
 
+var seed int64
+var randomizer *rand.Rand
+
 var RandomMethods = map[string]*object.LibraryFunction{}
 var RandomProperties = map[string]*object.LibraryProperty{}
-var seed int64 = 0
 
 func init() {
-	// Set an initial fixed seed value. This can be overwritten at runtime.
-	rand.Seed(seed)
+	seed = time.Now().UnixNano()
+	randomizer = rand.New(rand.NewSource(seed))
 
 	RegisterMethod(RandomMethods, "seed", randomSeed)
 	RegisterMethod(RandomMethods, "random", randomRandom)
-	RegisterMethod(RandomMethods, "range", randomRange)
 
 	RegisterProperty(RandomProperties, "seed", randomSeedProperty)
 }
@@ -27,7 +28,7 @@ func init() {
 // randomRandom returns a uniform pseudo-random real number in the range (0, 1).
 func randomRandom(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
 	min := float64(0)
-	max := float64(0)
+	max := float64(1)
 
 	if len(args) > 0 {
 		max, _ = args[0].(*object.Number).Value.Float64()
@@ -41,9 +42,9 @@ func randomRandom(scope *object.Scope, tok token.Token, args ...object.Object) o
 	number := float64(0)
 
 	if max > 0 {
-		number = float64(min + rand.Float64()*(max-min))
+		number = float64(min + randomizer.Float64()*(max-min))
 	} else {
-		number = rand.Float64()
+		number = randomizer.Float64()
 	}
 
 	return &object.Number{Value: decimal.NewFromFloat(number)}
@@ -59,37 +60,9 @@ func randomSeed(scope *object.Scope, tok token.Token, args ...object.Object) obj
 		seed = time.Now().UnixNano()
 	}
 
-	rand.Seed(seed)
+	randomizer.Seed(seed)
 
 	return nil
-}
-
-// When called with a single number value (a), a
-// pseudo-random number will be returned in the range (0, a). When called with
-// two numbers (a, b), a pseudo-random number will be returned in the
-// range (a, b).
-func randomRange(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
-	min := float64(0)
-	max := float64(0)
-
-	if len(args) > 0 {
-		max, _ = args[0].(*object.Number).Value.Float64()
-
-		if len(args) > 1 {
-			min = max
-			max, _ = args[1].(*object.Number).Value.Float64()
-		}
-	}
-
-	number := float64(0)
-
-	if max > 0 {
-		number = float64(min + rand.Float64()*(max-min))
-	} else {
-		number = rand.Float64()
-	}
-
-	return &object.Number{Value: decimal.NewFromFloat(number)}
 }
 
 // Properties
