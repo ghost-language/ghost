@@ -27,7 +27,7 @@ changelog:
       - '(?i)\breadme\b'
 brews:
   - name: ghost
-    tap:
+    repository:
       owner: ghost-language
       name: homebrew-ghost
     commit_author:
