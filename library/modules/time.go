@@ -50,9 +50,9 @@ func timeNow(scope *object.Scope, tok token.Token, args ...object.Object) object
 		return nil
 	}
 
-	nano := decimal.NewFromInt(time.Now().UnixNano())
+	unix := decimal.NewFromInt(time.Now().Unix())
 
-	return &object.Number{Value: nano}
+	return &object.Number{Value: unix}
 }
 
 // properties
