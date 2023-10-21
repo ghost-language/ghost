@@ -17,6 +17,7 @@ func init() {
 	RegisterMethod(MathMethods, "isZero", mathIsZero)
 	RegisterMethod(MathMethods, "sin", mathSin)
 	RegisterMethod(MathMethods, "tan", mathTan)
+	RegisterMethod(MathMethods, "max", mathMax)
 	RegisterMethod(MathMethods, "min", mathMin)
 
 	RegisterProperty(MathProperties, "pi", mathPi)
@@ -128,6 +129,30 @@ func mathTan(scope *object.Scope, tok token.Token, args ...object.Object) object
 	number := args[0].(*object.Number)
 
 	return &object.Number{Value: number.Value.Tan()}
+}
+
+// mathMax returns the largest number of the referenced numbers.
+func mathMax(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
+	if len(args) < 2 {
+		panic("math.max requires at least two arguments")
+	}
+
+	if args[0].Type() != object.NUMBER {
+		return nil
+	}
+
+	if args[1].Type() != object.NUMBER {
+		return nil
+	}
+
+	number1 := args[0].(*object.Number)
+	number2 := args[1].(*object.Number)
+
+	if number1.Value.GreaterThan(number2.Value) {
+		return number1
+	}
+
+	return number2
 }
 
 // mathMin returns the smallest number of the referenced numbers.
