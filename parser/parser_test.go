@@ -579,6 +579,137 @@ func TestMapLiteralsWithStringKeys(t *testing.T) {
 	}
 }
 
+func TestMapLiteralsWithBooleanKeys(t *testing.T) {
+	input := `{true: 1, false: 2}`
+
+	scanner := scanner.New(input, "test.ghost")
+	parser := New(scanner)
+	program := parser.Parse()
+
+	failIfParserHasErrors(t, parser)
+
+	statement, ok := program.Statements[0].(*ast.Expression)
+
+	if !ok {
+		t.Fatalf("program.Statements[0] is not ast.Expression. got=%T", program.Statements[0])
+	}
+
+	mapLiteral, ok := statement.Expression.(*ast.Map)
+
+	if !ok {
+		t.Fatalf("statement is not ast.Map. got=%T", statement.Expression)
+	}
+
+	if len(mapLiteral.Pairs) != 2 {
+		t.Fatalf("map.Pairs has wrong length. got=%d", len(mapLiteral.Pairs))
+	}
+
+	expected := map[bool]int64{
+		true:  1,
+		false: 2,
+	}
+
+	for key, value := range mapLiteral.Pairs {
+		boolean, ok := key.(*ast.Boolean)
+
+		if !ok {
+			t.Errorf("key is not ast.Boolean. got=%T", key)
+		}
+
+		expectedValue := expected[boolean.Value]
+
+		isNumberLiteral(t, value, expectedValue)
+	}
+}
+
+func TestMapLiteralsWithIntegerKeys(t *testing.T) {
+	input := `{1: 1, 2: 2, 3: 3}`
+
+	scanner := scanner.New(input, "test.ghost")
+	parser := New(scanner)
+	program := parser.Parse()
+
+	failIfParserHasErrors(t, parser)
+
+	statement, ok := program.Statements[0].(*ast.Expression)
+
+	if !ok {
+		t.Fatalf("program.Statements[0] is not ast.Expression. got=%T", program.Statements[0])
+	}
+
+	mapLiteral, ok := statement.Expression.(*ast.Map)
+
+	if !ok {
+		t.Fatalf("statement is not ast.Map. got=%T", statement.Expression)
+	}
+
+	if len(mapLiteral.Pairs) != 3 {
+		t.Fatalf("map.Pairs has wrong length. got=%d", len(mapLiteral.Pairs))
+	}
+
+	expected := map[int64]int64{
+		1: 1,
+		2: 2,
+		3: 3,
+	}
+
+	for key, value := range mapLiteral.Pairs {
+		number, ok := key.(*ast.Number)
+
+		if !ok {
+			t.Errorf("key is not ast.Number. got=%T", key)
+		}
+
+		expectedValue := expected[number.Value.IntPart()]
+
+		isNumberLiteral(t, value, expectedValue)
+	}
+}
+
+func TestMapLiteralsWithVariableKeys(t *testing.T) {
+	input := `{foo: 1, bar: 2, baz: 3}`
+
+	scanner := scanner.New(input, "test.ghost")
+	parser := New(scanner)
+	program := parser.Parse()
+
+	failIfParserHasErrors(t, parser)
+
+	statement, ok := program.Statements[0].(*ast.Expression)
+
+	if !ok {
+		t.Fatalf("program.Statements[0] is not ast.Expression. got=%T", program.Statements[0])
+	}
+
+	mapLiteral, ok := statement.Expression.(*ast.Map)
+
+	if !ok {
+		t.Fatalf("statement is not ast.Map. got=%T", statement.Expression)
+	}
+
+	if len(mapLiteral.Pairs) != 3 {
+		t.Fatalf("map.Pairs has wrong length. got=%d", len(mapLiteral.Pairs))
+	}
+
+	expected := map[string]int64{
+		"foo": 1,
+		"bar": 2,
+		"baz": 3,
+	}
+
+	for key, value := range mapLiteral.Pairs {
+		identifier, ok := key.(*ast.Identifier)
+
+		if !ok {
+			t.Errorf("key is not ast.Identifier. got=%T", key)
+		}
+
+		expectedValue := expected[identifier.Value]
+
+		isNumberLiteral(t, value, expectedValue)
+	}
+}
+
 func TestEmptyMapLiterals(t *testing.T) {
 	input := `{}`
 
