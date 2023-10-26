@@ -6,3 +6,4 @@ bar = {
 
 print(bar.foo)
 print(foo)
+print(bar)

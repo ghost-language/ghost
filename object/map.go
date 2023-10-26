@@ -1,6 +1,12 @@
 package object
 
-import "github.com/shopspring/decimal"
+import (
+	"bytes"
+	"fmt"
+	"strings"
+
+	"github.com/shopspring/decimal"
+)
 
 const MAP = "MAP"
 
@@ -16,7 +22,23 @@ type MapPair struct {
 
 // String represents the map object's value as a string.
 func (mapObject *Map) String() string {
-	return "map"
+	var out bytes.Buffer
+
+	length := len(mapObject.Pairs)
+	pairs := make([]string, length)
+
+	var index int
+
+	for _, pair := range mapObject.Pairs {
+		pairs[index] = fmt.Sprintf("%s: %s", pair.Key.String(), pair.Value.String())
+		index++
+	}
+
+	out.WriteString("{")
+	out.WriteString(strings.Join(pairs, ", "))
+	out.WriteString("}")
+
+	return out.String()
 }
 
 // Type returns the map object type.
