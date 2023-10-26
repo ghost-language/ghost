@@ -1,14 +1,8 @@
-print("hello world")
-print(1 + 2)
+foo = 'hello'
 
-if (true) {
-    print("true!!")
-} else {
-    print("false :(")
+bar = {
+  foo: 'bar'
 }
 
-class Animal {
-    function speak() {
-        print("Animals speaks.")
-    }
-}
+print(bar.foo)
+print(foo)
