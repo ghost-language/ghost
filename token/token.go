@@ -65,6 +65,7 @@ const (
 	CASE     = "case"
 	CLASS    = "class"
 	CONTINUE = "continue"
+	DEFAULT  = "default"
 	ELSE     = "else"
 	EXTENDS  = "extends"
 	FALSE    = "false"
