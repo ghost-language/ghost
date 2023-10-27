@@ -3,6 +3,7 @@ package object
 import (
 	"ghostlang.org/x/ghost/ast"
 	"ghostlang.org/x/ghost/token"
+	"github.com/shopspring/decimal"
 )
 
 var evaluator func(node ast.Node, scope *Scope) Object
@@ -36,4 +37,49 @@ type ObjectMethod func(value interface{}, args ...Object) (Object, bool)
 
 func RegisterEvaluator(e func(node ast.Node, scope *Scope) Object) {
 	evaluator = e
+}
+
+func AnyValueToObject(val any) Object {
+	switch v := val.(type) {
+	case bool:
+		if v {
+			return &Boolean{Value: true}
+		}
+
+		return &Boolean{Value: false}
+	case string:
+		return &String{Value: v}
+	case int:
+		return &Number{Value: decimal.NewFromInt(int64(v))}
+	case int64:
+		return &Number{Value: decimal.NewFromInt(int64(v))}
+	case float64:
+		return &Number{Value: decimal.NewFromFloat(v)}
+	case nil:
+		return &Null{}
+	case []any:
+		elements := make([]Object, len(v))
+
+		for index, item := range v {
+			elements[index] = AnyValueToObject(item)
+		}
+
+		return &List{Elements: elements}
+	case map[string]any:
+		pairs := make(map[MapKey]MapPair)
+
+		for key, val := range v {
+			pairKey := &String{Value: key}
+			var pairValue Object
+			hashed := pairKey.MapKey()
+
+			pairValue = AnyValueToObject(val)
+
+			pairs[hashed] = MapPair{Key: pairKey, Value: pairValue}
+		}
+
+		return &Map{Pairs: pairs}
+	}
+
+	return nil
 }

@@ -13,7 +13,7 @@ type Error struct {
 
 // String represents the error object's value as a string.
 func (err *Error) String() string {
-	return "error"
+	return "error: " + err.Message
 }
 
 // Type returns the error object type.

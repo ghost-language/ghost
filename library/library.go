@@ -18,6 +18,7 @@ func init() {
 	RegisterModule("os", modules.OsMethods, modules.OsProperties)
 	RegisterModule("random", modules.RandomMethods, modules.RandomProperties)
 	RegisterModule("time", modules.TimeMethods, modules.TimeProperties)
+	RegisterModule("json", modules.JsonMethods, modules.JsonProperties)
 
 	RegisterFunction("print", functions.Print)
 	RegisterFunction("type", functions.Type)

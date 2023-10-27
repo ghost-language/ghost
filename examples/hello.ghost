@@ -1,9 +1,16 @@
-foo = 'hello'
+test = '{ "name": "Kai", "age": 34, "is_admin": true, "hobbies": ["programming", "gaming", "reading"], "address": { "street": "1234 Main St", "city": "Anytown", "state": "CA", "zip": 12345 } }'
 
-bar = {
-  foo: 'bar'
-}
+foo = json.parse(test)
 
-print(bar.foo)
-print(foo)
-print(bar)
+console.log(foo.name)
+console.log(foo.age)
+console.log(foo.is_admin)
+console.log(foo.hobbies)
+console.log(foo.address)
+console.log(foo.address.street)
+console.log(foo.address.city)
+console.log(foo.address.state)
+console.log(foo.address.zip)
+console.log(foo.hobbies[0])
+console.log(foo.hobbies[1])
+console.log(foo.hobbies[2])
