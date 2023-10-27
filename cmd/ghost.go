@@ -18,10 +18,9 @@ import (
 )
 
 var (
-	flagHelp      bool
-	flagVersion   bool
-	flagBenchmark bool
-	flagTime      bool
+	flagHelp    bool
+	flagVersion bool
+	flagTime    bool
 )
 
 func init() {
@@ -33,7 +32,6 @@ func init() {
 
 	flag.BoolVar(&flagHelp, "h", false, "display help information")
 	flag.BoolVar(&flagVersion, "v", false, "display version information")
-	flag.BoolVar(&flagBenchmark, "b", false, "run benchmark tests against Ghost and Go")
 	flag.BoolVar(&flagTime, "t", false, "display how long the program ran for")
 }
 
@@ -47,11 +45,6 @@ func main() {
 
 	if flagHelp {
 		helpCommand()
-		os.Exit(0)
-	}
-
-	if flagBenchmark {
-		benchmarkCommand()
 		os.Exit(0)
 	}
 
