@@ -47,12 +47,12 @@ func main() {
 
 	if flagHelp {
 		helpCommand()
-		os.Exit(2)
+		os.Exit(0)
 	}
 
 	if flagBenchmark {
 		benchmarkCommand()
-		os.Exit(2)
+		os.Exit(0)
 	}
 
 	args := flag.Args()

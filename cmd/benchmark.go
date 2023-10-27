@@ -12,6 +12,7 @@ import (
 
 func benchmarkCommand() {
 	benchmarkHelloWorld()
+	benchmarkFibonacci()
 }
 
 func benchmarkHelloWorld() {
@@ -23,14 +24,50 @@ func benchmarkHelloWorld() {
 	fmt.Println("==============================")
 	fmt.Printf("Go:             %s\n", goTime)
 	fmt.Printf("Ghost:          %s\n", ghostTime)
+	fmt.Printf("Difference:     %s\n", ghostTime-goTime)
+	fmt.Printf("Difference (%%): +%.2f%%\n", (float64(ghostTime-goTime)/float64(goTime))*100)
 	fmt.Printf("-- Scanner:     %s\n", scanTime)
 	fmt.Printf("-- Parser:      %s\n", parseTime)
-	fmt.Printf("-- Interpreter: %s\n", interpretTime)
+	fmt.Printf("-- Interpreter: %s\n\n", interpretTime)
+}
+
+func benchmarkFibonacci() {
+	goTime := nativeFibonacci()
+	scanTime, parseTime, interpretTime, ghostTime := benchmark(`
+		function fibonacci(n) {
+			if (n <= 1) {
+				return n
+			}
+
+			return fibonacci(n - 1) + fibonacci(n - 2)
+		}
+		
+		fibonacci(20)
+		`)
+
+	fmt.Println("==============================")
+	fmt.Println("Fibonacci benchmark")
+	fmt.Println("==============================")
+	fmt.Printf("Go:             %s\n", goTime)
+	fmt.Printf("Ghost:          %s\n", ghostTime)
+	fmt.Printf("Difference:     %s\n", ghostTime-goTime)
+	fmt.Printf("Difference (%%): +%.2f%%\n", (float64(ghostTime-goTime)/float64(goTime))*100)
+	fmt.Printf("-- Scanner:     %s\n", scanTime)
+	fmt.Printf("-- Parser:      %s\n", parseTime)
+	fmt.Printf("-- Interpreter: %s\n\n", interpretTime)
 }
 
 func nativeHelloWorld() time.Duration {
 	start := time.Now()
 	fmt.Println("Hello, world!")
+
+	return time.Since(start)
+}
+
+func nativeFibonacci() time.Duration {
+	start := time.Now()
+
+	_ = fibonacci(20)
 
 	return time.Since(start)
 }
@@ -56,4 +93,12 @@ func benchmark(source string) (scanTime time.Duration, parseTime time.Duration, 
 	ghostTime = time.Since(start)
 
 	return scanTime, parseTime, interpretTime, ghostTime
+}
+
+func fibonacci(n int) int {
+	if n <= 1 {
+		return n
+	}
+
+	return fibonacci(n-1) + fibonacci(n-2)
 }

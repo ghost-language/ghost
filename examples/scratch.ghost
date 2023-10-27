@@ -1,23 +1,11 @@
-bar = true
-list = [1, 2, 3]
+data = {
+  name: 'Test',
+  handler: function(n) {
+    print('n * n')
 
-// for (i in list) {
-//     if (foo == true) {
-//         print("foo is true")
-//     }
-
-//     if (bar == true) {
-//         print("bar is true")
-//     }
-// }
-
-for (i = 0; i < 10; i = i + 1) {
-    foo
-    // if (foo == true) {
-    //     print("foo is true")
-    // }
-
-    // if (bar == true) {
-    //     print("bar is true")
-    // }
+    return n * n
+  }
 }
+
+print(data.name)
+print(data.handler(6))

@@ -25,6 +25,16 @@ func evaluateMethod(node *ast.Method, scope *object.Scope) object.Object {
 	}
 
 	switch receiver := left.(type) {
+	case *object.Map:
+		method := node.Method.(*ast.Identifier)
+
+		property := &object.String{Value: method.Value}
+
+		if function, ok := receiver.Pairs[property.MapKey()]; ok {
+			return unwrapCall(node.Token, function.Value, arguments, scope)
+		}
+
+		return newError("%d:%d:%s: runtime error: unknown method: %s.%s", node.Token.Line, node.Token.Column, node.Token.File, receiver.Type(), method.Value)
 	case *object.Instance:
 		method := node.Method.(*ast.Identifier)
 		evaluated := evaluateInstanceMethod(node, receiver, method.Value, arguments)
