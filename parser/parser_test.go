@@ -766,6 +766,101 @@ func TestReturnStatements(t *testing.T) {
 	}
 }
 
+func TestSwitchStatements(t *testing.T) {
+	input := `switch (value) {
+		case 1 {
+			print('one')
+		}
+		case 2 {
+			print('two')
+		}
+	}`
+
+	scanner := scanner.New(input, "test.ghost")
+	parser := New(scanner)
+	program := parser.Parse()
+
+	failIfParserHasErrors(t, parser)
+
+	statement, ok := program.Statements[0].(*ast.Expression)
+
+	if !ok {
+		t.Fatalf("program.Statements[0] is not ast.Expression. got=%T", program.Statements[0])
+	}
+
+	switchStatement, ok := statement.Expression.(*ast.Switch)
+
+	if !ok {
+		t.Fatalf("statement is not ast.Switch. got=%T", statement.Expression)
+	}
+
+	if len(switchStatement.Cases) != 2 {
+		t.Fatalf("switchStatement.Cases has wrong length. got=%d", len(switchStatement.Cases))
+	}
+}
+
+func TestSwitchStatementsWithDefault(t *testing.T) {
+	input := `switch (value) {
+		case 1 {
+			print('one')
+		}
+		case 2 {
+			print('two')
+		}
+		default {
+			print('default')
+		}
+	}`
+
+	scanner := scanner.New(input, "test.ghost")
+	parser := New(scanner)
+	program := parser.Parse()
+
+	failIfParserHasErrors(t, parser)
+
+	statement, ok := program.Statements[0].(*ast.Expression)
+
+	if !ok {
+		t.Fatalf("program.Statements[0] is not ast.Expression. got=%T", program.Statements[0])
+	}
+
+	switchStatement, ok := statement.Expression.(*ast.Switch)
+
+	if !ok {
+		t.Fatalf("statement is not ast.Switch. got=%T", statement.Expression)
+	}
+
+	if len(switchStatement.Cases) != 3 {
+		t.Fatalf("switchStatement.Cases has wrong length. got=%d", len(switchStatement.Cases))
+	}
+}
+
+func TestSwitchStatementsWithMultipleDefaults(t *testing.T) {
+	input := `switch (value) {
+		case 1 {
+			print('one')
+		}
+		case 2 {
+			print('two')
+		}
+		case default {
+			print('default one')
+		}
+		default {
+			print('default two')
+		}
+	}`
+
+	scanner := scanner.New(input, "test.ghost")
+	parser := New(scanner)
+	parser.Parse()
+
+	// Expecting a parser error here for having multiple defaults
+	if len(parser.Errors()) != 1 {
+		t.Fatalf("parser should have 1 error. got=%d", len(parser.Errors()))
+	}
+}
+
 // =============================================================================
 // Helper methods
 
