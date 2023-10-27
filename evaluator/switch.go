@@ -10,6 +10,11 @@ func evaluateSwitch(node *ast.Switch, scope *object.Scope) object.Object {
 	obj := Evaluate(node.Value, scope)
 
 	for _, option := range node.Cases {
+		// Skip default case to handle last if needed
+		if option.Default {
+			continue
+		}
+
 		for _, val := range option.Value {
 			out := Evaluate(val, scope)
 
@@ -19,6 +24,15 @@ func evaluateSwitch(node *ast.Switch, scope *object.Scope) object.Object {
 
 				return out
 			}
+		}
+	}
+
+	// Handle default case
+	for _, option := range node.Cases {
+		if option.Default {
+			out := evaluateBlock(option.Body, scope)
+
+			return out
 		}
 	}
 

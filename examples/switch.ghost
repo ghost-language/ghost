@@ -1,25 +1,16 @@
-// value = true
-
-// switch (value) {
-//     case false {
-//         print("false.")
-//     }
-
-//     case true {
-//         print("true.")
-//     }
-// }
-
-beverage = "coffee"
+beverage = "tea"
 
 switch (beverage) {
-    case "water" {
-        print("Water is $0.75 per bottle.")
-    }
-    case "juice" {
-        print("Juice is $1.25 per bottle.")
-    }
-    case "coffee", "latte" {
-        print("Coffee and lattes are $2.75 per 12oz.")
-    }
+  case "water" {
+    print("Water is $0.75 per bottle.")
+  }
+  case "juice" {
+    print("Juice is $1.25 per bottle.")
+  }
+  case "coffee", "latte" {
+    print("Coffee and lattes are $2.75 per 12oz.")
+  }
+  default {
+    print("Unknown beverage.")
+  }
 }
