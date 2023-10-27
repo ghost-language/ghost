@@ -25,6 +25,7 @@ var keywords = map[string]token.Type{
 	"case":     token.CASE,
 	"class":    token.CLASS,
 	"continue": token.CONTINUE,
+	"default":  token.DEFAULT,
 	"else":     token.ELSE,
 	"extends":  token.EXTENDS,
 	"false":    token.FALSE,
