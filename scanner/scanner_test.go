@@ -14,7 +14,7 @@ func TestScanTokens(t *testing.T) {
 			expectedLexeme string
 		}
 	}{
-		`( ) [ ] { } , . - + ; * % ? : > < >= <= ! != = == "hello world" 42 3.14 6.67428e-11 foo foobar true false class whilefoo こんにちは 世界 += -= *= /= import from as ..`,
+		`( ) [ ] { } , . - + ; * % ? : > < >= <= ! != = == "hello world" 42 3.14 6.67428e-11 foo foobar hello1 true false class whilefoo こんにちは 世界 += -= *= /= import from as ..`,
 		[]struct {
 			expectedType   token.Type
 			expectedLexeme string
@@ -48,6 +48,7 @@ func TestScanTokens(t *testing.T) {
 			{token.NUMBER, "6.67428e-11"},
 			{token.IDENTIFIER, "foo"},
 			{token.IDENTIFIER, "foobar"},
+			{token.IDENTIFIER, "hello1"},
 			{token.TRUE, "true"},
 			{token.FALSE, "false"},
 			{token.CLASS, "class"},

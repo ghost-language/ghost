@@ -377,7 +377,7 @@ func isEmpty(character rune) bool {
 
 // isIdentifier tells us if the passed character can be used in a valid identifier.
 func isIdentifier(character rune) bool {
-	return !isDigit(character) && !isWhitespace(character) && !isBrace(character) && !isBracket(character) && !isParenthesis(character) && !isOperator(character) && !isCompound(character) && !isComparison(character) && !isEmpty(character)
+	return !isWhitespace(character) && !isBrace(character) && !isBracket(character) && !isParenthesis(character) && !isOperator(character) && !isCompound(character) && !isComparison(character) && !isEmpty(character)
 }
 
 // lookupIdentifier looks up the string in the list of keywords and returns its

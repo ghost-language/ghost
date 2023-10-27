@@ -9,3 +9,9 @@ data = {
 
 print(data.name)
 print(data.handler(6))
+
+function test1() {
+  print('test1')
+}
+
+test1()
