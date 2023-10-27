@@ -83,3 +83,41 @@ func AnyValueToObject(val any) Object {
 
 	return nil
 }
+
+func ObjectToAnyValue(val Object) any {
+	switch v := val.(type) {
+	case *Boolean:
+		return bool(v.Value)
+	case *String:
+		return string(v.Value)
+	case *Number:
+		// Determine if value is an integer or float.
+		if v.Value.Exponent() <= 0 {
+			return int(v.Value.IntPart())
+		}
+
+		num, _ := v.Value.Float64()
+
+		return num
+	case *Null:
+		return nil
+	case *List:
+		var collection []any
+
+		for _, val := range v.Elements {
+			collection = append(collection, ObjectToAnyValue(val))
+		}
+
+		return collection
+	case *Map:
+		collection := make(map[string]any)
+
+		for _, pair := range v.Pairs {
+			collection[pair.Key.(*String).Value] = ObjectToAnyValue(pair.Value)
+		}
+
+		return collection
+	}
+
+	return nil
+}

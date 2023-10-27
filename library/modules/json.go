@@ -2,6 +2,7 @@ package modules
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"ghostlang.org/x/ghost/object"
 	"ghostlang.org/x/ghost/token"
@@ -12,7 +13,7 @@ var JsonProperties = map[string]*object.LibraryProperty{}
 
 func init() {
 	RegisterMethod(JsonMethods, "decode", jsonDecode)
-	// RegisterMethod(JsonMethods, "encode", jsonEncode)
+	RegisterMethod(JsonMethods, "encode", jsonEncode)
 }
 
 // jsonDecode decodes the JSON-encoded data and returns a new list or map object.
@@ -58,4 +59,52 @@ func jsonDecode(scope *object.Scope, tok token.Token, args ...object.Object) obj
 	}
 
 	return object.NewError("failed to decode JSON: %s", err.Error())
+}
+
+// jsonEncode returns the JSON encoding of either a list or map object.
+func jsonEncode(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
+	if len(args) != 1 {
+		return object.NewError("wrong number of arguments. got=%d, want=1", len(args))
+	}
+
+	switch arg := args[0].(type) {
+	case *object.List:
+		var elements []interface{}
+
+		for _, val := range arg.Elements {
+			elements = append(elements, object.ObjectToAnyValue(val))
+		}
+
+		data, err := json.Marshal(elements)
+
+		if err != nil {
+			return object.NewError("failed to encode JSON: %s", err.Error())
+		}
+
+		return &object.String{Value: string(data)}
+	case *object.Map:
+		pairs := make(map[string]interface{})
+
+		for _, pair := range arg.Pairs {
+			// map keys can be numbers, strings, or booleans
+			switch pair.Key.(type) {
+			case *object.String:
+				pairs[pair.Key.(*object.String).Value] = object.ObjectToAnyValue(pair.Value)
+			case *object.Number:
+				pairs[fmt.Sprintf("%d", object.ObjectToAnyValue(pair.Key.(*object.Number)))] = object.ObjectToAnyValue(pair.Value)
+			case *object.Boolean:
+				pairs[fmt.Sprintf("%t", pair.Key.(*object.Boolean).Value)] = object.ObjectToAnyValue(pair.Value)
+			}
+		}
+
+		data, err := json.Marshal(pairs)
+
+		if err != nil {
+			return object.NewError("failed to encode JSON: %s", err.Error())
+		}
+
+		return &object.String{Value: string(data)}
+	}
+
+	return object.NewError("argument to `encode` must be LIST or MAP, got %s", args[0].Type())
 }
