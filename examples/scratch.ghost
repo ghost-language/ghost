@@ -1,17 +1,6 @@
-data = {
-  name: 'Test',
-  handler: function(n) {
-    print('n * n')
+x = 0
+list = [0, 1, 2, 3]
 
-    return n * n
-  }
+for (i = 0; i < list.length(); i++) {
+  print(i)
 }
-
-print(data.name)
-print(data.handler(6))
-
-function test1() {
-  print('test1')
-}
-
-test1()

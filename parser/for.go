@@ -40,7 +40,7 @@ func (parser *Parser) forExpression() ast.ExpressionNode {
 	parser.readToken()
 	parser.readToken()
 
-	expression.Increment = parser.assign()
+	expression.Increment = parser.forIncrement()
 
 	if expression.Increment == nil {
 		return nil
@@ -106,4 +106,40 @@ func (parser *Parser) forInExpression(parent *ast.For) ast.ExpressionNode {
 	expression.Block = parser.blockStatement()
 
 	return expression
+}
+
+// forIncrement parses the increment expression of a for loop.
+// It can be an assignment (x = x + 1), a postfix expression (x++), or an infix expression (x += 1).
+func (parser *Parser) forIncrement() ast.ExpressionNode {
+	if parser.currentTokenIs(token.RIGHTPAREN) {
+		return nil
+	}
+
+	if parser.currentTokenIs(token.SEMICOLON) {
+		parser.readToken()
+		return nil
+	}
+
+	if parser.currentTokenIs(token.IDENTIFIER) && parser.nextTokenIs(token.EQUAL) {
+		return parser.assign()
+	}
+
+	if parser.currentTokenIs(token.IDENTIFIER) && (parser.nextTokenIs(token.PLUSEQUAL) ||
+		parser.nextTokenIs(token.MINUSEQUAL) ||
+		parser.nextTokenIs(token.SLASHEQUAL) ||
+		parser.nextTokenIs(token.STAREQUAL)) {
+		identifier := parser.identifierLiteral()
+
+		parser.readToken()
+
+		return parser.compoundExpression(identifier)
+	}
+
+	if parser.currentTokenIs(token.IDENTIFIER) && (parser.nextTokenIs(token.PLUSPLUS) || parser.nextTokenIs(token.MINUSMINUS)) {
+		parser.readToken()
+
+		return parser.postfixExpression()
+	}
+
+	return nil
 }
