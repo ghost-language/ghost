@@ -136,6 +136,10 @@ func New(scanner *scanner.Scanner) *Parser {
 	parser.registerInfix(token.SLASHEQUAL, parser.compoundExpression)
 	parser.registerInfix(token.QUESTION, parser.ternaryExpression)
 
+	// Register all of our postfix parse functions
+	parser.registerPostfix(token.PLUSPLUS, parser.postfixExpression)
+	parser.registerPostfix(token.MINUSMINUS, parser.postfixExpression)
+
 	// Read the first two tokens, so currentToken and nextToken are both set.
 	parser.readToken()
 	parser.readToken()
@@ -151,6 +155,11 @@ func (parser *Parser) registerPrefix(tokenType token.Type, fn prefixParserFn) {
 // registerInfix registers a new infix parse function.
 func (parser *Parser) registerInfix(tokenType token.Type, fn infixParserFn) {
 	parser.infixParserFns[tokenType] = fn
+}
+
+// registerPostfix registers a new postfix parse function.
+func (parser *Parser) registerPostfix(tokenType token.Type, fn postfixParserFn) {
+	parser.postfixParserFns[tokenType] = fn
 }
 
 // Parse parses tokens and creates an AST. It returns the Program node,

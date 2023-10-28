@@ -99,12 +99,16 @@ func (scanner *Scanner) ScanToken() token.Token {
 	case rune('-'):
 		if scanner.match('=') {
 			scannedToken = scanner.newToken(token.MINUSEQUAL, "-=", 2)
+		} else if scanner.match('-') {
+			scannedToken = scanner.newToken(token.MINUSMINUS, "--", 2)
 		} else {
 			scannedToken = scanner.newToken(token.MINUS, "-", 1)
 		}
 	case rune('+'):
 		if scanner.match('=') {
 			scannedToken = scanner.newToken(token.PLUSEQUAL, "+=", 2)
+		} else if scanner.match('+') {
+			scannedToken = scanner.newToken(token.PLUSPLUS, "++", 2)
 		} else {
 			scannedToken = scanner.newToken(token.PLUS, "+", 1)
 		}
