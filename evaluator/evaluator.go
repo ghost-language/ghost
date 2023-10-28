@@ -62,6 +62,8 @@ func Evaluate(node ast.Node, scope *object.Scope) object.Object {
 		return evaluateNull(node, scope)
 	case *ast.Number:
 		return evaluateNumber(node, scope)
+	case *ast.Postfix:
+		return evaluatePostfix(node, scope)
 	case *ast.Prefix:
 		return evaluatePrefix(node, scope)
 	case *ast.Property:

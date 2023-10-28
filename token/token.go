@@ -49,7 +49,9 @@ const (
 	LESS         = "<"
 	LESSEQUAL    = "<="
 	PLUSEQUAL    = "+="
+	PLUSPLUS     = "++"
 	MINUSEQUAL   = "-="
+	MINUSMINUS   = "--"
 	STAREQUAL    = "*="
 	SLASHEQUAL   = "/="
 

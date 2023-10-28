@@ -77,6 +77,8 @@ func TestNumbers(t *testing.T) {
 		{"x = 5; x -= 1; x", 4},
 		{"x = 5; x *= 2; x", 10},
 		{"x = 10; x /= 2; x", 5},
+		{"x = 0; x++; x", 1},
+		{"x = 6; x--; x", 5},
 	}
 
 	for _, tt := range tests {
