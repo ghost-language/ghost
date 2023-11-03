@@ -106,6 +106,7 @@ func New(scanner *scanner.Scanner) *Parser {
 	parser.registerPrefix(token.WHILE, parser.whileExpression)
 	parser.registerPrefix(token.FOR, parser.forExpression)
 	parser.registerPrefix(token.CLASS, parser.classStatement)
+	parser.registerPrefix(token.TRAIT, parser.traitStatement)
 	parser.registerPrefix(token.THIS, parser.thisExpression)
 	parser.registerPrefix(token.IMPORT, parser.importStatement)
 	parser.registerPrefix(token.SWITCH, parser.switchStatement)

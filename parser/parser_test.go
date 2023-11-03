@@ -899,6 +899,42 @@ func TestSwitchStatementsWithMultipleDefaults(t *testing.T) {
 	}
 }
 
+func TestTraitExpressions(t *testing.T) {
+	input := `trait Foo {
+		//
+	}`
+
+	scanner := scanner.New(input, "test.ghost")
+	parser := New(scanner)
+	program := parser.Parse()
+
+	failIfParserHasErrors(t, parser)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("program.Statements does not contain 1 statement. got=%d", len(program.Statements))
+	}
+
+	statement, ok := program.Statements[0].(*ast.Expression)
+
+	if !ok {
+		t.Fatalf("program.Statements[0] is not ast.Expression. got=%T", program.Statements[0])
+	}
+
+	expression, ok := statement.Expression.(*ast.Trait)
+
+	if !ok {
+		t.Fatalf("statement is not ast.Trait. got=%T", statement.Expression)
+	}
+
+	if expression.Name.Value != "Foo" {
+		t.Fatalf("expression.Name is not 'Foo'. got=%s", expression.Name.Value)
+	}
+
+	if len(expression.Body.Statements) != 0 {
+		t.Fatalf("expression.Body.Statements does not contain 0 statements. got=%d", len(expression.Body.Statements))
+	}
+}
+
 // =============================================================================
 // Helper methods
 
