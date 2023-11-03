@@ -1,6 +1,14 @@
-x = 0
-list = [0, 1, 2, 3]
-
-for (i = 0; i < list.length(); i++) {
-  print(i)
+trait Foo {
+  function bar() {
+    console.log('foo.bar')
+  }
 }
+
+class Lorem {
+  // 
+}
+
+lorem = Lorem.new()
+
+console.log('done')
+console.log(Foo)
