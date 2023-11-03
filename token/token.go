@@ -86,6 +86,7 @@ const (
 	THIS     = "this"
 	TRAIT    = "trait"
 	TRUE     = "true"
+	USE      = "use"
 	WHILE    = "while"
 	EOF      = "eof"
 	INVALID  = "__INVALID__"
