@@ -84,6 +84,7 @@ const (
 	SUPER    = "super"
 	SWITCH   = "switch"
 	THIS     = "this"
+	TRAIT    = "trait"
 	TRUE     = "true"
 	WHILE    = "while"
 	EOF      = "eof"
