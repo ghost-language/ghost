@@ -1,14 +1,16 @@
-trait Foo {
-  function bar() {
-    console.log('foo.bar')
-  }
-}
+import Foo from 'foo'
 
 class Lorem {
-  // 
+  use Foo
+
+  function hello() {
+    console.log('hello')
+  }
 }
 
 lorem = Lorem.new()
 
-console.log('done')
-console.log(Foo)
+lorem.hello()
+lorem.bar()
+
+console.log('done.')

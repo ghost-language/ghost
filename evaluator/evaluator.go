@@ -80,6 +80,8 @@ func Evaluate(node ast.Node, scope *object.Scope) object.Object {
 		return evaluateTrait(node, scope)
 	case *ast.This:
 		return evaluateThis(node, scope)
+	case *ast.Use:
+		return evaluateUse(node, scope)
 	case *ast.While:
 		return evaluateWhile(node, scope)
 	}

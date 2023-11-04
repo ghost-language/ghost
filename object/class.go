@@ -12,6 +12,7 @@ type Class struct {
 	Scope       *Scope
 	Environment *Environment
 	Super       *Class
+	Traits      []*Trait
 }
 
 // String represents the class object's value as a string.

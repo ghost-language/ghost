@@ -1,0 +1,5 @@
+trait Foo {
+  function bar() {
+    console.log('FOO BAR!!!')
+  }
+}

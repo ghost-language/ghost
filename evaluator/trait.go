@@ -13,8 +13,8 @@ func evaluateTrait(node *ast.Trait, scope *object.Scope) object.Object {
 	}
 
 	// Create a new scope for this trait
-	traitEnvironment := object.NewEnclosedEnvironment(scope.Environment)
-	traitScope := &object.Scope{Environment: traitEnvironment, Self: trait}
+	trait.Environment = object.NewEnclosedEnvironment(scope.Environment)
+	traitScope := &object.Scope{Environment: trait.Environment, Self: trait}
 
 	Evaluate(node.Body, traitScope)
 

@@ -60,20 +60,34 @@ func evaluateInstanceMethod(node *ast.Method, receiver *object.Instance, name st
 	class := receiver.Class
 	method, ok := receiver.Class.Environment.Get(name)
 
+	// If we dont have a method, loop through the super classes and check them.
+	// Then check the traits.
 	if !ok {
 		for class != nil {
 			method, ok = class.Environment.Get(name)
 
 			if !ok {
 				class = class.Super
-
-				if class == nil {
-					return object.NewError("%d:%d:%s: runtime error: undefined method %s for class %s", node.Token.Line, node.Token.Column, node.Token.File, name, receiver.Class.Name.Value)
-				}
 			} else {
 				class = nil
 			}
 		}
+	}
+
+	// if we dont have a method, check for a trait
+	if method == nil {
+		for _, trait := range receiver.Class.Traits {
+			method, ok = trait.Environment.Get(name)
+
+			if !ok {
+				return object.NewError("%d:%d:%s: runtime error: undefined method %s for class %s", node.Token.Line, node.Token.Column, node.Token.File, name, receiver.Class.Name.Value)
+			}
+		}
+	}
+
+	// if we still dont have a method, return an error
+	if method == nil {
+		return object.NewError("%d:%d:%s: runtime error: undefined method %s for class %s", node.Token.Line, node.Token.Column, node.Token.File, name, receiver.Class.Name.Value)
 	}
 
 	switch method := method.(type) {
