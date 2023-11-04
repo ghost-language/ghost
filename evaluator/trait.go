@@ -16,7 +16,11 @@ func evaluateTrait(node *ast.Trait, scope *object.Scope) object.Object {
 	trait.Environment = object.NewEnclosedEnvironment(scope.Environment)
 	traitScope := &object.Scope{Environment: trait.Environment, Self: trait}
 
-	Evaluate(node.Body, traitScope)
+	result := Evaluate(node.Body, traitScope)
+
+	if isError(result) {
+		return result
+	}
 
 	scope.Environment.Set(node.Name.Value, trait)
 

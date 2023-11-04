@@ -1,5 +1,7 @@
 trait Foo {
+  message = 'Hello World!!!!'
+
   function bar() {
-    console.log('FOO BAR!!!')
+    console.log(this.message)
   }
 }
