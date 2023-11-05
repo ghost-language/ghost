@@ -41,7 +41,9 @@ var keywords = map[string]token.Type{
 	"super":    token.SUPER,
 	"switch":   token.SWITCH,
 	"this":     token.THIS,
+	"trait":    token.TRAIT,
 	"true":     token.TRUE,
+	"use":      token.USE,
 	"while":    token.WHILE,
 }
 

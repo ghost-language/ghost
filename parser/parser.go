@@ -106,6 +106,8 @@ func New(scanner *scanner.Scanner) *Parser {
 	parser.registerPrefix(token.WHILE, parser.whileExpression)
 	parser.registerPrefix(token.FOR, parser.forExpression)
 	parser.registerPrefix(token.CLASS, parser.classStatement)
+	parser.registerPrefix(token.TRAIT, parser.traitStatement)
+	parser.registerPrefix(token.USE, parser.useExpression)
 	parser.registerPrefix(token.THIS, parser.thisExpression)
 	parser.registerPrefix(token.IMPORT, parser.importStatement)
 	parser.registerPrefix(token.SWITCH, parser.switchStatement)
@@ -202,7 +204,7 @@ func (parser *Parser) isAtEnd() bool {
 
 func (parser *Parser) nextError(tt token.Type) {
 	message := fmt.Sprintf(
-		"%d:%d: syntax error: expected next token to be %s, got: %s instead", parser.nextToken.Line, parser.nextToken.Column, tt, parser.nextToken.Type,
+		"%d:%d: syntax error: expected next token to be `%s`, got: `%s` instead", parser.nextToken.Line, parser.nextToken.Column, tt, parser.nextToken.Type,
 	)
 
 	parser.errors = append(parser.errors, message)

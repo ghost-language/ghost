@@ -15,16 +15,7 @@ func evaluateProperty(node *ast.Property, scope *object.Scope) object.Object {
 
 	switch left.(type) {
 	case *object.Instance:
-		property := node.Property.(*ast.Identifier)
-		instance := left.(*object.Instance)
-
-		if !instance.Environment.Has(property.Value) {
-			instance.Environment.Set(property.Value, value.NULL)
-		}
-
-		val, _ := instance.Environment.Get(property.Value)
-
-		return val
+		return evaluateInstanceProperty(left, node)
 	case *object.LibraryModule:
 		property := node.Property.(*ast.Identifier)
 		module := left.(*object.LibraryModule)
@@ -48,4 +39,37 @@ func evaluateProperty(node *ast.Property, scope *object.Scope) object.Object {
 	}
 
 	return nil
+}
+
+func evaluateInstanceProperty(left object.Object, node *ast.Property) object.Object {
+	var val object.Object
+
+	instance := left.(*object.Instance)
+	property := node.Property.(*ast.Identifier)
+
+	if instance.Environment.Has(property.Value) {
+		val, _ = instance.Environment.Get(property.Value)
+
+		return val
+	}
+
+	if instance.Class.Environment.Has(property.Value) {
+		val, _ = instance.Class.Environment.Get(property.Value)
+
+		return val
+	}
+
+	for _, trait := range instance.Class.Traits {
+		if trait.Environment.Has(property.Value) {
+			val, _ = trait.Environment.Get(property.Value)
+
+			return val
+		}
+	}
+
+	instance.Environment.Set(property.Value, value.NULL)
+
+	val, _ = instance.Environment.Get(property.Value)
+
+	return val
 }

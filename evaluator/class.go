@@ -34,7 +34,11 @@ func evaluateClass(node *ast.Class, scope *object.Scope) object.Object {
 	classEnvironment := object.NewEnclosedEnvironment(scope.Environment)
 	classScope := &object.Scope{Environment: classEnvironment, Self: class}
 
-	Evaluate(node.Body, classScope)
+	result := Evaluate(node.Body, classScope)
+
+	if isError(result) {
+		return result
+	}
 
 	scope.Environment.Set(node.Name.Value, class)
 

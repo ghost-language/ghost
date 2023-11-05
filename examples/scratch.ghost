@@ -1,6 +1,16 @@
-x = 0
-list = [0, 1, 2, 3]
+import Foo from 'foo'
 
-for (i = 0; i < list.length(); i++) {
-  print(i)
+class Lorem {
+  use Foo
+
+  function hello() {
+    console.log('hello')
+  }
 }
+
+lorem = Lorem.new()
+
+lorem.hello()
+lorem.bar()
+
+console.log('done.')

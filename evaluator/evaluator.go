@@ -76,8 +76,12 @@ func Evaluate(node ast.Node, scope *object.Scope) object.Object {
 		return evaluateSwitch(node, scope)
 	case *ast.Ternary:
 		return evaluateTernary(node, scope)
+	case *ast.Trait:
+		return evaluateTrait(node, scope)
 	case *ast.This:
 		return evaluateThis(node, scope)
+	case *ast.Use:
+		return evaluateUse(node, scope)
 	case *ast.While:
 		return evaluateWhile(node, scope)
 	}
