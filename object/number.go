@@ -29,6 +29,8 @@ func (number *Number) Method(method string, args []Object) (Object, bool) {
 	switch method {
 	case "round":
 		return number.round(args)
+	case "floor":
+		return number.floor(args)
 	case "toString":
 		return number.toString(args)
 	}
@@ -55,4 +57,8 @@ func (number *Number) round(args []Object) (Object, bool) {
 	}
 
 	return &Number{Value: number.Value.Round(int32(places.Value.IntPart()))}, true
+}
+
+func (number *Number) floor(args []Object) (Object, bool) {
+	return &Number{Value: number.Value.Floor()}, true
 }
