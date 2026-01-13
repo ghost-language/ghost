@@ -307,6 +307,71 @@ func TestTraitMethodLookup(t *testing.T) {
 	}
 }
 
+func TestInheritedProperties(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected int64
+	}{
+		{
+			name: "access parent class property",
+			input: `
+				class Animal {
+					species = 42
+				}
+
+				class Dog extends Animal {
+				}
+
+				d = Dog.new()
+				d.species
+			`,
+			expected: 42,
+		},
+		{
+			name: "access grandparent class property",
+			input: `
+				class Animal {
+					legs = 4
+				}
+
+				class Mammal extends Animal {
+				}
+
+				class Dog extends Mammal {
+				}
+
+				d = Dog.new()
+				d.legs
+			`,
+			expected: 4,
+		},
+		{
+			name: "child property overrides parent",
+			input: `
+				class Animal {
+					sound = 1
+				}
+
+				class Dog extends Animal {
+					sound = 2
+				}
+
+				d = Dog.new()
+				d.sound
+			`,
+			expected: 2,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := evaluate(tt.input)
+			isNumberObject(t, result, tt.expected)
+		})
+	}
+}
+
 // =============================================================================
 // Helper functions
 

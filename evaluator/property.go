@@ -59,6 +59,18 @@ func evaluateInstanceProperty(left object.Object, node *ast.Property) object.Obj
 		return val
 	}
 
+	class := instance.Class.Super
+
+	for class != nil {
+		if class.Environment.Has(property.Value) {
+			val, _ = class.Environment.Get(property.Value)
+
+			return val
+		}
+
+		class = class.Super
+	}
+
 	for _, trait := range instance.Class.Traits {
 		if trait.Environment.Has(property.Value) {
 			val, _ = trait.Environment.Get(property.Value)
