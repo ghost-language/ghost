@@ -372,6 +372,37 @@ func TestInheritedProperties(t *testing.T) {
 	}
 }
 
+func TestThisOutsideClass(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{
+			name:     "this at top level",
+			input:    `this`,
+			expected: "1:1:test.ghost: runtime error: 'this' used outside of class context",
+		},
+		{
+			name:     "this in regular function",
+			input:    `function foo() { return this } foo()`,
+			expected: "1:25:test.ghost: runtime error: 'this' used outside of class context",
+		},
+		{
+			name:     "this.property at top level",
+			input:    `this.name`,
+			expected: "1:1:test.ghost: runtime error: 'this' used outside of class context",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := evaluate(tt.input)
+			isErrorObject(t, result, tt.expected)
+		})
+	}
+}
+
 // =============================================================================
 // Helper functions
 

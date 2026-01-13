@@ -6,11 +6,10 @@ import (
 )
 
 func evaluateThis(node *ast.This, scope *object.Scope) object.Object {
-	if scope.Self != nil {
+	switch scope.Self.(type) {
+	case *object.Instance, *object.Class:
 		return scope.Self
 	}
 
-	pairs := make(map[object.MapKey]object.MapPair)
-
-	return &object.Map{Pairs: pairs}
+	return newError("%d:%d:%s: runtime error: 'this' used outside of class context", node.Token.Line, node.Token.Column, node.Token.File)
 }
