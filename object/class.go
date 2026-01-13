@@ -31,12 +31,19 @@ func (class *Class) Method(method string, args []Object) (Object, bool) {
 	case "new":
 		instance := &Instance{Class: class, Environment: NewEnclosedEnvironment(class.Environment)}
 
-		if ok := instance.Environment.Has("constructor"); ok {
-			result := instance.Call("constructor", args, class.Name.Token)
+		// Check for constructor in class and superclass chain
+		currentClass := class
+		for currentClass != nil {
+			if constructor, ok := currentClass.Environment.Get("constructor"); ok {
+				result := instance.callMethod(constructor.(*Function), args, class.Name.Token)
 
-			if result != nil && result.Type() == ERROR {
-				return result, false
+				if result != nil && result.Type() == ERROR {
+					return result, false
+				}
+
+				break
 			}
+			currentClass = currentClass.Super
 		}
 
 		return instance, true

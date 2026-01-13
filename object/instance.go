@@ -32,14 +32,18 @@ func (instance *Instance) Method(method string, args []Object) (Object, bool) {
 func (instance *Instance) Call(name string, arguments []Object, tok token.Token) Object {
 	if function, ok := instance.Environment.Get(name); ok {
 		if method, ok := function.(*Function); ok {
-			methodEnvironment := createMethodEnvironment(method, arguments)
-			methodScope := &Scope{Self: instance, Environment: methodEnvironment}
-
-			return evaluator(method.Body, methodScope)
+			return instance.callMethod(method, arguments, tok)
 		}
 	}
 
 	return NewError("%d:%d: runtime error: unknown method '%s' on class %s", tok.Line, tok.Column, name, instance.Class.Name.Value)
+}
+
+func (instance *Instance) callMethod(method *Function, arguments []Object, tok token.Token) Object {
+	methodEnvironment := createMethodEnvironment(method, arguments)
+	methodScope := &Scope{Self: instance, Environment: methodEnvironment}
+
+	return evaluator(method.Body, methodScope)
 }
 
 func createMethodEnvironment(method *Function, arguments []Object) *Environment {

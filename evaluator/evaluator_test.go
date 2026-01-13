@@ -402,6 +402,79 @@ func TestInheritedProperties(t *testing.T) {
 	}
 }
 
+func TestInheritedConstructor(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected int64
+	}{
+		{
+			name: "parent constructor called when child has none",
+			input: `
+				class Animal {
+					function constructor(legs) {
+						this.legs = legs
+					}
+				}
+
+				class Dog extends Animal {
+				}
+
+				d = Dog.new(4)
+				d.legs
+			`,
+			expected: 4,
+		},
+		{
+			name: "grandparent constructor called when child and parent have none",
+			input: `
+				class Animal {
+					function constructor(legs) {
+						this.legs = legs
+					}
+				}
+
+				class Mammal extends Animal {
+				}
+
+				class Dog extends Mammal {
+				}
+
+				d = Dog.new(4)
+				d.legs
+			`,
+			expected: 4,
+		},
+		{
+			name: "child constructor overrides parent",
+			input: `
+				class Animal {
+					function constructor(legs) {
+						this.legs = legs
+					}
+				}
+
+				class Dog extends Animal {
+					function constructor(legs) {
+						this.legs = legs * 2
+					}
+				}
+
+				d = Dog.new(4)
+				d.legs
+			`,
+			expected: 8,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := evaluate(tt.input)
+			isNumberObject(t, result, tt.expected)
+		})
+	}
+}
+
 func TestThisOutsideClass(t *testing.T) {
 	tests := []struct {
 		name     string
