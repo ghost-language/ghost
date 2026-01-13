@@ -79,8 +79,8 @@ func evaluateInstanceMethod(node *ast.Method, receiver *object.Instance, name st
 		for _, trait := range receiver.Class.Traits {
 			method, ok = trait.Environment.Get(name)
 
-			if !ok {
-				return object.NewError("%d:%d:%s: runtime error: undefined method %s for class %s", node.Token.Line, node.Token.Column, node.Token.File, name, receiver.Class.Name.Value)
+			if ok {
+				break
 			}
 		}
 	}

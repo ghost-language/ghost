@@ -207,7 +207,7 @@ func TestClassProperties(t *testing.T) {
 		function constructor(area) {
 			this.area = area
 		}
-	
+
 		function area() {
 			return math.pi * this.area * this.area
 		}
@@ -221,6 +221,90 @@ func TestClassProperties(t *testing.T) {
 	result := evaluate(input)
 
 	isNumberObject(t, result, 314)
+}
+
+func TestTraitMethodLookup(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected int64
+	}{
+		{
+			name: "method from single trait",
+			input: `
+				trait Greet {
+					function greet() {
+						return 1
+					}
+				}
+
+				class Person {
+					use Greet
+				}
+
+				p = Person.new()
+				p.greet()
+			`,
+			expected: 1,
+		},
+		{
+			name: "method from second trait",
+			input: `
+				trait First {
+					function first() {
+						return 1
+					}
+				}
+
+				trait Second {
+					function second() {
+						return 2
+					}
+				}
+
+				class Thing {
+					use First
+					use Second
+				}
+
+				t = Thing.new()
+				t.second()
+			`,
+			expected: 2,
+		},
+		{
+			name: "methods from both traits",
+			input: `
+				trait Add {
+					function add() {
+						return 10
+					}
+				}
+
+				trait Multiply {
+					function multiply() {
+						return 20
+					}
+				}
+
+				class Calculator {
+					use Add
+					use Multiply
+				}
+
+				c = Calculator.new()
+				c.add() + c.multiply()
+			`,
+			expected: 30,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := evaluate(tt.input)
+			isNumberObject(t, result, tt.expected)
+		})
+	}
 }
 
 // =============================================================================
