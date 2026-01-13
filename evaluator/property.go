@@ -59,14 +59,15 @@ func evaluateInstanceProperty(left object.Object, node *ast.Property) object.Obj
 		return val
 	}
 
-	// Check superclass chain
 	class := instance.Class.Super
+
 	for class != nil {
 		if class.Environment.Has(property.Value) {
 			val, _ = class.Environment.Get(property.Value)
 
 			return val
 		}
+
 		class = class.Super
 	}
 
