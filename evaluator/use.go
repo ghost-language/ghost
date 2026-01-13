@@ -31,7 +31,7 @@ func evaluateUse(node *ast.Use, scope *object.Scope) object.Object {
 		traits = append(traits, t)
 	}
 
-	class.Traits = traits
+	class.Traits = append(class.Traits, traits...)
 
 	return nil
 }
