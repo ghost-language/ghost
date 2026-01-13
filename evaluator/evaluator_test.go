@@ -297,6 +297,36 @@ func TestTraitMethodLookup(t *testing.T) {
 			`,
 			expected: 30,
 		},
+		{
+			name: "comma-separated traits",
+			input: `
+				trait First {
+					function first() {
+						return 1
+					}
+				}
+
+				trait Second {
+					function second() {
+						return 2
+					}
+				}
+
+				trait Third {
+					function third() {
+						return 3
+					}
+				}
+
+				class Thing {
+					use First, Second, Third
+				}
+
+				t = Thing.new()
+				t.first() + t.second() + t.third()
+			`,
+			expected: 6,
+		},
 	}
 
 	for _, tt := range tests {

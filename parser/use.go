@@ -13,8 +13,19 @@ func (parser *Parser) useExpression() ast.ExpressionNode {
 	}
 
 	identifier := &ast.Identifier{Token: parser.currentToken, Value: parser.currentToken.Lexeme}
-
 	use.Traits = append(use.Traits, identifier)
+
+	for parser.nextTokenIs(token.COMMA) {
+		parser.readToken() // consume comma
+
+		if !parser.expectNextTokenIs(token.IDENTIFIER) {
+			return nil
+		}
+
+		identifier := &ast.Identifier{Token: parser.currentToken, Value: parser.currentToken.Lexeme}
+
+		use.Traits = append(use.Traits, identifier)
+	}
 
 	return use
 }
