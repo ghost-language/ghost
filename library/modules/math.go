@@ -1,9 +1,10 @@
 package modules
 
 import (
+	"math"
+
 	"ghostlang.org/x/ghost/object"
 	"ghostlang.org/x/ghost/token"
-	"github.com/shopspring/decimal"
 )
 
 var MathMethods = map[string]*object.LibraryFunction{}
@@ -38,7 +39,7 @@ func mathAbs(scope *object.Scope, tok token.Token, args ...object.Object) object
 
 	number := args[0].(*object.Number)
 
-	return &object.Number{Value: number.Value.Abs()}
+	return number.Abs()
 }
 
 // mathCos returns the cosine value of the referenced number.
@@ -53,7 +54,7 @@ func mathCos(scope *object.Scope, tok token.Token, args ...object.Object) object
 
 	number := args[0].(*object.Number)
 
-	return &object.Number{Value: number.Value.Cos()}
+	return number.Cos()
 }
 
 // mathisNegative returns true if the referenced number is negative.
@@ -68,7 +69,7 @@ func mathIsNegative(scope *object.Scope, tok token.Token, args ...object.Object)
 
 	number := args[0].(*object.Number)
 
-	return &object.Boolean{Value: number.Value.IsNegative()}
+	return &object.Boolean{Value: number.IsNeg()}
 }
 
 // mathisPositive returns true if the referenced number is positive.
@@ -83,7 +84,7 @@ func mathIsPositive(scope *object.Scope, tok token.Token, args ...object.Object)
 
 	number := args[0].(*object.Number)
 
-	return &object.Boolean{Value: number.Value.IsPositive()}
+	return &object.Boolean{Value: number.IsPos()}
 }
 
 // mathisZero returns true if the referenced number is zero.
@@ -98,7 +99,7 @@ func mathIsZero(scope *object.Scope, tok token.Token, args ...object.Object) obj
 
 	number := args[0].(*object.Number)
 
-	return &object.Boolean{Value: number.Value.IsZero()}
+	return &object.Boolean{Value: number.IsZero()}
 }
 
 // mathSin returns the sine value of the referenced number.
@@ -113,7 +114,7 @@ func mathSin(scope *object.Scope, tok token.Token, args ...object.Object) object
 
 	number := args[0].(*object.Number)
 
-	return &object.Number{Value: number.Value.Sin()}
+	return number.Sin()
 }
 
 // mathTan returns the tangent value of the referenced number.
@@ -128,7 +129,7 @@ func mathTan(scope *object.Scope, tok token.Token, args ...object.Object) object
 
 	number := args[0].(*object.Number)
 
-	return &object.Number{Value: number.Value.Tan()}
+	return number.Tan()
 }
 
 // mathMax returns the largest number of the referenced numbers.
@@ -148,7 +149,7 @@ func mathMax(scope *object.Scope, tok token.Token, args ...object.Object) object
 	number1 := args[0].(*object.Number)
 	number2 := args[1].(*object.Number)
 
-	if number1.Value.GreaterThan(number2.Value) {
+	if number1.GreaterThan(number2) {
 		return number1
 	}
 
@@ -172,7 +173,7 @@ func mathMin(scope *object.Scope, tok token.Token, args ...object.Object) object
 	number1 := args[0].(*object.Number)
 	number2 := args[1].(*object.Number)
 
-	if number1.Value.LessThan(number2.Value) {
+	if number1.LessThan(number2) {
 		return number1
 	}
 
@@ -183,31 +184,23 @@ func mathMin(scope *object.Scope, tok token.Token, args ...object.Object) object
 
 // mathPi returns the value of π, othewise known as Pi.
 func mathPi(scope *object.Scope, tok token.Token) object.Object {
-	pi, _ := decimal.NewFromString("3.141592653589793")
-
-	return &object.Number{Value: pi}
+	return object.NewFloat(math.Pi)
 }
 
 // mathE returns the value of e, otherwise known as Euler's number.
 func mathE(scope *object.Scope, tok token.Token) object.Object {
-	e, _ := decimal.NewFromString("2.718281828459045")
-
-	return &object.Number{Value: e}
+	return object.NewFloat(math.E)
 }
 
 // mathTau returns the value of τ, otherwise known as Tau. Tau is a circle
-// constant equal to 2π, the ratio of a circle’s circumference to its radius.
+// constant equal to 2π, the ratio of a circle's circumference to its radius.
 func mathTau(scope *object.Scope, tok token.Token) object.Object {
-	tau, _ := decimal.NewFromString("6.283185307179586")
-
-	return &object.Number{Value: tau}
+	return object.NewFloat(2 * math.Pi)
 }
 
 // mathEpsilon returns the value of ϵ, otherwise known as Epsilon. Epsilon
 // represents the difference between 1 and the smallest floating point number
 // greater than 1.
 func mathEpsilon(scope *object.Scope, tok token.Token) object.Object {
-	epsilon, _ := decimal.NewFromString("2.2204460492503130808472633361816E-16")
-
-	return &object.Number{Value: epsilon}
+	return object.NewFloat(math.SmallestNonzeroFloat64)
 }

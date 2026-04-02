@@ -552,8 +552,8 @@ func isNumberObject(t *testing.T, obj object.Object, expected int64) bool {
 		return false
 	}
 
-	if number.Value.IntPart() != expected {
-		t.Errorf("object has wrong value. got=%d, expected=%d", number.Value.IntPart(), expected)
+	if number.Int64() != expected {
+		t.Errorf("object has wrong value. got=%d, expected=%d", number.Int64(), expected)
 		return false
 	}
 

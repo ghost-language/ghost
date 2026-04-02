@@ -4,10 +4,9 @@ import (
 	"fmt"
 	"hash/fnv"
 	"regexp"
+	"strconv"
 	"strings"
 	"unicode/utf8"
-
-	"github.com/shopspring/decimal"
 )
 
 const STRING = "STRING"
@@ -120,9 +119,7 @@ func (str *String) endsWith(args []Object) (Object, bool) {
 }
 
 func (str *String) length(args []Object) (Object, bool) {
-	length := &Number{Value: decimal.NewFromInt(int64(utf8.RuneCountInString(str.Value)))}
-
-	return length, true
+	return NewInt(int64(utf8.RuneCountInString(str.Value))), true
 }
 
 func (str *String) matches(args []Object) (Object, bool) {
@@ -171,9 +168,19 @@ func (str *String) toString(args []Object) (Object, bool) {
 }
 
 func (str *String) toNumber(args []Object) (Object, bool) {
-	number, _ := decimal.NewFromString(str.Value)
+	// Try integer first, then float.
+	if !strings.ContainsAny(str.Value, ".eE") {
+		if i, err := strconv.ParseInt(str.Value, 10, 64); err == nil {
+			return NewInt(i), true
+		}
+	}
 
-	return &Number{Value: number}, true
+	f, err := strconv.ParseFloat(str.Value, 64)
+	if err != nil {
+		return NewInt(0), true
+	}
+
+	return NewFloat(f), true
 }
 
 func (str *String) trim(args []Object) (Object, bool) {

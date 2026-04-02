@@ -5,7 +5,6 @@ import (
 
 	"ghostlang.org/x/ghost/object"
 	"ghostlang.org/x/ghost/token"
-	"github.com/shopspring/decimal"
 )
 
 func TestJsonDecode(t *testing.T) {
@@ -13,7 +12,7 @@ func TestJsonDecode(t *testing.T) {
 
 	expected := &object.Map{Pairs: map[object.MapKey]object.MapPair{
 		(&object.String{Value: "name"}).MapKey(): {Key: &object.String{Value: "name"}, Value: &object.String{Value: "Kai"}},
-		(&object.String{Value: "age"}).MapKey():  {Key: &object.String{Value: "age"}, Value: &object.Number{Value: decimal.NewFromInt(34)}},
+		(&object.String{Value: "age"}).MapKey():  {Key: &object.String{Value: "age"}, Value: object.NewInt(34)},
 	}}
 
 	result := jsonDecode(nil, token.Token{}, &object.String{Value: input})
@@ -26,7 +25,7 @@ func TestJsonDecode(t *testing.T) {
 func TestJsonEncode(t *testing.T) {
 	input := &object.Map{Pairs: map[object.MapKey]object.MapPair{
 		(&object.String{Value: "name"}).MapKey(): {Key: &object.String{Value: "name"}, Value: &object.String{Value: "Kai"}},
-		(&object.String{Value: "age"}).MapKey():  {Key: &object.String{Value: "age"}, Value: &object.Number{Value: decimal.NewFromInt(34)}},
+		(&object.String{Value: "age"}).MapKey():  {Key: &object.String{Value: "age"}, Value: object.NewInt(34)},
 	}}
 
 	expected := `{"age":34,"name":"Kai"}`

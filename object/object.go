@@ -3,7 +3,6 @@ package object
 import (
 	"ghostlang.org/x/ghost/ast"
 	"ghostlang.org/x/ghost/token"
-	"github.com/shopspring/decimal"
 )
 
 var evaluator func(node ast.Node, scope *Scope) Object
@@ -50,11 +49,11 @@ func AnyValueToObject(val any) Object {
 	case string:
 		return &String{Value: v}
 	case int:
-		return &Number{Value: decimal.NewFromInt(int64(v))}
+		return NewInt(int64(v))
 	case int64:
-		return &Number{Value: decimal.NewFromInt(int64(v))}
+		return NewInt(v)
 	case float64:
-		return &Number{Value: decimal.NewFromFloat(v)}
+		return NewFloat(v)
 	case nil:
 		return &Null{}
 	case []any:
@@ -91,14 +90,10 @@ func ObjectToAnyValue(val Object) any {
 	case *String:
 		return string(v.Value)
 	case *Number:
-		// Determine if value is an integer or float.
-		if v.Value.Exponent() <= 0 {
-			return int(v.Value.IntPart())
+		if v.IsFloat() {
+			return v.Float64()
 		}
-
-		num, _ := v.Value.Float64()
-
-		return num
+		return int(v.Int64())
 	case *Null:
 		return nil
 	case *List:

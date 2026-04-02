@@ -8,7 +8,6 @@ import (
 
 	"ghostlang.org/x/ghost/object"
 	"ghostlang.org/x/ghost/token"
-	"github.com/shopspring/decimal"
 )
 
 var OsMethods = map[string]*object.LibraryFunction{}
@@ -34,9 +33,7 @@ func osArgs(scope *object.Scope, tok token.Token, args ...object.Object) object.
 }
 
 func osClock(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
-	seconds := decimal.NewFromInt(time.Now().UnixNano())
-
-	return &object.Number{Value: seconds}
+	return object.NewInt(time.Now().UnixNano())
 }
 
 func osExit(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
@@ -70,7 +67,7 @@ func osExit(scope *object.Scope, tok token.Token, args ...object.Object) object.
 
 	arg := args[0].(*object.Number)
 
-	os.Exit(int(arg.Value.IntPart()))
+	os.Exit(int(arg.Int64()))
 
 	return arg
 }

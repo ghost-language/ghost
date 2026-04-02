@@ -3,8 +3,6 @@ package object
 import (
 	"bytes"
 	"strings"
-
-	"github.com/shopspring/decimal"
 )
 
 const LIST = "LIST"
@@ -86,7 +84,7 @@ func (list *List) last(args []Object) (Object, bool) {
 }
 
 func (list *List) length(args []Object) (Object, bool) {
-	return &Number{Value: decimal.NewFromInt(int64(len(list.Elements)))}, true
+	return NewInt(int64(len(list.Elements))), true
 }
 
 func (list *List) pop(args []Object) (Object, bool) {
@@ -110,7 +108,7 @@ func (list *List) push(args []Object) (Object, bool) {
 
 	list.Elements = newElements
 
-	return &Number{Value: decimal.NewFromInt(int64(newLength))}, true
+	return NewInt(int64(newLength)), true
 }
 
 func (list *List) tail(args []Object) (Object, bool) {
