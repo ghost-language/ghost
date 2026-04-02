@@ -2,11 +2,12 @@ package ast
 
 import (
 	"ghostlang.org/x/ghost/token"
-	"github.com/shopspring/decimal"
 )
 
 type Number struct {
 	ExpressionNode
-	Token token.Token
-	Value decimal.Decimal
+	Token      token.Token
+	IntValue   int64
+	FloatValue float64
+	IsFloat    bool
 }

@@ -31,9 +31,7 @@ func evaluatePrefix(node *ast.Prefix, scope *object.Scope) object.Object {
 			return newError("%d:%d:%s: runtime error: unknown operator: -%s", node.Token.Line, node.Token.Column, node.Token.File, right.Type())
 		}
 
-		numberValue := right.(*object.Number).Value.Neg()
-
-		return &object.Number{Value: numberValue}
+		return right.(*object.Number).Neg()
 	}
 
 	return newError("%d:%d:%s: runtime error: unknown operator: %s%s", node.Token.Line, node.Token.Column, node.Token.File, node.Operator, right.Type())

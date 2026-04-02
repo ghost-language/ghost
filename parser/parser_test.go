@@ -358,12 +358,14 @@ func TestInfixExpressions(t *testing.T) {
 
 func TestNumberLiteral(t *testing.T) {
 	tests := []struct {
-		input    string
-		expected string
+		input       string
+		isFloat     bool
+		intValue    int64
+		floatValue  float64
 	}{
-		{"5", "5"},
-		{"3.14", "3.14"},
-		{"5e10", "50000000000"},
+		{"5", false, 5, 0},
+		{"3.14", true, 0, 3.14},
+		{"5e10", true, 0, 5e10},
 	}
 
 	for _, tt := range tests {
@@ -389,8 +391,18 @@ func TestNumberLiteral(t *testing.T) {
 			t.Fatalf("statement is not ast.Number. got=%T", statement.Expression)
 		}
 
-		if number.Value.String() != tt.expected {
-			t.Fatalf("number.Value is not '%s'. got=%s", tt.expected, number.Value.String())
+		if number.IsFloat != tt.isFloat {
+			t.Fatalf("number.IsFloat is not '%t'. got=%t", tt.isFloat, number.IsFloat)
+		}
+
+		if tt.isFloat {
+			if number.FloatValue != tt.floatValue {
+				t.Fatalf("number.FloatValue is not '%g'. got=%g", tt.floatValue, number.FloatValue)
+			}
+		} else {
+			if number.IntValue != tt.intValue {
+				t.Fatalf("number.IntValue is not '%d'. got=%d", tt.intValue, number.IntValue)
+			}
 		}
 	}
 }
@@ -698,7 +710,7 @@ func TestMapLiteralsWithIntegerKeys(t *testing.T) {
 			t.Errorf("key is not ast.Number. got=%T", key)
 		}
 
-		expectedValue := expected[number.Value.IntPart()]
+		expectedValue := expected[number.IntValue]
 
 		isNumberLiteral(t, value, expectedValue)
 	}
@@ -1016,8 +1028,8 @@ func isNumberLiteral(t *testing.T, expression ast.ExpressionNode, value int64) b
 		t.Errorf("expression is not ast.Number. got=%T", expression)
 	}
 
-	if number.Value.IntPart() != value {
-		t.Errorf("number.Value is not %d. got=%d", value, number.Value.IntPart())
+	if number.IntValue != value {
+		t.Errorf("number.IntValue is not %d. got=%d", value, number.IntValue)
 	}
 
 	return true

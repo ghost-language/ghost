@@ -3,57 +3,54 @@ package evaluator
 import (
 	"ghostlang.org/x/ghost/ast"
 	"ghostlang.org/x/ghost/object"
-	"github.com/shopspring/decimal"
 )
 
 func evaluateNumber(node *ast.Number, scope *object.Scope) object.Object {
-	return &object.Number{Value: node.Value}
+	if node.IsFloat {
+		return object.NewFloat(node.FloatValue)
+	}
+	return object.NewInt(node.IntValue)
 }
 
 func evaluateNumberInfix(node *ast.Infix, left object.Object, right object.Object) object.Object {
-	leftValue := left.(*object.Number).Value
-	rightValue := right.(*object.Number).Value
+	leftNum := left.(*object.Number)
+	rightNum := right.(*object.Number)
 
 	switch node.Operator {
 	case "+":
-		return &object.Number{Value: leftValue.Add(rightValue)}
+		return leftNum.Add(rightNum)
 	case "-":
-		return &object.Number{Value: leftValue.Sub(rightValue)}
+		return leftNum.Sub(rightNum)
 	case "*":
-		return &object.Number{Value: leftValue.Mul(rightValue)}
+		return leftNum.Mul(rightNum)
 	case "/":
-		return &object.Number{Value: leftValue.Div(rightValue)}
+		return leftNum.Div(rightNum)
 	case "%":
-		return &object.Number{Value: leftValue.Mod(rightValue)}
+		return leftNum.Mod(rightNum)
 	case "<":
-		return toBooleanValue(leftValue.LessThan(rightValue))
+		return toBooleanValue(leftNum.LessThan(rightNum))
 	case "<=":
-		return toBooleanValue(leftValue.LessThanOrEqual(rightValue))
+		return toBooleanValue(leftNum.LessThanOrEqual(rightNum))
 	case ">":
-		return toBooleanValue(leftValue.GreaterThan(rightValue))
+		return toBooleanValue(leftNum.GreaterThan(rightNum))
 	case ">=":
-		return toBooleanValue(leftValue.GreaterThanOrEqual(rightValue))
+		return toBooleanValue(leftNum.GreaterThanOrEqual(rightNum))
 	case "==":
-		return toBooleanValue(leftValue.Equal(rightValue))
+		return toBooleanValue(leftNum.Equal(rightNum))
 	case "!=":
-		return toBooleanValue(!leftValue.Equal(rightValue))
+		return toBooleanValue(!leftNum.Equal(rightNum))
 	case "..":
-		numbers := make([]object.Object, 0)
-		one := decimal.NewFromInt(1)
-		number := leftValue
+		start := leftNum.Int64()
+		end := rightNum.Int64()
 
-		if leftValue.GreaterThan(rightValue) {
-			return &object.List{Elements: numbers}
+		if start > end {
+			return &object.List{Elements: []object.Object{}}
 		}
 
-		for {
-			numbers = append(numbers, &object.Number{Value: number})
+		numbers := make([]object.Object, 0, end-start+1)
 
-			if number.GreaterThanOrEqual(rightValue) {
-				break
-			}
-
-			number = number.Add(one)
+		for i := start; i <= end; i++ {
+			numbers = append(numbers, object.NewInt(i))
 		}
 
 		return &object.List{Elements: numbers}

@@ -6,7 +6,6 @@ import (
 
 	"ghostlang.org/x/ghost/object"
 	"ghostlang.org/x/ghost/token"
-	"github.com/shopspring/decimal"
 )
 
 var seed int64
@@ -31,11 +30,11 @@ func randomRandom(scope *object.Scope, tok token.Token, args ...object.Object) o
 	max := float64(1)
 
 	if len(args) > 0 {
-		max, _ = args[0].(*object.Number).Value.Float64()
+		max = args[0].(*object.Number).Float64()
 
 		if len(args) > 1 {
 			min = max
-			max, _ = args[1].(*object.Number).Value.Float64()
+			max = args[1].(*object.Number).Float64()
 		}
 	}
 
@@ -47,7 +46,7 @@ func randomRandom(scope *object.Scope, tok token.Token, args ...object.Object) o
 		number = randomizer.Float64()
 	}
 
-	return &object.Number{Value: decimal.NewFromFloat(number)}
+	return object.NewFloat(number)
 }
 
 // randomSeed sets the referenced number as the seed for the pseudo-random
@@ -55,7 +54,7 @@ func randomRandom(scope *object.Scope, tok token.Token, args ...object.Object) o
 // nano timestamp will be used.
 func randomSeed(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
 	if len(args) == 1 && args[0].Type() == object.NUMBER {
-		seed = args[0].(*object.Number).Value.IntPart()
+		seed = args[0].(*object.Number).Int64()
 	} else {
 		seed = time.Now().UnixNano()
 	}
@@ -69,5 +68,5 @@ func randomSeed(scope *object.Scope, tok token.Token, args ...object.Object) obj
 
 // randomSeedProperty returns the current seed value used internally.
 func randomSeedProperty(scope *object.Scope, tok token.Token) object.Object {
-	return &object.Number{Value: decimal.NewFromInt(seed)}
+	return object.NewInt(seed)
 }

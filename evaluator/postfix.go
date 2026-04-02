@@ -3,7 +3,6 @@ package evaluator
 import (
 	"ghostlang.org/x/ghost/ast"
 	"ghostlang.org/x/ghost/object"
-	"github.com/shopspring/decimal"
 )
 
 func evaluatePostfix(node *ast.Postfix, scope *object.Scope) object.Object {
@@ -19,11 +18,7 @@ func evaluatePostfix(node *ast.Postfix, scope *object.Scope) object.Object {
 			return newError("%d:%d:%s: runtime error: identifier is not a number: %s", node.Token.Line, node.Token.Column, node.Token.File, node.Token.Lexeme)
 		}
 
-		one := decimal.NewFromInt(1)
-
-		newValue := &object.Number{
-			Value: value.(*object.Number).Value.Add(one),
-		}
+		newValue := value.(*object.Number).Increment()
 
 		scope.Environment.Set(node.Token.Lexeme, newValue)
 
@@ -39,11 +34,7 @@ func evaluatePostfix(node *ast.Postfix, scope *object.Scope) object.Object {
 			return newError("%d:%d:%s: runtime error: identifier is not a number: %s", node.Token.Line, node.Token.Column, node.Token.File, node.Token.Lexeme)
 		}
 
-		one := decimal.NewFromInt(1)
-
-		newValue := &object.Number{
-			Value: value.(*object.Number).Value.Sub(one),
-		}
+		newValue := value.(*object.Number).Decrement()
 
 		scope.Environment.Set(node.Token.Lexeme, newValue)
 

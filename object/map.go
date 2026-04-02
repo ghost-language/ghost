@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"strings"
-
-	"github.com/shopspring/decimal"
 )
 
 const MAP = "MAP"
@@ -61,8 +59,9 @@ func NewMap(values map[string]interface{}) *Map {
 
 		switch val := value.(type) {
 		case int:
+			pairValue = NewInt(int64(val))
 		case int64:
-			pairValue = &Number{Value: decimal.NewFromInt(int64(val))}
+			pairValue = NewInt(val)
 		case string:
 			pairValue = &String{Value: val}
 		}

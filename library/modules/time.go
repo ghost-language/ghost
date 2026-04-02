@@ -5,7 +5,6 @@ import (
 
 	"ghostlang.org/x/ghost/object"
 	"ghostlang.org/x/ghost/token"
-	"github.com/shopspring/decimal"
 )
 
 var TimeMethods = map[string]*object.LibraryFunction{}
@@ -29,90 +28,65 @@ func init() {
 
 func timeSleep(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
 	if len(args) != 1 {
-		// TODO: error
 		return nil
 	}
 
 	if args[0].Type() != object.NUMBER {
-		// TODO: error
 		return nil
 	}
 
 	ms := args[0].(*object.Number)
-	time.Sleep(time.Duration(ms.Value.IntPart()) * time.Millisecond)
+	time.Sleep(time.Duration(ms.Int64()) * time.Millisecond)
 
 	return nil
 }
 
 func timeNow(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
 	if len(args) != 0 {
-		// TODO: error
 		return nil
 	}
 
-	unix := decimal.NewFromInt(time.Now().Unix())
-
-	return &object.Number{Value: unix}
+	return object.NewInt(time.Now().Unix())
 }
 
 // properties
 
 func timeNanosecond(scope *object.Scope, tok token.Token) object.Object {
-	nanosecond := decimal.NewFromFloat(0.00001)
-
-	return &object.Number{Value: nanosecond}
+	return object.NewFloat(0.00001)
 }
 
 func timeMicrosecond(scope *object.Scope, tok token.Token) object.Object {
-	microsecond := decimal.NewFromFloat(0.0001)
-
-	return &object.Number{Value: microsecond}
+	return object.NewFloat(0.0001)
 }
 
 func timeMillisecond(scope *object.Scope, tok token.Token) object.Object {
-	millisecond := decimal.NewFromFloat(0.001)
-
-	return &object.Number{Value: millisecond}
+	return object.NewFloat(0.001)
 }
 
 func timeSecond(scope *object.Scope, tok token.Token) object.Object {
-	second := decimal.NewFromInt(1)
-
-	return &object.Number{Value: second}
+	return object.NewInt(1)
 }
 
 func timeMinute(scope *object.Scope, tok token.Token) object.Object {
-	minute := decimal.NewFromInt(60)
-
-	return &object.Number{Value: minute}
+	return object.NewInt(60)
 }
 
 func timeHour(scope *object.Scope, tok token.Token) object.Object {
-	hour := decimal.NewFromInt(3600)
-
-	return &object.Number{Value: hour}
+	return object.NewInt(3600)
 }
 
 func timeDay(scope *object.Scope, tok token.Token) object.Object {
-	day := decimal.NewFromInt(86400)
-
-	return &object.Number{Value: day}
+	return object.NewInt(86400)
 }
 
 func timeWeek(scope *object.Scope, tok token.Token) object.Object {
-	week := decimal.NewFromInt(604800)
-
-	return &object.Number{Value: week}
+	return object.NewInt(604800)
 }
 
 func timeMonth(scope *object.Scope, tok token.Token) object.Object {
-	month := decimal.NewFromInt(2592000)
-
-	return &object.Number{Value: month}
+	return object.NewInt(2592000)
 }
 
 func timeYear(scope *object.Scope, tok token.Token) object.Object {
-	year := decimal.NewFromInt(31536000)
-
-	return &object.Number{Value: year}
+	return object.NewInt(31536000)
 }

@@ -3,7 +3,6 @@ package evaluator
 import (
 	"ghostlang.org/x/ghost/ast"
 	"ghostlang.org/x/ghost/object"
-	"github.com/shopspring/decimal"
 )
 
 func evaluateForIn(node *ast.ForIn, scope *object.Scope) object.Object {
@@ -33,7 +32,7 @@ func evaluateForIn(node *ast.ForIn, scope *object.Scope) object.Object {
 	switch obj := iterable.(type) {
 	case *object.List:
 		for k, v := range obj.Elements {
-			scope.Environment.Set(node.Key.Value, &object.Number{Value: decimal.NewFromInt(int64(k))})
+			scope.Environment.Set(node.Key.Value, object.NewInt(int64(k)))
 			scope.Environment.Set(node.Value.Value, v)
 
 			block := Evaluate(node.Block, scope)

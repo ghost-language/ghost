@@ -33,7 +33,7 @@ func evaluateIndex(node *ast.Index, scope *object.Scope) object.Object {
 
 func evaluateListIndex(node *ast.Index, left, index object.Object) object.Object {
 	list := left.(*object.List)
-	idx := index.(*object.Number).Value.IntPart()
+	idx := index.(*object.Number).Int64()
 	max := int64(len(list.Elements) - 1)
 
 	if idx < 0 || idx > max {
@@ -63,7 +63,7 @@ func evaluateMapIndex(node *ast.Index, left, index object.Object) object.Object 
 
 func evaluateStringIndex(node *ast.Index, left, index object.Object) object.Object {
 	str := left.(*object.String)
-	idx := index.(*object.Number).Value.IntPart()
+	idx := index.(*object.Number).Int64()
 	max := int64(len(str.Value) - 1)
 
 	if idx < 0 || idx > max {

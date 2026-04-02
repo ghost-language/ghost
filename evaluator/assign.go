@@ -44,7 +44,7 @@ func evaluateIndexAssignment(node *ast.Index, assignmentValue object.Object, sco
 
 	switch obj := left.(type) {
 	case *object.List:
-		idx := int(index.(*object.Number).Value.IntPart())
+		idx := int(index.(*object.Number).Int64())
 		elements := obj.Elements
 
 		if idx < 0 {
