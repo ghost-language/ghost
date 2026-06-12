@@ -111,10 +111,10 @@ func isError(obj object.Object) bool {
 	return false
 }
 
-// isTerminator determines if the referenced object is an error, break, or continue.
+// isTerminator determines if the referenced object is an error, break, continue, or return.
 func isTerminator(obj object.Object) bool {
 	if obj != nil {
-		return obj.Type() == object.ERROR || obj.Type() == object.BREAK || obj.Type() == object.CONTINUE
+		return obj.Type() == object.ERROR || obj.Type() == object.BREAK || obj.Type() == object.CONTINUE || obj.Type() == object.RETURN
 	}
 
 	return false

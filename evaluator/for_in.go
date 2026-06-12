@@ -41,6 +41,8 @@ func evaluateForIn(node *ast.ForIn, scope *object.Scope) object.Object {
 				switch val := block.(type) {
 				case *object.Error:
 					return val
+				case *object.Return:
+					return val
 				case *object.Continue:
 					//
 				case *object.Break:
@@ -60,6 +62,8 @@ func evaluateForIn(node *ast.ForIn, scope *object.Scope) object.Object {
 			if isTerminator(block) {
 				switch val := block.(type) {
 				case *object.Error:
+					return val
+				case *object.Return:
 					return val
 				case *object.Continue:
 					//

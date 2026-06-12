@@ -39,6 +39,8 @@ func evaluateFor(node *ast.For, scope *object.Scope) object.Object {
 				switch val := err.(type) {
 				case *object.Error:
 					return val
+				case *object.Return:
+					return val
 				case *object.Continue:
 					//
 				case *object.Break:

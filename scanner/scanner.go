@@ -197,11 +197,10 @@ func (scanner *Scanner) ScanToken() token.Token {
 	return scannedToken
 }
 
-// scanString consumes characters until it hits either the closing or end of
-// file. If we run to the end of the file without a closing ", we report an
-// error.
+// scanString consumes characters until it hits either the closing quote or end
+// of file, processing backslash escape sequences along the way.
 func (scanner *Scanner) scanString(closing rune) string {
-	position := scanner.position + 1
+	var result []rune
 
 	for {
 		scanner.readCharacter()
@@ -209,9 +208,33 @@ func (scanner *Scanner) scanString(closing rune) string {
 		if scanner.character == closing || scanner.isAtEnd() {
 			break
 		}
+
+		if scanner.character == '\\' {
+			scanner.readCharacter()
+			switch scanner.character {
+			case 'n':
+				result = append(result, '\n')
+			case 't':
+				result = append(result, '\t')
+			case 'r':
+				result = append(result, '\r')
+			case '\\':
+				result = append(result, '\\')
+			case '"':
+				result = append(result, '"')
+			case '\'':
+				result = append(result, '\'')
+			default:
+				result = append(result, '\\')
+				result = append(result, scanner.character)
+			}
+			continue
+		}
+
+		result = append(result, scanner.character)
 	}
 
-	return string(scanner.source[position:scanner.position])
+	return string(result)
 }
 
 // scanNumber consumes all digits for the integer part of the literal, and then

@@ -74,10 +74,16 @@ func evaluateInstanceMethod(node *ast.Method, receiver *object.Instance, name st
 		}
 	}
 
-	// if we dont have a method, check for a trait
+	// if we dont have a method, check for a trait up the superclass chain
 	if method == nil {
-		for _, trait := range receiver.Class.Traits {
-			method, ok = trait.Environment.Get(name)
+		for c := receiver.Class; c != nil; c = c.Super {
+			for _, trait := range c.Traits {
+				method, ok = trait.Environment.Get(name)
+
+				if ok {
+					break
+				}
+			}
 
 			if ok {
 				break
