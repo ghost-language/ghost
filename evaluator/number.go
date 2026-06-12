@@ -24,8 +24,14 @@ func evaluateNumberInfix(node *ast.Infix, left object.Object, right object.Objec
 	case "*":
 		return leftNum.Mul(rightNum)
 	case "/":
+		if rightNum.IsZero() {
+			return newError("%d:%d:%s: runtime error: division by zero", node.Token.Line, node.Token.Column, node.Token.File)
+		}
 		return leftNum.Div(rightNum)
 	case "%":
+		if rightNum.IsZero() {
+			return newError("%d:%d:%s: runtime error: division by zero", node.Token.Line, node.Token.Column, node.Token.File)
+		}
 		return leftNum.Mod(rightNum)
 	case "<":
 		return toBooleanValue(leftNum.LessThan(rightNum))

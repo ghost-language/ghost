@@ -22,9 +22,7 @@ func evaluateAssign(node *ast.Assign, scope *object.Scope) object.Object {
 		return evaluatePropertyAssignment(assignment, value, scope)
 	}
 
-	object.NewError("%d:%d:%s: runtime error: cannot assign variable to a %T", node.Token.Line, node.Token.Column, node.Token.File, node.Name)
-
-	return nil
+	return object.NewError("%d:%d:%s: runtime error: cannot assign variable to a %T", node.Token.Line, node.Token.Column, node.Token.File, node.Name)
 }
 
 func evaluateIdentifierAssignment(node *ast.Identifier, value object.Object, scope *object.Scope) object.Object {
@@ -44,7 +42,11 @@ func evaluateIndexAssignment(node *ast.Index, assignmentValue object.Object, sco
 
 	switch obj := left.(type) {
 	case *object.List:
-		idx := int(index.(*object.Number).Int64())
+		numIdx, ok := index.(*object.Number)
+		if !ok {
+			return object.NewError("%d:%d:%s: runtime error: list index must be a number, got %s", node.Token.Line, node.Token.Column, node.Token.File, index.Type())
+		}
+		idx := int(numIdx.Int64())
 		elements := obj.Elements
 
 		if idx < 0 {

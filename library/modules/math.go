@@ -135,7 +135,7 @@ func mathTan(scope *object.Scope, tok token.Token, args ...object.Object) object
 // mathMax returns the largest number of the referenced numbers.
 func mathMax(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
 	if len(args) < 2 {
-		panic("math.max requires at least two arguments")
+		return object.NewError("%d:%d:%s: runtime error: math.max requires at least two arguments", tok.Line, tok.Column, tok.File)
 	}
 
 	if args[0].Type() != object.NUMBER {
@@ -159,7 +159,7 @@ func mathMax(scope *object.Scope, tok token.Token, args ...object.Object) object
 // mathMin returns the smallest number of the referenced numbers.
 func mathMin(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
 	if len(args) < 2 {
-		panic("math.min requires at least two arguments")
+		return object.NewError("%d:%d:%s: runtime error: math.min requires at least two arguments", tok.Line, tok.Column, tok.File)
 	}
 
 	if args[0].Type() != object.NUMBER {

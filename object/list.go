@@ -62,6 +62,9 @@ func (list *List) Method(method string, args []Object) (Object, bool) {
 // Object methods
 
 func (list *List) first(args []Object) (Object, bool) {
+	if len(list.Elements) == 0 {
+		return &Null{}, true
+	}
 	return list.Elements[0], true
 }
 
@@ -80,6 +83,9 @@ func (list *List) join(args []Object) (Object, bool) {
 func (list *List) last(args []Object) (Object, bool) {
 	length := len(list.Elements)
 
+	if length == 0 {
+		return &Null{}, true
+	}
 	return list.Elements[length-1], true
 }
 

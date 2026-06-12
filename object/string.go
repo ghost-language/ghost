@@ -84,7 +84,7 @@ func (str *String) find(args []Object) (Object, bool) {
 	found := re.FindStringSubmatch(args[0].(*String).Value)
 
 	if len(found) > 0 {
-		return &String{Value: found[1]}, true
+		return &String{Value: found[0]}, true
 	}
 
 	return &String{}, true
