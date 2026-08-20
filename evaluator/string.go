@@ -3,6 +3,7 @@ package evaluator
 import (
 	"ghostlang.org/x/ghost/ast"
 	"ghostlang.org/x/ghost/object"
+	"ghostlang.org/x/ghost/token"
 )
 
 func evaluateString(node *ast.String, scope *object.Scope) object.Object {
@@ -14,19 +15,19 @@ func evaluateStringInfix(node *ast.Infix, left object.Object, right object.Objec
 	rightValue := right.String()
 
 	switch node.Operator {
-	case "+":
+	case token.PLUS:
 		return &object.String{Value: leftValue + rightValue}
-	case "<":
+	case token.LESS:
 		return &object.Boolean{Value: leftValue < rightValue}
-	case "<=":
+	case token.LESSEQUAL:
 		return &object.Boolean{Value: leftValue <= rightValue}
-	case ">":
+	case token.GREATER:
 		return &object.Boolean{Value: leftValue > rightValue}
-	case ">=":
+	case token.GREATEREQUAL:
 		return &object.Boolean{Value: leftValue >= rightValue}
-	case "==":
+	case token.EQUALEQUAL:
 		return &object.Boolean{Value: leftValue == rightValue}
-	case "!=":
+	case token.BANGEQUAL:
 		return &object.Boolean{Value: leftValue != rightValue}
 	}
 

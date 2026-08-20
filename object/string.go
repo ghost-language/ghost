@@ -9,8 +9,6 @@ import (
 	"unicode/utf8"
 )
 
-const STRING = "STRING"
-
 // String objects consist of a string value.
 type String struct {
 	Value string

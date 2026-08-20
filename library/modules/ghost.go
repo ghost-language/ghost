@@ -36,7 +36,7 @@ func ghostAbort(scope *object.Scope, tok token.Token, args ...object.Object) obj
 		return object.NewError(obj.Value)
 	}
 
-	return object.NewError("%d:%d: runtime error: ghost.abort() expects the first argument to be of type 'null' or 'string'. got=%s", tok.Line, tok.Column, strings.ToLower(string(args[0].Type())))
+	return object.NewError("%d:%d: runtime error: ghost.abort() expects the first argument to be of type 'null' or 'string'. got=%s", tok.Line, tok.Column, strings.ToLower(args[0].Type().String()))
 }
 
 func ghostExecute(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
@@ -47,7 +47,7 @@ func ghostExecute(scope *object.Scope, tok token.Token, args ...object.Object) o
 	source, ok := args[0].(*object.String)
 
 	if !ok {
-		return object.NewError("%d:%d: runtime error: ghost.execute() expects the first argument to be of type 'string'. got=%s", tok.Line, tok.Column, strings.ToLower(string(args[0].Type())))
+		return object.NewError("%d:%d: runtime error: ghost.execute() expects the first argument to be of type 'string'. got=%s", tok.Line, tok.Column, strings.ToLower(args[0].Type().String()))
 	}
 
 	scanner := scanner.New(source.Value, tok.File)
@@ -65,7 +65,7 @@ func ghostExtend(scope *object.Scope, tok token.Token, args ...object.Object) ob
 	basePath, ok := args[0].(*object.String)
 
 	if !ok {
-		return object.NewError("%d:%d: runtime error: ghost.extend() expects the first argument to be of type 'string'. got=%s", tok.Line, tok.Column, strings.ToLower(string(args[0].Type())))
+		return object.NewError("%d:%d: runtime error: ghost.extend() expects the first argument to be of type 'string'. got=%s", tok.Line, tok.Column, strings.ToLower(args[0].Type().String()))
 	}
 
 	path := path.Clean(scope.Environment.GetDirectory() + "/" + basePath.Value)

@@ -6,8 +6,6 @@ import (
 	"strings"
 )
 
-const MAP = "MAP"
-
 // Map objects consist of a map value.
 type Map struct {
 	Pairs map[MapKey]MapPair

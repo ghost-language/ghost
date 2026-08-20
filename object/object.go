@@ -7,8 +7,62 @@ import (
 
 var evaluator func(node ast.Node, scope *Scope) Object
 
-// Type is the type of the object given as a string.
-type Type string
+// Type identifies the runtime type of an object. It is an integer rather than a
+// string so that the type comparisons the evaluator performs on every operation
+// are single-word compares instead of string compares, and so that MapKey hashes
+// over a machine word. String() keeps the human-readable name for error messages.
+type Type int
+
+const (
+	BOOLEAN Type = iota
+	BREAK
+	CLASS
+	CONTINUE
+	ERROR
+	FUNCTION
+	INSTANCE
+	LIBRARY_FUNCTION
+	LIBRARY_MODULE
+	LIBRARY_PROPERTY
+	LIST
+	MAP
+	NULL
+	NUMBER
+	RETURN
+	SCOPE
+	STRING
+	TRAIT
+)
+
+var typeNames = [...]string{
+	BOOLEAN:          "BOOLEAN",
+	BREAK:            "BREAK",
+	CLASS:            "CLASS",
+	CONTINUE:         "CONTINUE",
+	ERROR:            "ERROR",
+	FUNCTION:         "FUNCTION",
+	INSTANCE:         "INSTANCE",
+	LIBRARY_FUNCTION: "LIBRARY_FUNCTION",
+	LIBRARY_MODULE:   "LIBRARY_MODULE",
+	LIBRARY_PROPERTY: "LIBRARY_PROPERTY",
+	LIST:             "LIST",
+	MAP:              "MAP",
+	NULL:             "NULL",
+	NUMBER:           "NUMBER",
+	RETURN:           "RETURN",
+	SCOPE:            "SCOPE",
+	STRING:           "STRING",
+	TRAIT:            "TRAIT",
+}
+
+// String returns the name of the type, as used in runtime error messages.
+func (t Type) String() string {
+	if int(t) < 0 || int(t) >= len(typeNames) {
+		return "UNKNOWN"
+	}
+
+	return typeNames[t]
+}
 
 // Object is the interface for all object values.
 type Object interface {

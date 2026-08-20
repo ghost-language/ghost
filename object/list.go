@@ -5,8 +5,6 @@ import (
 	"strings"
 )
 
-const LIST = "LIST"
-
 // List objects consist of a nil value.
 type List struct {
 	Elements []Object

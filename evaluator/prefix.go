@@ -3,6 +3,7 @@ package evaluator
 import (
 	"ghostlang.org/x/ghost/ast"
 	"ghostlang.org/x/ghost/object"
+	"ghostlang.org/x/ghost/token"
 	"ghostlang.org/x/ghost/value"
 )
 
@@ -14,7 +15,7 @@ func evaluatePrefix(node *ast.Prefix, scope *object.Scope) object.Object {
 	}
 
 	switch node.Operator {
-	case "!":
+	case token.BANG:
 		switch right {
 		case value.TRUE:
 			return value.FALSE
@@ -25,7 +26,7 @@ func evaluatePrefix(node *ast.Prefix, scope *object.Scope) object.Object {
 		default:
 			return value.FALSE
 		}
-	case "-":
+	case token.MINUS:
 		// Only works with number objects
 		if right.Type() != object.NUMBER {
 			return newError("%d:%d:%s: runtime error: unknown operator: -%s", node.Token.Line, node.Token.Column, node.Token.File, right.Type())

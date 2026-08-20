@@ -4,8 +4,6 @@ import (
 	"ghostlang.org/x/ghost/ast"
 )
 
-const CLASS = "CLASS"
-
 // Class objects consist of a body and an environment.
 type Class struct {
 	Name        *ast.Identifier

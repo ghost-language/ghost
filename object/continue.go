@@ -1,7 +1,5 @@
 package object
 
-const CONTINUE = "CONTINUE"
-
 // Continue objects consist of a nil value.
 type Continue struct{}
 

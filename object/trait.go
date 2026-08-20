@@ -2,8 +2,6 @@ package object
 
 import "ghostlang.org/x/ghost/ast"
 
-const TRAIT = "TRAIT"
-
 // Trait objects consist of a body and an environment.
 type Trait struct {
 	Name        *ast.Identifier

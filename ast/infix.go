@@ -6,6 +6,6 @@ type Infix struct {
 	ExpressionNode
 	Token    token.Token
 	Left     ExpressionNode
-	Operator string
+	Operator token.Type
 	Right    ExpressionNode
 }

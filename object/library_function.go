@@ -2,8 +2,6 @@ package object
 
 import "fmt"
 
-const LIBRARY_FUNCTION = "LIBRARY_FUNCTION"
-
 // LibraryFunction objects consist of a native Go function.
 type LibraryFunction struct {
 	Name     string

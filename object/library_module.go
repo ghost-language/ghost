@@ -1,7 +1,5 @@
 package object
 
-const LIBRARY_MODULE = "LIBRARY_MODULE"
-
 // LibraryModule objects consist of a slice of LibraryFunctions.
 type LibraryModule struct {
 	Name       string

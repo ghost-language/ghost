@@ -7,7 +7,7 @@ import (
 func (parser *Parser) infixExpression(left ast.ExpressionNode) ast.ExpressionNode {
 	infix := &ast.Infix{
 		Token:    parser.currentToken,
-		Operator: parser.currentToken.Lexeme,
+		Operator: parser.currentToken.Type,
 		Left:     left,
 	}
 

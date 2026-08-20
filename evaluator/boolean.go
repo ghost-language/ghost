@@ -3,6 +3,7 @@ package evaluator
 import (
 	"ghostlang.org/x/ghost/ast"
 	"ghostlang.org/x/ghost/object"
+	"ghostlang.org/x/ghost/token"
 )
 
 func evaluateBoolean(node *ast.Boolean, scope *object.Scope) object.Object {
@@ -14,13 +15,13 @@ func evaluateBooleanInfix(node *ast.Infix, left object.Object, right object.Obje
 	rightValue := right.(*object.Boolean).Value
 
 	switch node.Operator {
-	case "and":
+	case token.AND:
 		return toBooleanValue(leftValue && rightValue)
-	case "or":
+	case token.OR:
 		return toBooleanValue(leftValue || rightValue)
-	case "==":
+	case token.EQUALEQUAL:
 		return toBooleanValue(leftValue == rightValue)
-	case "!=":
+	case token.BANGEQUAL:
 		return toBooleanValue(leftValue != rightValue)
 	}
 

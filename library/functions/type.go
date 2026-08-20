@@ -12,7 +12,7 @@ func Type(scope *object.Scope, tok token.Token, args ...object.Object) object.Ob
 		return object.NewError("%d:%d: runtime error: type() expects 1 argument. got=%d", tok.Line, tok.Column, len(args))
 	}
 
-	objectType := string(args[0].Type())
+	objectType := args[0].Type().String()
 
 	return &object.String{Value: strings.ToLower(objectType)}
 }

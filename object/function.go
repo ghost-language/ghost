@@ -6,8 +6,6 @@ import (
 	"ghostlang.org/x/ghost/ast"
 )
 
-const FUNCTION = "FUNCTION"
-
 // Function objects consist of a user-generated function.
 type Function struct {
 	Parameters []*ast.Identifier

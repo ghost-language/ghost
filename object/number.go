@@ -6,8 +6,6 @@ import (
 	"strconv"
 )
 
-const NUMBER = "NUMBER"
-
 // Number objects represent numeric values using either int64 or float64 internally.
 // Integer operations stay as int64 for speed and exactness.
 // Float operations use float64. Division always promotes to float.

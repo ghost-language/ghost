@@ -4,8 +4,6 @@ import (
 	"fmt"
 )
 
-const ERROR = "ERROR"
-
 // Error objects consist of a nil value.
 type Error struct {
 	Message string

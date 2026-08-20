@@ -6,8 +6,6 @@ import (
 	"ghostlang.org/x/ghost/token"
 )
 
-const INSTANCE = "INSTANCE"
-
 // Instance objects consist of a body and an environment.
 type Instance struct {
 	Class       *Class

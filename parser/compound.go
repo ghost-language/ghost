@@ -7,7 +7,7 @@ import (
 func (parser *Parser) compoundExpression(left ast.ExpressionNode) ast.ExpressionNode {
 	compound := &ast.Compound{
 		Token:    parser.currentToken,
-		Operator: parser.currentToken.Lexeme,
+		Operator: parser.currentToken.Type,
 		Left:     left,
 	}
 
