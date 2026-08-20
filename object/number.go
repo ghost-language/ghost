@@ -6,8 +6,6 @@ import (
 	"strconv"
 )
 
-const NUMBER = "NUMBER"
-
 // Number objects represent numeric values using either int64 or float64 internally.
 // Integer operations stay as int64 for speed and exactness.
 // Float operations use float64. Division always promotes to float.
@@ -17,8 +15,31 @@ type Number struct {
 	isFloat bool
 }
 
-// NewInt creates a new integer Number.
+// Bounds of the preallocated small-integer cache. Loop counters, indices, and
+// list lengths overwhelmingly fall in this range, so interning them removes a
+// heap allocation from nearly every arithmetic operation. Number is immutable
+// (its fields are unexported and never reassigned after construction), which is
+// what makes sharing these instances safe.
+const (
+	smallIntMin = -128
+	smallIntMax = 1024
+)
+
+var smallInts [smallIntMax - smallIntMin + 1]Number
+
+func init() {
+	for index := range smallInts {
+		smallInts[index] = Number{i: int64(index + smallIntMin)}
+	}
+}
+
+// NewInt creates a new integer Number, returning a shared instance for small
+// values.
 func NewInt(i int64) *Number {
+	if i >= smallIntMin && i <= smallIntMax {
+		return &smallInts[i-smallIntMin]
+	}
+
 	return &Number{i: i}
 }
 

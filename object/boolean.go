@@ -2,8 +2,6 @@ package object
 
 import "fmt"
 
-const BOOLEAN = "BOOLEAN"
-
 // Boolean objects consist of a boolean value.
 type Boolean struct {
 	Value bool

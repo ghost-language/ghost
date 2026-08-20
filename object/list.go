@@ -5,8 +5,6 @@ import (
 	"strings"
 )
 
-const LIST = "LIST"
-
 // List objects consist of a nil value.
 type List struct {
 	Elements []Object
@@ -105,16 +103,9 @@ func (list *List) pop(args []Object) (Object, bool) {
 }
 
 func (list *List) push(args []Object) (Object, bool) {
-	length := len(list.Elements)
-	newLength := length + 1
+	list.Elements = append(list.Elements, args[0])
 
-	newElements := make([]Object, newLength)
-	copy(newElements, list.Elements)
-	newElements[length] = args[0]
-
-	list.Elements = newElements
-
-	return NewInt(int64(newLength)), true
+	return NewInt(int64(len(list.Elements))), true
 }
 
 func (list *List) tail(args []Object) (Object, bool) {

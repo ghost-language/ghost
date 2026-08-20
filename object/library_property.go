@@ -2,8 +2,6 @@ package object
 
 import "fmt"
 
-const LIBRARY_PROPERTY = "LIBRARY_PROPERTY"
-
 // LibraryProperty objects consist of a native Go property.
 type LibraryProperty struct {
 	Name     string

@@ -27,13 +27,13 @@ func ioAppend(scope *object.Scope, tok token.Token, args ...object.Object) objec
 	basePath, ok := args[0].(*object.String)
 
 	if !ok {
-		return object.NewError("%d:%d: runtime error: io.append() expects first argument to be of type 'string'. got=%s", tok.Line, tok.Column, strings.ToLower(string(args[0].Type())))
+		return object.NewError("%d:%d: runtime error: io.append() expects first argument to be of type 'string'. got=%s", tok.Line, tok.Column, strings.ToLower(args[0].Type().String()))
 	}
 
 	content, ok := args[1].(*object.String)
 
 	if !ok {
-		return object.NewError("%d:%d: runtime error: io.append() expects second argument to be of type 'string'. got=%s", tok.Line, tok.Column, strings.ToLower(string(args[1].Type())))
+		return object.NewError("%d:%d: runtime error: io.append() expects second argument to be of type 'string'. got=%s", tok.Line, tok.Column, strings.ToLower(args[1].Type().String()))
 	}
 
 	cleanPath := path.Clean(scope.Environment.GetDirectory() + "/" + basePath.Value)
@@ -59,7 +59,7 @@ func ioRead(scope *object.Scope, tok token.Token, args ...object.Object) object.
 	basePath, ok := args[0].(*object.String)
 
 	if !ok {
-		return object.NewError("%d:%d: runtime error: io.read() expects first argument to be of type 'string'. got=%s", tok.Line, tok.Column, strings.ToLower(string(args[0].Type())))
+		return object.NewError("%d:%d: runtime error: io.read() expects first argument to be of type 'string'. got=%s", tok.Line, tok.Column, strings.ToLower(args[0].Type().String()))
 	}
 
 	path := path.Clean(scope.Environment.GetDirectory() + "/" + basePath.Value)
@@ -80,13 +80,13 @@ func ioWrite(scope *object.Scope, tok token.Token, args ...object.Object) object
 	basePath, ok := args[0].(*object.String)
 
 	if !ok {
-		return object.NewError("%d:%d: runtime error: io.write() expects first argument to be of type 'string'. got=%s", tok.Line, tok.Column, strings.ToLower(string(args[0].Type())))
+		return object.NewError("%d:%d: runtime error: io.write() expects first argument to be of type 'string'. got=%s", tok.Line, tok.Column, strings.ToLower(args[0].Type().String()))
 	}
 
 	content, ok := args[1].(*object.String)
 
 	if !ok {
-		return object.NewError("%d:%d: runtime error: io.write() expects second argument to be of type 'string'. got=%s", tok.Line, tok.Column, strings.ToLower(string(args[1].Type())))
+		return object.NewError("%d:%d: runtime error: io.write() expects second argument to be of type 'string'. got=%s", tok.Line, tok.Column, strings.ToLower(args[1].Type().String()))
 	}
 
 	path := path.Clean(scope.Environment.GetDirectory() + "/" + basePath.Value)

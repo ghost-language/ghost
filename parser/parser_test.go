@@ -342,7 +342,7 @@ func TestInfixExpressions(t *testing.T) {
 			t.Fatalf("statement is not ast.Infix. got=%T", statement.Expression)
 		}
 
-		if infix.Operator != tt.operator {
+		if infix.Operator.String() != tt.operator {
 			t.Fatalf("infix.Operator is not '%s'. got=%s", tt.operator, infix.Operator)
 		}
 
@@ -358,10 +358,10 @@ func TestInfixExpressions(t *testing.T) {
 
 func TestNumberLiteral(t *testing.T) {
 	tests := []struct {
-		input       string
-		isFloat     bool
-		intValue    int64
-		floatValue  float64
+		input      string
+		isFloat    bool
+		intValue   int64
+		floatValue float64
 	}{
 		{"5", false, 5, 0},
 		{"3.14", true, 0, 3.14},
@@ -440,7 +440,7 @@ func TestPrefixExpressions(t *testing.T) {
 			t.Fatalf("statement is not ast.Prefix. got=%T", statement.Expression)
 		}
 
-		if prefix.Operator != tt.operator {
+		if prefix.Operator.String() != tt.operator {
 			t.Fatalf("prefix.Operator is not '%s'. got=%s", tt.operator, prefix.Operator)
 		}
 
@@ -482,7 +482,7 @@ func TestPostfixExpressions(t *testing.T) {
 			t.Fatalf("statement is not ast.Postfix. got=%T", statement.Expression)
 		}
 
-		if postfix.Operator != tt.operator {
+		if postfix.Operator.String() != tt.operator {
 			t.Fatalf("postfix.Operator is not '%s'. got=%s", tt.operator, postfix.Operator)
 		}
 	}
@@ -992,7 +992,7 @@ func isInfixExpression(t *testing.T, expression ast.ExpressionNode, left interfa
 		return false
 	}
 
-	if operatorExpression.Operator != operator {
+	if operatorExpression.Operator.String() != operator {
 		t.Errorf("expression.Operator is not '%s'. got=%q", operator, operatorExpression.Operator)
 		return false
 	}

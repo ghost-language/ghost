@@ -1,7 +1,5 @@
 package object
 
-const SCOPE = "SCOPE"
-
 // Scope objects consist of an environment and parent object.
 type Scope struct {
 	Environment *Environment

@@ -1,7 +1,5 @@
 package object
 
-const NULL = "NULL"
-
 // Null objects consist of a nil value.
 type Null struct{}
 

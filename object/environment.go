@@ -5,17 +5,32 @@ import (
 	"os"
 )
 
+// inlineCapacity is how many variables an environment stores inline, in the
+// environment struct itself, before it falls back to a map.
+//
+// Every function call builds a new environment, and almost all of them hold
+// only a handful of names: the parameters plus a few locals. A map is a poor
+// fit for that. Allocating one, and growing its buckets as names are set,
+// dominated the memory profile of call-heavy programs. Storing the first few
+// names inline means an environment costs a single allocation and lookups are
+// a short scan of adjacent memory rather than a hash. Environments that hold
+// more names than this - module and class scopes, mainly - spill the remainder
+// into the overflow map and keep their previous behavior.
+const inlineCapacity = 4
+
 type Environment struct {
-	store     map[string]Object
+	names    [inlineCapacity]string
+	values   [inlineCapacity]Object
+	count    int
+	overflow map[string]Object
+
 	outer     *Environment
 	writer    io.Writer
 	directory string
 }
 
 func NewEnvironment() *Environment {
-	store := make(map[string]Object)
-
-	return &Environment{store: store, writer: os.Stdout}
+	return &Environment{writer: os.Stdout}
 }
 
 func NewEnclosedEnvironment(outer *Environment) *Environment {
@@ -26,12 +41,40 @@ func NewEnclosedEnvironment(outer *Environment) *Environment {
 	return environment
 }
 
+// local looks a name up in this environment only, ignoring the outer chain.
+func (environment *Environment) local(name string) (Object, bool) {
+	for index := 0; index < environment.count; index++ {
+		if environment.names[index] == name {
+			return environment.values[index], true
+		}
+	}
+
+	if environment.overflow != nil {
+		value, ok := environment.overflow[name]
+
+		return value, ok
+	}
+
+	return nil, false
+}
+
+// All returns a copy of the names bound in this environment.
 func (environment *Environment) All() map[string]Object {
-	return environment.store
+	all := make(map[string]Object, environment.count+len(environment.overflow))
+
+	for index := 0; index < environment.count; index++ {
+		all[environment.names[index]] = environment.values[index]
+	}
+
+	for name, value := range environment.overflow {
+		all[name] = value
+	}
+
+	return all
 }
 
 func (environment *Environment) Has(name string) bool {
-	_, ok := environment.store[name]
+	_, ok := environment.local(name)
 
 	if !ok && environment.outer != nil {
 		_, ok = environment.outer.Get(name)
@@ -41,7 +84,7 @@ func (environment *Environment) Has(name string) bool {
 }
 
 func (environment *Environment) Get(name string) (Object, bool) {
-	object, ok := environment.store[name]
+	object, ok := environment.local(name)
 
 	if !ok && environment.outer != nil {
 		object, ok = environment.outer.Get(name)
@@ -50,14 +93,62 @@ func (environment *Environment) Get(name string) (Object, bool) {
 	return object, ok
 }
 
+// Set binds a name in this environment, replacing any existing binding here.
+// It never walks the outer chain.
 func (environment *Environment) Set(name string, value Object) Object {
-	environment.store[name] = value
+	for index := 0; index < environment.count; index++ {
+		if environment.names[index] == name {
+			environment.values[index] = value
+
+			return value
+		}
+	}
+
+	if environment.overflow != nil {
+		if _, ok := environment.overflow[name]; ok {
+			environment.overflow[name] = value
+
+			return value
+		}
+	}
+
+	if environment.count < inlineCapacity {
+		environment.names[environment.count] = name
+		environment.values[environment.count] = value
+		environment.count++
+
+		return value
+	}
+
+	if environment.overflow == nil {
+		environment.overflow = make(map[string]Object)
+	}
+
+	environment.overflow[name] = value
 
 	return value
 }
 
 func (environment *Environment) Delete(name string) {
-	delete(environment.store, name)
+	for index := 0; index < environment.count; index++ {
+		if environment.names[index] != name {
+			continue
+		}
+
+		// Order is not meaningful here, so close the gap with the last entry
+		// and clear it so the removed value can be collected.
+		last := environment.count - 1
+
+		environment.names[index] = environment.names[last]
+		environment.values[index] = environment.values[last]
+		environment.names[last] = ""
+		environment.values[last] = nil
+		environment.count--
+
+		return
+	}
+
+	delete(environment.overflow, name)
 }
 
 func (environment *Environment) SetWriter(writer io.Writer) {

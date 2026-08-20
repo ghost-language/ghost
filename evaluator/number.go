@@ -3,6 +3,7 @@ package evaluator
 import (
 	"ghostlang.org/x/ghost/ast"
 	"ghostlang.org/x/ghost/object"
+	"ghostlang.org/x/ghost/token"
 )
 
 func evaluateNumber(node *ast.Number, scope *object.Scope) object.Object {
@@ -17,35 +18,35 @@ func evaluateNumberInfix(node *ast.Infix, left object.Object, right object.Objec
 	rightNum := right.(*object.Number)
 
 	switch node.Operator {
-	case "+":
+	case token.PLUS:
 		return leftNum.Add(rightNum)
-	case "-":
+	case token.MINUS:
 		return leftNum.Sub(rightNum)
-	case "*":
+	case token.STAR:
 		return leftNum.Mul(rightNum)
-	case "/":
+	case token.SLASH:
 		if rightNum.IsZero() {
 			return newError("%d:%d:%s: runtime error: division by zero", node.Token.Line, node.Token.Column, node.Token.File)
 		}
 		return leftNum.Div(rightNum)
-	case "%":
+	case token.PERCENT:
 		if rightNum.IsZero() {
 			return newError("%d:%d:%s: runtime error: division by zero", node.Token.Line, node.Token.Column, node.Token.File)
 		}
 		return leftNum.Mod(rightNum)
-	case "<":
+	case token.LESS:
 		return toBooleanValue(leftNum.LessThan(rightNum))
-	case "<=":
+	case token.LESSEQUAL:
 		return toBooleanValue(leftNum.LessThanOrEqual(rightNum))
-	case ">":
+	case token.GREATER:
 		return toBooleanValue(leftNum.GreaterThan(rightNum))
-	case ">=":
+	case token.GREATEREQUAL:
 		return toBooleanValue(leftNum.GreaterThanOrEqual(rightNum))
-	case "==":
+	case token.EQUALEQUAL:
 		return toBooleanValue(leftNum.Equal(rightNum))
-	case "!=":
+	case token.BANGEQUAL:
 		return toBooleanValue(!leftNum.Equal(rightNum))
-	case "..":
+	case token.DOTDOT:
 		start := leftNum.Int64()
 		end := rightNum.Int64()
 

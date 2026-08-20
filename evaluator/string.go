@@ -3,6 +3,7 @@ package evaluator
 import (
 	"ghostlang.org/x/ghost/ast"
 	"ghostlang.org/x/ghost/object"
+	"ghostlang.org/x/ghost/token"
 )
 
 func evaluateString(node *ast.String, scope *object.Scope) object.Object {
@@ -14,20 +15,20 @@ func evaluateStringInfix(node *ast.Infix, left object.Object, right object.Objec
 	rightValue := right.String()
 
 	switch node.Operator {
-	case "+":
+	case token.PLUS:
 		return &object.String{Value: leftValue + rightValue}
-	case "<":
-		return &object.Boolean{Value: leftValue < rightValue}
-	case "<=":
-		return &object.Boolean{Value: leftValue <= rightValue}
-	case ">":
-		return &object.Boolean{Value: leftValue > rightValue}
-	case ">=":
-		return &object.Boolean{Value: leftValue >= rightValue}
-	case "==":
-		return &object.Boolean{Value: leftValue == rightValue}
-	case "!=":
-		return &object.Boolean{Value: leftValue != rightValue}
+	case token.LESS:
+		return toBooleanValue(leftValue < rightValue)
+	case token.LESSEQUAL:
+		return toBooleanValue(leftValue <= rightValue)
+	case token.GREATER:
+		return toBooleanValue(leftValue > rightValue)
+	case token.GREATEREQUAL:
+		return toBooleanValue(leftValue >= rightValue)
+	case token.EQUALEQUAL:
+		return toBooleanValue(leftValue == rightValue)
+	case token.BANGEQUAL:
+		return toBooleanValue(leftValue != rightValue)
 	}
 
 	return newError("%d:%d:%s: runtime error: unknown operator: %s %s %s", node.Token.Line, node.Token.Column, node.Token.File, right.Type(), node.Operator, left.Type())

@@ -1,7 +1,5 @@
 package object
 
-const RETURN = "RETURN"
-
 // Return objects consist of a value.
 type Return struct {
 	Value Object

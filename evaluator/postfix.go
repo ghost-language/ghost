@@ -3,11 +3,12 @@ package evaluator
 import (
 	"ghostlang.org/x/ghost/ast"
 	"ghostlang.org/x/ghost/object"
+	"ghostlang.org/x/ghost/token"
 )
 
 func evaluatePostfix(node *ast.Postfix, scope *object.Scope) object.Object {
 	switch node.Operator {
-	case "++":
+	case token.PLUSPLUS:
 		value, ok := scope.Environment.Get(node.Token.Lexeme)
 
 		if !ok {
@@ -23,7 +24,7 @@ func evaluatePostfix(node *ast.Postfix, scope *object.Scope) object.Object {
 		scope.Environment.Set(node.Token.Lexeme, newValue)
 
 		return newValue
-	case "--":
+	case token.MINUSMINUS:
 		value, ok := scope.Environment.Get(node.Token.Lexeme)
 
 		if !ok {

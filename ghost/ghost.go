@@ -6,6 +6,7 @@ import (
 	"ghostlang.org/x/ghost/library/modules"
 	"ghostlang.org/x/ghost/log"
 	"ghostlang.org/x/ghost/object"
+	"ghostlang.org/x/ghost/optimizer"
 	"ghostlang.org/x/ghost/parser"
 	"ghostlang.org/x/ghost/scanner"
 	"ghostlang.org/x/ghost/value"
@@ -73,6 +74,8 @@ func (ghost *Ghost) Execute() object.Object {
 
 		return object.NewError(parser.Errors()[0])
 	}
+
+	program = optimizer.Optimize(program)
 
 	result := evaluator.Evaluate(program, ghost.Scope)
 

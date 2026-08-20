@@ -1,7 +1,5 @@
 package object
 
-const BREAK = "BREAK"
-
 // Break objects consist of a nil value.
 type Break struct{}
 
