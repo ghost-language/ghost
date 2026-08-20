@@ -13,23 +13,27 @@ func evaluateProperty(node *ast.Property, scope *object.Scope) object.Object {
 		return left
 	}
 
-	switch left.(type) {
-	case *object.Instance:
-		return evaluateInstanceProperty(left, node)
-	case *object.LibraryModule:
-		property := node.Property.(*ast.Identifier)
-		module := left.(*object.LibraryModule)
+	property := node.Property.(*ast.Identifier)
 
-		if function, ok := module.Properties[property.Value]; ok {
+	if left == nil {
+		return newError("%d:%d:%s: runtime error: cannot read property %s of a null value", node.Token.Line, node.Token.Column, node.Token.File, property.Value)
+	}
+
+	switch left := left.(type) {
+	case *object.Instance:
+		return evaluateInstanceProperty(left, left.Class, property)
+	case *object.Super:
+		return evaluateInstanceProperty(left.Instance, left.Class, property)
+	case *object.LibraryModule:
+		if function, ok := left.Properties[property.Value]; ok {
 			return unwrapCall(node.Token, function, nil, scope)
 		}
 
-		return newError("%d:%d:%s: runtime error: unknown property: %s.%s", node.Token.Line, node.Token.Column, node.Token.File, module.Name, property.Value)
+		return newError("%d:%d:%s: runtime error: unknown property: %s.%s", node.Token.Line, node.Token.Column, node.Token.File, left.Name, property.Value)
 	case *object.Map:
-		property := &object.String{Value: node.Property.(*ast.Identifier).Value}
-		mapObj := left.(*object.Map)
+		key := &object.String{Value: property.Value}
 
-		pair, ok := mapObj.Pairs[property.MapKey()]
+		pair, ok := left.Pairs[key.MapKey()]
 
 		if !ok {
 			return value.NULL
@@ -38,50 +42,23 @@ func evaluateProperty(node *ast.Property, scope *object.Scope) object.Object {
 		return pair.Value
 	}
 
-	return nil
+	return newError("%d:%d:%s: runtime error: cannot read property %s of %s", node.Token.Line, node.Token.Column, node.Token.File, property.Value, left.Type())
 }
 
-func evaluateInstanceProperty(left object.Object, node *ast.Property) object.Object {
-	var val object.Object
-
-	instance := left.(*object.Instance)
-	property := node.Property.(*ast.Identifier)
-
-	if instance.Environment.Has(property.Value) {
-		val, _ = instance.Environment.Get(property.Value)
-
-		return val
-	}
-
-	if instance.Class.Environment.Has(property.Value) {
-		val, _ = instance.Class.Environment.Get(property.Value)
-
-		return val
-	}
-
-	class := instance.Class.Super
-
-	for class != nil {
-		if class.Environment.Has(property.Value) {
-			val, _ = class.Environment.Get(property.Value)
-
-			return val
-		}
-
-		class = class.Super
-	}
-
-	for _, trait := range instance.Class.Traits {
-		if trait.Environment.Has(property.Value) {
-			val, _ = trait.Environment.Get(property.Value)
-
+// evaluateInstanceProperty reads a property off an instance: its own fields
+// first, then members declared on the class chain starting at `start`. Only the
+// instance's own bindings are consulted, never the enclosing lexical scope, so
+// a global of the same name cannot pose as a property.
+func evaluateInstanceProperty(instance *object.Instance, start *object.Class, property *ast.Identifier) object.Object {
+	if start == instance.Class {
+		if val, ok := instance.Environment.GetLocal(property.Value); ok {
 			return val
 		}
 	}
 
-	instance.Environment.Set(property.Value, value.NULL)
+	if member, _, ok := object.LookupMember(start, property.Value); ok {
+		return member
+	}
 
-	val, _ = instance.Environment.Get(property.Value)
-
-	return val
+	return value.NULL
 }

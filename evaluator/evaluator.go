@@ -58,6 +58,8 @@ func Evaluate(node ast.Node, scope *object.Scope) object.Object {
 		return evaluateMap(node, scope)
 	case *ast.Method:
 		return evaluateMethod(node, scope)
+	case *ast.New:
+		return evaluateNew(node, scope)
 	case *ast.Null:
 		return evaluateNull(node, scope)
 	case *ast.Number:
@@ -72,6 +74,8 @@ func Evaluate(node ast.Node, scope *object.Scope) object.Object {
 		return evaluateReturn(node, scope)
 	case *ast.String:
 		return evaluateString(node, scope)
+	case *ast.Super:
+		return evaluateSuper(node, scope)
 	case *ast.Switch:
 		return evaluateSwitch(node, scope)
 	case *ast.Ternary:

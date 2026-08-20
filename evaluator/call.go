@@ -24,6 +24,10 @@ func evaluateCall(node *ast.Call, scope *object.Scope) object.Object {
 }
 
 func unwrapCall(tok token.Token, callee object.Object, arguments []object.Object, scope *object.Scope) object.Object {
+	if callee == nil {
+		return newError("%d:%d:%s: runtime error: uncallable object: null", tok.Line, tok.Column, tok.File)
+	}
+
 	switch callee := callee.(type) {
 	case *object.LibraryFunction:
 		if result := callee.Function(scope, tok, arguments...); result != nil {
@@ -40,6 +44,16 @@ func unwrapCall(tok token.Token, callee object.Object, arguments []object.Object
 	case *object.Function:
 		functionEnvironment := createFunctionEnvironment(callee, arguments)
 		functionScope := &object.Scope{Self: callee, Environment: functionEnvironment}
+
+		// A function declared inside a method keeps that method's receiver, so
+		// `this` and `super` still work from within a closure.
+		if callee.Scope != nil {
+			if instance, ok := callee.Scope.Self.(*object.Instance); ok {
+				functionScope.Self = instance
+				functionScope.Class = callee.Scope.Class
+			}
+		}
+
 		evaluated := Evaluate(callee.Body, functionScope)
 
 		return unwrapReturn(evaluated)

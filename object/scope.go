@@ -4,6 +4,13 @@ package object
 type Scope struct {
 	Environment *Environment
 	Self        Object
+
+	// Class records which class declared the code currently executing. It is
+	// what `super` resolves against, so an inherited method always starts its
+	// super lookup from its own declaring class rather than from the receiver's
+	// class — otherwise a method inherited two levels down would resolve
+	// `super` back to itself.
+	Class *Class
 }
 
 // String represents the scope object's value as a string.

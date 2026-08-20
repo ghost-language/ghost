@@ -25,7 +25,7 @@ func evaluateUse(node *ast.Use, scope *object.Scope) object.Object {
 		t, ok := identifier.(*object.Trait)
 
 		if !ok {
-			return object.NewError("%d:%d:%s: runtime error: referenced identifier in use not a trait, got=%T", trait.Token.Line, trait.Token.Column, trait.Token.File, trait)
+			return object.NewError("%d:%d:%s: runtime error: referenced identifier in use not a trait, got=%s", trait.Token.Line, trait.Token.Column, trait.Token.File, identifier.Type())
 		}
 
 		traits = append(traits, t)

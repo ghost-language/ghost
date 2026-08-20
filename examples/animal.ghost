@@ -1,5 +1,5 @@
 class Animal {
-    function speak() {
+    speak() {
         print("> The animal speaks.")
     }
 }

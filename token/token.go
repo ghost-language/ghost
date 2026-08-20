@@ -80,6 +80,7 @@ const (
 	IF
 	IMPORT
 	IN
+	NEW
 	NULL
 	OR
 	PRINT
@@ -151,6 +152,7 @@ var typeNames = [...]string{
 	IF:       "if",
 	IMPORT:   "import",
 	IN:       "in",
+	NEW:      "new",
 	NULL:     "null",
 	OR:       "or",
 	PRINT:    "print",

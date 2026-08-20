@@ -41,6 +41,46 @@ All object types implement the `Method(method string, args []Object) (Object, bo
 
 Ghost supports: classes with inheritance (`extends`), traits (`trait`/`use`), first-class functions, closures, lists, maps, for/for-in/while loops, switch statements, imports, and compound operators (`+=`, `++`, etc.).
 
+### Class syntax
+
+Classes follow JavaScript/TypeScript conventions. Methods are declared by name
+with no `function` keyword, instances are built with `new`, and `super`
+resolves members on the superclass of the class that declared the running
+method.
+
+```ghost
+trait Loud {
+    shout() { return this.speak().toUpperCase() }
+}
+
+class Animal {
+    legs = 4                       // per-instance field
+
+    constructor(name) {
+        this.name = name
+    }
+
+    speak() { return "..." }
+}
+
+class Dog extends Animal {
+    use Loud
+
+    constructor(name) {
+        super.constructor(name)
+    }
+
+    speak() { return super.speak() + " woof" }
+}
+
+new Dog("Fido").shout()
+```
+
+Field declarations in a class or trait body are initializers, not shared class
+state: they are re-evaluated for each instance, ancestors first, before the
+constructor runs. A method body's scope is the class environment, so sibling
+methods resolve by bare name.
+
 ## Version
 
 Update `version/version.go` when releasing. GoReleaser handles binary distribution.
