@@ -15,6 +15,20 @@ import (
 	"ghostlang.org/x/ghost/ast"
 )
 
+// globalResolver reports whether a name refers to a library global. The library
+// package installs it during initialization. It is a hook rather than a direct
+// dependency because library/modules already depends on this package, so
+// importing library here would close an import cycle.
+//
+// When it is nil, identifiers are left unclassified and the evaluator falls
+// back to consulting the registries itself.
+var globalResolver func(name string) bool
+
+// SetGlobalResolver installs the function used to classify identifiers.
+func SetGlobalResolver(resolver func(name string) bool) {
+	globalResolver = resolver
+}
+
 // Optimize rewrites a parsed program in place and returns it.
 func Optimize(program *ast.Program) *ast.Program {
 	if program == nil {
@@ -48,6 +62,19 @@ func optimize(node ast.Node) ast.Node {
 
 	case *ast.Expression:
 		node.Expression = optimize(node.Expression)
+
+		return node
+
+	case *ast.Identifier:
+		// Classify the name once so the evaluator can skip the library
+		// registries for ordinary variables.
+		if globalResolver != nil {
+			if globalResolver(node.Value) {
+				node.LibraryBinding = ast.LibraryBindingGlobal
+			} else {
+				node.LibraryBinding = ast.LibraryBindingLocal
+			}
+		}
 
 		return node
 

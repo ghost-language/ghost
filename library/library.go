@@ -4,6 +4,7 @@ import (
 	"ghostlang.org/x/ghost/library/functions"
 	"ghostlang.org/x/ghost/library/modules"
 	"ghostlang.org/x/ghost/object"
+	"ghostlang.org/x/ghost/optimizer"
 )
 
 var Functions = map[string]*object.LibraryFunction{}
@@ -22,6 +23,20 @@ func init() {
 
 	RegisterFunction("print", functions.Print)
 	RegisterFunction("type", functions.Type)
+
+	optimizer.SetGlobalResolver(IsGlobal)
+}
+
+// IsGlobal reports whether a name refers to a registered library module or
+// function. The optimizer uses it to classify identifiers ahead of evaluation.
+func IsGlobal(name string) bool {
+	if _, ok := Modules[name]; ok {
+		return true
+	}
+
+	_, ok := Functions[name]
+
+	return ok
 }
 
 func RegisterFunction(name string, function object.GoFunction) {

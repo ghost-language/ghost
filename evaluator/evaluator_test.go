@@ -590,6 +590,18 @@ func TestOptimizerPreservesSemantics(t *testing.T) {
 		`[1 + 1, 2 * 2, "a" + "b"]`,
 		`m = {"k": 3 * 3} m["k"]`,
 		`(1 == 1) ? "t" : "f"`,
+
+		// Library globals are classified by the optimizer, so confirm modules,
+		// functions, and their precedence over scope bindings all survive it.
+		`math.pi > 3`,
+		`math.floor(3.7)`,
+		`type(5)`,
+		`type("a")`,
+		`type([1])`,
+		`math.abs(-4)`,
+		`x = math.pi x > 3`,
+		// A library name still wins over a same-named variable, as before.
+		`type = 5 type("a")`,
 	}
 
 	for _, source := range programs {
