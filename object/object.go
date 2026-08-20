@@ -31,6 +31,7 @@ const (
 	RETURN
 	SCOPE
 	STRING
+	SUPER
 	TRAIT
 )
 
@@ -52,6 +53,7 @@ var typeNames = [...]string{
 	RETURN:           "RETURN",
 	SCOPE:            "SCOPE",
 	STRING:           "STRING",
+	SUPER:            "SUPER",
 	TRAIT:            "TRAIT",
 }
 

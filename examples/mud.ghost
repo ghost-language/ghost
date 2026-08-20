@@ -2,11 +2,11 @@ player = { 'x': 5, 'y': 5 }
 grid = { 'width': 40, 'height': 20 }
 
 class Game {
-  function constructor() {
+  constructor() {
     // 
   }
 
-  function draw() {
+  draw() {
     for (i = 1; i <= grid.height; i = i + 1) {
       for (j = 1; j <= grid.width; j = j + 1) {
         if (i == player.y and j == player.x) {
@@ -20,7 +20,7 @@ class Game {
     }
   }
 
-  function update() {
+  update() {
     input = console.read()
 
     if (input == 'w') {
@@ -34,7 +34,7 @@ class Game {
     }
   }
 
-  function run() {
+  run() {
     while (true) {
       console.clear()
 
@@ -44,5 +44,5 @@ class Game {
   }
 }
 
-game = Game.new()
+game = new Game()
 game.run()

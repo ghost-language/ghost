@@ -93,6 +93,21 @@ func (environment *Environment) Get(name string) (Object, bool) {
 	return object, ok
 }
 
+// HasLocal reports whether the name is bound in this environment itself,
+// ignoring the enclosing chain. Instance fields are looked up this way so that
+// a same-named variable in an enclosing scope cannot masquerade as a property.
+func (environment *Environment) HasLocal(name string) bool {
+	_, ok := environment.local(name)
+
+	return ok
+}
+
+// GetLocal reads a name bound in this environment itself, ignoring the
+// enclosing chain.
+func (environment *Environment) GetLocal(name string) (Object, bool) {
+	return environment.local(name)
+}
+
 // Set binds a name in this environment, replacing any existing binding here.
 // It never walks the outer chain.
 func (environment *Environment) Set(name string, value Object) Object {

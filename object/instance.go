@@ -8,7 +8,11 @@ import (
 
 // Instance objects consist of a body and an environment.
 type Instance struct {
-	Class       *Class
+	Class *Class
+
+	// Environment holds this instance's own fields. Lookups against it are
+	// always local: it encloses the class environment only so that the output
+	// writer and working directory are inherited.
 	Environment *Environment
 }
 
@@ -27,19 +31,50 @@ func (instance *Instance) Method(method string, args []Object) (Object, bool) {
 	return nil, false
 }
 
+// LookupMember resolves a name against the instance's class chain, checking
+// each class before the traits it uses and walking up to the superclass only
+// after both. It returns the member along with the class that declared it; the
+// caller records that class on the scope so `super` resolves relative to the
+// declaration site rather than the receiver's class.
+func (instance *Instance) LookupMember(name string) (Object, *Class, bool) {
+	return LookupMember(instance.Class, name)
+}
+
+// LookupMember resolves a name starting at the given class and walking up the
+// superclass chain. `super` uses it with the declaring class's superclass.
+func LookupMember(start *Class, name string) (Object, *Class, bool) {
+	for class := start; class != nil; class = class.Super {
+		if member, ok := class.Environment.GetLocal(name); ok {
+			return member, class, true
+		}
+
+		for _, trait := range class.Traits {
+			if member, ok := trait.Environment.GetLocal(name); ok {
+				return member, class, true
+			}
+		}
+	}
+
+	return nil, nil, false
+}
+
+// Call invokes a method on the instance by name. It is the entry point used by
+// Go code embedding Ghost.
 func (instance *Instance) Call(name string, arguments []Object, tok token.Token) Object {
-	if function, ok := instance.Environment.Get(name); ok {
-		if method, ok := function.(*Function); ok {
-			return instance.callMethod(method, arguments, tok)
+	member, class, ok := instance.LookupMember(name)
+
+	if ok {
+		if method, ok := member.(*Function); ok {
+			return instance.callMethod(method, class, arguments)
 		}
 	}
 
 	return NewError("%d:%d: runtime error: unknown method '%s' on class %s", tok.Line, tok.Column, name, instance.Class.Name.Value)
 }
 
-func (instance *Instance) callMethod(method *Function, arguments []Object, tok token.Token) Object {
+func (instance *Instance) callMethod(method *Function, class *Class, arguments []Object) Object {
 	methodEnvironment := createMethodEnvironment(method, arguments)
-	methodScope := &Scope{Self: instance, Environment: methodEnvironment}
+	methodScope := &Scope{Self: instance, Class: class, Environment: methodEnvironment}
 
 	return evaluator(method.Body, methodScope)
 }

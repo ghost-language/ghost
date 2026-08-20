@@ -109,6 +109,8 @@ func New(scanner *scanner.Scanner) *Parser {
 	parser.registerPrefix(token.TRAIT, parser.traitStatement)
 	parser.registerPrefix(token.USE, parser.useExpression)
 	parser.registerPrefix(token.THIS, parser.thisExpression)
+	parser.registerPrefix(token.SUPER, parser.superExpression)
+	parser.registerPrefix(token.NEW, parser.newExpression)
 	parser.registerPrefix(token.IMPORT, parser.importStatement)
 	parser.registerPrefix(token.SWITCH, parser.switchStatement)
 	parser.registerPrefix(token.BREAK, parser.breakStatement)
@@ -242,4 +244,15 @@ func (parser *Parser) currentTokenPrecedence() int {
 	}
 
 	return LOWEST
+}
+
+// prefixError records a syntax error for a token that cannot begin an
+// expression. Without it an unparseable token yields a nil expression that only
+// surfaces later as a crash in the evaluator.
+func (parser *Parser) prefixError() {
+	message := fmt.Sprintf(
+		"%d:%d: syntax error: unexpected token `%s`", parser.currentToken.Line, parser.currentToken.Column, parser.currentToken.Type,
+	)
+
+	parser.errors = append(parser.errors, message)
 }

@@ -3,12 +3,12 @@ import Foo from 'foo'
 class Lorem {
   use Foo
 
-  function hello() {
+  hello() {
     console.log('hello')
   }
 }
 
-lorem = Lorem.new()
+lorem = new Lorem()
 
 lorem.hello()
 lorem.bar()

@@ -126,6 +126,12 @@ func optimize(node ast.Node) ast.Node {
 
 		return node
 
+	case *ast.New:
+		node.Class = optimize(node.Class)
+		optimizeExpressions(node.Arguments)
+
+		return node
+
 	case *ast.Property:
 		node.Left = optimize(node.Left)
 

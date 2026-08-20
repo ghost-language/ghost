@@ -7,6 +7,21 @@ import (
 )
 
 func evaluateAssign(node *ast.Assign, scope *object.Scope) object.Object {
+	// A bare assignment in a class or trait body declares a field. The
+	// initializer is recorded unevaluated and re-evaluated for each instance,
+	// so instances do not share one copy of a mutable value.
+	if identifier, ok := node.Name.(*ast.Identifier); ok {
+		if declaration, ok := scope.Self.(object.FieldDeclarer); ok {
+			if identifier.Value == constructorName {
+				return constructorFieldError(node)
+			}
+
+			declaration.SetField(identifier.Value, node.Value)
+
+			return nil
+		}
+	}
+
 	value := Evaluate(node.Value, scope)
 
 	if isError(value) {
@@ -25,13 +40,15 @@ func evaluateAssign(node *ast.Assign, scope *object.Scope) object.Object {
 	return object.NewError("%d:%d:%s: runtime error: cannot assign variable to a %T", node.Token.Line, node.Token.Column, node.Token.File, node.Name)
 }
 
+// constructorFieldError rejects `constructor = ...` in a class body. A field by
+// that name would never be run as a constructor, so silently accepting it hides
+// the mistake.
+func constructorFieldError(node *ast.Assign) object.Object {
+	return object.NewError("%d:%d:%s: runtime error: '%s' must be declared as a method, not a field", node.Token.Line, node.Token.Column, node.Token.File, constructorName)
+}
+
 func evaluateIdentifierAssignment(node *ast.Identifier, value object.Object, scope *object.Scope) object.Object {
-	switch this := scope.Self.(type) {
-	case *object.Class:
-		this.Environment.Set(node.Value, value)
-	default:
-		scope.Environment.Set(node.Value, value)
-	}
+	scope.Environment.Set(node.Value, value)
 
 	return nil
 }

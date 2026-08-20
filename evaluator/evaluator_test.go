@@ -25,7 +25,7 @@ func TestErrorHandling(t *testing.T) {
 		{`"Hello" - "World"`, "1:9:test.ghost: runtime error: unknown operator: STRING - STRING"},
 		{`{"name": "Ghost"}[function() { 123 }]`, "1:18:test.ghost: runtime error: unusable as map key: FUNCTION"},
 		{`function foo() { a } foo()`, "1:18:test.ghost: runtime error: unknown identifier: a"},
-		{`class Test { function foo() { a } } test = Test.new() test.foo()`, "1:31:test.ghost: runtime error: unknown identifier: a"},
+		{`class Test { function foo() { a } } test = new Test() test.foo()`, "1:31:test.ghost: runtime error: unknown identifier: a"},
 	}
 
 	for _, tt := range tests {
@@ -96,7 +96,7 @@ func TestClassStatement(t *testing.T) {
 	}{
 		{`class Foo {}`, "Foo"},
 		{`class Foo {
-			function bar() {
+			bar() {
 				true
 			}
 		}`, "Foo"},
@@ -205,16 +205,16 @@ func TestWhileExpressions(t *testing.T) {
 func TestClassProperties(t *testing.T) {
 	input := `
 	class Circle {
-		function constructor(area) {
+		constructor(area) {
 			this.area = area
 		}
 
-		function area() {
+		area() {
 			return math.pi * this.area * this.area
 		}
 	}
 
-	test = Circle.new(10)
+	test = new Circle(10)
 
 	return test.area()
 	`
@@ -234,7 +234,7 @@ func TestTraitMethodLookup(t *testing.T) {
 			name: "method from single trait",
 			input: `
 				trait Greet {
-					function greet() {
+					greet() {
 						return 1
 					}
 				}
@@ -243,7 +243,7 @@ func TestTraitMethodLookup(t *testing.T) {
 					use Greet
 				}
 
-				p = Person.new()
+				p = new Person()
 				p.greet()
 			`,
 			expected: 1,
@@ -252,13 +252,13 @@ func TestTraitMethodLookup(t *testing.T) {
 			name: "method from second trait",
 			input: `
 				trait First {
-					function first() {
+					first() {
 						return 1
 					}
 				}
 
 				trait Second {
-					function second() {
+					second() {
 						return 2
 					}
 				}
@@ -268,7 +268,7 @@ func TestTraitMethodLookup(t *testing.T) {
 					use Second
 				}
 
-				t = Thing.new()
+				t = new Thing()
 				t.second()
 			`,
 			expected: 2,
@@ -277,13 +277,13 @@ func TestTraitMethodLookup(t *testing.T) {
 			name: "methods from both traits",
 			input: `
 				trait Add {
-					function add() {
+					add() {
 						return 10
 					}
 				}
 
 				trait Multiply {
-					function multiply() {
+					multiply() {
 						return 20
 					}
 				}
@@ -293,7 +293,7 @@ func TestTraitMethodLookup(t *testing.T) {
 					use Multiply
 				}
 
-				c = Calculator.new()
+				c = new Calculator()
 				c.add() + c.multiply()
 			`,
 			expected: 30,
@@ -302,19 +302,19 @@ func TestTraitMethodLookup(t *testing.T) {
 			name: "comma-separated traits",
 			input: `
 				trait First {
-					function first() {
+					first() {
 						return 1
 					}
 				}
 
 				trait Second {
-					function second() {
+					second() {
 						return 2
 					}
 				}
 
 				trait Third {
-					function third() {
+					third() {
 						return 3
 					}
 				}
@@ -323,7 +323,7 @@ func TestTraitMethodLookup(t *testing.T) {
 					use First, Second, Third
 				}
 
-				t = Thing.new()
+				t = new Thing()
 				t.first() + t.second() + t.third()
 			`,
 			expected: 6,
@@ -354,7 +354,7 @@ func TestInheritedProperties(t *testing.T) {
 				class Dog extends Animal {
 				}
 
-				d = Dog.new()
+				d = new Dog()
 				d.species
 			`,
 			expected: 42,
@@ -372,7 +372,7 @@ func TestInheritedProperties(t *testing.T) {
 				class Dog extends Mammal {
 				}
 
-				d = Dog.new()
+				d = new Dog()
 				d.legs
 			`,
 			expected: 4,
@@ -388,7 +388,7 @@ func TestInheritedProperties(t *testing.T) {
 					sound = 2
 				}
 
-				d = Dog.new()
+				d = new Dog()
 				d.sound
 			`,
 			expected: 2,
@@ -413,7 +413,7 @@ func TestInheritedConstructor(t *testing.T) {
 			name: "parent constructor called when child has none",
 			input: `
 				class Animal {
-					function constructor(legs) {
+					constructor(legs) {
 						this.legs = legs
 					}
 				}
@@ -421,7 +421,7 @@ func TestInheritedConstructor(t *testing.T) {
 				class Dog extends Animal {
 				}
 
-				d = Dog.new(4)
+				d = new Dog(4)
 				d.legs
 			`,
 			expected: 4,
@@ -430,7 +430,7 @@ func TestInheritedConstructor(t *testing.T) {
 			name: "grandparent constructor called when child and parent have none",
 			input: `
 				class Animal {
-					function constructor(legs) {
+					constructor(legs) {
 						this.legs = legs
 					}
 				}
@@ -441,7 +441,7 @@ func TestInheritedConstructor(t *testing.T) {
 				class Dog extends Mammal {
 				}
 
-				d = Dog.new(4)
+				d = new Dog(4)
 				d.legs
 			`,
 			expected: 4,
@@ -450,18 +450,18 @@ func TestInheritedConstructor(t *testing.T) {
 			name: "child constructor overrides parent",
 			input: `
 				class Animal {
-					function constructor(legs) {
+					constructor(legs) {
 						this.legs = legs
 					}
 				}
 
 				class Dog extends Animal {
-					function constructor(legs) {
+					constructor(legs) {
 						this.legs = legs * 2
 					}
 				}
 
-				d = Dog.new(4)
+				d = new Dog(4)
 				d.legs
 			`,
 			expected: 8,
@@ -715,4 +715,585 @@ func isClassObject(t *testing.T, obj object.Object, expected string) bool {
 	}
 
 	return true
+}
+
+func TestNewExpression(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected int64
+	}{
+		{
+			name: "instantiation without arguments",
+			input: `
+				class Counter {
+					value() { return 7 }
+				}
+
+				new Counter().value()
+			`,
+			expected: 7,
+		},
+		{
+			name: "instantiation with arguments",
+			input: `
+				class Point {
+					constructor(x, y) {
+						this.x = x
+						this.y = y
+					}
+				}
+
+				p = new Point(3, 4)
+				p.x + p.y
+			`,
+			expected: 7,
+		},
+		{
+			name: "instantiation without parentheses",
+			input: `
+				class Counter {
+					value() { return 7 }
+				}
+
+				c = new Counter
+				c.value()
+			`,
+			expected: 7,
+		},
+		{
+			name: "method call chains off the instance, not the class expression",
+			input: `
+				class Counter {
+					value() { return 7 }
+				}
+
+				new Counter().value()
+			`,
+			expected: 7,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := evaluate(tt.input)
+			isNumberObject(t, result, tt.expected)
+		})
+	}
+}
+
+func TestSuperMethodCalls(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected int64
+	}{
+		{
+			name: "super calls the overridden parent method",
+			input: `
+				class Animal {
+					legs() { return 4 }
+				}
+
+				class Dog extends Animal {
+					legs() { return super.legs() + 1 }
+				}
+
+				new Dog().legs()
+			`,
+			expected: 5,
+		},
+		{
+			name: "super resolves from the declaring class, not the receiver",
+			input: `
+				class A {
+					value() { return 1 }
+				}
+
+				class B extends A {
+					value() { return super.value() + 10 }
+				}
+
+				class C extends B {
+					value() { return super.value() + 100 }
+				}
+
+				new C().value()
+			`,
+			expected: 111,
+		},
+		{
+			name: "super skips a level that does not override",
+			input: `
+				class A {
+					value() { return 1 }
+				}
+
+				class B extends A {
+				}
+
+				class C extends B {
+					value() { return super.value() + 10 }
+				}
+
+				new C().value()
+			`,
+			expected: 11,
+		},
+		{
+			name: "super.constructor chains initialization",
+			input: `
+				class Animal {
+					constructor(legs) {
+						this.legs = legs
+					}
+				}
+
+				class Dog extends Animal {
+					constructor() {
+						super.constructor(4)
+						this.tails = 1
+					}
+				}
+
+				d = new Dog()
+				d.legs + d.tails
+			`,
+			expected: 5,
+		},
+		{
+			name: "an inherited method still dispatches to the override",
+			input: `
+				class Animal {
+					legs() { return 4 }
+					total() { return this.legs() }
+				}
+
+				class Dog extends Animal {
+					legs() { return super.legs() * 2 }
+				}
+
+				new Dog().total()
+			`,
+			expected: 8,
+		},
+		{
+			name: "super reads a parent property",
+			input: `
+				class Animal {
+					sound() { return 1 }
+				}
+
+				class Dog extends Animal {
+					sound() { return 2 }
+					parentSound() { return super.sound() }
+				}
+
+				new Dog().parentSound()
+			`,
+			expected: 1,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := evaluate(tt.input)
+			isNumberObject(t, result, tt.expected)
+		})
+	}
+}
+
+func TestPerInstanceFields(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected int64
+	}{
+		{
+			name: "instances do not share a mutable field",
+			input: `
+				class Bag {
+					items = []
+
+					add(item) { this.items.push(item) }
+				}
+
+				a = new Bag()
+				b = new Bag()
+
+				a.add(1)
+				a.add(2)
+
+				a.items.length() * 10 + b.items.length()
+			`,
+			expected: 20,
+		},
+		{
+			name: "instances do not share a scalar field",
+			input: `
+				class Counter {
+					count = 0
+
+					bump() { this.count = this.count + 1 }
+				}
+
+				a = new Counter()
+				b = new Counter()
+
+				a.bump()
+				a.bump()
+
+				a.count * 10 + b.count
+			`,
+			expected: 20,
+		},
+		{
+			name: "field initializers run parent-first",
+			input: `
+				class Animal {
+					legs = 4
+					total = 4
+				}
+
+				class Dog extends Animal {
+					total = 5
+				}
+
+				d = new Dog()
+				d.legs * 10 + d.total
+			`,
+			expected: 45,
+		},
+		{
+			name: "trait fields are per-instance too",
+			input: `
+				trait Countable {
+					count = 0
+
+					bump() { this.count = this.count + 1 }
+				}
+
+				class Widget {
+					use Countable
+				}
+
+				a = new Widget()
+				b = new Widget()
+
+				a.bump()
+
+				a.count * 10 + b.count
+			`,
+			expected: 10,
+		},
+		{
+			name: "a subclass field overrides the parent declaration",
+			input: `
+				class Animal {
+					sound = 1
+				}
+
+				class Dog extends Animal {
+					sound = 2
+				}
+
+				new Dog().sound
+			`,
+			expected: 2,
+		},
+		{
+			name: "a field initializer can reference the enclosing scope",
+			input: `
+				base = 40
+
+				class Thing {
+					value = base + 2
+				}
+
+				new Thing().value
+			`,
+			expected: 42,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := evaluate(tt.input)
+			isNumberObject(t, result, tt.expected)
+		})
+	}
+}
+
+func TestClassMemberResolution(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected int64
+	}{
+		{
+			name: "a method calls a sibling method by bare name",
+			input: `
+				class Math {
+					double(n) { return n * 2 }
+					quadruple(n) { return double(double(n)) }
+				}
+
+				new Math().quadruple(3)
+			`,
+			expected: 12,
+		},
+		{
+			name: "a closure inside a method keeps the receiver",
+			input: `
+				class Counter {
+					count = 21
+
+					doubled() {
+						f = function() { return this.count * 2 }
+
+						return f()
+					}
+				}
+
+				new Counter().doubled()
+			`,
+			expected: 42,
+		},
+		{
+			name: "a class method beats a trait method of the same name",
+			input: `
+				trait T {
+					value() { return 1 }
+				}
+
+				class A {
+					use T
+
+					value() { return 2 }
+				}
+
+				new A().value()
+			`,
+			expected: 2,
+		},
+		{
+			name: "a trait on a subclass beats the superclass method",
+			input: `
+				trait T {
+					value() { return 2 }
+				}
+
+				class A {
+					value() { return 1 }
+				}
+
+				class B extends A {
+					use T
+				}
+
+				new B().value()
+			`,
+			expected: 2,
+		},
+		{
+			name: "an instance field does not leak in from an enclosing scope",
+			input: `
+				name = 99
+
+				class Thing {
+					value() {
+						if (this.name) {
+							return 0
+						}
+
+						return 1
+					}
+				}
+
+				new Thing().value()
+			`,
+			expected: 1,
+		},
+		{
+			name: "methods declared with the function keyword still work",
+			input: `
+				class Legacy {
+					function value() { return 5 }
+				}
+
+				new Legacy().value()
+			`,
+			expected: 5,
+		},
+		{
+			name: "default parameters work on shorthand methods",
+			input: `
+				class Greeter {
+					value(n = 6) { return n }
+				}
+
+				new Greeter().value()
+			`,
+			expected: 6,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := evaluate(tt.input)
+			isNumberObject(t, result, tt.expected)
+		})
+	}
+}
+
+// TestClassRuntimeErrors covers the cases that previously crashed the
+// interpreter by returning a bare Go nil into an expression.
+func TestClassRuntimeErrors(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{
+			name:     "property access on a class",
+			input:    "class A { value() { return 1 } }\nA.value",
+			expected: "2:2:test.ghost: runtime error: cannot read property value of CLASS",
+		},
+		{
+			name:     "method call on a class",
+			input:    "class A { value() { return 1 } }\nA.value()",
+			expected: "2:2:test.ghost: runtime error: unknown method value on class A; construct instances with `new A()`",
+		},
+		{
+			name:     "unknown method on a primitive",
+			input:    "5.nope()",
+			expected: "1:2:test.ghost: runtime error: unknown method: NUMBER.nope",
+		},
+		{
+			name:     "extending an undefined identifier",
+			input:    "class A extends Nope {}",
+			expected: "1:17:test.ghost: runtime error: unknown identifier: Nope",
+		},
+		{
+			name:     "extending a non-class",
+			input:    "x = 5\nclass A extends x {}",
+			expected: "2:17:test.ghost: runtime error: referenced identifier in extends not a class, got=NUMBER",
+		},
+		{
+			name:     "using a non-trait",
+			input:    "x = 5\nclass A { use x }",
+			expected: "2:15:test.ghost: runtime error: referenced identifier in use not a trait, got=NUMBER",
+		},
+		{
+			name:     "declaring constructor as a field",
+			input:    "class A { constructor = 5 }",
+			expected: "1:23:test.ghost: runtime error: 'constructor' must be declared as a method, not a field",
+		},
+		{
+			name:     "instantiating a non-class",
+			input:    "x = 5\nnew x()",
+			expected: "2:1:test.ghost: runtime error: cannot instantiate a non-class value, got NUMBER",
+		},
+		{
+			name:     "super outside a class",
+			input:    "super",
+			expected: "1:1:test.ghost: runtime error: 'super' used outside of class context",
+		},
+		{
+			name:     "super in a class with no superclass",
+			input:    "class A { value() { return super.value() } }\nnew A().value()",
+			expected: "1:28:test.ghost: runtime error: class A has no superclass",
+		},
+		{
+			name:     "calling an undefined method",
+			input:    "class A {}\nnew A().nope()",
+			expected: "2:8:test.ghost: runtime error: undefined method nope for class A",
+		},
+		{
+			name:     "calling a field that is not a function",
+			input:    "class A { value = 5 }\nnew A().value()",
+			expected: "2:8:test.ghost: runtime error: undefined method value for class A",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := evaluate(tt.input)
+			isErrorObject(t, result, tt.expected)
+		})
+	}
+}
+
+func TestEqualityComparisons(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected bool
+	}{
+		{"null equals null", `null == null`, true},
+		{"null does not differ from null", `null != null`, false},
+		{"an unset variable equals null", `x = null  x == null`, true},
+		{"a value does not equal null", `5 == null`, false},
+		{"a value differs from null", `5 != null`, true},
+		{"null compares from the left", `null != 5`, true},
+		{
+			name:     "an instance equals itself",
+			input:    "class A {}\na = new A()\na == a",
+			expected: true,
+		},
+		{
+			name:     "an instance equals another name for itself",
+			input:    "class A {}\na = new A()\nb = a\na == b",
+			expected: true,
+		},
+		{
+			name:     "instances compare by identity, not by field values",
+			input:    "class A { constructor(n) { this.n = n } }\nnew A(1) == new A(1)",
+			expected: false,
+		},
+		{
+			name:     "distinct instances differ",
+			input:    "class A {}\nnew A() != new A()",
+			expected: true,
+		},
+		{
+			name:     "an instance does not equal null",
+			input:    "class A {}\nnew A() == null",
+			expected: false,
+		},
+		{
+			name:     "an unset property reads as null",
+			input:    "class A {}\nnew A().missing == null",
+			expected: true,
+		},
+		{
+			name:     "a set property does not read as null",
+			input:    "class A { value = 5 }\nnew A().value == null",
+			expected: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := evaluate(tt.input)
+
+			boolean, ok := result.(*object.Boolean)
+
+			if !ok {
+				t.Fatalf("object is not Boolean. got=%T (%+v)", result, result)
+			}
+
+			if boolean.Value != tt.expected {
+				t.Fatalf("object has wrong value. got=%t, expected=%t", boolean.Value, tt.expected)
+			}
+		})
+	}
+}
+
+// TestEqualityTypeMismatch confirms that comparing two unrelated non-null types
+// is still an error rather than silently false.
+func TestEqualityTypeMismatch(t *testing.T) {
+	result := evaluate(`1 == "a"`)
+
+	isErrorObject(t, result, `1:3:test.ghost: runtime error: type mismatch: NUMBER == STRING`)
 }

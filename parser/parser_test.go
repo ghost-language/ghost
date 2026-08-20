@@ -1034,3 +1034,175 @@ func isNumberLiteral(t *testing.T, expression ast.ExpressionNode, value int64) b
 
 	return true
 }
+
+func TestNewExpression(t *testing.T) {
+	tests := []struct {
+		input     string
+		class     string
+		arguments int
+	}{
+		{`new Person()`, "Person", 0},
+		{`new Person`, "Person", 0},
+		{`new Person("kai", 5)`, "Person", 2},
+	}
+
+	for _, tt := range tests {
+		scanner := scanner.New(tt.input, "test.ghost")
+		parser := New(scanner)
+		program := parser.Parse()
+
+		failIfParserHasErrors(t, parser)
+
+		statement, ok := program.Statements[0].(*ast.Expression)
+
+		if !ok {
+			t.Fatalf("program.Statements[0] is not ast.Expression. got=%T", program.Statements[0])
+		}
+
+		expression, ok := statement.Expression.(*ast.New)
+
+		if !ok {
+			t.Fatalf("statement.Expression is not ast.New. got=%T", statement.Expression)
+		}
+
+		identifier, ok := expression.Class.(*ast.Identifier)
+
+		if !ok {
+			t.Fatalf("expression.Class is not ast.Identifier. got=%T", expression.Class)
+		}
+
+		if identifier.Value != tt.class {
+			t.Fatalf("expression.Class is not '%s'. got=%s", tt.class, identifier.Value)
+		}
+
+		if len(expression.Arguments) != tt.arguments {
+			t.Fatalf("expression.Arguments does not contain %d arguments. got=%d", tt.arguments, len(expression.Arguments))
+		}
+	}
+}
+
+// TestNewBindsTighterThanCalls confirms `new Foo().bar()` reads as
+// `(new Foo()).bar()` rather than instantiating the result of `Foo().bar()`.
+func TestNewBindsTighterThanCalls(t *testing.T) {
+	scanner := scanner.New(`new Person().greet()`, "test.ghost")
+	parser := New(scanner)
+	program := parser.Parse()
+
+	failIfParserHasErrors(t, parser)
+
+	statement := program.Statements[0].(*ast.Expression)
+
+	method, ok := statement.Expression.(*ast.Method)
+
+	if !ok {
+		t.Fatalf("statement.Expression is not ast.Method. got=%T", statement.Expression)
+	}
+
+	if _, ok := method.Left.(*ast.New); !ok {
+		t.Fatalf("method.Left is not ast.New. got=%T", method.Left)
+	}
+}
+
+func TestClassMethodShorthand(t *testing.T) {
+	input := `
+	class Person {
+		name = "kai"
+
+		constructor(name) {
+			this.name = name
+		}
+
+		greet(greeting = "hello") {
+			return greeting
+		}
+	}
+	`
+
+	scanner := scanner.New(input, "test.ghost")
+	parser := New(scanner)
+	program := parser.Parse()
+
+	failIfParserHasErrors(t, parser)
+
+	statement := program.Statements[0].(*ast.Expression)
+	class := statement.Expression.(*ast.Class)
+
+	if len(class.Body.Statements) != 3 {
+		t.Fatalf("class body does not contain 3 members. got=%d", len(class.Body.Statements))
+	}
+
+	if _, ok := class.Body.Statements[0].(*ast.Assign); !ok {
+		t.Fatalf("first member is not ast.Assign. got=%T", class.Body.Statements[0])
+	}
+
+	for index, expected := range []struct {
+		name       string
+		parameters int
+	}{{"constructor", 1}, {"greet", 1}} {
+		member, ok := class.Body.Statements[index+1].(*ast.Expression)
+
+		if !ok {
+			t.Fatalf("member %d is not ast.Expression. got=%T", index+1, class.Body.Statements[index+1])
+		}
+
+		function, ok := member.Expression.(*ast.Function)
+
+		if !ok {
+			t.Fatalf("member %d is not ast.Function. got=%T", index+1, member.Expression)
+		}
+
+		if function.Name.Value != expected.name {
+			t.Fatalf("member %d is not named '%s'. got=%s", index+1, expected.name, function.Name.Value)
+		}
+
+		if len(function.Parameters) != expected.parameters {
+			t.Fatalf("member %d does not have %d parameters. got=%d", index+1, expected.parameters, len(function.Parameters))
+		}
+	}
+}
+
+func TestSuperExpression(t *testing.T) {
+	scanner := scanner.New(`super.greet()`, "test.ghost")
+	parser := New(scanner)
+	program := parser.Parse()
+
+	failIfParserHasErrors(t, parser)
+
+	statement := program.Statements[0].(*ast.Expression)
+
+	method, ok := statement.Expression.(*ast.Method)
+
+	if !ok {
+		t.Fatalf("statement.Expression is not ast.Method. got=%T", statement.Expression)
+	}
+
+	if _, ok := method.Left.(*ast.Super); !ok {
+		t.Fatalf("method.Left is not ast.Super. got=%T", method.Left)
+	}
+}
+
+// TestSyntaxErrors covers tokens that cannot begin an expression. These used to
+// parse to a nil node that only surfaced later as a crash in the evaluator.
+func TestSyntaxErrors(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected string
+	}{
+		{`Person.new()`, "1:8: syntax error: `new` is not a method; construct instances with `new Person()`"},
+		{`x = ,`, "1:5: syntax error: unexpected token `,`"},
+	}
+
+	for _, tt := range tests {
+		scanner := scanner.New(tt.input, "test.ghost")
+		parser := New(scanner)
+		parser.Parse()
+
+		if len(parser.Errors()) == 0 {
+			t.Fatalf("expected a parser error for %q, got none", tt.input)
+		}
+
+		if parser.Errors()[0] != tt.expected {
+			t.Fatalf("wrong parser error. got=%s, expected=%s", parser.Errors()[0], tt.expected)
+		}
+	}
+}

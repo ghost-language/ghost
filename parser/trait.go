@@ -16,7 +16,7 @@ func (parser *Parser) traitStatement() ast.ExpressionNode {
 		return nil
 	}
 
-	trait.Body = parser.blockStatement()
+	trait.Body = parser.classBody()
 
 	return trait
 }

@@ -1,8 +1,8 @@
 class Beverage {
-    function serve() {
+    serve() {
         print("serving beverage...")
     }
 }
 
-beverage = Beverage.new()
+beverage = new Beverage()
 beverage.serve()
