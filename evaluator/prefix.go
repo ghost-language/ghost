@@ -16,12 +16,16 @@ func evaluatePrefix(node *ast.Prefix, scope *object.Scope) object.Object {
 
 	switch node.Operator {
 	case token.BANG:
-		switch right {
-		case value.TRUE:
-			return value.FALSE
-		case value.FALSE:
-			return value.TRUE
-		case value.NULL:
+		// Compare by value rather than by pointer identity. Not every boolean
+		// reaching this point is one of the value.TRUE/value.FALSE singletons:
+		// string comparisons and library functions such as string.startsWith()
+		// and math.isNegative() build fresh boolean objects, and an identity
+		// check silently fell through to the default branch for those, making
+		// !(expression) yield false regardless of the operand.
+		switch right := right.(type) {
+		case *object.Boolean:
+			return toBooleanValue(!right.Value)
+		case *object.Null:
 			return value.TRUE
 		default:
 			return value.FALSE

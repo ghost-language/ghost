@@ -18,17 +18,17 @@ func evaluateStringInfix(node *ast.Infix, left object.Object, right object.Objec
 	case token.PLUS:
 		return &object.String{Value: leftValue + rightValue}
 	case token.LESS:
-		return &object.Boolean{Value: leftValue < rightValue}
+		return toBooleanValue(leftValue < rightValue)
 	case token.LESSEQUAL:
-		return &object.Boolean{Value: leftValue <= rightValue}
+		return toBooleanValue(leftValue <= rightValue)
 	case token.GREATER:
-		return &object.Boolean{Value: leftValue > rightValue}
+		return toBooleanValue(leftValue > rightValue)
 	case token.GREATEREQUAL:
-		return &object.Boolean{Value: leftValue >= rightValue}
+		return toBooleanValue(leftValue >= rightValue)
 	case token.EQUALEQUAL:
-		return &object.Boolean{Value: leftValue == rightValue}
+		return toBooleanValue(leftValue == rightValue)
 	case token.BANGEQUAL:
-		return &object.Boolean{Value: leftValue != rightValue}
+		return toBooleanValue(leftValue != rightValue)
 	}
 
 	return newError("%d:%d:%s: runtime error: unknown operator: %s %s %s", node.Token.Line, node.Token.Column, node.Token.File, right.Type(), node.Operator, left.Type())

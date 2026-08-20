@@ -509,6 +509,48 @@ func TestThisOutsideClass(t *testing.T) {
 // =============================================================================
 // Helper functions
 
+func TestBangOperator(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected bool
+	}{
+		{"!true", false},
+		{"!false", true},
+		{"!null", true},
+		{"!!true", true},
+		{"!!false", false},
+
+		// Comparisons and library functions produce boolean objects that are
+		// not the shared TRUE/FALSE singletons. The bang operator must compare
+		// them by value, not by pointer identity.
+		{`!("a" != "a")`, true},
+		{`!("a" == "a")`, false},
+		{`!("a" == "b")`, true},
+		{"!(1 != 1)", true},
+		{"!(1 == 1)", false},
+		{`!("abc".startsWith("x"))`, true},
+		{`!("abc".startsWith("a"))`, false},
+
+		// Non-boolean, non-null operands remain falsy under bang.
+		{"!5", false},
+		{`!"abc"`, false},
+	}
+
+	for _, tt := range tests {
+		result := evaluate(tt.input)
+
+		boolean, ok := result.(*object.Boolean)
+
+		if !ok {
+			t.Fatalf("evaluate(%q) is not object.Boolean. got=%T (%+v)", tt.input, result, result)
+		}
+
+		if boolean.Value != tt.expected {
+			t.Errorf("evaluate(%q) is not %t. got=%t", tt.input, tt.expected, boolean.Value)
+		}
+	}
+}
+
 func evaluate(input string) object.Object {
 	scope := &object.Scope{
 		Environment: object.NewEnvironment(),
