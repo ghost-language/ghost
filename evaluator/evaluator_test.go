@@ -5,6 +5,7 @@ import (
 
 	"ghostlang.org/x/ghost/library/modules"
 	"ghostlang.org/x/ghost/object"
+	"ghostlang.org/x/ghost/optimizer"
 	"ghostlang.org/x/ghost/parser"
 	"ghostlang.org/x/ghost/scanner"
 )
@@ -549,6 +550,83 @@ func TestBangOperator(t *testing.T) {
 			t.Errorf("evaluate(%q) is not %t. got=%t", tt.input, tt.expected, boolean.Value)
 		}
 	}
+}
+
+// TestOptimizerPreservesSemantics evaluates each program twice, once on the raw
+// AST and once on the optimized AST, and requires the two to agree. Constant
+// folding is only correct if it is invisible, including for the expressions it
+// deliberately refuses to fold because they raise runtime errors.
+func TestOptimizerPreservesSemantics(t *testing.T) {
+	programs := []string{
+		// Arithmetic, including the integer/float promotion rules.
+		"1 + 2", "10 - 4", "6 * 7", "7 % 3", "-5", "-(3 * 4)",
+		"2 * 3 + 4 * 5 - 6", "1.5 + 2.5", "1 + 2.5", "6 / 3", "7 / 2",
+		"2147483647 * 2147483647", "-9223372036854775807 - 1",
+
+		// Comparisons and booleans.
+		"1 < 2", "2 <= 2", "3 > 4", "1 == 1", "1 != 1", "1.0 == 1",
+		`"a" == "a"`, `"a" < "b"`, `"a" != "b"`,
+		"true and false", "true or false", "true == true", "false != true",
+		"!true", "!false", "!null", "!(1 == 2)", `!("a" != "a")`,
+
+		// Strings.
+		`"hello" + " " + "world"`, `"" + "a"`,
+
+		// Expressions the optimizer must leave alone: each raises a runtime
+		// error whose message and position must survive.
+		"1 / 0", "1 % 0", "1.0 / 0.0", "1 + true", `1 + "a"`, "-true",
+		"true + false", `"a" - "b"`,
+
+		// Ranges build list objects and must not be folded.
+		"1 .. 5", "(1 + 1) .. (2 + 3)",
+
+		// Folding inside larger constructs.
+		`total = 0
+		 for (i = 0; i < 2 * 5; i = i + 1) { total = total + (3 * 4) }
+		 total`,
+		`function f(a = 2 * 3) { return a + (1 + 1) } f()`,
+		`if (1 + 1 == 2) { "yes" } else { "no" }`,
+		`x = 5 while (x > 5 - 5) { x = x - 1 } x`,
+		`[1 + 1, 2 * 2, "a" + "b"]`,
+		`m = {"k": 3 * 3} m["k"]`,
+		`(1 == 1) ? "t" : "f"`,
+	}
+
+	for _, source := range programs {
+		plain := evaluate(source)
+		optimized := evaluateOptimized(source)
+
+		if (plain == nil) != (optimized == nil) {
+			t.Errorf("%q: nil mismatch: plain=%v optimized=%v", source, plain, optimized)
+			continue
+		}
+
+		if plain == nil {
+			continue
+		}
+
+		if plain.Type() != optimized.Type() {
+			t.Errorf("%q: type mismatch: plain=%s optimized=%s", source, plain.Type(), optimized.Type())
+			continue
+		}
+
+		if plain.String() != optimized.String() {
+			t.Errorf("%q: value mismatch: plain=%q optimized=%q", source, plain.String(), optimized.String())
+		}
+	}
+}
+
+func evaluateOptimized(input string) object.Object {
+	scope := &object.Scope{
+		Environment: object.NewEnvironment(),
+	}
+
+	object.RegisterEvaluator(Evaluate)
+	modules.RegisterEvaluator(Evaluate)
+
+	p := parser.New(scanner.New(input, "test.ghost"))
+
+	return Evaluate(optimizer.Optimize(p.Parse()), scope)
 }
 
 func evaluate(input string) object.Object {

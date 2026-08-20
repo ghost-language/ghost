@@ -10,6 +10,7 @@ import (
 	"ghostlang.org/x/ghost/ast"
 	"ghostlang.org/x/ghost/log"
 	"ghostlang.org/x/ghost/object"
+	"ghostlang.org/x/ghost/optimizer"
 	"ghostlang.org/x/ghost/parser"
 	"ghostlang.org/x/ghost/scanner"
 	"ghostlang.org/x/ghost/token"
@@ -135,6 +136,8 @@ func evaluateFile(file string, tok token.Token, scope *object.Scope) object.Obje
 
 		return nil
 	}
+
+	program = optimizer.Optimize(program)
 
 	newScope := &object.Scope{Self: scope.Self, Environment: object.NewEnvironment()}
 	newScope.Environment.SetDirectory(scope.Environment.GetDirectory())

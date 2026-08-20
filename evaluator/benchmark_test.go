@@ -5,6 +5,7 @@ import (
 
 	"ghostlang.org/x/ghost/library/modules"
 	"ghostlang.org/x/ghost/object"
+	"ghostlang.org/x/ghost/optimizer"
 	"ghostlang.org/x/ghost/parser"
 	"ghostlang.org/x/ghost/scanner"
 )
@@ -141,6 +142,10 @@ func BenchmarkEvaluate(b *testing.B) {
 				if len(p.Errors()) != 0 {
 					b.Fatalf("parse errors: %v", p.Errors())
 				}
+
+				// Mirror the real pipeline in ghost.Execute, which optimizes
+				// the program before evaluating it.
+				program = optimizer.Optimize(program)
 
 				result := Evaluate(program, scope)
 

@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"ghostlang.org/x/ghost/object"
+	"ghostlang.org/x/ghost/optimizer"
 	"ghostlang.org/x/ghost/parser"
 	"ghostlang.org/x/ghost/scanner"
 	"ghostlang.org/x/ghost/token"
@@ -52,7 +53,7 @@ func ghostExecute(scope *object.Scope, tok token.Token, args ...object.Object) o
 
 	scanner := scanner.New(source.Value, tok.File)
 	parser := parser.New(scanner)
-	program := parser.Parse()
+	program := optimizer.Optimize(parser.Parse())
 
 	return evaluate(program, scope)
 }
