@@ -102,16 +102,47 @@ var benchmarks = []struct {
 		"ClassMethods",
 		`class Counter {
 			count = 0
-			function increment() {
+			increment() {
 				this.count = this.count + 1
 				return this.count
 			}
 		}
-		c = Counter.new()
+		c = new Counter()
 		for (i = 0; i < 10000; i = i + 1) {
 			c.increment()
 		}
 		c.count`,
+	},
+	{
+		// A game loop: many globals in one flat scope, read from a tight
+		// nested loop, with no function calls to push work into child scopes.
+		// This shape stresses lookup in a large scope rather than call setup,
+		// and the two pull environment storage in opposite directions.
+		"TileRender",
+		`layers = []
+		for (l = 0; l < 3; l = l + 1) {
+			rows = []
+			for (y = 0; y < 30; y = y + 1) {
+				row = []
+				for (x = 0; x < 40; x = x + 1) { row[x] = (x + y + l) % 8 }
+				rows[y] = row
+			}
+			layers[l] = rows
+		}
+		total = 0
+		for (frame = 0; frame < 10; frame = frame + 1) {
+			for (l = 0; l < 3; l = l + 1) {
+				rows = layers[l]
+				for (y = 0; y < 30; y = y + 1) {
+					row = rows[y]
+					for (x = 0; x < 40; x = x + 1) {
+						tile = row[x]
+						if (tile != 0) { total = total + tile * 16 + x * 16 + y * 16 }
+					}
+				}
+			}
+		}
+		total`,
 	},
 	{
 		"MapOperations",
