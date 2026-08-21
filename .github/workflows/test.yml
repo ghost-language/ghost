@@ -3,32 +3,41 @@ name: Test
 on:
   push:
     branches: [ "1.0" ]
+  # Deliberately unfiltered by base branch, so a pull request is checked
+  # wherever it is targeted rather than only when it targets 1.0.
   pull_request:
-    branches: [ "1.0" ]
 
 jobs:
 
-  build:
-    name: Build
+  test:
+    name: Test
     runs-on: ubuntu-latest
     steps:
 
-    - name: Set up Go 1.x
-      uses: actions/setup-go@v2
+    - name: Check out code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
       with:
-        go-version: ^1.17
-      id: go
+        # Track the version in go.mod rather than repeating it here.
+        go-version-file: go.mod
 
-    - name: Check out code into the Go module directory
-      uses: actions/checkout@v2
+    - name: Check formatting
+      run: make fmt
 
-    - name: Get dependencies
-      run: |
-        go get -v -t -d ./...
-        if [ -f Gopkg.toml ]; then
-            curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
-            dep ensure
-        fi
+    - name: Vet
+      run: make vet
+
+    - name: Build
+      run: go build ./...
 
     - name: Test
       run: make test
+
+    # Benchmarks are not compiled by a plain `go test` run, and the Ghost
+    # programs inside them are only parsed once they execute, so a language
+    # change can leave the suite unable to parse while every test still passes.
+    # Running each benchmark a single iteration is enough to catch that.
+    - name: Benchmarks
+      run: make bench
