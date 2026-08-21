@@ -5,23 +5,51 @@ import (
 	"os"
 )
 
-// inlineCapacity is how many variables an environment stores inline, in the
-// environment struct itself, before it falls back to a map.
+// Environments store their bindings in three tiers, in lookup order: a fixed
+// array inside the struct, a grown slice, and finally a map.
 //
-// Every function call builds a new environment, and almost all of them hold
-// only a handful of names: the parameters plus a few locals. A map is a poor
-// fit for that. Allocating one, and growing its buckets as names are set,
-// dominated the memory profile of call-heavy programs. Storing the first few
-// names inline means an environment costs a single allocation and lookups are
-// a short scan of adjacent memory rather than a hash. Environments that hold
-// more names than this - module and class scopes, mainly - spill the remainder
-// into the overflow map and keep their previous behavior.
-const inlineCapacity = 4
+// The tiers exist because the two shapes of scope in a Ghost program want
+// opposite things. A call frame holds a couple of parameters and is created
+// again on every call, so it wants to be small and to cost a single allocation;
+// the top level of a script holds every global and is read constantly from
+// inside hot loops, so it wants lookups to stay cheap well past a couple of
+// names. Sizing one fixed array for both made calls slower when it was large
+// and script globals slower when it was small.
+//
+// Scanning beats hashing at these sizes by more than it looks like it should.
+// A name being looked up and the name stored in the environment usually come
+// from the same identifier in the AST, so the string comparison settles on
+// equal pointers without examining any characters.
+//
+// Past scanLimit a scan really does stop paying for itself, so everything moves
+// into the map and the scan tiers are abandoned. Splitting names across a scan
+// tier and a map would be worse than either: every miss would pay a full scan
+// before the map lookup.
+const (
+	inlineCapacity = 4
+	scanLimit      = 16
+)
+
+// binding is one name/value pair in an environment's second storage tier.
+type binding struct {
+	name  string
+	value Object
+}
 
 type Environment struct {
-	names    [inlineCapacity]string
-	values   [inlineCapacity]Object
-	count    int
+	// Tier one: inline, so an environment this small costs no allocation
+	// beyond the struct itself.
+	names  [inlineCapacity]string
+	values [inlineCapacity]Object
+	count  int
+
+	// Tier two: allocated only for environments that outgrow the inline array.
+	// One slice of pairs rather than parallel slices, because the header sits
+	// in every environment, including the call frames that never grow one.
+	extra []binding
+
+	// Tier three: for environments larger than scanLimit. Once this exists the
+	// scan tiers are empty.
 	overflow map[string]Object
 
 	outer     *Environment
@@ -49,6 +77,12 @@ func (environment *Environment) local(name string) (Object, bool) {
 		}
 	}
 
+	for index := range environment.extra {
+		if environment.extra[index].name == name {
+			return environment.extra[index].value, true
+		}
+	}
+
 	if environment.overflow != nil {
 		value, ok := environment.overflow[name]
 
@@ -60,10 +94,14 @@ func (environment *Environment) local(name string) (Object, bool) {
 
 // All returns a copy of the names bound in this environment.
 func (environment *Environment) All() map[string]Object {
-	all := make(map[string]Object, environment.count+len(environment.overflow))
+	all := make(map[string]Object, environment.count+len(environment.extra)+len(environment.overflow))
 
 	for index := 0; index < environment.count; index++ {
 		all[environment.names[index]] = environment.values[index]
+	}
+
+	for index := range environment.extra {
+		all[environment.extra[index].name] = environment.extra[index].value
 	}
 
 	for name, value := range environment.overflow {
@@ -119,12 +157,18 @@ func (environment *Environment) Set(name string, value Object) Object {
 		}
 	}
 
-	if environment.overflow != nil {
-		if _, ok := environment.overflow[name]; ok {
-			environment.overflow[name] = value
+	for index := range environment.extra {
+		if environment.extra[index].name == name {
+			environment.extra[index].value = value
 
 			return value
 		}
+	}
+
+	if environment.overflow != nil {
+		environment.overflow[name] = value
+
+		return value
 	}
 
 	if environment.count < inlineCapacity {
@@ -135,9 +179,29 @@ func (environment *Environment) Set(name string, value Object) Object {
 		return value
 	}
 
-	if environment.overflow == nil {
-		environment.overflow = make(map[string]Object)
+	if environment.count+len(environment.extra) < scanLimit {
+		environment.extra = append(environment.extra, binding{name: name, value: value})
+
+		return value
 	}
+
+	// Too large to scan. Move every binding into the map and abandon the scan
+	// tiers so that lookups cost one map access rather than a scan and a map
+	// access.
+	environment.overflow = make(map[string]Object, scanLimit*2)
+
+	for index := 0; index < environment.count; index++ {
+		environment.overflow[environment.names[index]] = environment.values[index]
+		environment.names[index] = ""
+		environment.values[index] = nil
+	}
+
+	for index := range environment.extra {
+		environment.overflow[environment.extra[index].name] = environment.extra[index].value
+	}
+
+	environment.count = 0
+	environment.extra = nil
 
 	environment.overflow[name] = value
 
@@ -145,13 +209,13 @@ func (environment *Environment) Set(name string, value Object) Object {
 }
 
 func (environment *Environment) Delete(name string) {
+	// Order is not meaningful in either scan tier, so removals close the gap
+	// with the last entry and clear it so the removed value can be collected.
 	for index := 0; index < environment.count; index++ {
 		if environment.names[index] != name {
 			continue
 		}
 
-		// Order is not meaningful here, so close the gap with the last entry
-		// and clear it so the removed value can be collected.
 		last := environment.count - 1
 
 		environment.names[index] = environment.names[last]
@@ -159,6 +223,20 @@ func (environment *Environment) Delete(name string) {
 		environment.names[last] = ""
 		environment.values[last] = nil
 		environment.count--
+
+		return
+	}
+
+	for index := range environment.extra {
+		if environment.extra[index].name != name {
+			continue
+		}
+
+		last := len(environment.extra) - 1
+
+		environment.extra[index] = environment.extra[last]
+		environment.extra[last] = binding{}
+		environment.extra = environment.extra[:last]
 
 		return
 	}
