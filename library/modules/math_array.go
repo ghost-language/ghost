@@ -33,6 +33,7 @@ func registerMathArrays() {
 	RegisterMethod(MathMethods, "dot", mathDot)
 	RegisterMethod(MathMethods, "matmul", mathDot)
 	RegisterMethod(MathMethods, "cross", mathCross)
+	RegisterMethod(MathMethods, "outer", mathOuter)
 	RegisterMethod(MathMethods, "norm", mathNorm)
 	RegisterMethod(MathMethods, "normalize", mathNormalize)
 	RegisterMethod(MathMethods, "distance", mathDistance)
@@ -511,6 +512,41 @@ func mathCross(scope *object.Scope, tok token.Token, args ...object.Object) obje
 		left[2]*right[0] - left[0]*right[2],
 		left[0]*right[1] - left[1]*right[0],
 	})
+}
+
+// mathOuter multiplies every element of one vector by every element of another,
+// giving a matrix as tall as the first and as wide as the second. It is the
+// shape a weight gradient takes, and the reason it is a method rather than a
+// composition of transpose and dot is that spelling it out that way obscures
+// what is being asked for.
+func mathOuter(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
+	if err := arity("math.outer", tok, args, 2); err != nil {
+		return err
+	}
+
+	left, err := toVector("math.outer", tok, args, 0)
+
+	if err != nil {
+		return err
+	}
+
+	right, err := toVector("math.outer", tok, args, 1)
+
+	if err != nil {
+		return err
+	}
+
+	rows := make([][]float64, len(left))
+
+	for row, scale := range left {
+		rows[row] = make([]float64, len(right))
+
+		for column, value := range right {
+			rows[row][column] = scale * value
+		}
+	}
+
+	return matrixList(rows)
 }
 
 // mathNorm returns the length of a vector. The default is the ordinary
