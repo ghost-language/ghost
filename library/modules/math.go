@@ -2,7 +2,6 @@ package modules
 
 import (
 	"math"
-	"math/rand"
 
 	"ghostlang.org/x/ghost/object"
 	"ghostlang.org/x/ghost/token"
@@ -448,8 +447,7 @@ func mathRandomSeed(scope *object.Scope, tok token.Token, args ...object.Object)
 		return err
 	}
 
-	seed = given
-	randomizer = rand.New(rand.NewSource(seed))
+	SeedRandom(given)
 
 	return value.NULL
 }
