@@ -1,21 +1,55 @@
 version: 2
+project_name: ghost
+
+before:
+  hooks:
+    # Fail on a missing or mismatched dependency before any build starts,
+    # rather than once per GOOS/GOARCH pair.
+    - go mod download
+
 builds:
-  - main: ./cmd
+  - id: "cli"
+    main: ./cmd
     binary: ghost
-    id: "cli"
-    goos: ["linux", "darwin", "windows"]
-    goarch: ["386", "amd64", "arm", "arm64"]
     env:
       - CGO_ENABLED=0
-archives:
-  - format_overrides:
+    goos: ["linux", "darwin", "windows"]
+    goarch: ["386", "amd64", "arm", "arm64"]
+    ignore:
+      # macOS was never shipped for 32-bit Intel, and every Apple Silicon
+      # machine is arm64. These two combinations build nothing installable.
+      - goos: "darwin"
+        goarch: "386"
+      - goos: "darwin"
+        goarch: "arm"
+      # 32-bit ARM Windows is not a platform anyone runs a CLI on.
       - goos: "windows"
-        format: "zip"
+        goarch: "arm"
+    flags:
+      # Keeps the build machine's paths out of the binary, matching the
+      # Makefile's build targets.
+      - -trimpath
+    ldflags:
+      - -s -w
+    # Stamp binaries with the commit time instead of the build time, so
+    # rebuilding a tag produces the same archives.
+    mod_timestamp: "{{ .CommitTimestamp }}"
+
+archives:
+  - id: "cli"
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    formats: ["tar.gz"]
+    format_overrides:
+      - goos: "windows"
+        formats: ["zip"]
     files: ["LICENSE", "README.md"]
+
 checksum:
   name_template: "checksums.txt"
+
 snapshot:
-  name_template: "{{ .Tag }}-next"
+  version_template: "{{ .Tag }}-next"
+
 changelog:
   sort: asc
   filters:
@@ -24,17 +58,45 @@ changelog:
       - "^examples:"
       - "^test:"
       - '(?i)\breadme\b'
-brews:
+
+release:
+  # The release already exists by the time this runs - a human created it on
+  # GitHub, which is what triggers the workflow. Append the generated changelog
+  # to whatever notes they wrote instead of replacing them.
+  mode: append
+
+# A cask rather than a formula: Homebrew asks projects shipping pre-built
+# binaries to use casks, and GoReleaser deprecated `brews` to match. Casks are
+# macOS-only, which is what the README already documented this tap as being for.
+homebrew_casks:
   - name: ghost
     repository:
       owner: ghost-language
       name: homebrew-ghost
+      # The tap is a separate repository, so the workflow's automatic
+      # GITHUB_TOKEN cannot push to it. This needs a personal access token
+      # with contents:write on ghost-language/homebrew-ghost, stored as the
+      # HOMEBREW_TAP_TOKEN secret.
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
+    # Without the token the cask cannot be pushed. Skipping that one step is
+    # better than failing a release whose binaries are already published.
+    skip_upload: '{{ if .Env.HOMEBREW_TAP_TOKEN }}false{{ else }}true{{ end }}'
     commit_author:
-      name: goreleaserbot
-      email: goreleaser@carlosbecker.com
-    description: "https://github.com/ghost-language/ghost."
-    dependencies:
-      - git
-      - zsh
-    install: |
-      bin.install "ghost"
+      name: github-actions[bot]
+      email: 41898282+github-actions[bot]@users.noreply.github.com
+    homepage: "https://github.com/ghost-language/ghost"
+    description: "Ghost, a dynamically typed scripting language."
+    license: "MIT"
+    # No conflict is declared against the formula this cask replaces, even
+    # though both install the same binary: a cask can only conflict with
+    # another cask. Formula/ghost.rb has to be deleted from the tap by hand
+    # once the first cask release has landed.
+    hooks:
+      post:
+        # The binaries are not signed or notarised, so macOS quarantines them
+        # on download and the first run is refused. Clearing the attribute at
+        # install time is what makes `brew install` produce a working ghost.
+        install: |
+          if system_command("/usr/bin/xattr", args: ["-h"]).exit_status == 0
+            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/ghost"]
+          end

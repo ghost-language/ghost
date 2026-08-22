@@ -97,42 +97,39 @@ $  ghost -i examples/fibtc.ghost
 
 ## Releasing
 
-Ghost is hosted and distributed through GitHub. We utilize [GoReleaser](https://goreleaser.com) to automate the release process. GoReleaser will build all the necessary binaries, publish the release and publish the brew tap formula. The following steps outline the process for maintainers of Ghost:
+Ghost is hosted and distributed through GitHub. Publishing a release on GitHub
+triggers the `Release` workflow, which runs [GoReleaser](https://goreleaser.com)
+to build every binary, attach the archives to the release, and update the
+Homebrew cask. Maintainers do not run GoReleaser by hand.
 
-1. Ensure you have a GitHub token with `repo` access saved to your environment:
-
-```
-export GITHUB_TOKEN="YOUR_GH_TOKEN"
-```
-
-2. Ensure the internal version reference is updated:
+1. Update the internal version reference so it matches the tag you are about to
+   create. The release workflow refuses to publish if the two disagree:
 
    ```go
    // version/version.go
 
-   var (
-      Version = "x.y.z"
-   )
+   const Version = "x.y.z"
    ```
 
-3. Create a new tag:
+2. Merge that change, then create and push the tag:
 
-```
-$ git tag -a vx.y.z -m "Release description"
-$ git push origin vx.y.z
-```
+   ```
+   $ git tag -a vx.y.z -m "Release description"
+   $ git push origin vx.y.z
+   ```
 
-4. Run GoReleaser:
+3. Publish a release for the tag on GitHub, writing whatever notes you want.
+   The generated changelog is appended to them. Publishing is what starts the
+   workflow - a draft release does not.
 
-```
-$ goreleaser
-```
+To exercise the whole pipeline without cutting a tag, run the `Release`
+workflow manually from the Actions tab. It builds and archives everything,
+publishes nothing, and attaches the archives to the run.
 
-## Credits
+### Homebrew
 
-- [Crafting Interpreters](https://craftinginterpreters.com/)
-- [Writing An Interpreter In Go](https://interpreterbook.com/)
-
-## License
-
-Ghost is open-sourced software licensed under the MIT license. See the [LICENSE](LICENSE) file for complete details.
+The cask is pushed to [ghost-language/homebrew-ghost](https://github.com/ghost-language/homebrew-ghost),
+a separate repository that the workflow's automatic `GITHUB_TOKEN` cannot write
+to. It needs a personal access token with `contents:write` on that repository,
+stored as the `HOMEBREW_TAP_TOKEN` secret. Without it the release still
+publishes; only the cask update is skipped.
