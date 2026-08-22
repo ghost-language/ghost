@@ -165,6 +165,14 @@ func TestMathBroadcasts(t *testing.T) {
 		{"clamp", []object.Object{integers(-5, 5, 15), object.NewInt(0), object.NewInt(10)}, "[0, 5, 10]"},
 		{"isNegative", []object.Object{integers(-1, 0, 1)}, "[true, false, false]"},
 		{"maximum", []object.Object{integers(1, 5), integers(4, 2)}, "[4, 5]"},
+
+		// Shapes are lined up from the right and the shorter side stretches,
+		// which is numpy's rule. A row spreads down a matrix rather than being
+		// paired against its rows.
+		{"add", []object.Object{list(integers(1, 2), integers(3, 4)), integers(10, 20)}, "[[11, 22], [13, 24]]"},
+		{"add", []object.Object{list(integers(1, 2), integers(3, 4)), list(integers(10), integers(20))}, "[[11, 12], [23, 24]]"},
+		{"add", []object.Object{integers(1, 2, 3), integers(5)}, "[6, 7, 8]"},
+		{"clamp", []object.Object{list(integers(-5, 5), integers(15, 3)), object.NewInt(0), object.NewInt(10)}, "[[0, 5], [10, 3]]"},
 	}
 
 	for _, test := range tests {
@@ -273,6 +281,7 @@ func TestMathLinearAlgebra(t *testing.T) {
 		{"matmul", []object.Object{list(integers(1, 2)), list(integers(3), integers(4))}, "[[11]]"},
 		{"cross", []object.Object{integers(1, 0, 0), integers(0, 1, 0)}, "[0, 0, 1]"},
 		{"cross", []object.Object{integers(1, 0), integers(0, 1)}, "1"},
+		{"outer", []object.Object{integers(1, 2, 3), integers(10, 20)}, "[[10, 20], [20, 40], [30, 60]]"},
 		{"norm", []object.Object{integers(3, 4)}, "5"},
 		{"norm", []object.Object{integers(3, -4), object.NewInt(1)}, "7"},
 		{"normalize", []object.Object{integers(3, 4)}, "[0.6, 0.8]"},
@@ -461,6 +470,7 @@ func TestMathErrors(t *testing.T) {
 		{"solve", []object.Object{list(integers(1, 2), integers(2, 4)), integers(1, 2)}},
 		{"determinant", []object.Object{list(integers(1, 2, 3), integers(4, 5, 6))}},
 		{"dot", []object.Object{integers(1, 2), integers(1, 2, 3)}},
+		{"outer", []object.Object{integers(1, 2), object.NewInt(3)}},
 		{"reshape", []object.Object{integers(1, 2, 3), object.NewInt(2), object.NewInt(2)}},
 		{"arange", []object.Object{object.NewInt(1), object.NewInt(5), object.NewInt(0)}},
 		{"linspace", []object.Object{object.NewInt(0), object.NewInt(1), object.NewInt(-1)}},

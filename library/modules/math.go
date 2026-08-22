@@ -145,66 +145,21 @@ func init() {
 // written once for numbers and works on vectors and matrices for free.
 type elementwiseOp func(tok token.Token, values []*object.Number) object.Object
 
-// broadcast applies an operation across its arguments elementwise. A number
-// argument is held constant against a list argument, list arguments must agree
-// in length, and nesting is followed to any depth. The rules are the ones numpy
-// readers already know: `math.add(2, 3)`, `math.add([1, 2], 10)`, and
-// `math.add([[1, 2]], [[3, 4]])` all mean what they look like they mean.
+// broadcast applies an operation across its arguments elementwise, stretching
+// the smaller shapes across the larger. The rules live in object.Broadcast,
+// which the evaluator also uses for `+` and `*` on lists, so `math.add(a, b)`
+// and `a + b` are one operation reached two ways rather than two that have to
+// be kept in step.
 func broadcast(name string, tok token.Token, args []object.Object, operation elementwiseOp) object.Object {
-	length := -1
+	result, fault := object.Broadcast(args, func(values []*object.Number) object.Object {
+		return operation(tok, values)
+	})
 
-	for _, arg := range args {
-		list, ok := arg.(*object.List)
-
-		if !ok {
-			continue
-		}
-
-		if length >= 0 && len(list.Elements) != length {
-			return object.NewError("%d:%d:%s: runtime error: %s() expects lists of matching lengths. got=%d and %d", tok.Line, tok.Column, tok.File, name, length, len(list.Elements))
-		}
-
-		length = len(list.Elements)
+	if fault != nil {
+		return object.NewError("%d:%d:%s: runtime error: %s() %s", tok.Line, tok.Column, tok.File, name, fault.Reason)
 	}
 
-	if length < 0 {
-		numbers := make([]*object.Number, len(args))
-
-		for index, arg := range args {
-			number, ok := arg.(*object.Number)
-
-			if !ok {
-				return object.NewError("%d:%d:%s: runtime error: %s() expects argument %d to be a number or a list of numbers. got=%s", tok.Line, tok.Column, tok.File, name, index+1, typeName(arg))
-			}
-
-			numbers[index] = number
-		}
-
-		return operation(tok, numbers)
-	}
-
-	elements := make([]object.Object, length)
-	slice := make([]object.Object, len(args))
-
-	for index := 0; index < length; index++ {
-		for position, arg := range args {
-			if list, ok := arg.(*object.List); ok {
-				slice[position] = list.Elements[index]
-			} else {
-				slice[position] = arg
-			}
-		}
-
-		result := broadcast(name, tok, slice, operation)
-
-		if object.IsError(result) {
-			return result
-		}
-
-		elements[index] = result
-	}
-
-	return &object.List{Elements: elements}
+	return result
 }
 
 // elementwise turns an operation into a library method of fixed arity.

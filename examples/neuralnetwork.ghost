@@ -1,0 +1,64 @@
+// A 2-4-1 neural network learning XOR, in Ghost alone: the forward pass, the
+// loss, and backpropagation are all whole-matrix expressions.
+//
+// All four samples are trained at once. The bias is a single row added to a
+// matrix of four, which works because shapes line up from the right and the
+// row stretches down the batch.
+
+math.randomSeed(7)
+
+function sigmoid(z) { return 1 / (1 + math.exp(z * -1)) }
+function sigmoidSlope(a) { return a * (1 - a) }
+
+function randomMatrix(rows, columns) {
+    m = []
+    for (row = 0; row < rows; row++) {
+        values = []
+        for (column = 0; column < columns; column++) { values.push(math.random() - 0.5) }
+        m.push(values)
+    }
+    return m
+}
+
+// Summing down the batch is a dot product against a row of ones.
+function columnSums(m, rows) { return math.dot(math.ones(rows), m) }
+
+inputs = [[0, 0], [0, 1], [1, 0], [1, 1]]
+targets = [[0], [1], [1], [0]]
+
+batch = 4
+rate = 0.5
+
+weights1 = randomMatrix(2, 4)
+bias1 = math.zeros(4)
+weights2 = randomMatrix(4, 1)
+bias2 = math.zeros(1)
+
+for (epoch = 0; epoch < 4000; epoch++) {
+    // Forward, all four samples at once.
+    hidden = sigmoid(math.dot(inputs, weights1) + bias1)
+    output = sigmoid(math.dot(hidden, weights2) + bias2)
+
+    // Gradients.
+    error = output - targets
+    delta2 = error * sigmoidSlope(output)
+    delta1 = math.dot(delta2, math.transpose(weights2)) * sigmoidSlope(hidden)
+
+    // Backward.
+    weights2 -= math.dot(math.transpose(hidden), delta2) * rate
+    bias2 -= columnSums(delta2, batch) * rate
+    weights1 -= math.dot(math.transpose(inputs), delta1) * rate
+    bias1 -= columnSums(delta1, batch) * rate
+
+    if (epoch % 1000 == 0) {
+        print("epoch " + epoch.toString() + "  loss " + math.round(math.sum(error * error), 5).toString())
+    }
+}
+
+print("")
+hidden = sigmoid(math.dot(inputs, weights1) + bias1)
+output = sigmoid(math.dot(hidden, weights2) + bias2)
+
+for (i = 0; i < 4; i++) {
+    print(inputs[i].toString() + " -> " + math.round(output[i][0], 3).toString() + "  (want " + targets[i][0].toString() + ")")
+}
