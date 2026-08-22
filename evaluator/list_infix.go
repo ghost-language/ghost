@@ -2,6 +2,7 @@ package evaluator
 
 import (
 	"ghostlang.org/x/ghost/ast"
+	"ghostlang.org/x/ghost/fault"
 	"ghostlang.org/x/ghost/object"
 	"ghostlang.org/x/ghost/token"
 )
@@ -21,15 +22,16 @@ func evaluateListInfix(node *ast.Infix, left object.Object, right object.Object)
 	operation, ok := listOperations[node.Operator]
 
 	if !ok {
-		return newError("%d:%d:%s: runtime error: unknown operator: %s %s %s", node.Token.Line, node.Token.Column, node.Token.File, left.Type(), node.Operator, right.Type())
+		return operatorError(node.Token, node.Operator, left, right).
+			WithHelp("list arithmetic covers `+`, `-`, `*`, `/`, and `%%`; to join two lists use `concat`")
 	}
 
-	result, fault := object.Broadcast([]object.Object{left, right}, func(values []*object.Number) object.Object {
+	result, mismatch := object.Broadcast([]object.Object{left, right}, func(values []*object.Number) object.Object {
 		return operation(node, values[0], values[1])
 	})
 
-	if fault != nil {
-		return newError("%d:%d:%s: runtime error: cannot evaluate %s %s %s: %s", node.Token.Line, node.Token.Column, node.Token.File, left.Type(), node.Operator, right.Type(), fault.Reason)
+	if mismatch != nil {
+		return object.NewError(fault.Value, node.Token, "cannot use `%s` between these values: %s", node.Operator, mismatch.Reason)
 	}
 
 	return result
@@ -45,14 +47,14 @@ var listOperations = map[token.Type]func(node *ast.Infix, left *object.Number, r
 	token.STAR:  func(node *ast.Infix, left *object.Number, right *object.Number) object.Object { return left.Mul(right) },
 	token.SLASH: func(node *ast.Infix, left *object.Number, right *object.Number) object.Object {
 		if right.IsZero() {
-			return newError("%d:%d:%s: runtime error: division by zero", node.Token.Line, node.Token.Column, node.Token.File)
+			return object.NewError(fault.Value, node.Token, "cannot divide by zero")
 		}
 
 		return left.Div(right)
 	},
 	token.PERCENT: func(node *ast.Infix, left *object.Number, right *object.Number) object.Object {
 		if right.IsZero() {
-			return newError("%d:%d:%s: runtime error: division by zero", node.Token.Line, node.Token.Column, node.Token.File)
+			return object.NewError(fault.Value, node.Token, "cannot take the remainder of a division by zero")
 		}
 
 		return left.Mod(right)

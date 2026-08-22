@@ -7,6 +7,7 @@ import (
 
 	"ghostlang.org/x/ghost/ghost"
 	"ghostlang.org/x/ghost/log"
+	"ghostlang.org/x/ghost/object"
 	"github.com/peterh/liner"
 )
 
@@ -22,43 +23,80 @@ func Start(in io.Reader, out io.Writer) {
 	line.SetCtrlCAborts(true)
 	line.SetTabCompletionStyle(liner.TabPrints)
 
-	_, err := os.Open(history)
-	if err != nil {
-		f, err := os.Create(history)
-		if err != nil {
-			log.Error("system error: unable to write to history file: %s", err)
-		} else {
-			line.WriteHistory(f)
-			f.Close()
-		}
-	}
+	loadHistory(line)
 
-	ghost := ghost.New()
+	instance := ghost.New()
+
+	directory, _ := os.Getwd()
+
+	instance.SetDirectory(directory)
+	instance.SetFile("repl.ghost")
 
 	for {
 		source, err := line.Prompt(prompt)
 
-		if err == liner.ErrPromptAborted {
-			log.Info("Exiting...")
-			os.Exit(1)
-		} else {
-			evaluate(ghost, source)
+		// Ctrl-C aborts the line being typed and Ctrl-D ends the session. A
+		// session that ends this way ended the way it was asked to, so it is
+		// not reported as a failure.
+		if err == liner.ErrPromptAborted || err == io.EOF {
+			saveHistory(line)
 
-			line.AppendHistory(source)
+			return
 		}
+
+		if err != nil {
+			log.Error("could not read from the terminal: %s", err)
+
+			return
+		}
+
+		if source == "" {
+			continue
+		}
+
+		line.AppendHistory(source)
+
+		evaluate(instance, source)
 	}
 }
 
-func evaluate(ghost *ghost.Ghost, source string) {
-	directory, _ := os.Getwd()
+// evaluate runs one line and shows what it produced.
+//
+// A failure has already been written out in full by the time this sees it, and
+// the session carries on: a mistyped line in a REPL is a normal part of using
+// one, not a reason to stop.
+func evaluate(instance *ghost.Ghost, source string) {
+	instance.SetSource(source)
 
-	ghost.SetSource(source)
-	ghost.SetFile("repl.ghost")
-	ghost.SetDirectory(directory)
+	result := instance.Execute()
 
-	result := ghost.Execute()
-
-	if result != nil {
-		log.Info(result.String())
+	if result == nil || object.IsError(result) {
+		return
 	}
+
+	log.Print(result.String())
+}
+
+func loadHistory(line *liner.State) {
+	file, err := os.Open(history)
+
+	if err != nil {
+		return
+	}
+
+	defer file.Close()
+
+	line.ReadHistory(file)
+}
+
+func saveHistory(line *liner.State) {
+	file, err := os.Create(history)
+
+	if err != nil {
+		return
+	}
+
+	defer file.Close()
+
+	line.WriteHistory(file)
 }

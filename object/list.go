@@ -3,6 +3,8 @@ package object
 import (
 	"bytes"
 	"strings"
+
+	"ghostlang.org/x/ghost/token"
 )
 
 // List objects consist of a nil value.
@@ -33,26 +35,26 @@ func (list *List) Type() Type {
 }
 
 // Method defines the set of methods available on list objects.
-func (list *List) Method(method string, args []Object) (Object, bool) {
+func (list *List) Method(method string, tok token.Token, args []Object) (Object, bool) {
 	switch method {
 	case "first":
-		return list.first(args)
+		return list.first(tok, args)
 	case "concat":
-		return list.concat(args)
+		return list.concat(tok, args)
 	case "join":
-		return list.join(args)
+		return list.join(tok, args)
 	case "last":
-		return list.last(args)
+		return list.last(tok, args)
 	case "length":
-		return list.length(args)
+		return list.length(tok, args)
 	case "pop":
-		return list.pop(args)
+		return list.pop(tok, args)
 	case "push":
-		return list.push(args)
+		return list.push(tok, args)
 	case "tail":
-		return list.tail(args)
+		return list.tail(tok, args)
 	case "toString":
-		return list.toString(args)
+		return list.toString(tok, args)
 	}
 
 	return nil, false
@@ -61,25 +63,30 @@ func (list *List) Method(method string, args []Object) (Object, bool) {
 // =============================================================================
 // Object methods
 
-func (list *List) first(args []Object) (Object, bool) {
+func (list *List) first(tok token.Token, args []Object) (Object, bool) {
+	if err := Arity("list.first()", tok, args, 0); err != nil {
+		return err, true
+	}
+
 	if len(list.Elements) == 0 {
 		return &Null{}, true
 	}
+
 	return list.Elements[0], true
 }
 
 // concat joins two lists end to end, answering with a new list and leaving both
 // operands alone. Joining is what `+` means for strings but not for lists,
 // where the operators are elementwise arithmetic instead.
-func (list *List) concat(args []Object) (Object, bool) {
-	if len(args) != 1 {
-		return nil, false
+func (list *List) concat(tok token.Token, args []Object) (Object, bool) {
+	if err := Arity("list.concat()", tok, args, 1); err != nil {
+		return err, true
 	}
 
-	other, ok := args[0].(*List)
+	other, err := ListArgument("list.concat()", tok, args, 0)
 
-	if !ok {
-		return nil, false
+	if err != nil {
+		return err.WithHelp("`concat` joins two lists; to repeat a list, multiply it"), true
 	}
 
 	elements := make([]Object, 0, len(list.Elements)+len(other.Elements))
@@ -89,61 +96,100 @@ func (list *List) concat(args []Object) (Object, bool) {
 	return &List{Elements: elements}, true
 }
 
-func (list *List) join(args []Object) (Object, bool) {
-	var s []string
-
-	for _, value := range list.Elements {
-		s = append(s, value.String())
+func (list *List) join(tok token.Token, args []Object) (Object, bool) {
+	if err := Arity("list.join()", tok, args, 1); err != nil {
+		return err, true
 	}
 
-	str := strings.Join(s, args[0].(*String).Value)
+	separator, err := StringArgument("list.join()", tok, args, 0)
 
-	return &String{Value: str}, true
+	if err != nil {
+		return err, true
+	}
+
+	parts := make([]string, len(list.Elements))
+
+	for index, value := range list.Elements {
+		parts[index] = value.String()
+	}
+
+	return &String{Value: strings.Join(parts, separator.Value)}, true
 }
 
-func (list *List) last(args []Object) (Object, bool) {
+func (list *List) last(tok token.Token, args []Object) (Object, bool) {
+	if err := Arity("list.last()", tok, args, 0); err != nil {
+		return err, true
+	}
+
 	length := len(list.Elements)
 
 	if length == 0 {
 		return &Null{}, true
 	}
+
 	return list.Elements[length-1], true
 }
 
-func (list *List) length(args []Object) (Object, bool) {
-	return NewInt(int64(len(list.Elements))), true
-}
-
-func (list *List) pop(args []Object) (Object, bool) {
-	if len(list.Elements) > 0 {
-		x := list.Elements[0]
-		list.Elements = list.Elements[1:]
-
-		return x, true
+func (list *List) length(tok token.Token, args []Object) (Object, bool) {
+	if err := Arity("list.length()", tok, args, 0); err != nil {
+		return err, true
 	}
 
-	return &Null{}, true
+	return NewInt(int64(len(list.Elements))), true
 }
 
-func (list *List) push(args []Object) (Object, bool) {
-	list.Elements = append(list.Elements, args[0])
+func (list *List) pop(tok token.Token, args []Object) (Object, bool) {
+	if err := Arity("list.pop()", tok, args, 0); err != nil {
+		return err, true
+	}
+
+	if len(list.Elements) == 0 {
+		return &Null{}, true
+	}
+
+	first := list.Elements[0]
+	list.Elements = list.Elements[1:]
+
+	return first, true
+}
+
+func (list *List) push(tok token.Token, args []Object) (Object, bool) {
+	if err := Arity("list.push()", tok, args, 1); err != nil {
+		return err, true
+	}
+
+	value, err := AnyArgument("list.push()", tok, args, 0)
+
+	if err != nil {
+		return err, true
+	}
+
+	list.Elements = append(list.Elements, value)
 
 	return NewInt(int64(len(list.Elements))), true
 }
 
-func (list *List) tail(args []Object) (Object, bool) {
+func (list *List) tail(tok token.Token, args []Object) (Object, bool) {
+	if err := Arity("list.tail()", tok, args, 0); err != nil {
+		return err, true
+	}
+
 	length := len(list.Elements)
 
-	if length > 0 {
-		newElements := make([]Object, length-1)
-		copy(newElements, list.Elements[1:length])
-
-		return &List{Elements: newElements}, true
+	if length == 0 {
+		return &Null{}, true
 	}
 
-	return &Null{}, true
+	elements := make([]Object, length-1)
+	copy(elements, list.Elements[1:length])
+
+	return &List{Elements: elements}, true
 }
 
-func (list *List) toString(args []Object) (Object, bool) {
+func (list *List) toString(tok token.Token, args []Object) (Object, bool) {
+	if err := Arity("list.toString()", tok, args, 0); err != nil {
+		return err, true
+	}
+
 	return &String{Value: list.String()}, true
 }

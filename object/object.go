@@ -35,35 +35,52 @@ const (
 	TRAIT
 )
 
+// typeNames maps each type to the name Ghost calls it by. These are the names
+// `type()` answers with and the names error messages use, and they are the same
+// names deliberately: a reader who is told a value is a `string` should be able
+// to check that with `type(value) == "string"` and get the same word back.
 var typeNames = [...]string{
-	BOOLEAN:          "BOOLEAN",
-	BREAK:            "BREAK",
-	CLASS:            "CLASS",
-	CONTINUE:         "CONTINUE",
-	ERROR:            "ERROR",
-	FUNCTION:         "FUNCTION",
-	INSTANCE:         "INSTANCE",
-	LIBRARY_FUNCTION: "LIBRARY_FUNCTION",
-	LIBRARY_MODULE:   "LIBRARY_MODULE",
-	LIBRARY_PROPERTY: "LIBRARY_PROPERTY",
-	LIST:             "LIST",
-	MAP:              "MAP",
-	NULL:             "NULL",
-	NUMBER:           "NUMBER",
-	RETURN:           "RETURN",
-	SCOPE:            "SCOPE",
-	STRING:           "STRING",
-	SUPER:            "SUPER",
-	TRAIT:            "TRAIT",
+	BOOLEAN:          "boolean",
+	BREAK:            "break",
+	CLASS:            "class",
+	CONTINUE:         "continue",
+	ERROR:            "error",
+	FUNCTION:         "function",
+	INSTANCE:         "instance",
+	LIBRARY_FUNCTION: "library_function",
+	LIBRARY_MODULE:   "library_module",
+	LIBRARY_PROPERTY: "library_property",
+	LIST:             "list",
+	MAP:              "map",
+	NULL:             "null",
+	NUMBER:           "number",
+	RETURN:           "return",
+	SCOPE:            "scope",
+	STRING:           "string",
+	SUPER:            "super",
+	TRAIT:            "trait",
 }
 
-// String returns the name of the type, as used in runtime error messages.
+// String returns the name of the type, as used in error messages and answered
+// by `type()`.
 func (t Type) String() string {
 	if int(t) < 0 || int(t) >= len(typeNames) {
-		return "UNKNOWN"
+		return "unknown"
 	}
 
 	return typeNames[t]
+}
+
+// TypeName names the type of a value, including one that is missing entirely.
+// A nil object is a hole in the evaluator rather than a Ghost value, but a
+// message about it still has to say something, and "null" is what a reader
+// would call it.
+func TypeName(value Object) string {
+	if value == nil {
+		return "null"
+	}
+
+	return value.Type().String()
 }
 
 // Object is the interface for all object values.
@@ -83,7 +100,7 @@ type Mappable interface {
 }
 
 type HasMethods interface {
-	Method(method string, args []Object) (Object, bool)
+	Method(method string, tok token.Token, args []Object) (Object, bool)
 }
 
 type GoFunction func(scope *Scope, tok token.Token, args ...Object) Object

@@ -3,6 +3,7 @@ package modules
 import (
 	"math"
 
+	"ghostlang.org/x/ghost/fault"
 	"ghostlang.org/x/ghost/object"
 	"ghostlang.org/x/ghost/token"
 	"ghostlang.org/x/ghost/value"
@@ -151,12 +152,12 @@ type elementwiseOp func(tok token.Token, values []*object.Number) object.Object
 // and `a + b` are one operation reached two ways rather than two that have to
 // be kept in step.
 func broadcast(name string, tok token.Token, args []object.Object, operation elementwiseOp) object.Object {
-	result, fault := object.Broadcast(args, func(values []*object.Number) object.Object {
+	result, mismatch := object.Broadcast(args, func(values []*object.Number) object.Object {
 		return operation(tok, values)
 	})
 
-	if fault != nil {
-		return object.NewError("%d:%d:%s: runtime error: %s() %s", tok.Line, tok.Column, tok.File, name, fault.Reason)
+	if mismatch != nil {
+		return object.NewError(fault.Value, tok, "`%s()` %s", name, mismatch.Reason)
 	}
 
 	return result
@@ -382,7 +383,7 @@ func mathRandom(scope *object.Scope, tok token.Token, args ...object.Object) obj
 	}
 
 	if high < low {
-		return object.NewError("%d:%d:%s: runtime error: math.random() expects the upper bound to be at least the lower bound", tok.Line, tok.Column, tok.File)
+		return object.NewError(fault.Value, tok, "`math.random()` expects the upper bound to be at least the lower bound")
 	}
 
 	return object.NewInt(low + randomizer.Int63n(high-low+1))
@@ -492,7 +493,7 @@ func numberClamp(tok token.Token, values []*object.Number) object.Object {
 	high := values[2]
 
 	if low.GreaterThan(high) {
-		return object.NewError("%d:%d:%s: runtime error: math.clamp() expects the lower bound to be no greater than the upper bound", tok.Line, tok.Column, tok.File)
+		return object.NewError(fault.Value, tok, "`math.clamp()` expects the lower bound to be no greater than the upper bound")
 	}
 
 	if given.LessThan(low) {
@@ -685,14 +686,6 @@ func toBoolean(given bool) object.Object {
 	return value.FALSE
 }
 
-func typeName(obj object.Object) string {
-	if obj == nil {
-		return "null"
-	}
-
-	return obj.Type().String()
-}
-
 func divisionByZero(name string, tok token.Token) *object.Error {
-	return object.NewError("%d:%d:%s: runtime error: %s() cannot divide by zero", tok.Line, tok.Column, tok.File, name)
+	return object.NewError(fault.Value, tok, "`%s()` cannot divide by zero", name)
 }

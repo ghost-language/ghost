@@ -1,5 +1,7 @@
 package object
 
+import "ghostlang.org/x/ghost/token"
+
 // LibraryModule objects consist of a slice of LibraryFunctions.
 type LibraryModule struct {
 	Name       string
@@ -18,6 +20,6 @@ func (libraryModule *LibraryModule) Type() Type {
 }
 
 // Method defines the set of methods available on library module objects.
-func (libraryModule *LibraryModule) Method(method string, args []Object) (Object, bool) {
+func (libraryModule *LibraryModule) Method(method string, tok token.Token, args []Object) (Object, bool) {
 	return nil, false
 }

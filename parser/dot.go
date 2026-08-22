@@ -1,8 +1,6 @@
 package parser
 
 import (
-	"fmt"
-
 	"ghostlang.org/x/ghost/ast"
 	"ghostlang.org/x/ghost/token"
 )
@@ -22,9 +20,8 @@ func (parser *Parser) dotExpression(left ast.ExpressionNode) ast.ExpressionNode 
 			name = identifier.Value
 		}
 
-		parser.errors = append(parser.errors, fmt.Sprintf(
-			"%d:%d: syntax error: `%s` is not a method; construct instances with `new %s()`", parser.currentToken.Line, parser.currentToken.Column, token.NEW, name,
-		))
+		parser.report(parser.currentToken, "`%s` is not a method", token.NEW).
+			WithHelp("construct instances with `new %s()`", name)
 
 		return nil
 	}

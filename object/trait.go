@@ -1,6 +1,9 @@
 package object
 
-import "ghostlang.org/x/ghost/ast"
+import (
+	"ghostlang.org/x/ghost/ast"
+	"ghostlang.org/x/ghost/token"
+)
 
 // Trait objects consist of a body and an environment.
 type Trait struct {
@@ -21,7 +24,7 @@ func (trait *Trait) Type() Type {
 }
 
 // Method defines the set of methods available on trait objects.
-func (trait *Trait) Method(method string, args []Object) (Object, bool) {
+func (trait *Trait) Method(method string, tok token.Token, args []Object) (Object, bool) {
 	return nil, false
 }
 

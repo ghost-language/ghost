@@ -2,6 +2,7 @@ package evaluator
 
 import (
 	"ghostlang.org/x/ghost/ast"
+	"ghostlang.org/x/ghost/fault"
 	"ghostlang.org/x/ghost/object"
 )
 
@@ -11,5 +12,5 @@ func evaluateThis(node *ast.This, scope *object.Scope) object.Object {
 		return scope.Self
 	}
 
-	return newError("%d:%d:%s: runtime error: 'this' used outside of class context", node.Token.Line, node.Token.Column, node.Token.File)
+	return object.NewError(fault.Name, node.Token, "`this` can only be used inside a class")
 }

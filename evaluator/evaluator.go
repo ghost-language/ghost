@@ -1,8 +1,6 @@
 package evaluator
 
 import (
-	"fmt"
-
 	"ghostlang.org/x/ghost/ast"
 	"ghostlang.org/x/ghost/object"
 	"ghostlang.org/x/ghost/value"
@@ -136,9 +134,4 @@ func isTruthy(value object.Object) bool {
 	default:
 		return true
 	}
-}
-
-// newError returns a new error object.
-func newError(format string, a ...interface{}) *object.Error {
-	return &object.Error{Message: fmt.Sprintf(format, a...)}
 }

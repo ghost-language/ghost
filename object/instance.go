@@ -3,6 +3,7 @@ package object
 import (
 	"fmt"
 
+	"ghostlang.org/x/ghost/fault"
 	"ghostlang.org/x/ghost/token"
 )
 
@@ -27,7 +28,7 @@ func (instance *Instance) Type() Type {
 }
 
 // Method defines the set of methods available on instance objects.
-func (instance *Instance) Method(method string, args []Object) (Object, bool) {
+func (instance *Instance) Method(method string, tok token.Token, args []Object) (Object, bool) {
 	return nil, false
 }
 
@@ -69,7 +70,11 @@ func (instance *Instance) Call(name string, arguments []Object, tok token.Token)
 		}
 	}
 
-	return NewError("%d:%d: runtime error: unknown method '%s' on class %s", tok.Line, tok.Column, name, instance.Class.Name.Value)
+	if ok {
+		return NewError(fault.Type, tok, "`%s.%s` is a %s, which cannot be called", instance.Class.Name.Value, name, TypeName(member))
+	}
+
+	return NewError(fault.Property, tok, "class `%s` has no method `%s`", instance.Class.Name.Value, name)
 }
 
 func (instance *Instance) callMethod(method *Function, class *Class, arguments []Object) Object {

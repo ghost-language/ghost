@@ -13,13 +13,29 @@ type Token struct {
 	Type    Type        // Token type
 	Lexeme  string      // String representation of literal value
 	Literal interface{} // Native value in Go
-	Line    int         // Line of occurance
-	Column  int         // Column of occurance on line
+	Line    int         // Line the lexeme starts on
+	Column  int         // Column the lexeme starts at, counting from one
+	Length  int         // Width of the lexeme in characters, so a report can underline all of it
 	File    string      // File of occurance
 }
 
 func (token *Token) String() string {
 	return fmt.Sprintf("%s \"%s\" %v on line %d", token.Type, token.Lexeme, token.Literal, token.Line)
+}
+
+// Describe names a token the way a sentence about it needs to read. Error
+// messages quote what was actually written, except at the end of the file where
+// there is nothing to quote.
+func (token Token) Describe() string {
+	if token.Type == EOF {
+		return "the end of the file"
+	}
+
+	if token.Lexeme == "" {
+		return token.Type.Describe()
+	}
+
+	return "`" + token.Lexeme + "`"
 }
 
 const (
@@ -166,6 +182,27 @@ var typeNames = [...]string{
 	WHILE:    "while",
 	EOF:      "eof",
 	INVALID:  "__INVALID__",
+}
+
+// Describe names a token type the way a sentence about it needs to read. An
+// operator or a keyword is quoted as it is written, because that is exactly what
+// the reader has to type; a class of token, such as a name or a number, is
+// described instead, because there is no single spelling to quote.
+func (t Type) Describe() string {
+	switch t {
+	case IDENTIFIER:
+		return "a name"
+	case STRING:
+		return "a string"
+	case NUMBER:
+		return "a number"
+	case EOF:
+		return "the end of the file"
+	case INVALID:
+		return "an unreadable token"
+	}
+
+	return "`" + t.String() + "`"
 }
 
 // String returns the source spelling of the token type.

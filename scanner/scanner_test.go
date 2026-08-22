@@ -3,6 +3,7 @@ package scanner
 import (
 	"testing"
 
+	"ghostlang.org/x/ghost/source"
 	"ghostlang.org/x/ghost/token"
 )
 
@@ -85,5 +86,182 @@ func TestScanTokens(t *testing.T) {
 		if tok.expectedLexeme != token.Lexeme {
 			t.Fatalf("token lexeme is wrong. expected=%q, got=%q", tok.expectedLexeme, token.Lexeme)
 		}
+	}
+}
+
+// =============================================================================
+// Positions and lexical faults
+
+// Every report Ghost prints is anchored on a token, so a token that does not
+// know exactly where it starts and how wide it is puts the caret in the wrong
+// place. These cover the shapes that used to be measured backwards from the
+// scanner's cursor.
+func TestTokenPositions(t *testing.T) {
+	tests := []struct {
+		name     string
+		source   string
+		expected []struct {
+			lexeme string
+			line   int
+			column int
+			length int
+		}
+	}{
+		{
+			name:   "operators and names",
+			source: `total = count + 1`,
+			expected: []struct {
+				lexeme string
+				line   int
+				column int
+				length int
+			}{
+				{"total", 1, 1, 5},
+				{"=", 1, 7, 1},
+				{"count", 1, 9, 5},
+				{"+", 1, 15, 1},
+				{"1", 1, 17, 1},
+			},
+		},
+		{
+			name:   "numbers start where they are written",
+			source: `x = 3.25`,
+			expected: []struct {
+				lexeme string
+				line   int
+				column int
+				length int
+			}{
+				{"x", 1, 1, 1},
+				{"=", 1, 3, 1},
+				{"3.25", 1, 5, 4},
+			},
+		},
+		{
+			name:   "a string covers its quotes",
+			source: `name = "ghost"`,
+			expected: []struct {
+				lexeme string
+				line   int
+				column int
+				length int
+			}{
+				{"name", 1, 1, 4},
+				{"=", 1, 6, 1},
+				{"ghost", 1, 8, 7},
+			},
+		},
+		{
+			name:   "later lines start over at column one",
+			source: "a = 1\nbb = 2",
+			expected: []struct {
+				lexeme string
+				line   int
+				column int
+				length int
+			}{
+				{"a", 1, 1, 1},
+				{"=", 1, 3, 1},
+				{"1", 1, 5, 1},
+				{"bb", 2, 1, 2},
+				{"=", 2, 4, 1},
+				{"2", 2, 6, 1},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			scanner := New(test.source, "test.ghost")
+
+			for index, expected := range test.expected {
+				scanned := scanner.ScanToken()
+
+				if scanned.Lexeme != expected.lexeme {
+					t.Fatalf("token %d: got lexeme %q, expected %q", index, scanned.Lexeme, expected.lexeme)
+				}
+
+				if scanned.Line != expected.line || scanned.Column != expected.column || scanned.Length != expected.length {
+					t.Errorf("token %q: got line=%d column=%d length=%d, expected line=%d column=%d length=%d",
+						scanned.Lexeme, scanned.Line, scanned.Column, scanned.Length,
+						expected.line, expected.column, expected.length)
+				}
+			}
+		})
+	}
+}
+
+// A string that runs off the end of the file used to scan silently, leaving the
+// rest of the program inside it.
+func TestScannerReportsLexicalFaults(t *testing.T) {
+	tests := []struct {
+		name     string
+		source   string
+		expected string
+	}{
+		{"unterminated string", `x = "ghost`, "test.ghost:1:5: syntax error: unterminated string"},
+		{"unterminated comment", "x = 1\n/* forever", "test.ghost:2:1: syntax error: unterminated block comment"},
+		{"unexpected character", "x = 1\ny = @", "test.ghost:2:5: syntax error: unexpected character `@`"},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			scanner := New(test.source, "test.ghost")
+
+			for scanner.ScanToken().Type != token.EOF {
+			}
+
+			faults := scanner.Faults()
+
+			if len(faults) != 1 {
+				t.Fatalf("got %d faults, expected 1: %v", len(faults), faults)
+			}
+
+			if faults[0].String() != test.expected {
+				t.Errorf("got=%q, expected=%q", faults[0].String(), test.expected)
+			}
+		})
+	}
+}
+
+// A stray character is stepped over rather than swallowed into the name that
+// follows it, so the rest of the line still scans.
+func TestScanningContinuesPastAStrayCharacter(t *testing.T) {
+	scanner := New("@ total", "test.ghost")
+
+	scanned := scanner.ScanToken()
+
+	if scanned.Lexeme != "total" {
+		t.Errorf("got=%q, expected=%q", scanned.Lexeme, "total")
+	}
+}
+
+// A string may hold newlines, and the line counter has to follow them or every
+// position after one points at the wrong line.
+func TestMultiLineStringsAdvanceTheLine(t *testing.T) {
+	scanner := New("x = \"one\ntwo\"\ny = 1", "test.ghost")
+
+	for index := 0; index < 3; index++ {
+		scanner.ScanToken()
+	}
+
+	scanned := scanner.ScanToken()
+
+	if scanned.Lexeme != "y" || scanned.Line != 3 {
+		t.Errorf("got lexeme=%q line=%d, expected lexeme=%q line=3", scanned.Lexeme, scanned.Line, "y")
+	}
+}
+
+// The source is filed as scanning starts so that a failure much later — in the
+// evaluator, long after parsing finished — can still quote the line.
+func TestScanningRegistersTheSource(t *testing.T) {
+	source.Reset()
+
+	New("first\nsecond", "registered.ghost")
+
+	line, ok := source.Line("registered.ghost", 2)
+
+	if !ok || line != "second" {
+		t.Errorf("got=(%q, %v), expected=(%q, true)", line, ok, "second")
 	}
 }

@@ -1,6 +1,7 @@
 package modules
 
 import (
+	"ghostlang.org/x/ghost/fault"
 	"ghostlang.org/x/ghost/object"
 	"ghostlang.org/x/ghost/token"
 )
@@ -9,48 +10,31 @@ import (
 // turns every method into a wall of type assertions. These helpers keep the
 // conversions in one place so that argument errors read the same no matter
 // which module reported them.
+//
+// They are thin wrappers over the checks in the object package rather than a
+// second set of rules. A module method, a method on a string, and a call into a
+// class all describe a bad argument with the same sentence, because all three
+// of them end up in the same function.
 
 // arity checks that a method received an exact number of arguments.
 func arity(name string, tok token.Token, args []object.Object, want int) *object.Error {
-	if len(args) != want {
-		return object.NewError("%d:%d:%s: runtime error: %s() expects %d argument(s). got=%d", tok.Line, tok.Column, tok.File, name, want, len(args))
-	}
-
-	return nil
+	return object.Arity(signature(name), tok, args, want)
 }
 
 // arityRange checks that a method received a number of arguments within bounds.
 func arityRange(name string, tok token.Token, args []object.Object, low, high int) *object.Error {
-	if len(args) < low || len(args) > high {
-		return object.NewError("%d:%d:%s: runtime error: %s() expects between %d and %d arguments. got=%d", tok.Line, tok.Column, tok.File, name, low, high, len(args))
-	}
-
-	return nil
+	return object.ArityRange(signature(name), tok, args, low, high)
 }
 
 // arityAtLeast checks that a method received no fewer than a number of
 // arguments, which suits the methods that read a whole run of values.
 func arityAtLeast(name string, tok token.Token, args []object.Object, low int) *object.Error {
-	if len(args) < low {
-		return object.NewError("%d:%d:%s: runtime error: %s() expects at least %d argument(s). got=%d", tok.Line, tok.Column, tok.File, name, low, len(args))
-	}
-
-	return nil
+	return object.ArityAtLeast(signature(name), tok, args, low)
 }
 
 // numberAt reads a numeric argument.
 func numberAt(name string, tok token.Token, args []object.Object, index int) (*object.Number, *object.Error) {
-	if index >= len(args) {
-		return nil, object.NewError("%d:%d:%s: runtime error: %s() is missing argument %d", tok.Line, tok.Column, tok.File, name, index+1)
-	}
-
-	number, ok := args[index].(*object.Number)
-
-	if !ok {
-		return nil, object.NewError("%d:%d:%s: runtime error: %s() expects argument %d to be a number. got=%s", tok.Line, tok.Column, tok.File, name, index+1, args[index].Type())
-	}
-
-	return number, nil
+	return object.NumberArgument(signature(name), tok, args, index)
 }
 
 // floatAt reads a numeric argument as a float.
@@ -77,14 +61,10 @@ func integerAt(name string, tok token.Token, args []object.Object, index int) (i
 
 // booleanAt reads a boolean argument.
 func booleanAt(name string, tok token.Token, args []object.Object, index int) (bool, *object.Error) {
-	if index >= len(args) {
-		return false, object.NewError("%d:%d:%s: runtime error: %s() is missing argument %d", tok.Line, tok.Column, tok.File, name, index+1)
-	}
+	boolean, err := object.BooleanArgument(signature(name), tok, args, index)
 
-	boolean, ok := args[index].(*object.Boolean)
-
-	if !ok {
-		return false, object.NewError("%d:%d:%s: runtime error: %s() expects argument %d to be a boolean. got=%s", tok.Line, tok.Column, tok.File, name, index+1, args[index].Type())
+	if err != nil {
+		return false, err
 	}
 
 	return boolean.Value, nil
@@ -92,17 +72,37 @@ func booleanAt(name string, tok token.Token, args []object.Object, index int) (b
 
 // listAt reads a list argument.
 func listAt(name string, tok token.Token, args []object.Object, index int) (*object.List, *object.Error) {
-	if index >= len(args) {
-		return nil, object.NewError("%d:%d:%s: runtime error: %s() is missing argument %d", tok.Line, tok.Column, tok.File, name, index+1)
+	return object.ListArgument(signature(name), tok, args, index)
+}
+
+// stringAt reads a string argument.
+func stringAt(name string, tok token.Token, args []object.Object, index int) (string, *object.Error) {
+	str, err := object.StringArgument(signature(name), tok, args, index)
+
+	if err != nil {
+		return "", err
 	}
 
-	list, ok := args[index].(*object.List)
+	return str.Value, nil
+}
 
-	if !ok {
-		return nil, object.NewError("%d:%d:%s: runtime error: %s() expects argument %d to be a list. got=%s", tok.Line, tok.Column, tok.File, name, index+1, args[index].Type())
-	}
+// systemFailure reports the world outside the program refusing to cooperate: a
+// file that will not open, a socket that will not bind. The Go error is quoted
+// as-is, because what it says — "no such file or directory", "permission
+// denied" — is already the clearest description available.
+func systemFailure(name string, tok token.Token, failure error) *object.Error {
+	return object.NewError(fault.System, tok, "`%s` failed: %s", signature(name), failure)
+}
 
-	return list, nil
+// functionAt reads a callable argument.
+func functionAt(name string, tok token.Token, args []object.Object, index int) (*object.Function, *object.Error) {
+	return object.FunctionArgument(signature(name), tok, args, index)
+}
+
+// signature renders a module method's name the way it is written in Ghost, so
+// that a message quotes something the reader can search their own source for.
+func signature(name string) string {
+	return name + "()"
 }
 
 // gatherNumbers reads a run of arguments as a flat sequence of numbers. Lists
@@ -155,7 +155,7 @@ func appendNumbers(name string, tok token.Token, numbers []*object.Number, arg o
 		return numbers, nil
 	}
 
-	return nil, object.NewError("%d:%d:%s: runtime error: %s() expects numbers or lists of numbers. got=%s", tok.Line, tok.Column, tok.File, name, typeName(arg))
+	return nil, object.NewError(fault.Argument, tok, "`%s` expects numbers or lists of numbers, got %s", signature(name), object.TypeName(arg))
 }
 
 // toFloats unwraps numbers for the Go operations that work in float64.

@@ -3,6 +3,7 @@ package modules
 import (
 	"math"
 
+	"ghostlang.org/x/ghost/fault"
 	"ghostlang.org/x/ghost/object"
 	"ghostlang.org/x/ghost/token"
 )
@@ -86,7 +87,7 @@ func mathArange(scope *object.Scope, tok token.Token, args ...object.Object) obj
 	}
 
 	if step == 0 {
-		return object.NewError("%d:%d:%s: runtime error: math.arange() expects a step other than zero", tok.Line, tok.Column, tok.File)
+		return object.NewError(fault.Value, tok, "`math.arange()` expects a step other than zero")
 	}
 
 	count := int(math.Ceil((stop - start) / step))
@@ -137,7 +138,7 @@ func mathLinspace(scope *object.Scope, tok token.Token, args ...object.Object) o
 	}
 
 	if count < 0 {
-		return object.NewError("%d:%d:%s: runtime error: math.linspace() expects a count of zero or greater. got=%d", tok.Line, tok.Column, tok.File, count)
+		return object.NewError(fault.Value, tok, "`math.linspace()` expects a count of zero or greater, got %d", count)
 	}
 
 	values := make([]float64, count)
@@ -199,7 +200,7 @@ func filled(name string, tok token.Token, args []object.Object, fill *object.Num
 		}
 
 		if size < 0 {
-			return object.NewError("%d:%d:%s: runtime error: %s() expects sizes of zero or greater. got=%d", tok.Line, tok.Column, tok.File, name, size)
+			return object.NewError(fault.Value, tok, "`%s()` expects sizes of zero or greater, got %d", name, size)
 		}
 
 		dimensions[index] = size
@@ -242,7 +243,7 @@ func mathIdentity(scope *object.Scope, tok token.Token, args ...object.Object) o
 	}
 
 	if size < 0 {
-		return object.NewError("%d:%d:%s: runtime error: math.identity() expects a size of zero or greater. got=%d", tok.Line, tok.Column, tok.File, size)
+		return object.NewError(fault.Value, tok, "`math.identity()` expects a size of zero or greater, got %d", size)
 	}
 
 	rows := make([]object.Object, size)
@@ -299,7 +300,7 @@ func mathReshape(scope *object.Scope, tok token.Token, args ...object.Object) ob
 	for index, size := range dimensions {
 		if size == -1 {
 			if inferred >= 0 {
-				return object.NewError("%d:%d:%s: runtime error: math.reshape() can infer only one dimension", tok.Line, tok.Column, tok.File)
+				return object.NewError(fault.Value, tok, "`math.reshape()` can infer only one dimension")
 			}
 
 			inferred = index
@@ -308,7 +309,7 @@ func mathReshape(scope *object.Scope, tok token.Token, args ...object.Object) ob
 		}
 
 		if size < 0 {
-			return object.NewError("%d:%d:%s: runtime error: math.reshape() expects sizes of zero or greater, or -1 to infer. got=%d", tok.Line, tok.Column, tok.File, size)
+			return object.NewError(fault.Value, tok, "`math.reshape()` expects sizes of zero or greater, or -1 to infer, got %d", size)
 		}
 
 		known *= size
@@ -316,7 +317,7 @@ func mathReshape(scope *object.Scope, tok token.Token, args ...object.Object) ob
 
 	if inferred >= 0 {
 		if known == 0 || total%known != 0 {
-			return object.NewError("%d:%d:%s: runtime error: math.reshape() cannot infer a dimension for %d values", tok.Line, tok.Column, tok.File, total)
+			return object.NewError(fault.Value, tok, "`math.reshape()` cannot infer a dimension for %d values", total)
 		}
 
 		dimensions[inferred] = total / known
@@ -324,7 +325,7 @@ func mathReshape(scope *object.Scope, tok token.Token, args ...object.Object) ob
 	}
 
 	if known != total {
-		return object.NewError("%d:%d:%s: runtime error: math.reshape() cannot fit %d values into the requested shape", tok.Line, tok.Column, tok.File, total)
+		return object.NewError(fault.Value, tok, "`math.reshape()` cannot fit %d values into the requested shape", total)
 	}
 
 	if len(dimensions) == 1 {
@@ -462,7 +463,7 @@ func mathDot(scope *object.Scope, tok token.Token, args ...object.Object) object
 	}
 
 	if len(left[0]) != len(right) {
-		return object.NewError("%d:%d:%s: runtime error: math.dot() expects the width of the first operand to match the height of the second. got=%d and %d", tok.Line, tok.Column, tok.File, len(left[0]), len(right))
+		return object.NewError(fault.Value, tok, "`math.dot()` expects the width of the first operand to match the height of the second, got %d and %d", len(left[0]), len(right))
 	}
 
 	product := multiplyMatrices(left, right)
@@ -500,7 +501,7 @@ func mathCross(scope *object.Scope, tok token.Token, args ...object.Object) obje
 	}
 
 	if len(left) != len(right) || (len(left) != 2 && len(left) != 3) {
-		return object.NewError("%d:%d:%s: runtime error: math.cross() expects two vectors of the same length, either both of 2 or both of 3", tok.Line, tok.Column, tok.File)
+		return object.NewError(fault.Value, tok, "`math.cross()` expects two vectors of the same length, either both of 2 or both of 3")
 	}
 
 	if len(left) == 2 {
@@ -576,7 +577,7 @@ func mathNorm(scope *object.Scope, tok token.Token, args ...object.Object) objec
 	}
 
 	if order <= 0 {
-		return object.NewError("%d:%d:%s: runtime error: math.norm() expects an order greater than zero", tok.Line, tok.Column, tok.File)
+		return object.NewError(fault.Value, tok, "`math.norm()` expects an order greater than zero")
 	}
 
 	if math.IsInf(order, 1) {
@@ -619,7 +620,7 @@ func mathNormalize(scope *object.Scope, tok token.Token, args ...object.Object) 
 	length = math.Sqrt(length)
 
 	if length == 0 {
-		return object.NewError("%d:%d:%s: runtime error: math.normalize() cannot normalize a vector of length zero", tok.Line, tok.Column, tok.File)
+		return object.NewError(fault.Value, tok, "`math.normalize()` cannot normalize a vector of length zero")
 	}
 
 	scaled := make([]float64, len(values))
@@ -647,7 +648,7 @@ func mathDistance(scope *object.Scope, tok token.Token, args ...object.Object) o
 	}
 
 	if len(values) < 2 || len(values)%2 != 0 {
-		return object.NewError("%d:%d:%s: runtime error: math.distance() expects two points of the same number of coordinates. got=%d coordinates", tok.Line, tok.Column, tok.File, len(values))
+		return object.NewError(fault.Value, tok, "`math.distance()` expects two points of the same number of coordinates, got %d coordinates", len(values))
 	}
 
 	half := len(values) / 2
@@ -675,7 +676,7 @@ func mathAngle(scope *object.Scope, tok token.Token, args ...object.Object) obje
 	}
 
 	if len(values) != 4 {
-		return object.NewError("%d:%d:%s: runtime error: math.angle() expects two points of two coordinates. got=%d coordinates", tok.Line, tok.Column, tok.File, len(values))
+		return object.NewError(fault.Value, tok, "`math.angle()` expects two points of two coordinates, got %d coordinates", len(values))
 	}
 
 	return object.NewFloat(math.Atan2(values[3]-values[1], values[2]-values[0]))
@@ -730,7 +731,7 @@ func mathInverse(scope *object.Scope, tok token.Token, args ...object.Object) ob
 	solution, _, singular := eliminate(copyMatrix(rows), identityMatrix(len(rows)))
 
 	if singular {
-		return object.NewError("%d:%d:%s: runtime error: math.inverse() cannot invert a singular matrix", tok.Line, tok.Column, tok.File)
+		return object.NewError(fault.Value, tok, "`math.inverse()` cannot invert a singular matrix")
 	}
 
 	return matrixList(solution)
@@ -760,13 +761,13 @@ func mathSolve(scope *object.Scope, tok token.Token, args ...object.Object) obje
 	}
 
 	if len(right) != len(rows) {
-		return object.NewError("%d:%d:%s: runtime error: math.solve() expects the right-hand side to have %d rows. got=%d", tok.Line, tok.Column, tok.File, len(rows), len(right))
+		return object.NewError(fault.Value, tok, "`math.solve()` expects the right-hand side to have %d rows, got %d", len(rows), len(right))
 	}
 
 	solution, _, singular := eliminate(copyMatrix(rows), copyMatrix(right))
 
 	if singular {
-		return object.NewError("%d:%d:%s: runtime error: math.solve() cannot solve a singular system", tok.Line, tok.Column, tok.File)
+		return object.NewError(fault.Value, tok, "`math.solve()` cannot solve a singular system")
 	}
 
 	if rightIsVector {
@@ -859,7 +860,7 @@ func toVector(name string, tok token.Token, args []object.Object, index int) ([]
 		number, ok := element.(*object.Number)
 
 		if !ok {
-			return nil, object.NewError("%d:%d:%s: runtime error: %s() expects argument %d to be a list of numbers. got=%s at index %d", tok.Line, tok.Column, tok.File, name, index+1, typeName(element), position)
+			return nil, object.NewError(fault.Argument, tok, "`%s()` expects argument %d to be a list of numbers, got %s at index %d", name, index+1, object.TypeName(element), position)
 		}
 
 		values[position] = number.Float64()
@@ -879,7 +880,7 @@ func toMatrix(name string, tok token.Token, args []object.Object, index int) ([]
 	}
 
 	if len(list.Elements) == 0 {
-		return nil, false, object.NewError("%d:%d:%s: runtime error: %s() expects argument %d to be a non-empty list", tok.Line, tok.Column, tok.File, name, index+1)
+		return nil, false, object.NewError(fault.Argument, tok, "`%s()` expects argument %d to be a non-empty list", name, index+1)
 	}
 
 	if _, ok := list.Elements[0].(*object.Number); ok {
@@ -899,7 +900,7 @@ func toMatrix(name string, tok token.Token, args []object.Object, index int) ([]
 		row, ok := element.(*object.List)
 
 		if !ok {
-			return nil, false, object.NewError("%d:%d:%s: runtime error: %s() expects argument %d to be a list of numbers or a list of rows. got=%s at index %d", tok.Line, tok.Column, tok.File, name, index+1, typeName(element), position)
+			return nil, false, object.NewError(fault.Argument, tok, "`%s()` expects argument %d to be a list of numbers or a list of rows, got %s at index %d", name, index+1, object.TypeName(element), position)
 		}
 
 		values, err := toVector(name, tok, []object.Object{row}, 0)
@@ -909,7 +910,7 @@ func toMatrix(name string, tok token.Token, args []object.Object, index int) ([]
 		}
 
 		if width >= 0 && len(values) != width {
-			return nil, false, object.NewError("%d:%d:%s: runtime error: %s() expects every row of argument %d to be the same length. got=%d and %d", tok.Line, tok.Column, tok.File, name, index+1, width, len(values))
+			return nil, false, object.NewError(fault.Argument, tok, "`%s()` expects every row of argument %d to be the same length, got %d and %d", name, index+1, width, len(values))
 		}
 
 		width = len(values)
@@ -932,7 +933,7 @@ func squareMatrix(name string, tok token.Token, args []object.Object) ([][]float
 	}
 
 	if isVector || len(rows) != len(rows[0]) {
-		return nil, object.NewError("%d:%d:%s: runtime error: %s() expects a square matrix", tok.Line, tok.Column, tok.File, name)
+		return nil, object.NewError(fault.Argument, tok, "`%s()` expects a square matrix", name)
 	}
 
 	return rows, nil

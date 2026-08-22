@@ -94,7 +94,8 @@ func (parser *Parser) switchStatement() ast.ExpressionNode {
 	}
 
 	if defaultCount > 1 {
-		parser.errors = append(parser.errors, "multiple default cases in switch statement")
+		parser.report(expression.Token, "a switch can only have one `default` case")
+
 		return nil
 	}
 

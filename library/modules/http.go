@@ -3,11 +3,13 @@ package modules
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
 	"time"
 
+	"ghostlang.org/x/ghost/fault"
 	"ghostlang.org/x/ghost/log"
 	"ghostlang.org/x/ghost/object"
 	"ghostlang.org/x/ghost/token"
@@ -22,17 +24,29 @@ func init() {
 }
 
 func httpHandle(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
-	if args[0].Type() != object.STRING {
-		return nil
+	if err := arity("http.handle", tok, args, 2); err != nil {
+		return err
 	}
 
-	if args[1].Type() != object.FUNCTION {
-		return nil
+	path, err := stringAt("http.handle", tok, args, 0)
+
+	if err != nil {
+		return err
 	}
 
-	path := args[0].(*object.String).Value
+	callback, err := functionAt("http.handle", tok, args, 1)
+
+	if err != nil {
+		return err
+	}
 
 	http.HandleFunc(path, func(writer http.ResponseWriter, request *http.Request) {
+		// A request handler runs on its own goroutine, outside the recovery
+		// that wraps a script's main run. A panic here would take the whole
+		// server down with a Go traceback, so it is caught where it happens and
+		// answered with a 500.
+		defer recoverHandler(writer, path)
+
 		scope.Environment.SetWriter(writer)
 
 		requestBodyBuf := new(bytes.Buffer)
@@ -48,32 +62,53 @@ func httpHandle(scope *object.Scope, tok token.Token, args ...object.Object) obj
 			"body":          requestBodyBuf.String(),
 		})
 
-		callbackArgs := make([]object.Object, 0)
-		callbackArgs = append(callbackArgs, httpRequest)
-
-		callback := args[1].(*object.Function)
-		callback.Evaluate(callbackArgs, writer)
+		callback.Evaluate([]object.Object{httpRequest}, writer)
 	})
 
 	return nil
 }
 
-func httpListen(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
-	if args[0].Type() != object.NUMBER {
-		return nil
+// recoverHandler turns a panic inside a request handler into a 500 and a line
+// on the server's log, rather than the end of the process.
+func recoverHandler(writer http.ResponseWriter, path string) {
+	recovered := recover()
+
+	if recovered == nil {
+		return
 	}
 
+	log.Error("the handler for %s stopped unexpectedly: %v", path, recovered)
+
+	writer.WriteHeader(http.StatusInternalServerError)
+}
+
+func httpListen(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
+	if err := arityRange("http.listen", tok, args, 1, 2); err != nil {
+		return err
+	}
+
+	port, err := integerAt("http.listen", tok, args, 0)
+
+	if err != nil {
+		return err
+	}
+
+	if port < 1 || port > 65535 {
+		return object.NewError(fault.Value, tok, "`http.listen()` expects a port between 1 and 65535, got %d", port)
+	}
+
+	var ready *object.Function
+
 	if len(args) == 2 {
-		if args[1].Type() != object.FUNCTION {
-			return nil
+		ready, err = functionAt("http.listen", tok, args, 1)
+
+		if err != nil {
+			return err
 		}
 	}
 
-	port := args[0].(*object.Number).String()
-
-	server := &http.Server{
-		Addr: ":" + port,
-	}
+	address := fmt.Sprintf(":%d", port)
+	server := &http.Server{Addr: address}
 
 	done := make(chan bool)
 	quit := make(chan os.Signal, 1)
@@ -86,21 +121,22 @@ func httpListen(scope *object.Scope, tok token.Token, args ...object.Object) obj
 
 		server.SetKeepAlivesEnabled(false)
 
-		if err := server.Shutdown(ctx); err != nil {
-			log.Debug("Could not gracefull shutdown the server: %v\n", err)
+		if failure := server.Shutdown(ctx); failure != nil {
+			log.Debug("could not shut the server down cleanly: %v", failure)
 		}
 
 		close(done)
 	}()
 
-	if len(args) == 2 {
-		callback := args[1].(*object.Function)
-
-		callback.Evaluate(nil, nil)
+	if ready != nil {
+		ready.Evaluate(nil, nil)
 	}
 
-	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-		log.Debug("Could not listen on %s: %v", port, err)
+	// A server that cannot bind its port has not started, and reporting that as
+	// a debug line leaves the script believing it is listening. It is a failure
+	// of the world outside the program, so it comes back as one.
+	if failure := server.ListenAndServe(); failure != nil && failure != http.ErrServerClosed {
+		return object.NewError(fault.System, tok, "`http.listen()` could not listen on port %d: %s", port, failure)
 	}
 
 	<-done

@@ -4,6 +4,7 @@ import (
 	"math"
 	"sort"
 
+	"ghostlang.org/x/ghost/fault"
 	"ghostlang.org/x/ghost/object"
 	"ghostlang.org/x/ghost/token"
 )
@@ -151,7 +152,7 @@ func reduceVariance(name string, tok token.Token, numbers []*object.Number) obje
 
 func reduceSampleVariance(name string, tok token.Token, numbers []*object.Number) object.Object {
 	if len(numbers) < 2 {
-		return object.NewError("%d:%d:%s: runtime error: %s() expects at least two values", tok.Line, tok.Column, tok.File, name)
+		return object.NewError(fault.Value, tok, "`%s()` expects at least two values", name)
 	}
 
 	return object.NewFloat(varianceOf(toFloats(numbers), 1))
@@ -163,7 +164,7 @@ func reduceStandardDeviation(name string, tok token.Token, numbers []*object.Num
 
 func reduceSampleStandardDeviation(name string, tok token.Token, numbers []*object.Number) object.Object {
 	if len(numbers) < 2 {
-		return object.NewError("%d:%d:%s: runtime error: %s() expects at least two values", tok.Line, tok.Column, tok.File, name)
+		return object.NewError(fault.Value, tok, "`%s()` expects at least two values", name)
 	}
 
 	return object.NewFloat(math.Sqrt(varianceOf(toFloats(numbers), 1)))
@@ -252,7 +253,7 @@ func quantileOf(name string, tok token.Token, args []object.Object, scale float6
 	}
 
 	if position < 0 || position > scale {
-		return object.NewError("%d:%d:%s: runtime error: %s() expects a position between 0 and %s. got=%s", tok.Line, tok.Column, tok.File, name, object.NewFloat(scale).String(), object.NewFloat(position).String())
+		return object.NewError(fault.Value, tok, "`%s()` expects a position between 0 and %s, got %s", name, object.NewFloat(scale).String(), object.NewFloat(position).String())
 	}
 
 	values := sortedFloats(numbers)
@@ -366,7 +367,7 @@ func reduceLcm(name string, tok token.Token, numbers []*object.Number) object.Ob
 		product, ok := multiplyChecked(multiple/divisor, next)
 
 		if !ok {
-			return object.NewError("%d:%d:%s: runtime error: %s() overflowed; the result is too large to represent", tok.Line, tok.Column, tok.File, name)
+			return object.NewError(fault.Value, tok, "`%s()` overflowed; the result is too large to represent", name)
 		}
 
 		multiple = product
@@ -389,7 +390,7 @@ func mathFactorial(scope *object.Scope, tok token.Token, args ...object.Object) 
 	}
 
 	if given < 0 {
-		return object.NewError("%d:%d:%s: runtime error: math.factorial() expects a value of zero or greater. got=%d", tok.Line, tok.Column, tok.File, given)
+		return object.NewError(fault.Value, tok, "`math.factorial()` expects a value of zero or greater, got %d", given)
 	}
 
 	result := int64(1)
@@ -495,11 +496,11 @@ func choiceArguments(name string, tok token.Token, args []object.Object) (int64,
 	}
 
 	if total < 0 || chosen < 0 {
-		return 0, 0, object.NewError("%d:%d:%s: runtime error: %s() expects values of zero or greater", tok.Line, tok.Column, tok.File, name)
+		return 0, 0, object.NewError(fault.Value, tok, "`%s()` expects values of zero or greater", name)
 	}
 
 	if chosen > total {
-		return 0, 0, object.NewError("%d:%d:%s: runtime error: %s() cannot choose %d from %d", tok.Line, tok.Column, tok.File, name, chosen, total)
+		return 0, 0, object.NewError(fault.Value, tok, "`%s()` cannot choose %d from %d", name, chosen, total)
 	}
 
 	return total, chosen, nil
@@ -602,5 +603,5 @@ func isPrime(given int64) bool {
 }
 
 func emptyInput(name string, tok token.Token) *object.Error {
-	return object.NewError("%d:%d:%s: runtime error: %s() expects at least one value", tok.Line, tok.Column, tok.File, name)
+	return object.NewError(fault.Value, tok, "`%s()` expects at least one value", name)
 }

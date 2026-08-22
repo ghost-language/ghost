@@ -1,6 +1,10 @@
 package object
 
-import "fmt"
+import (
+	"fmt"
+
+	"ghostlang.org/x/ghost/token"
+)
 
 // Boolean objects consist of a boolean value.
 type Boolean struct {
@@ -31,7 +35,7 @@ func (boolean *Boolean) MapKey() MapKey {
 }
 
 // Method defines the set of methods available on boolean objects.
-func (boolean *Boolean) Method(method string, args []Object) (Object, bool) {
+func (boolean *Boolean) Method(method string, tok token.Token, args []Object) (Object, bool) {
 	return nil, false
 }
 

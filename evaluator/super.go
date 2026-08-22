@@ -2,6 +2,7 @@ package evaluator
 
 import (
 	"ghostlang.org/x/ghost/ast"
+	"ghostlang.org/x/ghost/fault"
 	"ghostlang.org/x/ghost/object"
 )
 
@@ -14,11 +15,12 @@ func evaluateSuper(node *ast.Super, scope *object.Scope) object.Object {
 	instance, ok := scope.Self.(*object.Instance)
 
 	if !ok {
-		return newError("%d:%d:%s: runtime error: 'super' used outside of class context", node.Token.Line, node.Token.Column, node.Token.File)
+		return object.NewError(fault.Name, node.Token, "`super` can only be used inside a class")
 	}
 
 	if scope.Class == nil || scope.Class.Super == nil {
-		return newError("%d:%d:%s: runtime error: class %s has no superclass", node.Token.Line, node.Token.Column, node.Token.File, instance.Class.Name.Value)
+		return object.NewError(fault.Name, node.Token, "class `%s` has no superclass", instance.Class.Name.Value).
+			WithHelp("declare one with `class %s extends Parent`", instance.Class.Name.Value)
 	}
 
 	return &object.Super{Instance: instance, Class: scope.Class.Super}

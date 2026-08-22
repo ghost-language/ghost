@@ -1,6 +1,10 @@
 package object
 
-import "fmt"
+import (
+	"fmt"
+
+	"ghostlang.org/x/ghost/token"
+)
 
 // LibraryProperty objects consist of a native Go property.
 type LibraryProperty struct {
@@ -19,6 +23,6 @@ func (libraryProperty *LibraryProperty) Type() Type {
 }
 
 // Method defines the set of methods available on library property objects.
-func (libraryProperty *LibraryProperty) Method(method string, args []Object) (Object, bool) {
+func (libraryProperty *LibraryProperty) Method(method string, tok token.Token, args []Object) (Object, bool) {
 	return nil, false
 }

@@ -3,8 +3,8 @@ package modules
 import (
 	"path"
 	"plugin"
-	"strings"
 
+	"ghostlang.org/x/ghost/fault"
 	"ghostlang.org/x/ghost/object"
 	"ghostlang.org/x/ghost/optimizer"
 	"ghostlang.org/x/ghost/parser"
@@ -25,77 +25,93 @@ func init() {
 	RegisterProperty(GhostProperties, "version", ghostVersion)
 }
 
+// ghostAbort stops the program with a message of the script's own choosing. It
+// is the one place where a Ghost program raises an error rather than receiving
+// one, so the message is taken verbatim and reported as a value error: the
+// program decided its own state was wrong.
 func ghostAbort(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
-	if len(args) != 1 {
-		return object.NewError("%d:%d: runtime error: ghost.abort() expects 1 argument. got=%d", tok.Line, tok.Column, len(args))
+	if err := arity("ghost.abort", tok, args, 1); err != nil {
+		return err
 	}
 
-	switch obj := args[0].(type) {
+	switch reason := args[0].(type) {
 	case *object.Null:
 		return nil
 	case *object.String:
-		return object.NewError(obj.Value)
+		return object.NewError(fault.Value, tok, "%s", reason.Value)
 	}
 
-	return object.NewError("%d:%d: runtime error: ghost.abort() expects the first argument to be of type 'null' or 'string'. got=%s", tok.Line, tok.Column, strings.ToLower(args[0].Type().String()))
+	return object.NewError(fault.Argument, tok, "`ghost.abort()` expects argument 1 to be a string or null, got %s", object.TypeName(args[0]))
 }
 
 func ghostExecute(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
-	if len(args) != 1 {
-		return object.NewError("%d:%d: runtime error: ghost.execute() expects 1 argument. got=%d", tok.Line, tok.Column, len(args))
+	if err := arity("ghost.execute", tok, args, 1); err != nil {
+		return err
 	}
 
-	source, ok := args[0].(*object.String)
+	code, err := stringAt("ghost.execute", tok, args, 0)
 
-	if !ok {
-		return object.NewError("%d:%d: runtime error: ghost.execute() expects the first argument to be of type 'string'. got=%s", tok.Line, tok.Column, strings.ToLower(args[0].Type().String()))
+	if err != nil {
+		return err
 	}
 
-	scanner := scanner.New(source.Value, tok.File)
-	parser := parser.New(scanner)
-	program := optimizer.Optimize(parser.Parse())
+	parsed := parser.New(scanner.New(code, tok.File))
+	program := parsed.Parse()
 
-	return evaluate(program, scope)
+	// Code handed to `ghost.execute` is parsed on its own, so its syntax errors
+	// have to be reported here rather than by whoever parsed the outer script.
+	if raised := parsed.Errors(); len(raised) != 0 {
+		return object.NewErrorFrom(raised[0])
+	}
+
+	return evaluate(optimizer.Optimize(program), scope)
 }
 
 func ghostExtend(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
-	if len(args) != 1 {
-		return object.NewError("%d:%d: runtime error: ghost.extend() expects 1 argument. got=%d", tok.Line, tok.Column, len(args))
+	if err := arity("ghost.extend", tok, args, 1); err != nil {
+		return err
 	}
 
-	basePath, ok := args[0].(*object.String)
+	target, err := stringAt("ghost.extend", tok, args, 0)
+
+	if err != nil {
+		return err
+	}
+
+	resolved := path.Clean(scope.Environment.GetDirectory() + "/" + target)
+
+	extension, failure := plugin.Open(resolved)
+
+	if failure != nil {
+		return systemFailure("ghost.extend", tok, failure)
+	}
+
+	register, failure := extension.Lookup("Register")
+
+	if failure != nil {
+		return object.NewError(fault.System, tok, "plugin `%s` has no Register function", resolved).
+			WithHelp("a plugin has to export `func Register()` for Ghost to call")
+	}
+
+	entry, ok := register.(func())
 
 	if !ok {
-		return object.NewError("%d:%d: runtime error: ghost.extend() expects the first argument to be of type 'string'. got=%s", tok.Line, tok.Column, strings.ToLower(args[0].Type().String()))
+		return object.NewError(fault.System, tok, "the Register function in plugin `%s` has the wrong signature", resolved).
+			WithHelp("a plugin has to export `func Register()`, taking no arguments and returning nothing")
 	}
 
-	path := path.Clean(scope.Environment.GetDirectory() + "/" + basePath.Value)
-
-	extension, err := plugin.Open(path)
-
-	if err != nil {
-		return object.NewError("%d:%d: runtime error: ghost.extend() failed opening plugin: %s", tok.Line, tok.Column, err)
-	}
-
-	register, err := extension.Lookup("Register")
-
-	if err != nil {
-		return object.NewError("%d:%d: runtime error: plugin '%s' does not contain Register function: %s", tok.Line, tok.Column, path, err)
-	}
-
-	register.(func())()
+	entry()
 
 	return nil
 }
 
 func ghostIdentifiers(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
-	if len(args) != 0 {
-		return object.NewError("%d:%d: runtime error: ghost.identifiers() expects 0 arguments. got=%d", tok.Line, tok.Column, len(args))
+	if err := arity("ghost.identifiers", tok, args, 0); err != nil {
+		return err
 	}
 
-	identifiers := []object.Object{}
-
 	store := scope.Environment.All()
+	identifiers := make([]object.Object, 0, len(store))
 
 	for identifier := range store {
 		identifiers = append(identifiers, &object.String{Value: identifier})

@@ -1,6 +1,10 @@
 package object
 
-import "fmt"
+import (
+	"fmt"
+
+	"ghostlang.org/x/ghost/token"
+)
 
 // LibraryFunction objects consist of a native Go function.
 type LibraryFunction struct {
@@ -19,6 +23,6 @@ func (libraryFunction *LibraryFunction) Type() Type {
 }
 
 // Method defines the set of methods available on library function objects.
-func (libraryFunction *LibraryFunction) Method(method string, args []Object) (Object, bool) {
+func (libraryFunction *LibraryFunction) Method(method string, tok token.Token, args []Object) (Object, bool) {
 	return nil, false
 }

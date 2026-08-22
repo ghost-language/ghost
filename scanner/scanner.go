@@ -2,7 +2,10 @@ package scanner
 
 import (
 	"fmt"
+	"unicode"
 
+	"ghostlang.org/x/ghost/fault"
+	"ghostlang.org/x/ghost/source"
 	"ghostlang.org/x/ghost/token"
 )
 
@@ -15,6 +18,20 @@ type Scanner struct {
 	readPosition int    // current reading position in source (point to next character)
 	line         int    // current line being scanned
 	column       int    // current column being scanned
+
+	// Where the token now being scanned began. Every token is stamped with
+	// these rather than with the position the scanner has reached, so a report
+	// underlines the lexeme from its first character rather than guessing
+	// backwards from its last.
+	tokenLine     int
+	tokenColumn   int
+	tokenPosition int
+
+	// faults collects what the scanner could not read. Scanning cannot stop at
+	// the first one — the parser drives it, and a single stray character should
+	// not hide the rest of the file — so each is recorded, the offending text is
+	// skipped, and scanning carries on.
+	faults []*fault.Fault
 }
 
 // keywords contains a list of all reserved keywords.
@@ -49,12 +66,54 @@ var keywords = map[string]token.Type{
 }
 
 // New creates a new scanner instance.
-func New(source string, file string) *Scanner {
-	scanner := Scanner{source: []rune(source), file: file, line: 1, column: 1}
+//
+// The text is filed under its name as scanning starts, so that a failure
+// anywhere later — in the parser, or in the evaluator long after parsing
+// finished — can quote the line it happened on without anyone having carried
+// the source there.
+func New(text string, file string) *Scanner {
+	source.Register(file, text)
+
+	scanner := Scanner{source: []rune(text), file: file, line: 1, column: 1}
 
 	scanner.readCharacter()
 
 	return &scanner
+}
+
+// Faults returns everything the scanner could not read. The parser folds these
+// in with its own, so a caller sees one list of problems in source order rather
+// than two lists from two passes.
+func (scanner *Scanner) Faults() []*fault.Fault {
+	return scanner.faults
+}
+
+// report records a fault covering the text scanned since the current token
+// began.
+func (scanner *Scanner) report(kind fault.Kind, format string, arguments ...interface{}) *fault.Fault {
+	position := fault.Position{
+		File:   scanner.file,
+		Line:   scanner.tokenLine,
+		Column: scanner.tokenColumn,
+		Length: scanner.span(),
+	}
+
+	raised := fault.From(kind, position, format, arguments...)
+
+	scanner.faults = append(scanner.faults, raised)
+
+	return raised
+}
+
+// span measures how many characters the current token covers so far.
+func (scanner *Scanner) span() int {
+	length := scanner.position - scanner.tokenPosition + 1
+
+	if length < 1 {
+		return 1
+	}
+
+	return length
 }
 
 // readCharacter reads the current character and advance the readPosition.
@@ -77,6 +136,10 @@ func (scanner *Scanner) ScanToken() token.Token {
 	var scannedToken token.Token
 
 	scanner.skipWhitespace()
+
+	scanner.tokenLine = scanner.line
+	scanner.tokenColumn = scanner.column - 1
+	scanner.tokenPosition = scanner.position
 
 	switch scanner.character {
 	case rune('('):
@@ -174,23 +237,34 @@ func (scanner *Scanner) ScanToken() token.Token {
 	case rune('"'):
 		value := scanner.scanString('"')
 
-		scannedToken = scanner.newToken(token.STRING, value, len(value))
+		scannedToken = scanner.newToken(token.STRING, value, scanner.span())
 	case rune('\''):
 		value := scanner.scanString('\'')
 
-		scannedToken = scanner.newToken(token.STRING, value, len(value))
+		scannedToken = scanner.newToken(token.STRING, value, scanner.span())
 	case 0:
 		scannedToken = scanner.newToken(token.EOF, "", 1)
 	default:
 		if isDigit(scanner.character) {
 			number := scanner.scanNumber()
 
-			return scanner.newToken(token.NUMBER, number, len(number))
+			return scanner.newToken(token.NUMBER, number, len([]rune(number)))
+		}
+
+		if !isIdentifierStart(scanner.character) {
+			// A character that can neither begin a token nor a name is reported
+			// and stepped over, so the rest of the file is still scanned. Left
+			// in place it would be swallowed into a name that only fails much
+			// later, somewhere it did not come from.
+			scanner.report(fault.Syntax, "unexpected character `%s`", string(scanner.character))
+			scanner.readCharacter()
+
+			return scanner.ScanToken()
 		}
 
 		identifier := scanner.scanIdentifier()
 
-		return scanner.newToken(lookupIdentifier(identifier), identifier, len(identifier)+1)
+		return scanner.newToken(lookupIdentifier(identifier), identifier, len([]rune(identifier)))
 	}
 
 	scanner.readCharacter()
@@ -206,8 +280,22 @@ func (scanner *Scanner) scanString(closing rune) string {
 	for {
 		scanner.readCharacter()
 
-		if scanner.character == closing || scanner.isAtEnd() {
+		if scanner.character == closing {
 			break
+		}
+
+		if scanner.isAtEnd() {
+			scanner.report(fault.Syntax, "unterminated string").
+				WithHelp("add a closing `%s` before the end of the file", string(closing))
+
+			break
+		}
+
+		// A newline inside a string is part of the string, but the line counter
+		// still has to follow it, or every position after a multi-line string
+		// would point at the wrong line.
+		if scanner.character == '\n' {
+			scanner.advanceLine()
 		}
 
 		if scanner.character == '\\' {
@@ -295,11 +383,20 @@ func (scanner *Scanner) scanIdentifier() string {
 // case, newToken is for tokens without a literal (native Go) value.
 func (scanner *Scanner) newToken(tokenType token.Type, literal interface{}, length int) token.Token {
 	lexeme := fmt.Sprintf("%s", literal)
-	column := scanner.column - length
 
-	// log.Debug("file: %s", scanner.file)
+	if length < 1 {
+		length = 1
+	}
 
-	return token.Token{Type: tokenType, Lexeme: lexeme, Literal: literal, Line: scanner.line, Column: column, File: scanner.file}
+	return token.Token{
+		Type:    tokenType,
+		Lexeme:  lexeme,
+		Literal: literal,
+		Line:    scanner.tokenLine,
+		Column:  scanner.tokenColumn,
+		Length:  length,
+		File:    scanner.file,
+	}
 }
 
 // skipSingleLineComment consumes and reads characters until it reaches the end
@@ -325,6 +422,9 @@ func (scanner *Scanner) skipMultiLineComment() {
 		}
 
 		if scanner.isAtEnd() {
+			scanner.report(fault.Syntax, "unterminated block comment").
+				WithHelp("add a closing `*/` before the end of the file")
+
 			endOfComment = true
 		}
 
@@ -404,6 +504,13 @@ func isParenthesis(character rune) bool {
 // isEmpty tells us if the passed character is empty.
 func isEmpty(character rune) bool {
 	return character == rune(0)
+}
+
+// isIdentifierStart tells us if the passed character can begin a name. A name
+// starts with a letter or an underscore; anything else at the start of a token
+// is a character Ghost has no meaning for.
+func isIdentifierStart(character rune) bool {
+	return character == rune('_') || unicode.IsLetter(character)
 }
 
 // isIdentifier tells us if the passed character can be used in a valid identifier.

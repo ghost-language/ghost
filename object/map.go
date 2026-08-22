@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"fmt"
 	"strings"
+
+	"ghostlang.org/x/ghost/token"
 )
 
 // Map objects consist of a map value.
@@ -43,7 +45,7 @@ func (mapObject *Map) Type() Type {
 }
 
 // Method defines the set of methods available on map objects.
-func (mapObject *Map) Method(method string, args []Object) (Object, bool) {
+func (mapObject *Map) Method(method string, tok token.Token, args []Object) (Object, bool) {
 	return nil, false
 }
 

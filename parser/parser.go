@@ -1,9 +1,10 @@
 package parser
 
 import (
-	"fmt"
+	"sort"
 
 	"ghostlang.org/x/ghost/ast"
+	"ghostlang.org/x/ghost/fault"
 	"ghostlang.org/x/ghost/scanner"
 	"ghostlang.org/x/ghost/token"
 )
@@ -63,7 +64,7 @@ type (
 // as well as the prefix, infix, and postfix parse functions.
 type Parser struct {
 	scanner *scanner.Scanner
-	errors  []string
+	errors  []*fault.Fault
 
 	previousToken token.Token
 	currentToken  token.Token
@@ -83,7 +84,7 @@ type Parser struct {
 func New(scanner *scanner.Scanner) *Parser {
 	parser := &Parser{
 		scanner:          scanner,
-		errors:           []string{},
+		errors:           []*fault.Fault{},
 		prefixParserFns:  make(map[token.Type]prefixParserFn),
 		infixParserFns:   make(map[token.Type]infixParserFn),
 		postfixParserFns: make(map[token.Type]postfixParserFn),
@@ -173,9 +174,20 @@ func (parser *Parser) Parse() *ast.Program {
 	program.Statements = []ast.StatementNode{}
 
 	for !parser.isAtEnd() {
+		reported := len(parser.errors)
 		statement := parser.statement()
 
 		program.Statements = append(program.Statements, statement)
+
+		// A statement that failed leaves the parser somewhere in the middle of
+		// it, where every following token is read out of context. Skipping to
+		// the next statement boundary keeps one mistake from being reported as
+		// a dozen.
+		if len(parser.errors) > reported {
+			parser.synchronize()
+
+			continue
+		}
 
 		parser.readToken()
 	}
@@ -183,9 +195,59 @@ func (parser *Parser) Parse() *ast.Program {
 	return program
 }
 
-// Errors returns the slice of errors contained within the parser instance.
-func (parser *Parser) Errors() []string {
-	return parser.errors
+// Errors returns everything wrong with the source, in the order a reader would
+// come across it. Lexical and grammatical problems are one list rather than
+// two: which pass noticed a problem is Ghost's business, not the reader's.
+func (parser *Parser) Errors() []*fault.Fault {
+	raised := make([]*fault.Fault, 0, len(parser.errors)+len(parser.scanner.Faults()))
+
+	raised = append(raised, parser.scanner.Faults()...)
+	raised = append(raised, parser.errors...)
+
+	sort.SliceStable(raised, func(first int, second int) bool {
+		left := raised[first].Position
+		right := raised[second].Position
+
+		if left.Line != right.Line {
+			return left.Line < right.Line
+		}
+
+		return left.Column < right.Column
+	})
+
+	return raised
+}
+
+// synchronize discards tokens until the parser is at something that can begin a
+// statement again. Recovering this way is what lets a single run report every
+// syntax error in a file instead of only the first.
+func (parser *Parser) synchronize() {
+	for !parser.isAtEnd() {
+		if parser.currentTokenIs(token.SEMICOLON) {
+			parser.readToken()
+
+			return
+		}
+
+		switch parser.nextToken.Type {
+		case token.CLASS, token.FUNCTION, token.FOR, token.IF, token.RETURN,
+			token.SWITCH, token.TRAIT, token.WHILE, token.IMPORT, token.USE:
+			parser.readToken()
+
+			return
+		}
+
+		parser.readToken()
+	}
+}
+
+// report records a syntax error at a token.
+func (parser *Parser) report(tok token.Token, format string, arguments ...interface{}) *fault.Fault {
+	raised := fault.At(fault.Syntax, tok, format, arguments...)
+
+	parser.errors = append(parser.errors, raised)
+
+	return raised
 }
 
 // =============================================================================
@@ -205,11 +267,7 @@ func (parser *Parser) isAtEnd() bool {
 }
 
 func (parser *Parser) nextError(tt token.Type) {
-	message := fmt.Sprintf(
-		"%d:%d: syntax error: expected next token to be `%s`, got: `%s` instead", parser.nextToken.Line, parser.nextToken.Column, tt, parser.nextToken.Type,
-	)
-
-	parser.errors = append(parser.errors, message)
+	parser.report(parser.nextToken, "expected %s, found %s", tt.Describe(), parser.nextToken.Describe())
 }
 
 func (parser *Parser) currentTokenIs(tt token.Type) bool {
@@ -250,9 +308,40 @@ func (parser *Parser) currentTokenPrecedence() int {
 // expression. Without it an unparseable token yields a nil expression that only
 // surfaces later as a crash in the evaluator.
 func (parser *Parser) prefixError() {
-	message := fmt.Sprintf(
-		"%d:%d: syntax error: unexpected token `%s`", parser.currentToken.Line, parser.currentToken.Column, parser.currentToken.Type,
-	)
+	raised := parser.report(parser.currentToken, "%s cannot start an expression", capitalize(parser.currentToken.Describe()))
 
-	parser.errors = append(parser.errors, message)
+	// A closing bracket here almost always means the matching opener was never
+	// closed, and saying so is more use than naming the token that tripped.
+	switch parser.currentToken.Type {
+	case token.RIGHTPAREN, token.RIGHTBRACKET, token.RIGHTBRACE:
+		raised.WithHelp("check for a missing opening `%s` or an extra `%s`", opener(parser.currentToken.Type), parser.currentToken.Lexeme)
+	}
+}
+
+// opener names the bracket that should have preceded a closing one.
+func opener(closing token.Type) string {
+	switch closing {
+	case token.RIGHTPAREN:
+		return "("
+	case token.RIGHTBRACKET:
+		return "["
+	}
+
+	return "{"
+}
+
+// capitalize starts a sentence with an upper-case letter without disturbing the
+// backticks a description may begin with.
+func capitalize(text string) string {
+	for index, character := range text {
+		if character >= 'a' && character <= 'z' {
+			return text[:index] + string(character-32) + text[index+1:]
+		}
+
+		if character == '`' {
+			break
+		}
+	}
+
+	return text
 }

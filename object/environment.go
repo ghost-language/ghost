@@ -3,6 +3,8 @@ package object
 import (
 	"io"
 	"os"
+
+	"ghostlang.org/x/ghost/fault"
 )
 
 // Environments store their bindings in three tiers, in lookup order: a fixed
@@ -266,13 +268,21 @@ func (environment *Environment) GetDirectory() string {
 	return directory
 }
 
-// create a new function "Call" that can be used to call a function within the environment.
+// Call invokes a named function in this environment. It is how a Go program
+// embedding Ghost reaches into a script, so there is no token to point at and
+// the fault it raises carries no position.
 func (environment *Environment) Call(function string, args []Object, writer io.Writer) Object {
-	if object, ok := environment.Get(function); ok {
-		if function, ok := object.(*Function); ok {
-			return function.Evaluate(args, writer)
-		}
+	value, ok := environment.Get(function)
+
+	if !ok {
+		return NewErrorFrom(fault.New(fault.Name, "`%s` is not defined", function))
 	}
 
-	return NewError("function not found: %s", function)
+	callable, ok := value.(*Function)
+
+	if !ok {
+		return NewErrorFrom(fault.New(fault.Type, "`%s` is a %s, which cannot be called", function, TypeName(value)))
+	}
+
+	return callable.Evaluate(args, writer)
 }

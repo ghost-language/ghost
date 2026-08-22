@@ -2,6 +2,7 @@ package evaluator
 
 import (
 	"ghostlang.org/x/ghost/ast"
+	"ghostlang.org/x/ghost/fault"
 	"ghostlang.org/x/ghost/object"
 	"ghostlang.org/x/ghost/token"
 )
@@ -25,5 +26,5 @@ func evaluateBooleanInfix(node *ast.Infix, left object.Object, right object.Obje
 		return toBooleanValue(leftValue != rightValue)
 	}
 
-	return newError("%d:%d:%s: runtime error: unknown operator: %s %s %s", node.Token.Line, node.Token.Column, node.Token.File, right.Type(), node.Operator, left.Type())
+	return object.NewError(fault.Type, node.Token, "cannot use `%s` between two booleans", node.Operator)
 }

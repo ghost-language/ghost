@@ -1,7 +1,9 @@
 package parser
 
 import (
+	"strings"
 	"testing"
+	"time"
 
 	"ghostlang.org/x/ghost/ast"
 	"ghostlang.org/x/ghost/scanner"
@@ -1188,8 +1190,8 @@ func TestSyntaxErrors(t *testing.T) {
 		input    string
 		expected string
 	}{
-		{`Person.new()`, "1:8: syntax error: `new` is not a method; construct instances with `new Person()`"},
-		{`x = ,`, "1:5: syntax error: unexpected token `,`"},
+		{`Person.new()`, "test.ghost:1:8: syntax error: `new` is not a method"},
+		{`x = ,`, "test.ghost:1:5: syntax error: `,` cannot start an expression"},
 	}
 
 	for _, tt := range tests {
@@ -1201,8 +1203,156 @@ func TestSyntaxErrors(t *testing.T) {
 			t.Fatalf("expected a parser error for %q, got none", tt.input)
 		}
 
-		if parser.Errors()[0] != tt.expected {
+		if parser.Errors()[0].String() != tt.expected {
 			t.Fatalf("wrong parser error. got=%s, expected=%s", parser.Errors()[0], tt.expected)
 		}
+	}
+}
+
+// A file with two mistakes in it should report two mistakes. Without recovery
+// the parser reads everything after the first one out of context, and one typo
+// arrives as a wall of errors that say nothing about each other.
+func TestParserRecoversAndReportsEveryError(t *testing.T) {
+	source := "x = 1\ny = )\nz = 2\n\nfunction ok() { return 3 }\n\nw = ,\n"
+
+	parser := New(scanner.New(source, "test.ghost"))
+	parser.Parse()
+
+	errors := parser.Errors()
+
+	if len(errors) != 2 {
+		t.Fatalf("got %d errors, expected 2: %v", len(errors), errors)
+	}
+
+	expected := []string{
+		"test.ghost:2:5: syntax error: `)` cannot start an expression",
+		"test.ghost:7:5: syntax error: `,` cannot start an expression",
+	}
+
+	for index, want := range expected {
+		if errors[index].String() != want {
+			t.Errorf("error %d: got=%q, expected=%q", index, errors[index].String(), want)
+		}
+	}
+}
+
+// Which pass noticed a problem is Ghost's business, not the reader's, so
+// lexical and grammatical errors come back as one list in source order.
+func TestParserFoldsInScannerFaults(t *testing.T) {
+	parser := New(scanner.New("a = @\nb = )\n", "test.ghost"))
+	parser.Parse()
+
+	errors := parser.Errors()
+
+	if len(errors) < 2 {
+		t.Fatalf("got %d errors, expected at least 2: %v", len(errors), errors)
+	}
+
+	if errors[0].Position.Line > errors[1].Position.Line {
+		t.Errorf("errors are out of source order: %v", errors)
+	}
+
+	if errors[0].String() != "test.ghost:1:5: syntax error: unexpected character `@`" {
+		t.Errorf("got=%q", errors[0].String())
+	}
+}
+
+// A number the scanner accepted but that Ghost cannot hold is a syntax error
+// with a position, not a line logged to the terminal from inside the parser.
+func TestParserReportsUnreadableNumbers(t *testing.T) {
+	tests := []struct {
+		source   string
+		expected string
+	}{
+		{"x = 99999999999999999999999999", "test.ghost:1:5: syntax error: `99999999999999999999999999` is not a valid number"},
+		{"x = 1e", "test.ghost:1:5: syntax error: `1e` is not a valid number"},
+	}
+
+	for _, test := range tests {
+		parser := New(scanner.New(test.source, "test.ghost"))
+		parser.Parse()
+
+		errors := parser.Errors()
+
+		if len(errors) == 0 {
+			t.Fatalf("expected an error for %q", test.source)
+		}
+
+		if errors[0].String() != test.expected {
+			t.Errorf("got=%q, expected=%q", errors[0].String(), test.expected)
+		}
+	}
+}
+
+// A closing bracket that starts an expression is nearly always an unclosed
+// opener somewhere above it, and saying so is more use than naming the token.
+func TestParserSuggestsAMissingOpener(t *testing.T) {
+	parser := New(scanner.New("x = )", "test.ghost"))
+	parser.Parse()
+
+	errors := parser.Errors()
+
+	if len(errors) == 0 {
+		t.Fatal("expected an error")
+	}
+
+	if errors[0].Help == "" {
+		t.Errorf("expected help on %q", errors[0])
+	}
+}
+
+// A parser that never finishes is a worse failure than any error message: the
+// program does not run and does not say why. These are the two loops that used
+// to spin at the end of the file rather than reporting what was missing.
+func TestParsingAlwaysTerminates(t *testing.T) {
+	tests := []struct {
+		name     string
+		source   string
+		expected string
+	}{
+		{"an import written backwards", `from "lib" import double`, "expected `from` after the names being imported"},
+		{"an unclosed parameter list", `function greet(name, greeting`, "expected `)` to close the parameter list"},
+		{"a parameter that is not a name", `function greet(1) { }`, "expected a parameter name, found `1`"},
+		{"an import of something unnamed", `import 5 from "lib"`, "expected a name to import, found `5`"},
+		{"an unclosed map", `x = {"a": 1`, "expected"},
+		{"an unclosed switch", `switch (x) { case 1: {`, ""},
+		{"an unclosed block", `function greet() {`, ""},
+		{"an unclosed class", `class Point {`, ""},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			finished := make(chan []string, 1)
+
+			go func() {
+				parser := New(scanner.New(test.source, "test.ghost"))
+				parser.Parse()
+
+				messages := make([]string, 0, len(parser.Errors()))
+
+				for _, raised := range parser.Errors() {
+					messages = append(messages, raised.Message)
+				}
+
+				finished <- messages
+			}()
+
+			select {
+			case messages := <-finished:
+				if test.expected == "" {
+					return
+				}
+
+				for _, message := range messages {
+					if strings.Contains(message, test.expected) {
+						return
+					}
+				}
+
+				t.Errorf("no error mentioned %q, got %v", test.expected, messages)
+			case <-time.After(5 * time.Second):
+				t.Fatalf("parsing %q did not finish", test.source)
+			}
+		})
 	}
 }

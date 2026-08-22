@@ -2,6 +2,7 @@ package evaluator
 
 import (
 	"ghostlang.org/x/ghost/ast"
+	"ghostlang.org/x/ghost/fault"
 	"ghostlang.org/x/ghost/object"
 )
 
@@ -76,5 +77,6 @@ func evaluateForIn(node *ast.ForIn, scope *object.Scope) object.Object {
 		return nil
 	}
 
-	return newError("%d:%d:%s: runtime error: unusable as for loop: %T", node.Token.Line, node.Token.Column, node.Token.File, iterable)
+	return object.NewError(fault.Type, node.Token, "cannot loop over %s", object.TypeName(iterable)).
+		WithHelp("`for ... in` walks a list or a map")
 }

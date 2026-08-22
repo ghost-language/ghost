@@ -2,6 +2,7 @@ package evaluator
 
 import (
 	"ghostlang.org/x/ghost/ast"
+	"ghostlang.org/x/ghost/fault"
 	"ghostlang.org/x/ghost/object"
 	"ghostlang.org/x/ghost/value"
 )
@@ -13,10 +14,14 @@ func evaluateProperty(node *ast.Property, scope *object.Scope) object.Object {
 		return left
 	}
 
-	property := node.Property.(*ast.Identifier)
+	property, ok := node.Property.(*ast.Identifier)
+
+	if !ok {
+		return object.NewError(fault.Syntax, node.Token, "a property has to be named")
+	}
 
 	if left == nil {
-		return newError("%d:%d:%s: runtime error: cannot read property %s of a null value", node.Token.Line, node.Token.Column, node.Token.File, property.Value)
+		return object.NewError(fault.Type, node.Token, "cannot read property `%s` of a null value", property.Value)
 	}
 
 	switch left := left.(type) {
@@ -26,10 +31,14 @@ func evaluateProperty(node *ast.Property, scope *object.Scope) object.Object {
 		return evaluateInstanceProperty(left.Instance, left.Class, property)
 	case *object.LibraryModule:
 		if function, ok := left.Properties[property.Value]; ok {
-			return unwrapCall(node.Token, function, nil, scope)
+			return unwrapCall(property.Token, function, nil, scope)
 		}
 
-		return newError("%d:%d:%s: runtime error: unknown property: %s.%s", node.Token.Line, node.Token.Column, node.Token.File, left.Name, property.Value)
+		return object.NewError(fault.Property, property.Token, "module `%s` has no property `%s`", left.Name, property.Value).
+			WithHelp("%s", modulePropertySuggestion(left, property.Value))
+	case *object.Class:
+		return object.NewError(fault.Property, node.Token, "class `%s` has no property `%s` to read on the class itself", left.Name.Value, property.Value).
+			WithHelp("properties are read on instances: `new %s().%s`", left.Name.Value, property.Value)
 	case *object.Map:
 		key := &object.String{Value: property.Value}
 
@@ -42,7 +51,7 @@ func evaluateProperty(node *ast.Property, scope *object.Scope) object.Object {
 		return pair.Value
 	}
 
-	return newError("%d:%d:%s: runtime error: cannot read property %s of %s", node.Token.Line, node.Token.Column, node.Token.File, property.Value, left.Type())
+	return object.NewError(fault.Property, node.Token, "cannot read property `%s` of %s", property.Value, object.TypeName(left))
 }
 
 // evaluateInstanceProperty reads a property off an instance: its own fields
