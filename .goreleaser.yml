@@ -65,7 +65,10 @@ release:
   # to whatever notes they wrote instead of replacing them.
   mode: append
 
-brews:
+# A cask rather than a formula: Homebrew asks projects shipping pre-built
+# binaries to use casks, and GoReleaser deprecated `brews` to match. Casks are
+# macOS-only, which is what the README already documented this tap as being for.
+homebrew_casks:
   - name: ghost
     repository:
       owner: ghost-language
@@ -75,7 +78,7 @@ brews:
       # with contents:write on ghost-language/homebrew-ghost, stored as the
       # HOMEBREW_TAP_TOKEN secret.
       token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
-    # Without the token the formula cannot be pushed. Skipping that one step is
+    # Without the token the cask cannot be pushed. Skipping that one step is
     # better than failing a release whose binaries are already published.
     skip_upload: '{{ if .Env.HOMEBREW_TAP_TOKEN }}false{{ else }}true{{ end }}'
     commit_author:
@@ -84,7 +87,16 @@ brews:
     homepage: "https://github.com/ghost-language/ghost"
     description: "Ghost, a dynamically typed scripting language."
     license: "MIT"
-    install: |
-      bin.install "ghost"
-    test: |
-      assert_match version.to_s, shell_output("#{bin}/ghost -v")
+    # The formula this cask replaces installs the same binary. Delete
+    # Formula/ghost.rb from the tap once the first cask release has landed.
+    conflicts:
+      - formula: ghost
+    hooks:
+      post:
+        # The binaries are not signed or notarised, so macOS quarantines them
+        # on download and the first run is refused. Clearing the attribute at
+        # install time is what makes `brew install` produce a working ghost.
+        install: |
+          if system_command("/usr/bin/xattr", args: ["-h"]).exit_status == 0
+            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/ghost"]
+          end
