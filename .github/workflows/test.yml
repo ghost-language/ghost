@@ -6,12 +6,29 @@ on:
   # Deliberately unfiltered by base branch, so a pull request is checked
   # wherever it is targeted rather than only when it targets 1.0.
   pull_request:
+  # Lets a branch be checked before a pull request exists for it.
+  workflow_dispatch:
+
+# A new push to a pull request makes the run already in flight irrelevant, so
+# cancel it. Pushes to 1.0 are exempt: every commit on the release branch gets
+# a recorded result, because a release is cut from it.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+# Nothing in this workflow writes to the repository. The default token scope is
+# a repository-wide setting that may be broader than that, so narrow it here.
+permissions:
+  contents: read
 
 jobs:
 
   test:
     name: Test
     runs-on: ubuntu-latest
+    # A test that deadlocks would otherwise hold a runner for six hours. The
+    # suite itself passes -timeout 120s, so this only catches a hang outside it.
+    timeout-minutes: 15
     steps:
 
     - name: Check out code
@@ -41,3 +58,27 @@ jobs:
     # Running each benchmark a single iteration is enough to catch that.
     - name: Benchmarks
       run: make bench
+
+  # The release workflow is only exercised when a release is published, by
+  # which point the tag is already cut and a broken .goreleaser.yml is
+  # expensive to discover. Validating the config on every pull request moves
+  # that failure to where it is cheap to fix.
+  goreleaser:
+    name: GoReleaser config
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+
+    - name: Check out code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version-file: go.mod
+
+    - name: Check the release config
+      uses: goreleaser/goreleaser-action@v6
+      with:
+        version: "~> v2"
+        args: check

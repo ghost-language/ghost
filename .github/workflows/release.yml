@@ -1,0 +1,114 @@
+name: Release
+
+on:
+  # `published` rather than `created`: a draft release fires `created` too, and
+  # a draft is exactly the state where binaries should not be built yet.
+  release:
+    types: [published]
+  # A dry run. Builds every archive without publishing anything, so the release
+  # pipeline can be exercised from a branch before a tag is cut.
+  workflow_dispatch:
+
+# Two releases publishing at once would race over the Homebrew tap.
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+
+  # A release is the one build nobody gets to re-run cheaply, so it is checked
+  # before anything is published rather than after.
+  verify:
+    name: Verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+
+    - name: Check out code
+      uses: actions/checkout@v4
+      with:
+        # On a release event the default ref is the branch, not the tag. The
+        # tag is what is being shipped, so build from that.
+        ref: ${{ github.event.release.tag_name || github.ref }}
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version-file: go.mod
+
+    # version/version.go is a constant, so it cannot be stamped in at link
+    # time. It has to be bumped by hand before tagging, which means it can
+    # disagree with the tag. Publishing a `v0.31.0` binary that reports 0.30.0
+    # is worse than not publishing at all.
+    - name: Check the tag matches version/version.go
+      if: github.event_name == 'release'
+      env:
+        TAG: ${{ github.event.release.tag_name }}
+      run: |
+        declared=$(sed -n 's/^const Version = "\(.*\)"$/\1/p' version/version.go)
+        if [ -z "$declared" ]; then
+          echo "::error file=version/version.go::could not read the version constant"
+          exit 1
+        fi
+        if [ "$TAG" != "v$declared" ]; then
+          echo "::error file=version/version.go::tag $TAG does not match version/version.go (v$declared)"
+          echo "Bump version/version.go to match the tag, or retag, then re-run this workflow."
+          exit 1
+        fi
+        echo "$TAG matches version/version.go"
+
+    # fmt, vet, test and bench - the same gate a pull request has to pass.
+    - name: Check
+      run: make check
+
+  release:
+    name: Release
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      # Uploading archives to the release, and nothing else.
+      contents: write
+    steps:
+
+    - name: Check out code
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ github.event.release.tag_name || github.ref }}
+        # GoReleaser derives the version from the tag and the changelog from
+        # the commits since the previous one. Both need full history.
+        fetch-depth: 0
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version-file: go.mod
+
+    - name: Run GoReleaser
+      uses: goreleaser/goreleaser-action@v6
+      with:
+        version: "~> v2"
+        # A manual run builds everything but publishes nothing, so the pipeline
+        # can be proven without a tag.
+        args: >-
+          release --clean
+          ${{ github.event_name == 'workflow_dispatch' && '--snapshot --skip=publish,announce' || '' }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        # Optional. Absent, GoReleaser skips the Homebrew formula rather than
+        # failing the release - see skip_upload in .goreleaser.yml.
+        HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+
+    - name: Upload the dry run's archives
+      if: github.event_name == 'workflow_dispatch'
+      uses: actions/upload-artifact@v4
+      with:
+        name: dist
+        path: |
+          dist/*.tar.gz
+          dist/*.zip
+          dist/checksums.txt
+        retention-days: 7
