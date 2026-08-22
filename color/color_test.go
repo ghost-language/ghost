@@ -20,6 +20,7 @@ func TestDetectHonoursTheEnvironment(t *testing.T) {
 		{"FORCE_COLOR=0 does not", map[string]string{"FORCE_COLOR": "0"}, Plain},
 		{"CLICOLOR_FORCE styles a pipe", map[string]string{"CLICOLOR_FORCE": "1"}, Colored},
 		{"a dumb terminal cannot be forced", map[string]string{"TERM": "dumb", "FORCE_COLOR": "1"}, Plain},
+		{"CLICOLOR=0 does not stop a force", map[string]string{"CLICOLOR": "0", "FORCE_COLOR": "1"}, Colored},
 	}
 
 	for _, test := range tests {
@@ -41,7 +42,7 @@ func TestDetectHonoursTheEnvironment(t *testing.T) {
 // test ends, so a case says exactly what it means rather than inheriting the
 // environment the suite happens to be running in.
 func clearEnvironment(t *testing.T) {
-	for _, name := range []string{"NO_COLOR", "FORCE_COLOR", "CLICOLOR_FORCE", "TERM"} {
+	for _, name := range []string{"NO_COLOR", "FORCE_COLOR", "CLICOLOR", "CLICOLOR_FORCE", "TERM"} {
 		name := name
 
 		value, ok := os.LookupEnv(name)

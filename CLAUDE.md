@@ -137,9 +137,17 @@ type error: cannot use `+` between number and string
   a class has — offer it: `evaluator/errors.go` suggests the nearest name for a
   typo.
 - **Color is a role, never an escape code.** Ask `color.Detect(writer)` for a
-  profile and call `profile.Error(...)`, `profile.Help(...)`, and so on.
-  Detection honours `NO_COLOR`, `TERM=dumb`, `FORCE_COLOR`, and `CLICOLOR_FORCE`,
-  and a report rendered plain is the same text minus the paint.
+  profile and call `profile.Error(...)`, `profile.Help(...)`, and so on. A
+  report rendered plain is the same text minus the paint.
+
+  Detection answers Colored only on positive evidence, because escapes printed
+  somewhere that cannot render them are worse than no colour at all. It honours
+  `NO_COLOR`, `TERM=dumb`, `FORCE_COLOR`, `CLICOLOR_FORCE`, and `CLICOLOR=0`;
+  beyond that the destination has to be a real terminal — an ioctl on Unix, a
+  console handle on Windows, not the character-device guess that also matches
+  `/dev/null` — and that terminal has to be able to render ANSI, which on Unix
+  means a usable `TERM` and on Windows means successfully turning virtual
+  terminal processing on. The per-platform half lives in `color/terminal_*.go`.
 - **Only the top prints.** The scanner and parser collect faults; the evaluator
   returns error objects; `ghost.Execute` renders them. A `log.Error` inside the
   pipeline is a bug.

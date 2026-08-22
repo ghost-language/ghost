@@ -48,12 +48,25 @@ const (
 
 // Detect reports the profile appropriate for a writer.
 //
-// The rules follow the conventions terminal programs have settled on, in the
-// order they override each other: NO_COLOR turns styling off whatever else is
-// set; a TERM of "dumb" is a terminal that cannot render escapes, so nothing
-// can force them onto it; FORCE_COLOR and CLICOLOR_FORCE turn styling on even
-// when the destination is not a terminal at all, which is how a CI log ends up
-// with color; and failing all of that, the destination has to be a terminal.
+// Emitting escapes into something that cannot render them is worse than
+// emitting none: the reader gets `\033[1;31m` wrapped around the very message
+// that was supposed to be easy to read. So the answer is only Colored once
+// there is positive evidence that it will be understood, and every uncertain
+// case falls back to Plain.
+//
+// The rules, in the order they override each other:
+//
+//   - NO_COLOR, set to anything at all, turns styling off. It is the reader's
+//     standing instruction and nothing overrides it.
+//   - A TERM of "dumb" is a terminal saying it cannot render escapes. Nothing
+//     overrides that either, including the force variables below: forcing
+//     colour onto a terminal that has told us it cannot show it produces
+//     garbage, not colour.
+//   - FORCE_COLOR and CLICOLOR_FORCE turn styling on even when the destination
+//     is not a terminal at all, which is how a CI log ends up with colour.
+//   - CLICOLOR=0 turns it off for a destination that would otherwise get it.
+//   - Otherwise the destination has to be a terminal, and that terminal has to
+//     be able to render ANSI — which on Windows means asking it to.
 func Detect(writer io.Writer) Profile {
 	if _, ok := os.LookupEnv("NO_COLOR"); ok {
 		return Plain
@@ -67,11 +80,27 @@ func Detect(writer io.Writer) Profile {
 		return Colored
 	}
 
-	if isTerminal(writer) {
-		return Colored
+	if os.Getenv("CLICOLOR") == "0" {
+		return Plain
 	}
 
-	return Plain
+	// Only a file can be a terminal, so anything else — a buffer, a pipe
+	// wrapper, a test recorder — is answered without a syscall.
+	file, ok := writer.(*os.File)
+
+	if !ok {
+		return Plain
+	}
+
+	if !isTerminal(file) {
+		return Plain
+	}
+
+	if !rendersEscapes(file) {
+		return Plain
+	}
+
+	return Colored
 }
 
 // forced reports whether an environment variable is set to something other than
@@ -85,25 +114,6 @@ func forced(name string) bool {
 	}
 
 	return value != "0" && !strings.EqualFold(value, "false")
-}
-
-// isTerminal reports whether a writer is attached to a character device. Only
-// an *os.File can be, so anything else — a buffer, a pipe wrapper, a test
-// recorder — answers no without a syscall.
-func isTerminal(writer io.Writer) bool {
-	file, ok := writer.(*os.File)
-
-	if !ok {
-		return false
-	}
-
-	info, err := file.Stat()
-
-	if err != nil {
-		return false
-	}
-
-	return info.Mode()&os.ModeCharDevice != 0
 }
 
 // paint wraps text in an escape sequence, or leaves it alone when the profile
