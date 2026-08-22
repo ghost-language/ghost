@@ -2,6 +2,7 @@ package evaluator
 
 import (
 	"ghostlang.org/x/ghost/ast"
+	"ghostlang.org/x/ghost/fault"
 	"ghostlang.org/x/ghost/object"
 	"ghostlang.org/x/ghost/token"
 )
@@ -19,7 +20,7 @@ func evaluateCompound(node *ast.Compound, scope *object.Scope) object.Object {
 	operator, ok := compoundOperators[node.Operator]
 
 	if !ok {
-		return newError("%d:%d:%s: runtime error: unknown operator: %s", node.Token.Line, node.Token.Column, node.Token.File, node.Operator)
+		return object.NewError(fault.Internal, node.Token, "`%s` was parsed as a compound assignment but has no operator behind it", node.Operator)
 	}
 
 	infix := &ast.Infix{
@@ -43,7 +44,8 @@ func evaluateCompound(node *ast.Compound, scope *object.Scope) object.Object {
 	case *ast.Property:
 		return evaluatePropertyAssignment(target, value, scope)
 	default:
-		return newError("%d:%d:%s: runtime error: invalid compound assignment target: %T", node.Token.Line, node.Token.Column, node.Token.File, node.Left)
+		return object.NewError(fault.Syntax, node.Token, "cannot assign to this expression with `%s`", node.Operator).
+			WithHelp("only a variable, a list or map entry, or a property can be assigned to")
 	}
 
 	return nil

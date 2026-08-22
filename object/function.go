@@ -4,6 +4,7 @@ import (
 	"io"
 
 	"ghostlang.org/x/ghost/ast"
+	"ghostlang.org/x/ghost/token"
 )
 
 // Function objects consist of a user-generated function.
@@ -25,7 +26,7 @@ func (function *Function) Type() Type {
 }
 
 // Method defines the set of methods available on function objects.
-func (function *Function) Method(method string, args []Object) (Object, bool) {
+func (function *Function) Method(method string, tok token.Token, args []Object) (Object, bool) {
 	return nil, false
 }
 

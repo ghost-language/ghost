@@ -2,6 +2,7 @@ package evaluator
 
 import (
 	"ghostlang.org/x/ghost/ast"
+	"ghostlang.org/x/ghost/fault"
 	"ghostlang.org/x/ghost/object"
 )
 
@@ -17,13 +18,14 @@ func evaluateClass(node *ast.Class, scope *object.Scope) object.Object {
 		identifier, ok := scope.Environment.Get(node.Super.Value)
 
 		if !ok {
-			return object.NewError("%d:%d:%s: runtime error: unknown identifier: %s", node.Super.Token.Line, node.Super.Token.Column, node.Super.Token.File, node.Super.Value)
+			return object.NewError(fault.Name, node.Super.Token, "`%s` is not defined", node.Super.Value).
+				WithHelp("a class has to be declared before the class that extends it")
 		}
 
 		super, ok := identifier.(*object.Class)
 
 		if !ok {
-			return object.NewError("%d:%d:%s: runtime error: referenced identifier in extends not a class, got=%s", node.Super.Token.Line, node.Super.Token.Column, node.Super.Token.File, identifier.Type())
+			return object.NewError(fault.Type, node.Super.Token, "cannot extend `%s`, which is a %s, not a class", node.Super.Value, object.TypeName(identifier))
 		}
 
 		class.Super = super

@@ -26,15 +26,31 @@ func init() {
 
 // randomRandom returns a uniform pseudo-random real number in the range (0, 1).
 func randomRandom(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
+	if err := arityRange("random.random", tok, args, 0, 2); err != nil {
+		return err
+	}
+
 	min := float64(0)
 	max := float64(1)
 
 	if len(args) > 0 {
-		max = args[0].(*object.Number).Float64()
+		bound, err := floatAt("random.random", tok, args, 0)
+
+		if err != nil {
+			return err
+		}
+
+		max = bound
 
 		if len(args) > 1 {
+			upper, err := floatAt("random.random", tok, args, 1)
+
+			if err != nil {
+				return err
+			}
+
 			min = max
-			max = args[1].(*object.Number).Float64()
+			max = upper
 		}
 	}
 
@@ -53,11 +69,23 @@ func randomRandom(scope *object.Scope, tok token.Token, args ...object.Object) o
 // generator used by the random module. If no value is passed, the current unix
 // nano timestamp will be used.
 func randomSeed(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
-	if len(args) == 1 && args[0].Type() == object.NUMBER {
-		SeedRandom(args[0].(*object.Number).Int64())
-	} else {
-		SeedRandom(time.Now().UnixNano())
+	if err := arityRange("random.seed", tok, args, 0, 1); err != nil {
+		return err
 	}
+
+	if len(args) == 0 {
+		SeedRandom(time.Now().UnixNano())
+
+		return nil
+	}
+
+	chosen, err := integerAt("random.seed", tok, args, 0)
+
+	if err != nil {
+		return err
+	}
+
+	SeedRandom(chosen)
 
 	return nil
 }

@@ -1,10 +1,8 @@
 package modules
 
 import (
-	"io/ioutil"
 	"os"
 	"path"
-	"strings"
 
 	"ghostlang.org/x/ghost/object"
 	"ghostlang.org/x/ghost/token"
@@ -20,90 +18,96 @@ func init() {
 }
 
 func ioAppend(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
-	if len(args) != 2 {
-		return object.NewError("%d:%d: runtime error: io.append() expects 2 arguments. got=%d", tok.Line, tok.Column, len(args))
+	if err := arity("io.append", tok, args, 2); err != nil {
+		return err
 	}
 
-	basePath, ok := args[0].(*object.String)
-
-	if !ok {
-		return object.NewError("%d:%d: runtime error: io.append() expects first argument to be of type 'string'. got=%s", tok.Line, tok.Column, strings.ToLower(args[0].Type().String()))
-	}
-
-	content, ok := args[1].(*object.String)
-
-	if !ok {
-		return object.NewError("%d:%d: runtime error: io.append() expects second argument to be of type 'string'. got=%s", tok.Line, tok.Column, strings.ToLower(args[1].Type().String()))
-	}
-
-	cleanPath := path.Clean(scope.Environment.GetDirectory() + "/" + basePath.Value)
-
-	file, err := os.OpenFile(cleanPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	target, err := stringAt("io.append", tok, args, 0)
 
 	if err != nil {
-		return object.NewError("%d:%d: runtime error: io.append() %s", tok.Line, tok.Column, err)
+		return err
+	}
+
+	content, err := stringAt("io.append", tok, args, 1)
+
+	if err != nil {
+		return err
+	}
+
+	resolved := resolvePath(scope, target)
+
+	file, failure := os.OpenFile(resolved, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+
+	if failure != nil {
+		return systemFailure("io.append", tok, failure)
 	}
 
 	defer file.Close()
 
-	file.WriteString(content.Value + "\n")
+	if _, failure := file.WriteString(content + "\n"); failure != nil {
+		return systemFailure("io.append", tok, failure)
+	}
 
 	return nil
 }
 
 func ioRead(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
-	if len(args) != 1 {
-		return object.NewError("%d:%d: runtime error: io.read() expects 1 argument. got=%d", tok.Line, tok.Column, len(args))
+	if err := arity("io.read", tok, args, 1); err != nil {
+		return err
 	}
 
-	basePath, ok := args[0].(*object.String)
-
-	if !ok {
-		return object.NewError("%d:%d: runtime error: io.read() expects first argument to be of type 'string'. got=%s", tok.Line, tok.Column, strings.ToLower(args[0].Type().String()))
-	}
-
-	path := path.Clean(scope.Environment.GetDirectory() + "/" + basePath.Value)
-	content, err := ioutil.ReadFile(path)
+	target, err := stringAt("io.read", tok, args, 0)
 
 	if err != nil {
-		return object.NewError("%d:%d: runtime error: io.read() %s", tok.Line, tok.Column, err)
+		return err
+	}
+
+	content, failure := os.ReadFile(resolvePath(scope, target))
+
+	if failure != nil {
+		return systemFailure("io.read", tok, failure)
 	}
 
 	return &object.String{Value: string(content)}
 }
 
 func ioWrite(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
-	if len(args) != 2 {
-		return object.NewError("%d:%d: runtime error: io.write() expects 2 arguments. got=%d", tok.Line, tok.Column, len(args))
+	if err := arity("io.write", tok, args, 2); err != nil {
+		return err
 	}
 
-	basePath, ok := args[0].(*object.String)
-
-	if !ok {
-		return object.NewError("%d:%d: runtime error: io.write() expects first argument to be of type 'string'. got=%s", tok.Line, tok.Column, strings.ToLower(args[0].Type().String()))
-	}
-
-	content, ok := args[1].(*object.String)
-
-	if !ok {
-		return object.NewError("%d:%d: runtime error: io.write() expects second argument to be of type 'string'. got=%s", tok.Line, tok.Column, strings.ToLower(args[1].Type().String()))
-	}
-
-	path := path.Clean(scope.Environment.GetDirectory() + "/" + basePath.Value)
-	contents := []byte(content.Value)
-	info, err := os.Stat(path)
+	target, err := stringAt("io.write", tok, args, 0)
 
 	if err != nil {
-		return object.NewError("%d:%d: runtime error: io.write() %s", tok.Line, tok.Column, err)
+		return err
 	}
 
-	mode := info.Mode()
-
-	err = ioutil.WriteFile(path, contents, mode)
+	content, err := stringAt("io.write", tok, args, 1)
 
 	if err != nil {
-		return object.NewError("%d:%d: runtime error: io.write() %s", tok.Line, tok.Column, err)
+		return err
+	}
+
+	resolved := resolvePath(scope, target)
+
+	// The file keeps the permissions it already has, which means it has to
+	// already exist. Creating one is `io.append`'s job.
+	info, failure := os.Stat(resolved)
+
+	if failure != nil {
+		return systemFailure("io.write", tok, failure).
+			WithHelp("`io.write` replaces the contents of a file that already exists; use `io.append` to create one")
+	}
+
+	if failure := os.WriteFile(resolved, []byte(content), info.Mode()); failure != nil {
+		return systemFailure("io.write", tok, failure)
 	}
 
 	return nil
+}
+
+// resolvePath reads a path as the script would mean it: relative to the
+// directory the script itself lives in, not to wherever Ghost was run from.
+func resolvePath(scope *object.Scope, target string) string {
+	return path.Clean(scope.Environment.GetDirectory() + "/" + target)
 }

@@ -1,6 +1,10 @@
 package object
 
-import "testing"
+import (
+	"testing"
+
+	"ghostlang.org/x/ghost/fault"
+)
 
 func numbers(values ...int64) *List {
 	elements := make([]Object, len(values))
@@ -53,10 +57,10 @@ func TestBroadcastShapes(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		result, fault := Broadcast([]Object{test.left, test.right}, add)
+		result, mismatch := Broadcast([]Object{test.left, test.right}, add)
 
-		if fault != nil {
-			t.Errorf("%s: unexpected fault: %s", test.name, fault.Reason)
+		if mismatch != nil {
+			t.Errorf("%s: unexpected fault: %s", test.name, mismatch.Reason)
 			continue
 		}
 
@@ -95,20 +99,20 @@ func TestBroadcastFaults(t *testing.T) {
 			"elements that are not numbers",
 			&List{Elements: []Object{&String{Value: "a"}}},
 			NewInt(1),
-			"expected a number or a list of numbers, found STRING",
+			"expected a number or a list of numbers, found string",
 		},
 	}
 
 	for _, test := range tests {
-		_, fault := Broadcast([]Object{test.left, test.right}, add)
+		_, mismatch := Broadcast([]Object{test.left, test.right}, add)
 
-		if fault == nil {
+		if mismatch == nil {
 			t.Errorf("%s: expected a fault", test.name)
 			continue
 		}
 
-		if fault.Reason != test.expected {
-			t.Errorf("%s: got=%s, expected=%s", test.name, fault.Reason, test.expected)
+		if mismatch.Reason != test.expected {
+			t.Errorf("%s: got=%s, expected=%s", test.name, mismatch.Reason, test.expected)
 		}
 	}
 }
@@ -128,10 +132,10 @@ func TestBroadcastAcrossThreeOperands(t *testing.T) {
 		return values[0]
 	}
 
-	result, fault := Broadcast([]Object{rows(numbers(-5, 5), numbers(15, 3)), NewInt(0), NewInt(10)}, middle)
+	result, mismatch := Broadcast([]Object{rows(numbers(-5, 5), numbers(15, 3)), NewInt(0), NewInt(10)}, middle)
 
-	if fault != nil {
-		t.Fatalf("unexpected fault: %s", fault.Reason)
+	if mismatch != nil {
+		t.Fatalf("unexpected fault: %s", mismatch.Reason)
 	}
 
 	if result.String() != "[[0, 5], [10, 3]]" {
@@ -144,16 +148,16 @@ func TestBroadcastAcrossThreeOperands(t *testing.T) {
 func TestBroadcastStopsAtErrors(t *testing.T) {
 	divide := func(values []*Number) Object {
 		if values[1].IsZero() {
-			return NewError("division by zero")
+			return NewErrorFrom(fault.New(fault.Value, "division by zero"))
 		}
 
 		return values[0].Div(values[1])
 	}
 
-	result, fault := Broadcast([]Object{numbers(1, 2, 3), numbers(1, 0, 3)}, divide)
+	result, mismatch := Broadcast([]Object{numbers(1, 2, 3), numbers(1, 0, 3)}, divide)
 
-	if fault != nil {
-		t.Fatalf("unexpected fault: %s", fault.Reason)
+	if mismatch != nil {
+		t.Fatalf("unexpected fault: %s", mismatch.Reason)
 	}
 
 	if !IsError(result) {

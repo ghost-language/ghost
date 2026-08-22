@@ -2,6 +2,7 @@ package evaluator
 
 import (
 	"ghostlang.org/x/ghost/ast"
+	"ghostlang.org/x/ghost/fault"
 	"ghostlang.org/x/ghost/object"
 	"ghostlang.org/x/ghost/token"
 )
@@ -20,7 +21,7 @@ func evaluateInfix(node *ast.Infix, scope *object.Scope) object.Object {
 	}
 
 	if left == nil || right == nil {
-		return newError("%d:%d:%s: runtime error: operand of %s is null", node.Token.Line, node.Token.Column, node.Token.File, node.Operator)
+		return object.NewError(fault.Type, node.Token, "cannot use `%s` when one side is null", node.Operator)
 	}
 
 	if node.Operator == token.EQUALEQUAL || node.Operator == token.BANGEQUAL {
@@ -39,10 +40,10 @@ func evaluateInfix(node *ast.Infix, scope *object.Scope) object.Object {
 	case isListArithmetic(left, right):
 		return evaluateListInfix(node, left, right)
 	case left.Type() != right.Type():
-		return newError("%d:%d:%s: runtime error: type mismatch: %s %s %s", node.Token.Line, node.Token.Column, node.Token.File, left.Type(), node.Operator, right.Type())
+		return object.NewError(fault.Type, node.Token, "cannot use `%s` between %s and %s", node.Operator, object.TypeName(left), object.TypeName(right))
 	}
 
-	return newError("%d:%d:%s: runtime error: unknown operator: %s %s %s", node.Token.Line, node.Token.Column, node.Token.File, left.Type(), node.Operator, right.Type())
+	return operatorError(node.Token, node.Operator, left, right)
 }
 
 // evaluateEquality handles the comparisons that are not type-specific: a

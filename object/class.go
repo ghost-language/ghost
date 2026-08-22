@@ -2,6 +2,7 @@ package object
 
 import (
 	"ghostlang.org/x/ghost/ast"
+	"ghostlang.org/x/ghost/token"
 )
 
 // Field is a class or trait field declaration. The initializer is kept
@@ -40,7 +41,7 @@ func (class *Class) Type() Type {
 }
 
 // Method defines the set of methods available on class objects.
-func (class *Class) Method(method string, args []Object) (Object, bool) {
+func (class *Class) Method(method string, tok token.Token, args []Object) (Object, bool) {
 	return nil, false
 }
 

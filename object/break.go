@@ -1,5 +1,7 @@
 package object
 
+import "ghostlang.org/x/ghost/token"
+
 // Break objects consist of a nil value.
 type Break struct{}
 
@@ -14,6 +16,6 @@ func (obj *Break) Type() Type {
 }
 
 // Method defines the set of methods available on break objects.
-func (obj *Break) Method(method string, args []Object) (Object, bool) {
+func (obj *Break) Method(method string, tok token.Token, args []Object) (Object, bool) {
 	return nil, false
 }

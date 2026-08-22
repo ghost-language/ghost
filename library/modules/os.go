@@ -22,54 +22,56 @@ func init() {
 }
 
 func osArgs(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
-	list := &object.List{}
-	arguments := os.Args[1:]
-
-	for _, argument := range arguments {
-		list.Elements = append(list.Elements, &object.String{Value: argument})
+	if err := arity("os.args", tok, args, 0); err != nil {
+		return err
 	}
 
-	return list
+	arguments := os.Args[1:]
+	elements := make([]object.Object, len(arguments))
+
+	for index, argument := range arguments {
+		elements[index] = &object.String{Value: argument}
+	}
+
+	return &object.List{Elements: elements}
 }
 
 func osClock(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
+	if err := arity("os.clock", tok, args, 0); err != nil {
+		return err
+	}
+
 	return object.NewInt(time.Now().UnixNano())
 }
 
+// osExit ends the program with a status code, and optionally a parting message.
+// It is the one library method that never returns, so its arguments are checked
+// before anything is printed: exiting on a miscall would take the mistake with
+// it.
 func osExit(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
-	var message string
-
-	if len(args) == 2 {
-		if args[0].Type() != object.NUMBER {
-			// error
-			return nil
-		}
-
-		if args[1].Type() != object.STRING {
-			// error
-			return nil
-		}
-
-		message = args[1].(*object.String).Value
-	} else if len(args) == 1 {
-		if args[0].Type() != object.NUMBER {
-			// error
-			return nil
-		}
-	} else {
-		// error
-		return nil
+	if err := arityRange("os.exit", tok, args, 1, 2); err != nil {
+		return err
 	}
 
-	if message != "" {
+	status, err := integerAt("os.exit", tok, args, 0)
+
+	if err != nil {
+		return err
+	}
+
+	if len(args) == 2 {
+		message, err := stringAt("os.exit", tok, args, 1)
+
+		if err != nil {
+			return err
+		}
+
 		fmt.Println(message)
 	}
 
-	arg := args[0].(*object.Number)
+	os.Exit(int(status))
 
-	os.Exit(int(arg.Int64()))
-
-	return arg
+	return nil
 }
 
 // Properties

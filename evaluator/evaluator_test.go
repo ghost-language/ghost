@@ -15,17 +15,17 @@ func TestErrorHandling(t *testing.T) {
 		input           string
 		expectedMessage string
 	}{
-		{"5 + true", "1:3:test.ghost: runtime error: type mismatch: NUMBER + BOOLEAN"},
-		{"5 + true; 5", "1:3:test.ghost: runtime error: type mismatch: NUMBER + BOOLEAN"},
-		{"-true", "1:1:test.ghost: runtime error: unknown operator: -BOOLEAN"},
-		{"true + false", "1:6:test.ghost: runtime error: unknown operator: BOOLEAN + BOOLEAN"},
-		{"5; true + false; 5", "1:9:test.ghost: runtime error: unknown operator: BOOLEAN + BOOLEAN"},
-		{"if (10 > 1) { if (10 > 1) { return true + false } return 1 }", "1:41:test.ghost: runtime error: unknown operator: BOOLEAN + BOOLEAN"},
-		{"foobar", "1:1:test.ghost: runtime error: unknown identifier: foobar"},
-		{`"Hello" - "World"`, "1:9:test.ghost: runtime error: unknown operator: STRING - STRING"},
-		{`{"name": "Ghost"}[function() { 123 }]`, "1:18:test.ghost: runtime error: unusable as map key: FUNCTION"},
-		{`function foo() { a } foo()`, "1:18:test.ghost: runtime error: unknown identifier: a"},
-		{`class Test { function foo() { a } } test = new Test() test.foo()`, "1:31:test.ghost: runtime error: unknown identifier: a"},
+		{"5 + true", "test.ghost:1:3: type error: cannot use `+` between number and boolean"},
+		{"5 + true; 5", "test.ghost:1:3: type error: cannot use `+` between number and boolean"},
+		{"-true", "test.ghost:1:1: type error: cannot negate boolean"},
+		{"true + false", "test.ghost:1:6: type error: cannot use `+` between two booleans"},
+		{"5; true + false; 5", "test.ghost:1:9: type error: cannot use `+` between two booleans"},
+		{"if (10 > 1) { if (10 > 1) { return true + false } return 1 }", "test.ghost:1:41: type error: cannot use `+` between two booleans"},
+		{"foobar", "test.ghost:1:1: name error: `foobar` is not defined"},
+		{`"Hello" - "World"`, "test.ghost:1:9: type error: cannot use `-` between two strings"},
+		{`{"name": "Ghost"}[function() { 123 }]`, "test.ghost:1:18: type error: function cannot be used as a map key"},
+		{`function foo() { a } foo()`, "test.ghost:1:18: name error: `a` is not defined"},
+		{`class Test { function foo() { a } } test = new Test() test.foo()`, "test.ghost:1:31: name error: `a` is not defined"},
 	}
 
 	for _, tt := range tests {
@@ -114,9 +114,9 @@ func TestForExpressions(t *testing.T) {
 		input    string
 		expected interface{}
 	}{
-		{`x = 10; for (x = y; x > 0; x = x - 1) { x }`, "1:18:test.ghost: runtime error: unknown identifier: y"},
-		{`for (x = 0; x < 10; x = x + 1) { y }`, "1:34:test.ghost: runtime error: unknown identifier: y"},
-		{`bar = true; for (x = 0; x < 10; x = x + 1) { y; print(bar) }`, "1:46:test.ghost: runtime error: unknown identifier: y"},
+		{`x = 10; for (x = y; x > 0; x = x - 1) { x }`, "test.ghost:1:18: name error: `y` is not defined"},
+		{`for (x = 0; x < 10; x = x + 1) { y }`, "test.ghost:1:34: name error: `y` is not defined"},
+		{`bar = true; for (x = 0; x < 10; x = x + 1) { y; print(bar) }`, "test.ghost:1:46: name error: `y` is not defined"},
 	}
 
 	for _, tt := range tests {
@@ -136,7 +136,7 @@ func TestForInExpressions(t *testing.T) {
 		input    string
 		expected interface{}
 	}{
-		{`list = [1, 2, 3]; for(x in lists) { x }`, "1:28:test.ghost: runtime error: unknown identifier: lists"},
+		{`list = [1, 2, 3]; for(x in lists) { x }`, "test.ghost:1:28: name error: `lists` is not defined"},
 	}
 
 	for _, tt := range tests {
@@ -485,17 +485,17 @@ func TestThisOutsideClass(t *testing.T) {
 		{
 			name:     "this at top level",
 			input:    `this`,
-			expected: "1:1:test.ghost: runtime error: 'this' used outside of class context",
+			expected: "test.ghost:1:1: name error: `this` can only be used inside a class",
 		},
 		{
 			name:     "this in regular function",
 			input:    `function foo() { return this } foo()`,
-			expected: "1:25:test.ghost: runtime error: 'this' used outside of class context",
+			expected: "test.ghost:1:25: name error: `this` can only be used inside a class",
 		},
 		{
 			name:     "this.property at top level",
 			input:    `this.name`,
-			expected: "1:1:test.ghost: runtime error: 'this' used outside of class context",
+			expected: "test.ghost:1:1: name error: `this` can only be used inside a class",
 		},
 	}
 
@@ -668,8 +668,8 @@ func isErrorObject(t *testing.T, obj object.Object, expected string) bool {
 		return false
 	}
 
-	if err.Message != expected {
-		t.Errorf("error has wrong message. got=%s, expected=%s", err.Message, expected)
+	if err.String() != expected {
+		t.Errorf("error has wrong message. got=%s, expected=%s", err.String(), expected)
 		return false
 	}
 
@@ -1157,62 +1157,62 @@ func TestClassRuntimeErrors(t *testing.T) {
 		{
 			name:     "property access on a class",
 			input:    "class A { value() { return 1 } }\nA.value",
-			expected: "2:2:test.ghost: runtime error: cannot read property value of CLASS",
+			expected: "test.ghost:2:2: property error: class `A` has no property `value` to read on the class itself",
 		},
 		{
 			name:     "method call on a class",
 			input:    "class A { value() { return 1 } }\nA.value()",
-			expected: "2:2:test.ghost: runtime error: unknown method value on class A; construct instances with `new A()`",
+			expected: "test.ghost:2:3: property error: class `A` has no method `value` to call on the class itself",
 		},
 		{
 			name:     "unknown method on a primitive",
 			input:    "5.nope()",
-			expected: "1:2:test.ghost: runtime error: unknown method: NUMBER.nope",
+			expected: "test.ghost:1:3: property error: number has no method `nope`",
 		},
 		{
 			name:     "extending an undefined identifier",
 			input:    "class A extends Nope {}",
-			expected: "1:17:test.ghost: runtime error: unknown identifier: Nope",
+			expected: "test.ghost:1:17: name error: `Nope` is not defined",
 		},
 		{
 			name:     "extending a non-class",
 			input:    "x = 5\nclass A extends x {}",
-			expected: "2:17:test.ghost: runtime error: referenced identifier in extends not a class, got=NUMBER",
+			expected: "test.ghost:2:17: type error: cannot extend `x`, which is a number, not a class",
 		},
 		{
 			name:     "using a non-trait",
 			input:    "x = 5\nclass A { use x }",
-			expected: "2:15:test.ghost: runtime error: referenced identifier in use not a trait, got=NUMBER",
+			expected: "test.ghost:2:15: type error: cannot use `x`, which is a number, not a trait",
 		},
 		{
 			name:     "declaring constructor as a field",
 			input:    "class A { constructor = 5 }",
-			expected: "1:23:test.ghost: runtime error: 'constructor' must be declared as a method, not a field",
+			expected: "test.ghost:1:23: syntax error: `constructor` has to be declared as a method, not a field",
 		},
 		{
 			name:     "instantiating a non-class",
 			input:    "x = 5\nnew x()",
-			expected: "2:1:test.ghost: runtime error: cannot instantiate a non-class value, got NUMBER",
+			expected: "test.ghost:2:1: type error: cannot instantiate number, which is not a class",
 		},
 		{
 			name:     "super outside a class",
 			input:    "super",
-			expected: "1:1:test.ghost: runtime error: 'super' used outside of class context",
+			expected: "test.ghost:1:1: name error: `super` can only be used inside a class",
 		},
 		{
 			name:     "super in a class with no superclass",
 			input:    "class A { value() { return super.value() } }\nnew A().value()",
-			expected: "1:28:test.ghost: runtime error: class A has no superclass",
+			expected: "test.ghost:1:28: name error: class `A` has no superclass",
 		},
 		{
 			name:     "calling an undefined method",
 			input:    "class A {}\nnew A().nope()",
-			expected: "2:8:test.ghost: runtime error: undefined method nope for class A",
+			expected: "test.ghost:2:9: property error: class `A` has no method `nope`",
 		},
 		{
 			name:     "calling a field that is not a function",
 			input:    "class A { value = 5 }\nnew A().value()",
-			expected: "2:8:test.ghost: runtime error: undefined method value for class A",
+			expected: "test.ghost:2:9: property error: class `A` has no method `value`",
 		},
 	}
 
@@ -1295,5 +1295,5 @@ func TestEqualityComparisons(t *testing.T) {
 func TestEqualityTypeMismatch(t *testing.T) {
 	result := evaluate(`1 == "a"`)
 
-	isErrorObject(t, result, `1:3:test.ghost: runtime error: type mismatch: NUMBER == STRING`)
+	isErrorObject(t, result, "test.ghost:1:3: type error: cannot use `==` between number and string")
 }

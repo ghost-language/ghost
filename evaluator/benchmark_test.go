@@ -181,7 +181,7 @@ func BenchmarkEvaluate(b *testing.B) {
 				result := Evaluate(program, scope)
 
 				if object.IsError(result) {
-					b.Fatalf("runtime error: %s", result.(*object.Error).Message)
+					b.Fatalf("runtime error: %s", result.(*object.Error).String())
 				}
 			}
 		})

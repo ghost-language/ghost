@@ -1,5 +1,7 @@
 package object
 
+import "ghostlang.org/x/ghost/token"
+
 // Null objects consist of a nil value.
 type Null struct{}
 
@@ -14,6 +16,6 @@ func (null *Null) Type() Type {
 }
 
 // Method defines the set of methods available on null objects.
-func (null *Null) Method(method string, args []Object) (Object, bool) {
+func (null *Null) Method(method string, tok token.Token, args []Object) (Object, bool) {
 	return nil, false
 }

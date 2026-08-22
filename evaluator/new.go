@@ -2,6 +2,7 @@ package evaluator
 
 import (
 	"ghostlang.org/x/ghost/ast"
+	"ghostlang.org/x/ghost/fault"
 	"ghostlang.org/x/ghost/object"
 	"ghostlang.org/x/ghost/token"
 	"ghostlang.org/x/ghost/value"
@@ -18,13 +19,15 @@ func evaluateNew(node *ast.New, scope *object.Scope) object.Object {
 	}
 
 	if callee == nil {
-		return newError("%d:%d:%s: runtime error: cannot instantiate a non-class value", node.Token.Line, node.Token.Column, node.Token.File)
+		return object.NewError(fault.Type, node.Token, "cannot instantiate a null value").
+			WithHelp("`new` needs a class, as in `new Point(1, 2)`")
 	}
 
 	class, ok := callee.(*object.Class)
 
 	if !ok {
-		return newError("%d:%d:%s: runtime error: cannot instantiate a non-class value, got %s", node.Token.Line, node.Token.Column, node.Token.File, callee.Type())
+		return object.NewError(fault.Type, node.Token, "cannot instantiate %s, which is not a class", object.TypeName(callee)).
+			WithHelp("`new` needs a class, as in `new Point(1, 2)`")
 	}
 
 	arguments := evaluateExpressions(node.Arguments, scope)
@@ -33,15 +36,15 @@ func evaluateNew(node *ast.New, scope *object.Scope) object.Object {
 		return arguments[0]
 	}
 
-	return instantiate(class, arguments, node.Token)
+	return instantiate(class, arguments, node.Token, scope)
 }
 
 // instantiate builds an instance of the class, initializes its fields, and runs
 // the nearest constructor in the class chain.
-func instantiate(class *object.Class, arguments []object.Object, tok token.Token) object.Object {
+func instantiate(class *object.Class, arguments []object.Object, tok token.Token, caller *object.Scope) object.Object {
 	instance := &object.Instance{Class: class, Environment: object.NewEnclosedEnvironment(class.Environment)}
 
-	if result := initializeFields(instance, class); result != nil {
+	if result := initializeFields(instance, class, caller); result != nil {
 		return result
 	}
 
@@ -54,10 +57,10 @@ func instantiate(class *object.Class, arguments []object.Object, tok token.Token
 	method, ok := constructor.(*object.Function)
 
 	if !ok {
-		return newError("%d:%d:%s: runtime error: constructor of class %s is not a function, got %s", tok.Line, tok.Column, tok.File, class.Name.Value, constructor.Type())
+		return object.NewError(fault.Type, tok, "the constructor of class `%s` is a %s, not a function", class.Name.Value, object.TypeName(constructor))
 	}
 
-	result := invokeMethod(method, instance, declaringClass, arguments)
+	result := invokeMethod(method, instance, declaringClass, arguments, caller, tok)
 
 	if isError(result) {
 		return result
@@ -71,18 +74,18 @@ func instantiate(class *object.Class, arguments []object.Object, tok token.Token
 // class. Ancestors are applied first so a subclass field overrides the
 // declaration it shadows, and a class's own fields are applied after the traits
 // it uses for the same reason.
-func initializeFields(instance *object.Instance, class *object.Class) object.Object {
+func initializeFields(instance *object.Instance, class *object.Class, caller *object.Scope) object.Object {
 	for _, ancestor := range class.Ancestors() {
 		for _, trait := range ancestor.Traits {
 			for _, field := range trait.Fields {
-				if result := initializeField(instance, ancestor, field); result != nil {
+				if result := initializeField(instance, ancestor, field, caller); result != nil {
 					return result
 				}
 			}
 		}
 
 		for _, field := range ancestor.Fields {
-			if result := initializeField(instance, ancestor, field); result != nil {
+			if result := initializeField(instance, ancestor, field, caller); result != nil {
 				return result
 			}
 		}
@@ -91,8 +94,8 @@ func initializeFields(instance *object.Instance, class *object.Class) object.Obj
 	return nil
 }
 
-func initializeField(instance *object.Instance, class *object.Class, field object.Field) object.Object {
-	scope := &object.Scope{Environment: class.Environment, Self: instance, Class: class}
+func initializeField(instance *object.Instance, class *object.Class, field object.Field, caller *object.Scope) object.Object {
+	scope := &object.Scope{Environment: class.Environment, Self: instance, Class: class, Depth: depthOf(caller)}
 
 	result := Evaluate(field.Value, scope)
 
@@ -111,9 +114,26 @@ func initializeField(instance *object.Instance, class *object.Class, field objec
 
 // invokeMethod runs a resolved method with the instance bound as `this` and the
 // declaring class recorded so `super` resolves from the declaration site.
-func invokeMethod(method *object.Function, instance *object.Instance, declaringClass *object.Class, arguments []object.Object) object.Object {
+func invokeMethod(method *object.Function, instance *object.Instance, declaringClass *object.Class, arguments []object.Object, caller *object.Scope, at token.Token) object.Object {
+	depth := depthOf(caller)
+
+	if depth >= maxCallDepth {
+		return tooDeep(at)
+	}
+
 	environment := createFunctionEnvironment(method, arguments)
-	scope := &object.Scope{Self: instance, Class: declaringClass, Environment: environment}
+	scope := &object.Scope{Self: instance, Class: declaringClass, Environment: environment, Depth: depth + 1}
 
 	return Evaluate(method.Body, scope)
+}
+
+// depthOf reads how deep a caller already is. A method reached from Go rather
+// than from Ghost — an embedder calling into a script — has no caller, and
+// starts at the bottom.
+func depthOf(caller *object.Scope) int {
+	if caller == nil {
+		return 0
+	}
+
+	return caller.Depth
 }

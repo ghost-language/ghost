@@ -1,5 +1,7 @@
 package object
 
+import "ghostlang.org/x/ghost/token"
+
 // Return objects consist of a value.
 type Return struct {
 	Value Object
@@ -16,6 +18,6 @@ func (obj *Return) Type() Type {
 }
 
 // Method defines the set of methods available on return objects.
-func (obj *Return) Method(method string, args []Object) (Object, bool) {
+func (obj *Return) Method(method string, tok token.Token, args []Object) (Object, bool) {
 	return nil, false
 }

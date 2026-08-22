@@ -2,6 +2,7 @@ package evaluator
 
 import (
 	"ghostlang.org/x/ghost/ast"
+	"ghostlang.org/x/ghost/fault"
 	"ghostlang.org/x/ghost/object"
 	"ghostlang.org/x/ghost/value"
 )
@@ -19,6 +20,10 @@ func evaluateIndex(node *ast.Index, scope *object.Scope) object.Object {
 		return index
 	}
 
+	if left == nil || index == nil {
+		return object.NewError(fault.Type, node.Token, "cannot index a null value")
+	}
+
 	switch {
 	case left.Type() == object.STRING && index.Type() == object.NUMBER:
 		return evaluateStringIndex(node, left, index)
@@ -27,7 +32,7 @@ func evaluateIndex(node *ast.Index, scope *object.Scope) object.Object {
 	case left.Type() == object.MAP:
 		return evaluateMapIndex(node, left, index)
 	default:
-		return newError("%d:%d:%s: runtime error: index operator not supported: %s", node.Token.Line, node.Token.Column, node.Token.File, left.Type())
+		return indexTypeError(node, left, index)
 	}
 }
 
@@ -49,7 +54,8 @@ func evaluateMapIndex(node *ast.Index, left, index object.Object) object.Object 
 	key, ok := index.(object.Mappable)
 
 	if !ok {
-		return newError("%d:%d:%s: runtime error: unusable as map key: %s", node.Token.Line, node.Token.Column, node.Token.File, index.Type())
+		return object.NewError(fault.Type, node.Token, "%s cannot be used as a map key", object.TypeName(index)).
+			WithHelp("a map key has to be a string, a number, or a boolean")
 	}
 
 	pair, ok := mapObject.Pairs[key.MapKey()]

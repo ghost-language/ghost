@@ -2,6 +2,7 @@ package evaluator
 
 import (
 	"ghostlang.org/x/ghost/ast"
+	"ghostlang.org/x/ghost/fault"
 	"ghostlang.org/x/ghost/object"
 	"ghostlang.org/x/ghost/value"
 )
@@ -37,14 +38,16 @@ func evaluateAssign(node *ast.Assign, scope *object.Scope) object.Object {
 		return evaluatePropertyAssignment(assignment, value, scope)
 	}
 
-	return object.NewError("%d:%d:%s: runtime error: cannot assign variable to a %T", node.Token.Line, node.Token.Column, node.Token.File, node.Name)
+	return object.NewError(fault.Syntax, node.Token, "cannot assign to this expression").
+		WithHelp("only a variable, a list or map entry, or a property can be assigned to")
 }
 
 // constructorFieldError rejects `constructor = ...` in a class body. A field by
 // that name would never be run as a constructor, so silently accepting it hides
 // the mistake.
 func constructorFieldError(node *ast.Assign) object.Object {
-	return object.NewError("%d:%d:%s: runtime error: '%s' must be declared as a method, not a field", node.Token.Line, node.Token.Column, node.Token.File, constructorName)
+	return object.NewError(fault.Syntax, node.Token, "`%s` has to be declared as a method, not a field", constructorName).
+		WithHelp("write `%s(...) { ... }` rather than `%s = ...`", constructorName, constructorName)
 }
 
 func evaluateIdentifierAssignment(node *ast.Identifier, value object.Object, scope *object.Scope) object.Object {
@@ -55,19 +58,32 @@ func evaluateIdentifierAssignment(node *ast.Identifier, value object.Object, sco
 
 func evaluateIndexAssignment(node *ast.Index, assignmentValue object.Object, scope *object.Scope) object.Object {
 	left := Evaluate(node.Left, scope)
+
+	if isError(left) {
+		return left
+	}
+
 	index := Evaluate(node.Index, scope)
+
+	if isError(index) {
+		return index
+	}
+
+	if left == nil || index == nil {
+		return object.NewError(fault.Type, node.Token, "cannot assign into a null value")
+	}
 
 	switch obj := left.(type) {
 	case *object.List:
 		numIdx, ok := index.(*object.Number)
 		if !ok {
-			return object.NewError("%d:%d:%s: runtime error: list index must be a number, got %s", node.Token.Line, node.Token.Column, node.Token.File, index.Type())
+			return object.NewError(fault.Type, node.Token, "a list index has to be a number, got %s", object.TypeName(index))
 		}
 		idx := int(numIdx.Int64())
 		elements := obj.Elements
 
 		if idx < 0 {
-			return object.NewError("%d:%d:%s: runtime error: index out of range: %d", node.Token.Line, node.Token.Column, node.Token.File, idx)
+			return object.NewError(fault.Index, node.Token, "cannot assign to index %d, which is before the start of the list", idx)
 		}
 
 		if idx >= len(elements) {
@@ -83,12 +99,16 @@ func evaluateIndexAssignment(node *ast.Index, assignmentValue object.Object, sco
 		key, ok := index.(object.Mappable)
 
 		if !ok {
-			return object.NewError("%d:%d:%s: runtime error: unusable as a map key: %s", node.Token.Line, node.Token.Column, node.Token.File, index.Type())
+			return object.NewError(fault.Type, node.Token, "%s cannot be used as a map key", object.TypeName(index)).
+				WithHelp("a map key has to be a string, a number, or a boolean")
 		}
 
 		hashed := key.MapKey()
 		pair := object.MapPair{Key: index, Value: assignmentValue}
 		obj.Pairs[hashed] = pair
+	default:
+		return object.NewError(fault.Type, node.Token, "cannot assign into %s", object.TypeName(left)).
+			WithHelp("only lists and maps can be assigned into by index")
 	}
 
 	return nil
@@ -97,13 +117,27 @@ func evaluateIndexAssignment(node *ast.Index, assignmentValue object.Object, sco
 func evaluatePropertyAssignment(node *ast.Property, assignmentValue object.Object, scope *object.Scope) object.Object {
 	left := Evaluate(node.Left, scope)
 
+	if isError(left) {
+		return left
+	}
+
+	property, ok := node.Property.(*ast.Identifier)
+
+	if !ok {
+		return object.NewError(fault.Syntax, node.Token, "a property has to be named")
+	}
+
+	if left == nil {
+		return object.NewError(fault.Type, node.Token, "cannot set property `%s` on a null value", property.Value)
+	}
+
 	switch obj := left.(type) {
 	case *object.Instance:
-		obj.Environment.Set(node.Property.(*ast.Identifier).Value, assignmentValue)
+		obj.Environment.Set(property.Value, assignmentValue)
 
 		return nil
 	case *object.Map:
-		key := &object.String{Value: node.Property.(*ast.Identifier).Value}
+		key := &object.String{Value: property.Value}
 		hashed := key.MapKey()
 		pair := object.MapPair{Key: key, Value: assignmentValue}
 		obj.Pairs[hashed] = pair
@@ -111,5 +145,6 @@ func evaluatePropertyAssignment(node *ast.Property, assignmentValue object.Objec
 		return nil
 	}
 
-	return object.NewError("%d:%d:%s: runtime error: can only assign properties to maps, got %s", node.Token.Line, node.Token.Column, node.Token.File, left.Type())
+	return object.NewError(fault.Type, node.Token, "cannot set a property on %s", object.TypeName(left)).
+		WithHelp("properties can be set on class instances and on maps")
 }

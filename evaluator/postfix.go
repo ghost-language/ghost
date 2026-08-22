@@ -2,45 +2,51 @@ package evaluator
 
 import (
 	"ghostlang.org/x/ghost/ast"
+	"ghostlang.org/x/ghost/fault"
 	"ghostlang.org/x/ghost/object"
 	"ghostlang.org/x/ghost/token"
 )
 
 func evaluatePostfix(node *ast.Postfix, scope *object.Scope) object.Object {
+	name := node.Token.Lexeme
+
+	number, err := readCounter(node, scope, name)
+
+	if err != nil {
+		return err
+	}
+
+	var updated object.Object
+
 	switch node.Operator {
 	case token.PLUSPLUS:
-		value, ok := scope.Environment.Get(node.Token.Lexeme)
-
-		if !ok {
-			return newError("%d:%d:%s: runtime error: identifier not found: %s", node.Token.Line, node.Token.Column, node.Token.File, node.Token.Lexeme)
-		}
-
-		if value.Type() != object.NUMBER {
-			return newError("%d:%d:%s: runtime error: identifier is not a number: %s", node.Token.Line, node.Token.Column, node.Token.File, node.Token.Lexeme)
-		}
-
-		newValue := value.(*object.Number).Increment()
-
-		scope.Environment.Set(node.Token.Lexeme, newValue)
-
-		return newValue
+		updated = number.Increment()
 	case token.MINUSMINUS:
-		value, ok := scope.Environment.Get(node.Token.Lexeme)
-
-		if !ok {
-			return newError("%d:%d:%s: runtime error: identifier not found: %s", node.Token.Line, node.Token.Column, node.Token.File, node.Token.Lexeme)
-		}
-
-		if value.Type() != object.NUMBER {
-			return newError("%d:%d:%s: runtime error: identifier is not a number: %s", node.Token.Line, node.Token.Column, node.Token.File, node.Token.Lexeme)
-		}
-
-		newValue := value.(*object.Number).Decrement()
-
-		scope.Environment.Set(node.Token.Lexeme, newValue)
-
-		return newValue
+		updated = number.Decrement()
 	default:
-		return newError("%d:%d:%s: runtime error: unknown operator: %s", node.Token.Line, node.Token.Column, node.Token.File, node.Operator)
+		return object.NewError(fault.Internal, node.Token, "`%s` was parsed as a postfix operator but has no behaviour behind it", node.Operator)
 	}
+
+	scope.Environment.Set(name, updated)
+
+	return updated
+}
+
+// readCounter reads the variable a `++` or `--` is applied to. Both operators
+// fail the same two ways, so they ask the same question and report the same
+// answers rather than each spelling them out.
+func readCounter(node *ast.Postfix, scope *object.Scope, name string) (*object.Number, *object.Error) {
+	current, ok := scope.Environment.Get(name)
+
+	if !ok {
+		return nil, undefined(node.Token, name, scope)
+	}
+
+	number, ok := current.(*object.Number)
+
+	if !ok {
+		return nil, object.NewError(fault.Type, node.Token, "cannot use `%s` on `%s`, which is a %s, not a number", node.Operator, name, object.TypeName(current))
+	}
+
+	return number, nil
 }

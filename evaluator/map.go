@@ -2,6 +2,7 @@ package evaluator
 
 import (
 	"ghostlang.org/x/ghost/ast"
+	"ghostlang.org/x/ghost/fault"
 	"ghostlang.org/x/ghost/object"
 )
 
@@ -28,7 +29,8 @@ func evaluateMap(node *ast.Map, scope *object.Scope) object.Object {
 		mapKey, ok := key.(object.Mappable)
 
 		if !ok {
-			return newError("%d:%d:%s: runtime error: unusable as map key: %s", node.Token.Line, node.Token.Column, node.Token.File, key.Type())
+			return object.NewError(fault.Type, node.Token, "%s cannot be used as a map key", object.TypeName(key)).
+				WithHelp("a map key has to be a string, a number, or a boolean")
 		}
 
 		value := Evaluate(valueNode, scope)

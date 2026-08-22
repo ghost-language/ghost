@@ -1,5 +1,7 @@
 package object
 
+import "ghostlang.org/x/ghost/token"
+
 // Super is the receiver produced by the `super` keyword. It carries the
 // instance the call is bound to along with the class member lookup should start
 // from, which is the superclass of the class that declared the running method.
@@ -19,6 +21,6 @@ func (super *Super) Type() Type {
 }
 
 // Method defines the set of methods available on super objects.
-func (super *Super) Method(method string, args []Object) (Object, bool) {
+func (super *Super) Method(method string, tok token.Token, args []Object) (Object, bool) {
 	return nil, false
 }

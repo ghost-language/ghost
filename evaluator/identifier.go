@@ -25,5 +25,5 @@ func evaluateIdentifier(node *ast.Identifier, scope *object.Scope) object.Object
 		return identifier
 	}
 
-	return newError("%d:%d:%s: runtime error: unknown identifier: %s", node.Token.Line, node.Token.Column, node.Token.File, node.Value)
+	return undefined(node.Token, node.Value, scope)
 }

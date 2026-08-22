@@ -3,6 +3,7 @@ package modules
 import (
 	"time"
 
+	"ghostlang.org/x/ghost/fault"
 	"ghostlang.org/x/ghost/object"
 	"ghostlang.org/x/ghost/token"
 )
@@ -27,23 +28,28 @@ func init() {
 }
 
 func timeSleep(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
-	if len(args) != 1 {
-		return nil
+	if err := arity("time.sleep", tok, args, 1); err != nil {
+		return err
 	}
 
-	if args[0].Type() != object.NUMBER {
-		return nil
+	milliseconds, err := integerAt("time.sleep", tok, args, 0)
+
+	if err != nil {
+		return err
 	}
 
-	ms := args[0].(*object.Number)
-	time.Sleep(time.Duration(ms.Int64()) * time.Millisecond)
+	if milliseconds < 0 {
+		return object.NewError(fault.Value, tok, "`time.sleep()` expects a duration of zero or greater, got %d", milliseconds)
+	}
+
+	time.Sleep(time.Duration(milliseconds) * time.Millisecond)
 
 	return nil
 }
 
 func timeNow(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
-	if len(args) != 0 {
-		return nil
+	if err := arity("time.now", tok, args, 0); err != nil {
+		return err
 	}
 
 	return object.NewInt(time.Now().Unix())

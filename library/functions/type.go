@@ -1,18 +1,17 @@
 package functions
 
 import (
-	"strings"
-
 	"ghostlang.org/x/ghost/object"
 	"ghostlang.org/x/ghost/token"
 )
 
+// Type names the type of a value. The name it answers with is the same name
+// error messages use, so a reader who has been told a value is a `list` can
+// test for exactly that.
 func Type(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
-	if len(args) != 1 {
-		return object.NewError("%d:%d: runtime error: type() expects 1 argument. got=%d", tok.Line, tok.Column, len(args))
+	if err := object.Arity("type()", tok, args, 1); err != nil {
+		return err
 	}
 
-	objectType := args[0].Type().String()
-
-	return &object.String{Value: strings.ToLower(objectType)}
+	return &object.String{Value: object.TypeName(args[0])}
 }

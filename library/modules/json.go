@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"ghostlang.org/x/ghost/fault"
 	"ghostlang.org/x/ghost/object"
 	"ghostlang.org/x/ghost/token"
 )
@@ -16,95 +17,111 @@ func init() {
 	RegisterMethod(JsonMethods, "encode", jsonEncode)
 }
 
-// jsonDecode decodes the JSON-encoded data and returns a new list or map object.
+// jsonDecode reads JSON text into a list or a map.
 func jsonDecode(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
-	if len(args) != 1 {
-		return object.NewError("wrong number of arguments. got=%d, want=1", len(args))
+	if err := arity("json.decode", tok, args, 1); err != nil {
+		return err
 	}
 
-	str, ok := args[0].(*object.String)
+	text, err := stringAt("json.decode", tok, args, 0)
 
-	if !ok {
-		return object.NewError("argument to `decode` must be STRING, got %s", args[0].Type())
+	if err != nil {
+		return err
 	}
 
 	var data interface{}
 
-	err := json.Unmarshal([]byte(str.Value), &data)
-
-	if err != nil {
-		return object.NewError("failed to decode JSON: %s", err.Error())
+	if failure := json.Unmarshal([]byte(text), &data); failure != nil {
+		return object.NewError(fault.Value, tok, "`json.decode()` cannot read this as JSON: %s", failure)
 	}
 
-	switch v := data.(type) {
+	switch data := data.(type) {
 	case []interface{}:
-		var elements []object.Object
+		elements := make([]object.Object, len(data))
 
-		for _, val := range v {
-			elements = append(elements, object.AnyValueToObject(val))
+		for index, value := range data {
+			elements[index] = object.AnyValueToObject(value)
 		}
 
 		return &object.List{Elements: elements}
 	case map[string]interface{}:
-		pairs := make(map[object.MapKey]object.MapPair)
+		pairs := make(map[object.MapKey]object.MapPair, len(data))
 
-		for key, val := range v {
+		for key, value := range data {
 			pairKey := &object.String{Value: key}
-			pairValue := object.AnyValueToObject(val)
 
-			pairs[pairKey.MapKey()] = object.MapPair{Key: pairKey, Value: pairValue}
+			pairs[pairKey.MapKey()] = object.MapPair{Key: pairKey, Value: object.AnyValueToObject(value)}
 		}
 
 		return &object.Map{Pairs: pairs}
 	}
 
-	return object.NewError("failed to decode JSON: %s", err.Error())
+	// Valid JSON that is a bare number, string, boolean, or null. Decoding one
+	// is not a failure of the text, so the message says what it found rather
+	// than claiming the JSON is malformed.
+	return object.NewError(fault.Value, tok, "`json.decode()` expects a JSON object or array at the top level").
+		WithHelp("wrap the value in `[` and `]` to decode it as a list")
 }
 
-// jsonEncode returns the JSON encoding of either a list or map object.
+// jsonEncode renders a list or a map as JSON text.
 func jsonEncode(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
-	if len(args) != 1 {
-		return object.NewError("wrong number of arguments. got=%d, want=1", len(args))
+	if err := arity("json.encode", tok, args, 1); err != nil {
+		return err
 	}
 
-	switch arg := args[0].(type) {
+	switch value := args[0].(type) {
 	case *object.List:
-		var elements []interface{}
+		elements := make([]interface{}, len(value.Elements))
 
-		for _, val := range arg.Elements {
-			elements = append(elements, object.ObjectToAnyValue(val))
+		for index, element := range value.Elements {
+			elements[index] = object.ObjectToAnyValue(element)
 		}
 
-		data, err := json.Marshal(elements)
-
-		if err != nil {
-			return object.NewError("failed to encode JSON: %s", err.Error())
-		}
-
-		return &object.String{Value: string(data)}
+		return encodeJson(tok, elements)
 	case *object.Map:
-		pairs := make(map[string]interface{})
+		pairs := make(map[string]interface{}, len(value.Pairs))
 
-		for _, pair := range arg.Pairs {
-			// map keys can be numbers, strings, or booleans
-			switch pair.Key.(type) {
-			case *object.String:
-				pairs[pair.Key.(*object.String).Value] = object.ObjectToAnyValue(pair.Value)
-			case *object.Number:
-				pairs[fmt.Sprintf("%d", object.ObjectToAnyValue(pair.Key.(*object.Number)))] = object.ObjectToAnyValue(pair.Value)
-			case *object.Boolean:
-				pairs[fmt.Sprintf("%t", pair.Key.(*object.Boolean).Value)] = object.ObjectToAnyValue(pair.Value)
+		for _, pair := range value.Pairs {
+			key, ok := jsonKey(pair.Key)
+
+			if !ok {
+				return object.NewError(fault.Type, tok, "`json.encode()` cannot use %s as an object key", object.TypeName(pair.Key)).
+					WithHelp("a JSON object key has to come from a string, a number, or a boolean")
 			}
+
+			pairs[key] = object.ObjectToAnyValue(pair.Value)
 		}
 
-		data, err := json.Marshal(pairs)
-
-		if err != nil {
-			return object.NewError("failed to encode JSON: %s", err.Error())
-		}
-
-		return &object.String{Value: string(data)}
+		return encodeJson(tok, pairs)
 	}
 
-	return object.NewError("argument to `encode` must be LIST or MAP, got %s", args[0].Type())
+	return object.NewError(fault.Argument, tok, "`json.encode()` expects argument 1 to be a list or a map, got %s", object.TypeName(args[0]))
+}
+
+// encodeJson runs the Go encoder and turns whatever it objects to into a Ghost
+// error, so a value the encoder cannot represent is reported rather than
+// returned as an empty string.
+func encodeJson(tok token.Token, value interface{}) object.Object {
+	data, failure := json.Marshal(value)
+
+	if failure != nil {
+		return object.NewError(fault.Value, tok, "`json.encode()` cannot encode this value: %s", failure)
+	}
+
+	return &object.String{Value: string(data)}
+}
+
+// jsonKey renders a map key as the string a JSON object needs. JSON keys are
+// always strings, so a number or a boolean key is written out as one.
+func jsonKey(key object.Object) (string, bool) {
+	switch key := key.(type) {
+	case *object.String:
+		return key.Value, true
+	case *object.Number:
+		return key.String(), true
+	case *object.Boolean:
+		return fmt.Sprintf("%t", key.Value), true
+	}
+
+	return "", false
 }

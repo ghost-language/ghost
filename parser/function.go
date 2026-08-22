@@ -41,7 +41,22 @@ func (parser *Parser) functionParameters() (map[string]ast.ExpressionNode, []*as
 
 	parser.readToken()
 
+	// As with the import loop, every turn has to consume a token and stop at the
+	// end of the file: a parameter list that is never closed would otherwise
+	// hang the parser rather than report itself.
 	for !parser.currentTokenIs(token.RIGHTPAREN) {
+		if parser.isAtEnd() {
+			parser.report(parser.currentToken, "expected `)` to close the parameter list, found %s", parser.currentToken.Describe())
+
+			return defaults, parameters
+		}
+
+		if !parser.currentTokenIs(token.IDENTIFIER) {
+			parser.report(parser.currentToken, "expected a parameter name, found %s", parser.currentToken.Describe())
+
+			return defaults, parameters
+		}
+
 		parameter := &ast.Identifier{Token: parser.currentToken, Value: parser.currentToken.Lexeme}
 		parameters = append(parameters, parameter)
 

@@ -1,5 +1,7 @@
 package object
 
+import "ghostlang.org/x/ghost/token"
+
 // Continue objects consist of a nil value.
 type Continue struct{}
 
@@ -14,6 +16,6 @@ func (obj *Continue) Type() Type {
 }
 
 // Method defines the set of methods available on continue objects.
-func (obj *Continue) Method(method string, args []Object) (Object, bool) {
+func (obj *Continue) Method(method string, tok token.Token, args []Object) (Object, bool) {
 	return nil, false
 }

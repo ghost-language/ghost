@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"math"
 	"strconv"
+
+	"ghostlang.org/x/ghost/token"
 )
 
 // Number objects represent numeric values using either int64 or float64 internally.
@@ -91,14 +93,14 @@ func (n *Number) MapKey() MapKey {
 }
 
 // Method defines the set of methods available on number objects.
-func (n *Number) Method(method string, args []Object) (Object, bool) {
+func (n *Number) Method(method string, tok token.Token, args []Object) (Object, bool) {
 	switch method {
 	case "round":
-		return n.round(args)
+		return n.round(tok, args)
 	case "floor":
-		return n.floor(args)
+		return n.floor(tok, args)
 	case "toString":
-		return n.toString(args)
+		return n.toString(tok, args)
 	}
 
 	return nil, false
@@ -107,19 +109,29 @@ func (n *Number) Method(method string, args []Object) (Object, bool) {
 // =============================================================================
 // Object methods
 
-func (n *Number) toString(args []Object) (Object, bool) {
+func (n *Number) toString(tok token.Token, args []Object) (Object, bool) {
+	if err := Arity("number.toString()", tok, args, 0); err != nil {
+		return err, true
+	}
+
 	return &String{Value: n.String()}, true
 }
 
-func (n *Number) round(args []Object) (Object, bool) {
+func (n *Number) round(tok token.Token, args []Object) (Object, bool) {
+	if err := ArityRange("number.round()", tok, args, 0, 1); err != nil {
+		return err, true
+	}
+
 	places := int64(0)
 
 	if len(args) == 1 {
-		if args[0].Type() != NUMBER {
-			return nil, false
+		digits, err := NumberArgument("number.round()", tok, args, 0)
+
+		if err != nil {
+			return err, true
 		}
 
-		places = args[0].(*Number).Int64()
+		places = digits.Int64()
 	}
 
 	if !n.isFloat {
@@ -134,7 +146,11 @@ func (n *Number) round(args []Object) (Object, bool) {
 	return NewFloat(math.Round(n.f*shift) / shift), true
 }
 
-func (n *Number) floor(args []Object) (Object, bool) {
+func (n *Number) floor(tok token.Token, args []Object) (Object, bool) {
+	if err := Arity("number.floor()", tok, args, 0); err != nil {
+		return err, true
+	}
+
 	if !n.isFloat {
 		return n, true
 	}

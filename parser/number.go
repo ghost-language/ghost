@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"ghostlang.org/x/ghost/ast"
-	"ghostlang.org/x/ghost/log"
 )
 
 func (parser *Parser) numberLiteral() ast.ExpressionNode {
@@ -17,22 +16,37 @@ func (parser *Parser) numberLiteral() ast.ExpressionNode {
 		value, err := strconv.ParseFloat(lexeme, 64)
 
 		if err != nil {
-			log.Error("%d:__: syntax error: could not parse %q as number", parser.currentToken.Line, lexeme)
+			parser.numberError(lexeme, err)
+
 			return nil
 		}
 
 		number.FloatValue = value
 		number.IsFloat = true
-	} else {
-		value, err := strconv.ParseInt(lexeme, 10, 64)
 
-		if err != nil {
-			log.Error("%d:__: syntax error: could not parse %q as number", parser.currentToken.Line, lexeme)
-			return nil
-		}
-
-		number.IntValue = value
+		return number
 	}
 
+	value, err := strconv.ParseInt(lexeme, 10, 64)
+
+	if err != nil {
+		parser.numberError(lexeme, err)
+
+		return nil
+	}
+
+	number.IntValue = value
+
 	return number
+}
+
+// numberError reports a literal the scanner accepted but that is not a number
+// Ghost can hold. The two ways that happens want different advice, so the
+// message distinguishes a value that is too large from one that is malformed.
+func (parser *Parser) numberError(lexeme string, err error) {
+	raised := parser.report(parser.currentToken, "`%s` is not a valid number", lexeme)
+
+	if numeric, ok := err.(*strconv.NumError); ok && numeric.Err == strconv.ErrRange {
+		raised.WithHelp("this is outside the range Ghost can hold; the largest whole number is %d", int64(^uint64(0)>>1))
+	}
 }

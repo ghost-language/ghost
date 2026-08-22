@@ -29,11 +29,31 @@ func (parser *Parser) importFromStatement(parent *ast.Import) ast.ExpressionNode
 
 		parser.readToken()
 	} else if !parser.currentTokenIs(token.IDENTIFIER) {
+		parser.report(parser.currentToken, "expected a name to import, found %s", parser.currentToken.Describe())
+
 		return nil
 	}
 
+	// Each turn of this loop has to consume a token, and has to stop at the end
+	// of the file. An import written the wrong way round — `from "lib" import
+	// x` — would otherwise sit here forever looking for a `from` that has
+	// already gone past, which is a worse failure than any error: the program
+	// never runs and never says why.
 	for !parser.currentTokenIs(token.FROM) {
-		identifier := &ast.Identifier{Value: parser.currentToken.Lexeme}
+		if parser.isAtEnd() {
+			parser.report(statement.Token, "expected `from` after the names being imported").
+				WithHelp("an import reads `import name from \"module\"`")
+
+			return nil
+		}
+
+		if !parser.currentTokenIs(token.IDENTIFIER) {
+			parser.report(parser.currentToken, "expected a name to import, found %s", parser.currentToken.Describe())
+
+			return nil
+		}
+
+		identifier := &ast.Identifier{Token: parser.currentToken, Value: parser.currentToken.Lexeme}
 		alias := parser.currentToken.Lexeme
 
 		parser.readToken()

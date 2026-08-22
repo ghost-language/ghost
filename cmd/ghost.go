@@ -1,10 +1,8 @@
 package main
 
 import (
-	"bytes"
 	"flag"
 	"fmt"
-	"io"
 	"os"
 	"path"
 	"path/filepath"
@@ -13,6 +11,7 @@ import (
 
 	"ghostlang.org/x/ghost/ghost"
 	"ghostlang.org/x/ghost/log"
+	"ghostlang.org/x/ghost/object"
 	"ghostlang.org/x/ghost/repl"
 	"ghostlang.org/x/ghost/version"
 )
@@ -58,36 +57,34 @@ func main() {
 		return
 	}
 
-	if len(args) > 0 {
-		start := time.Now()
-		sourceFile, err := os.Open(args[0])
+	start := time.Now()
+	source, err := os.ReadFile(args[0])
 
-		if err != nil {
-			log.Error("system error: could not open source file %s: %s", args[0], err)
+	if err != nil {
+		log.Error("could not read %s: %s", args[0], err)
 
-			os.Exit(1)
-		}
+		os.Exit(1)
+	}
 
-		defer sourceFile.Close()
+	directory, _ := filepath.Abs(filepath.Dir(args[0]))
+	fullPath, _ := filepath.Abs(args[0])
+	currentFile := strings.Replace(fullPath, directory+"/", "", 1)
 
-		sourceBuffer := bytes.NewBuffer(nil)
-		io.Copy(sourceBuffer, sourceFile)
-		source := sourceBuffer.String()
+	instance := ghost.New()
+	instance.SetSource(string(source))
+	instance.SetFile(currentFile)
+	instance.SetDirectory(directory)
 
-		directory, _ := filepath.Abs(filepath.Dir(args[0]))
-		fullPath, _ := filepath.Abs(args[0])
-		currentFile := strings.Replace(fullPath, directory+"/", "", 1)
+	result := instance.Execute()
 
-		ghost := ghost.New()
-		ghost.SetSource(source)
-		ghost.SetFile(currentFile)
-		ghost.SetDirectory(directory)
-		ghost.Execute()
+	if flagTime {
+		log.Info("(executed in: %s)", time.Since(start))
+	}
 
-		elapsed := time.Since(start)
-
-		if flagTime {
-			log.Info("(executed in: %s)\n", elapsed)
-		}
+	// A script that failed has already had its error written out in full. What
+	// is left is to say so to whatever ran Ghost, which reads the exit status
+	// rather than the terminal.
+	if object.IsError(result) {
+		os.Exit(1)
 	}
 }
