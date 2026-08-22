@@ -87,10 +87,10 @@ homebrew_casks:
     homepage: "https://github.com/ghost-language/ghost"
     description: "Ghost, a dynamically typed scripting language."
     license: "MIT"
-    # The formula this cask replaces installs the same binary. Delete
-    # Formula/ghost.rb from the tap once the first cask release has landed.
-    conflicts:
-      - formula: ghost
+    # No conflict is declared against the formula this cask replaces, even
+    # though both install the same binary: a cask can only conflict with
+    # another cask. Formula/ghost.rb has to be deleted from the tap by hand
+    # once the first cask release has landed.
     hooks:
       post:
         # The binaries are not signed or notarised, so macOS quarantines them
