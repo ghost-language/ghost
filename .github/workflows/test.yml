@@ -77,8 +77,27 @@ jobs:
       with:
         go-version-file: go.mod
 
-    - name: Check the release config
+    - name: Install GoReleaser
       uses: goreleaser/goreleaser-action@v6
       with:
         version: "~> v2"
-        args: check
+        install-only: true
+
+    # `goreleaser check` exits non-zero for a deprecated property as well as an
+    # invalid one, and the two deserve different treatment. A deprecation lands
+    # when GoReleaser cuts a release, without anyone touching this repository -
+    # gating on it would turn every open pull request red for a reason none of
+    # them caused. It still gets an annotation, because it is a scheduled break
+    # of the release pipeline. Invalid config fails the way it should.
+    - name: Check the release config
+      run: |
+        if output=$(goreleaser check 2>&1); then
+          echo "$output"
+          exit 0
+        fi
+        echo "$output"
+        if grep -q 'uses deprecated properties' <<<"$output"; then
+          echo "::warning file=.goreleaser.yml::the release config uses properties GoReleaser has deprecated - they still work, but a future release will remove them"
+          exit 0
+        fi
+        exit 1
