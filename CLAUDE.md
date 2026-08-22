@@ -31,7 +31,8 @@ Ghost is a tree-walking interpreter written in Go. The execution pipeline follow
 
 - **Scope**: Wraps Environment and tracks `Self` for method calls (`object/scope.go`).
 - **Environment**: Variable storage with parent chain for lexical scoping (`object/environment.go`).
-- **Library system**: Native functions and modules registered via `library.RegisterFunction()` and `library.RegisterModule()`. Built-in modules in `library/modules/`.
+- **Library system**: Native functions and modules registered via `library.RegisterFunction()` and `library.RegisterModule()`. Built-in modules in `library/modules/`. Argument reading and validation goes through the shared helpers in `library/modules/args.go` (`arity`, `numberAt`, `listAt`, `gatherNumbers`, ...) so that argument errors read the same across every module.
+- **Math broadcasting**: The math module is split into a scalar layer (`math.go`), reductions (`math_statistics.go`), and arrays and linear algebra (`math_array.go`). Elementwise operations are written against plain numbers and registered with `registerElementwise`, which lifts them to lists and lists of lists through `broadcast()`; reductions are registered with `registerReduction`, which flattens whatever it is given first. Adding a new elementwise method should be a one-line table entry, not a new set of type assertions.
 
 ### Object Method System
 
