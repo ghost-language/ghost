@@ -32,7 +32,8 @@ Ghost is a tree-walking interpreter written in Go. The execution pipeline follow
 - **Scope**: Wraps Environment and tracks `Self` for method calls (`object/scope.go`).
 - **Environment**: Variable storage with parent chain for lexical scoping (`object/environment.go`).
 - **Library system**: Native functions and modules registered via `library.RegisterFunction()` and `library.RegisterModule()`. Built-in modules in `library/modules/`. Argument reading and validation goes through the shared helpers in `library/modules/args.go` (`arity`, `numberAt`, `listAt`, `gatherNumbers`, ...) so that argument errors read the same across every module.
-- **Math broadcasting**: The math module is split into a scalar layer (`math.go`), reductions (`math_statistics.go`), and arrays and linear algebra (`math_array.go`). Elementwise operations are written against plain numbers and registered with `registerElementwise`, which lifts them to lists and lists of lists through `broadcast()`; reductions are registered with `registerReduction`, which flattens whatever it is given first. Adding a new elementwise method should be a one-line table entry, not a new set of type assertions.
+- **Broadcasting**: `object.Broadcast()` (`object/broadcast.go`) applies an operation elementwise across operands using numpy's rules — shapes line up from the right, and an axis of length one (or a missing axis) repeats. It lives in `object` because two callers must agree on it exactly: `evaluateListInfix` (`evaluator/list_infix.go`) for `+ - * / %` on lists, and the math module's `broadcast()` for its methods. `a + b` and `math.add(a, b)` are one operation reached two ways — never give either its own rules.
+- **Math module**: split into a scalar layer (`math.go`), reductions (`math_statistics.go`), and arrays and linear algebra (`math_array.go`). Elementwise operations are written against plain numbers and registered with `registerElementwise`, which lifts them through `broadcast()`; reductions are registered with `registerReduction`, which flattens whatever it is given first. Adding a new elementwise method should be a one-line table entry, not a new set of type assertions.
 
 ### Object Method System
 
@@ -41,6 +42,10 @@ All object types implement the `Method(method string, args []Object) (Object, bo
 ## Language Features
 
 Ghost supports: classes with inheritance (`extends`), traits (`trait`/`use`), first-class functions, closures, lists, maps, for/for-in/while loops, switch statements, imports, and compound operators (`+=`, `++`, etc.).
+
+### List operators
+
+Arithmetic operators on lists are elementwise and broadcast (`[1, 2] * 2`, `[[1, 2], [3, 4]] + [10, 20]`). `==` and `!=` compare contents to any depth. Joining two lists is `concat()`, a method, because the operators are arithmetic — do not reintroduce `+` as concatenation. Ordering (`<`, `>`) between lists is deliberately unsupported: neither an elementwise nor a lexicographic reading is obviously right.
 
 ### Class syntax
 

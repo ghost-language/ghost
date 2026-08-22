@@ -9,13 +9,25 @@ print(math.degrees(math.pi))
 print(math.clamp(15, 0, 10))
 print(math.isClose(0.1 + 0.2, 0.3))
 
-// Every elementwise method broadcasts. A number held against a list applies to
-// each element, two lists apply pairwise, and nesting is followed all the way
-// down.
+// Arithmetic on lists is elementwise, and the operators say so more clearly
+// than a method call does.
+print([1, 2, 3] + 10)
+print([1, 2, 3] * 2)
+print([1, 2, 3] + [10, 20, 30])
+print([1, 2] == [1, 2])
+
+// Shapes line up from the right, so a row spreads down a matrix. This is what
+// lets one bias row apply to a whole batch of samples.
+print([[1, 2], [3, 4]] + [10, 20])
+
+// The methods are the same operation under a name, for where a name reads
+// better - and every elementwise method broadcasts the same way.
+print(math.add([1, 2, 3], 10))
 print(math.sqrt([1, 4, 9]))
 print(math.sqrt([[1, 4], [9, 16]]))
-print(math.add([1, 2, 3], 10))
-print(math.multiply([1, 2, 3], [4, 5, 6]))
+
+// Joining is a different operation, so it has a method rather than an operator.
+print([1, 2].concat([3, 4]))
 
 // Statistics read their values however they are held: spread across the call,
 // collected in a list, or arranged as a matrix.
@@ -41,6 +53,7 @@ print(math.dot([1, 2, 3], [4, 5, 6]))
 print(math.norm([3, 4]))
 print(math.normalize([3, 4]))
 print(math.cross([1, 0, 0], [0, 1, 0]))
+print(math.outer([1, 2, 3], [10, 20]))
 print(math.distance(0, 0, 3, 4))
 
 matrix = [[4, 7], [2, 6]]

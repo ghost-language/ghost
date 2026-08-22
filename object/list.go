@@ -37,6 +37,8 @@ func (list *List) Method(method string, args []Object) (Object, bool) {
 	switch method {
 	case "first":
 		return list.first(args)
+	case "concat":
+		return list.concat(args)
 	case "join":
 		return list.join(args)
 	case "last":
@@ -64,6 +66,27 @@ func (list *List) first(args []Object) (Object, bool) {
 		return &Null{}, true
 	}
 	return list.Elements[0], true
+}
+
+// concat joins two lists end to end, answering with a new list and leaving both
+// operands alone. Joining is what `+` means for strings but not for lists,
+// where the operators are elementwise arithmetic instead.
+func (list *List) concat(args []Object) (Object, bool) {
+	if len(args) != 1 {
+		return nil, false
+	}
+
+	other, ok := args[0].(*List)
+
+	if !ok {
+		return nil, false
+	}
+
+	elements := make([]Object, 0, len(list.Elements)+len(other.Elements))
+	elements = append(elements, list.Elements...)
+	elements = append(elements, other.Elements...)
+
+	return &List{Elements: elements}, true
 }
 
 func (list *List) join(args []Object) (Object, bool) {

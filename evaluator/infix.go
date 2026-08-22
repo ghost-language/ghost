@@ -36,6 +36,8 @@ func evaluateInfix(node *ast.Infix, scope *object.Scope) object.Object {
 		return evaluateNumberInfix(node, left, right)
 	case left.Type() == object.STRING && right.Type() == object.STRING:
 		return evaluateStringInfix(node, left, right)
+	case isListArithmetic(left, right):
+		return evaluateListInfix(node, left, right)
 	case left.Type() != right.Type():
 		return newError("%d:%d:%s: runtime error: type mismatch: %s %s %s", node.Token.Line, node.Token.Column, node.Token.File, left.Type(), node.Operator, right.Type())
 	}
@@ -60,6 +62,11 @@ func evaluateEquality(node *ast.Infix, left object.Object, right object.Object) 
 		// Instances compare by identity: two instances of the same class with
 		// equal fields are still two different objects.
 		equal = left == right
+	case left.Type() == object.LIST && right.Type() == object.LIST:
+		// Lists compare by contents, to any depth. Two lists written out the
+		// same way are equal, which is the only reading that makes `==` useful
+		// on a value built rather than passed around.
+		equal = listsEqual(left.(*object.List), right.(*object.List))
 	default:
 		return nil, false
 	}
@@ -69,4 +76,15 @@ func evaluateEquality(node *ast.Infix, left object.Object, right object.Object) 
 	}
 
 	return toBooleanValue(equal), true
+}
+
+// isListArithmetic reports whether an operation is elementwise list arithmetic.
+// A list against a list or against a number is; a list against anything else
+// stays a type mismatch, which says more than a broadcasting failure would.
+func isListArithmetic(left object.Object, right object.Object) bool {
+	if left.Type() == object.LIST {
+		return right.Type() == object.LIST || right.Type() == object.NUMBER
+	}
+
+	return left.Type() == object.NUMBER && right.Type() == object.LIST
 }
