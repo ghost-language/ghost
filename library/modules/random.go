@@ -54,14 +54,21 @@ func randomRandom(scope *object.Scope, tok token.Token, args ...object.Object) o
 // nano timestamp will be used.
 func randomSeed(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
 	if len(args) == 1 && args[0].Type() == object.NUMBER {
-		seed = args[0].(*object.Number).Int64()
+		SeedRandom(args[0].(*object.Number).Int64())
 	} else {
-		seed = time.Now().UnixNano()
+		SeedRandom(time.Now().UnixNano())
 	}
 
-	randomizer.Seed(seed)
-
 	return nil
+}
+
+// SeedRandom points the generator behind the random and math modules at a given
+// seed. It is exported so that a host embedding Ghost can fix the seed before a
+// program runs - an engine that wants its procedural output reproducible by
+// default, say - without reaching into the module tables to do it.
+func SeedRandom(value int64) {
+	seed = value
+	randomizer = rand.New(rand.NewSource(seed))
 }
 
 // Properties
