@@ -6,4 +6,5 @@ type Postfix struct {
 	ExpressionNode
 	Token    token.Token
 	Operator token.Type
+	Left     ExpressionNode
 }

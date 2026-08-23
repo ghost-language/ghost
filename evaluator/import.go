@@ -57,6 +57,12 @@ func lookupImport(filename string) (*object.Scope, bool) {
 	return scope, ok
 }
 
+// evaluateImport handles the bare form of an import: `import "math"` binds
+// the whole module to a variable named after its path, and `import "math" as
+// m` binds it to `m` instead. The module is only read, parsed, and evaluated
+// once no matter how many places import it (loadModule/rememberImport below
+// are shared with evaluateImportFrom for that reason); every import of it
+// still has to bind its own name into the importing scope.
 func evaluateImport(node *ast.Import, scope *object.Scope) object.Object {
 	filename, err := resolveModule(node.Token, node.Path.Value, scope)
 
@@ -64,20 +70,54 @@ func evaluateImport(node *ast.Import, scope *object.Scope) object.Object {
 		return err
 	}
 
-	// Have we imported this file before? If so, we don't need to do anything.
-	if _, ok := lookupImport(filename); ok {
-		return nil
+	moduleScope, loaded := lookupImport(filename)
+
+	if !loaded {
+		moduleScope, err = loadModule(filename, node.Token, node.Path.Value, scope)
+
+		if err != nil {
+			return err
+		}
+
+		rememberImport(filename, moduleScope)
 	}
 
-	moduleScope, err := loadModule(filename, node.Token, node.Path.Value, scope)
-
-	if err != nil {
-		return err
+	if moduleScope == nil {
+		return object.NewError(fault.Import, node.Token, "module `%s` is still being imported, so it cannot be bound to a name yet", node.Path.Value).
+			WithHelp("this is a circular import: %s", importCycle(node.Path.Value))
 	}
 
-	rememberImport(filename, moduleScope)
+	name := moduleBindingName(node.Path.Value)
+
+	if node.Alias != nil {
+		name = node.Alias.Value
+	}
+
+	scope.Environment.Set(name, moduleValue(moduleScope))
 
 	return nil
+}
+
+// moduleBindingName derives the name a bare `import "path/to/module"` binds
+// its module to, the same way most languages take the last path segment:
+// `import "math"` binds `math`, `import "utils/math"` also binds `math`.
+func moduleBindingName(path string) string {
+	return filepath.Base(path)
+}
+
+// moduleValue turns a finished module's top-level bindings into a value that
+// Ghost code can hold and read properties off of. A Map already supports dot
+// access and has its own methods (keys(), has(), ...), so a loaded module
+// reuses it rather than introducing a namespace type solely for this.
+func moduleValue(moduleScope *object.Scope) *object.Map {
+	pairs := make(map[object.MapKey]object.MapPair)
+
+	for name, value := range moduleScope.Environment.All() {
+		key := &object.String{Value: name}
+		pairs[key.MapKey()] = object.MapPair{Key: key, Value: value}
+	}
+
+	return &object.Map{Pairs: pairs}
 }
 
 func evaluateImportFrom(node *ast.ImportFrom, scope *object.Scope) object.Object {

@@ -456,9 +456,12 @@ func TestPostfixExpressions(t *testing.T) {
 	tests := []struct {
 		input    string
 		operator string
+		left     interface{}
 	}{
-		{"index++", "++"},
-		{"index--", "--"},
+		{"index++", "++", "identifier"},
+		{"index--", "--", "identifier"},
+		{"this.score++", "++", "property"},
+		{"list[0]--", "--", "index"},
 	}
 
 	for _, tt := range tests {
@@ -468,24 +471,39 @@ func TestPostfixExpressions(t *testing.T) {
 
 		failIfParserHasErrors(t, parser)
 
-		if len(program.Statements) != 2 {
-			t.Fatalf("program.Statements does not contain 2 statements. got=%d", len(program.Statements))
+		if len(program.Statements) != 1 {
+			t.Fatalf("%s: program.Statements does not contain 1 statement. got=%d", tt.input, len(program.Statements))
 		}
 
-		statement, ok := program.Statements[1].(*ast.Expression)
+		statement, ok := program.Statements[0].(*ast.Expression)
 
 		if !ok {
-			t.Fatalf("program.Statements[1] is not ast.Expression. got=%T", program.Statements[0])
+			t.Fatalf("%s: program.Statements[0] is not ast.Expression. got=%T", tt.input, program.Statements[0])
 		}
 
 		postfix, ok := statement.Expression.(*ast.Postfix)
 
 		if !ok {
-			t.Fatalf("statement is not ast.Postfix. got=%T", statement.Expression)
+			t.Fatalf("%s: statement is not ast.Postfix. got=%T", tt.input, statement.Expression)
 		}
 
 		if postfix.Operator.String() != tt.operator {
-			t.Fatalf("postfix.Operator is not '%s'. got=%s", tt.operator, postfix.Operator)
+			t.Fatalf("%s: postfix.Operator is not '%s'. got=%s", tt.input, tt.operator, postfix.Operator)
+		}
+
+		switch tt.left {
+		case "identifier":
+			if _, ok := postfix.Left.(*ast.Identifier); !ok {
+				t.Fatalf("%s: postfix.Left is not ast.Identifier. got=%T", tt.input, postfix.Left)
+			}
+		case "property":
+			if _, ok := postfix.Left.(*ast.Property); !ok {
+				t.Fatalf("%s: postfix.Left is not ast.Property. got=%T", tt.input, postfix.Left)
+			}
+		case "index":
+			if _, ok := postfix.Left.(*ast.Index); !ok {
+				t.Fatalf("%s: postfix.Left is not ast.Index. got=%T", tt.input, postfix.Left)
+			}
 		}
 	}
 }
@@ -1355,6 +1373,101 @@ func TestParserReportsUnreadableNumbers(t *testing.T) {
 
 // A closing bracket that starts an expression is nearly always an unclosed
 // opener somewhere above it, and saying so is more use than naming the token.
+func TestImportStatements(t *testing.T) {
+	t.Run("bare import has no alias", func(t *testing.T) {
+		program := New(scanner.New(`import "math"`, "test.ghost")).Parse()
+
+		statement := program.Statements[0].(*ast.Expression)
+		imp, ok := statement.Expression.(*ast.Import)
+
+		if !ok {
+			t.Fatalf("expected ast.Import, got %T", statement.Expression)
+		}
+
+		if imp.Path.Value != "math" {
+			t.Fatalf("expected path %q, got %q", "math", imp.Path.Value)
+		}
+
+		if imp.Alias != nil {
+			t.Fatalf("expected no alias, got %q", imp.Alias.Value)
+		}
+	})
+
+	t.Run("bare import as alias", func(t *testing.T) {
+		program := New(scanner.New(`import "math" as m`, "test.ghost")).Parse()
+
+		statement := program.Statements[0].(*ast.Expression)
+		imp := statement.Expression.(*ast.Import)
+
+		if imp.Alias == nil || imp.Alias.Value != "m" {
+			t.Fatalf("expected alias %q, got %v", "m", imp.Alias)
+		}
+	})
+
+	t.Run("named import without braces still works", func(t *testing.T) {
+		program := New(scanner.New(`import pi, e from "math"`, "test.ghost")).Parse()
+
+		statement := program.Statements[0].(*ast.Expression)
+		importFrom := statement.Expression.(*ast.ImportFrom)
+
+		if len(importFrom.Identifiers) != 2 {
+			t.Fatalf("expected 2 identifiers, got %d", len(importFrom.Identifiers))
+		}
+	})
+
+	t.Run("named import with braces", func(t *testing.T) {
+		program := New(scanner.New(`import { pi, e } from "math"`, "test.ghost")).Parse()
+
+		statement := program.Statements[0].(*ast.Expression)
+		importFrom := statement.Expression.(*ast.ImportFrom)
+
+		if len(importFrom.Identifiers) != 2 {
+			t.Fatalf("expected 2 identifiers, got %d", len(importFrom.Identifiers))
+		}
+
+		if importFrom.Path.Value != "math" {
+			t.Fatalf("expected path %q, got %q", "math", importFrom.Path.Value)
+		}
+	})
+
+	t.Run("named import with braces and alias", func(t *testing.T) {
+		program := New(scanner.New(`import { pi as p } from "math"`, "test.ghost")).Parse()
+
+		statement := program.Statements[0].(*ast.Expression)
+		importFrom := statement.Expression.(*ast.ImportFrom)
+
+		identifier, ok := importFrom.Identifiers["p"]
+
+		if !ok {
+			t.Fatalf("expected alias %q to be bound, got %v", "p", importFrom.Identifiers)
+		}
+
+		if identifier.Value != "pi" {
+			t.Fatalf("expected alias %q to name %q, got %q", "p", "pi", identifier.Value)
+		}
+	})
+
+	t.Run("everything import with braces", func(t *testing.T) {
+		program := New(scanner.New(`import { * } from "math"`, "test.ghost")).Parse()
+
+		statement := program.Statements[0].(*ast.Expression)
+		importFrom := statement.Expression.(*ast.ImportFrom)
+
+		if !importFrom.Everything {
+			t.Fatal("expected Everything to be true")
+		}
+	})
+
+	t.Run("unclosed brace reports an error", func(t *testing.T) {
+		parser := New(scanner.New(`import { pi, e from "math"`, "test.ghost"))
+		parser.Parse()
+
+		if len(parser.Errors()) == 0 {
+			t.Fatal("expected an error for an unclosed brace")
+		}
+	})
+}
+
 func TestParserSuggestsAMissingOpener(t *testing.T) {
 	parser := New(scanner.New("x = )", "test.ghost"))
 	parser.Parse()

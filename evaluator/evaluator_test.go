@@ -80,6 +80,8 @@ func TestNumbers(t *testing.T) {
 		{"x = 10; x /= 2; x", 5},
 		{"x = 0; x++; x", 1},
 		{"x = 6; x--; x", 5},
+		{"class Counter { score = 0\nadd() { this.score++ } }\nc = new Counter()\nc.add()\nc.add()\nc.add()\nc.score", 3},
+		{"list = [5]; list[0]++; list[0]", 6},
 	}
 
 	for _, tt := range tests {
