@@ -240,14 +240,7 @@ func TestNativeClassCanBeNewedViaModuleDotAccess(t *testing.T) {
 	instance := New()
 	instance.SetQuiet(true)
 	instance.SetFile("test.ghost")
-	// Two statements, not `new audio.Audio("x.mp3").path()` chained directly:
-	// `new <dotted class>(args).method()` is a pre-existing parser
-	// limitation (confirmed with a plain Ghost class too, nothing to do with
-	// native classes) — parser/new.go's unwrapping of a dotted class name
-	// only peels off the outermost call in the chain, so the constructor
-	// call and the trailing `.path()` get confused. Out of scope here; this
-	// test is about native classes working via dotted access at all.
-	instance.SetSource(`import "lumen:audio"` + "\n" + `x = new audio.Audio("x.mp3")` + "\n" + `x.path()`)
+	instance.SetSource(`import "lumen:audio"` + "\n" + `new audio.Audio("x.mp3").path()`)
 
 	result := instance.Execute()
 

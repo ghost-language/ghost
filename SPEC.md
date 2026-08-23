@@ -595,6 +595,12 @@ new Dog("Fido").shout()
   rejected at parse time with a message pointing at the correct syntax
   (leftover PHP/old-JS muscle memory is anticipated and corrected, not just
   rejected).
+- `ClassName` can be dotted (`new someMap.ClassName(args)`, `new
+  audio.Audio(path)`, §8.9/§10.3) and calls or property reads can chain
+  directly onto the result (`new m.Point(1).add(2).toString()`), the same as
+  a bare class name already allows — the constructor call is always the
+  first call in the chain, however many dots or further calls come after it
+  (`splitConstructor` in `parser/new.go`).
 
 ### 8.9 Modules and Imports
 

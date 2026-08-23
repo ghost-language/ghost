@@ -791,6 +791,73 @@ func TestNewExpression(t *testing.T) {
 	}
 }
 
+// TestNewOnADottedClass covers `new left.Right(...)`, where the class is
+// reached through a map/module rather than a bare name. A dotted name
+// swallows its own call while parsing (dotExpression, parser/dot.go), so
+// anything chained after the constructor call - `.bar()`, `.x` - arrives at
+// `new` nested arbitrarily deep inside further method/property nodes built
+// on top of it, not just one level as a naive unwrap would assume.
+func TestNewOnADottedClass(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected int64
+	}{
+		{
+			name: "no chained call after the constructor",
+			input: `
+				class Counter { value() { return 7 } }
+				m = {"Counter": Counter}
+				new m.Counter().value()
+			`,
+			expected: 7,
+		},
+		{
+			name: "a method chained after the constructor",
+			input: `
+				class Point { constructor(x) { this.x = x } double() { return this.x * 2 } }
+				m = {"Point": Point}
+				new m.Point(3).double()
+			`,
+			expected: 6,
+		},
+		{
+			name: "a property read chained after the constructor",
+			input: `
+				class Point { constructor(x) { this.x = x } }
+				m = {"Point": Point}
+				new m.Point(5).x
+			`,
+			expected: 5,
+		},
+		{
+			name: "multiple calls chained after the constructor, across types",
+			input: `
+				class Point { constructor(x) { this.x = x } add(n) { return this.x + n } }
+				m = {"Point": Point}
+				new m.Point(1).add(2).toString().length()
+			`,
+			expected: 1,
+		},
+		{
+			name: "a doubly-dotted class path with a chained call",
+			input: `
+				class Point { constructor(x) { this.x = x } double() { return this.x * 2 } }
+				m = {"nested": {"Point": Point}}
+				new m.nested.Point(4).double()
+			`,
+			expected: 8,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := evaluate(tt.input)
+			isNumberObject(t, result, tt.expected)
+		})
+	}
+}
+
 func TestSuperMethodCalls(t *testing.T) {
 	tests := []struct {
 		name     string
