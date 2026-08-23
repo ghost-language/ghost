@@ -36,7 +36,20 @@ func (boolean *Boolean) MapKey() MapKey {
 
 // Method defines the set of methods available on boolean objects.
 func (boolean *Boolean) Method(method string, tok token.Token, args []Object) (Object, bool) {
+	switch method {
+	case "toString":
+		return boolean.toString(tok, args)
+	}
+
 	return nil, false
+}
+
+func (boolean *Boolean) toString(tok token.Token, args []Object) (Object, bool) {
+	if err := Arity("boolean.toString()", tok, args, 0); err != nil {
+		return err, true
+	}
+
+	return &String{Value: boolean.String()}, true
 }
 
 func IsTrue(obj Object) bool {

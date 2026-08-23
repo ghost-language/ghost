@@ -14,7 +14,7 @@ func TestMapMethods(t *testing.T) {
 		{`{"a": 1, "b": 2}.values().sort().toString()`, "[1, 2]"},
 		{`{"a": 1}.get("a").toString()`, "1"},
 		{`{"a": 1}.get("missing", 42).toString()`, "42"},
-		{`type({"a": 1}.get("missing"))`, "null"},
+		{`{"a": 1}.get("missing").toString()`, "null"},
 		{`{}.length().toString()`, "0"},
 		{`{"a": 1, "b": 2}.length().toString()`, "2"},
 

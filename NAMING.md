@@ -30,6 +30,9 @@ shouldn't return a boolean.
 **Conversions read left to right, target last.** `toString`, `toNumber`,
 `toLowerCase`, `toUpperCase` - the type or form being converted *to* is always
 the suffix, so the name reads the same direction as the conversion happens.
+`toString()` in particular is universal: every value type answers it,
+booleans and null included, so a reader never has to check whether a
+particular type happens to support turning itself into a string.
 
 **Modules are lowercase domains, not types.** `math`, `time`, `random`,
 `console`, `os` name a *place* an operation belongs, not a kind of value.
