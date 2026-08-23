@@ -6,6 +6,7 @@ import (
 	"runtime"
 	"time"
 
+	"ghostlang.org/x/ghost/fault"
 	"ghostlang.org/x/ghost/object"
 	"ghostlang.org/x/ghost/token"
 )
@@ -15,8 +16,8 @@ var OsProperties = map[string]*object.LibraryProperty{}
 
 func init() {
 	RegisterMethod(OsMethods, "args", osArgs)
-	RegisterMethod(OsMethods, "clock", osClock)
 	RegisterMethod(OsMethods, "exit", osExit)
+	RegisterMethod(OsMethods, "sleep", osSleep)
 
 	RegisterProperty(OsProperties, "name", osName)
 }
@@ -34,14 +35,6 @@ func osArgs(scope *object.Scope, tok token.Token, args ...object.Object) object.
 	}
 
 	return &object.List{Elements: elements}
-}
-
-func osClock(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
-	if err := arity("os.clock", tok, args, 0); err != nil {
-		return err
-	}
-
-	return object.NewInt(time.Now().UnixNano())
 }
 
 // osExit ends the program with a status code, and optionally a parting message.
@@ -70,6 +63,30 @@ func osExit(scope *object.Scope, tok token.Token, args ...object.Object) object.
 	}
 
 	os.Exit(int(status))
+
+	return nil
+}
+
+// osSleep pauses the running program for a duration in milliseconds. It is a
+// process control, the same family as exit - pausing or ending the program
+// itself - rather than a date operation, which is why it lives here and not
+// in the date module.
+func osSleep(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
+	if err := arity("os.sleep", tok, args, 1); err != nil {
+		return err
+	}
+
+	milliseconds, err := integerAt("os.sleep", tok, args, 0)
+
+	if err != nil {
+		return err
+	}
+
+	if milliseconds < 0 {
+		return object.NewError(fault.Value, tok, "`os.sleep()` expects a duration of zero or greater, got %d", milliseconds)
+	}
+
+	time.Sleep(time.Duration(milliseconds) * time.Millisecond)
 
 	return nil
 }

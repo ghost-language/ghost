@@ -405,17 +405,17 @@ func TestMathConstants(t *testing.T) {
 // generator.
 func TestMathRandomIsReproducible(t *testing.T) {
 	call(t, "randomSeed", object.NewInt(42))
-	first := stringOf(t, call(t, "random", object.NewInt(1), object.NewInt(1000)))
+	first := stringOf(t, call(t, "randomInt", object.NewInt(1), object.NewInt(1000)))
 
 	call(t, "randomSeed", object.NewInt(42))
-	second := stringOf(t, call(t, "random", object.NewInt(1), object.NewInt(1000)))
+	second := stringOf(t, call(t, "randomInt", object.NewInt(1), object.NewInt(1000)))
 
 	if first != second {
 		t.Errorf("seeded runs differ. got=%s and %s", first, second)
 	}
 
 	randomSeed(nil, token.Token{}, object.NewInt(42))
-	third := stringOf(t, call(t, "random", object.NewInt(1), object.NewInt(1000)))
+	third := stringOf(t, call(t, "randomInt", object.NewInt(1), object.NewInt(1000)))
 
 	if third != first {
 		t.Errorf("random.seed() and math.randomSeed() drive different generators. got=%s and %s", third, first)
@@ -475,7 +475,7 @@ func TestMathErrors(t *testing.T) {
 		{"arange", []object.Object{object.NewInt(1), object.NewInt(5), object.NewInt(0)}},
 		{"linspace", []object.Object{object.NewInt(0), object.NewInt(1), object.NewInt(-1)}},
 		{"identity", []object.Object{object.NewInt(-1)}},
-		{"random", []object.Object{object.NewInt(10), object.NewInt(1)}},
+		{"randomInt", []object.Object{object.NewInt(10), object.NewInt(1)}},
 		{"max", []object.Object{}},
 		{"transpose", []object.Object{object.NewInt(5)}},
 	}

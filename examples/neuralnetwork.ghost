@@ -14,7 +14,7 @@ function randomMatrix(rows, columns) {
     m = []
     for (row = 0; row < rows; row++) {
         values = []
-        for (column = 0; column < columns; column++) { values.push(math.random() - 0.5) }
+        for (column = 0; column < columns; column++) { values.push(random.random() - 0.5) }
         m.push(values)
     }
     return m

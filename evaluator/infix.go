@@ -37,6 +37,8 @@ func evaluateInfix(node *ast.Infix, scope *object.Scope) object.Object {
 		return evaluateNumberInfix(node, left, right)
 	case left.Type() == object.STRING && right.Type() == object.STRING:
 		return evaluateStringInfix(node, left, right)
+	case left.Type() == object.DATE && right.Type() == object.DATE:
+		return evaluateDateInfix(node, left, right)
 	case isListArithmetic(left, right):
 		return evaluateListInfix(node, left, right)
 	case left.Type() != right.Type():

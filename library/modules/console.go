@@ -3,6 +3,7 @@ package modules
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"runtime"
@@ -24,7 +25,7 @@ func init() {
 	RegisterMethod(ConsoleMethods, "read", consoleRead)
 	RegisterMethod(ConsoleMethods, "warn", consoleWarn)
 	RegisterMethod(ConsoleMethods, "clear", consoleClear)
-	RegisterMethod(ConsoleMethods, "print", consolePrint)
+	RegisterMethod(ConsoleMethods, "write", consoleWrite)
 	RegisterMethod(ConsoleMethods, "newLine", consoleNewLine)
 }
 
@@ -35,7 +36,7 @@ func consoleError(scope *object.Scope, tok token.Token, args ...object.Object) o
 		values = append(values, value.String())
 	}
 
-	printLine(values, "error")
+	printLine(scope, values, "error")
 
 	return nil
 }
@@ -47,7 +48,7 @@ func consoleInfo(scope *object.Scope, tok token.Token, args ...object.Object) ob
 		values = append(values, value.String())
 	}
 
-	printLine(values, "info")
+	printLine(scope, values, "info")
 
 	return nil
 }
@@ -59,7 +60,7 @@ func consoleLog(scope *object.Scope, tok token.Token, args ...object.Object) obj
 		values = append(values, value.String())
 	}
 
-	printLine(values, "")
+	printLine(scope, values, "")
 
 	return nil
 }
@@ -97,7 +98,7 @@ func consoleWarn(scope *object.Scope, tok token.Token, args ...object.Object) ob
 		values = append(values, value.String())
 	}
 
-	printLine(values, "warning")
+	printLine(scope, values, "warning")
 
 	return nil
 }
@@ -116,33 +117,44 @@ func consoleClear(scope *object.Scope, tok token.Token, args ...object.Object) o
 	return nil
 }
 
-func consolePrint(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
+// consoleWrite writes without a trailing newline, the way console.log and its
+// relatives do not - the distinction Symfony's Console component draws
+// between write() and writeln(), which is where the name comes from. It is
+// named apart from the global print() so the two words never mean two
+// different contracts.
+func consoleWrite(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
 	values := make([]string, 0)
 
 	for _, value := range args {
 		values = append(values, value.String())
 	}
 
-	print(values)
+	if len(values) > 0 {
+		fmt.Fprint(scope.Environment.GetWriter(), strings.Join(values, " "))
+	}
 
 	return nil
 }
 
 func consoleNewLine(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
-	fmt.Println()
+	fmt.Fprintln(scope.Environment.GetWriter())
 
 	return nil
 }
 
 //
 
-// printLine writes a console line, colouring its prefix by what the line is for.
-// The prefix says how to read what follows, so it is styled the same way the
-// rest of Ghost styles that meaning — and dropped entirely when the output is
-// not going to a terminal that can show it.
-func printLine(values []string, prefix string) {
+// printLine writes a console line, colouring its prefix by what the line is
+// for. The prefix says how to read what follows, so it is styled the same way
+// the rest of Ghost styles that meaning — and dropped entirely when the
+// output is not going to a terminal that can show it. It writes through the
+// scope's own writer rather than straight to stdout, so an embedder that
+// redirects Ghost's output is not bypassed by the console module alone.
+func printLine(scope *object.Scope, values []string, prefix string) {
+	writer := scope.Environment.GetWriter()
+
 	if len(values) == 0 {
-		fmt.Println()
+		fmt.Fprintln(writer)
 
 		return
 	}
@@ -150,17 +162,18 @@ func printLine(values []string, prefix string) {
 	parts := make([]string, 0, len(values)+1)
 
 	if prefix != "" {
-		parts = append(parts, style(prefix)+":")
+		parts = append(parts, style(writer, prefix)+":")
 	}
 
 	parts = append(parts, values...)
 
-	fmt.Println(strings.Join(parts, " "))
+	fmt.Fprintln(writer, strings.Join(parts, " "))
 }
 
-// style paints a console prefix in the colour its meaning has everywhere else.
-func style(prefix string) string {
-	profile := color.Detect(os.Stdout)
+// style paints a console prefix in the colour its meaning has everywhere else,
+// detected against the same writer the line is about to go to.
+func style(writer io.Writer, prefix string) string {
+	profile := color.Detect(writer)
 
 	switch prefix {
 	case "error":
@@ -172,14 +185,4 @@ func style(prefix string) string {
 	}
 
 	return prefix
-}
-
-func print(values []string) {
-	if len(values) > 0 {
-		str := make([]string, 0)
-
-		str = append(str, values...)
-
-		fmt.Print(strings.Join(str, " "))
-	}
 }

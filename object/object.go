@@ -18,6 +18,7 @@ const (
 	BREAK
 	CLASS
 	CONTINUE
+	DATE
 	ERROR
 	FUNCTION
 	INSTANCE
@@ -44,6 +45,7 @@ var typeNames = [...]string{
 	BREAK:            "break",
 	CLASS:            "class",
 	CONTINUE:         "continue",
+	DATE:             "date",
 	ERROR:            "error",
 	FUNCTION:         "function",
 	INSTANCE:         "instance",

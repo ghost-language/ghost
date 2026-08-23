@@ -75,5 +75,5 @@ print(math.combinations(52, 5))
 // exactly. Noise drifts where random numbers jitter.
 math.randomSeed(42)
 
-print(math.random(1, 6))
+print(math.randomInt(1, 6))
 print(math.noise(0.5, 1.5))

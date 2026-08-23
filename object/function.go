@@ -43,6 +43,25 @@ func (function *Function) Evaluate(args []Object, writer io.Writer) Object {
 	return result
 }
 
+// Call invokes the function as a callback - the shape a library method wants
+// when it takes a function argument, as List's map, filter, reduce, and each
+// do. It unwraps the `return` marker Evaluate leaves in place, so a caller
+// gets the value the Ghost function handed back rather than the object that
+// carries it through evaluation.
+func (function *Function) Call(args []Object) Object {
+	result := function.Evaluate(args, nil)
+
+	if wrapped, ok := result.(*Return); ok {
+		return wrapped.Value
+	}
+
+	if result == nil {
+		return &Null{}
+	}
+
+	return result
+}
+
 // =============================================================================
 // Helper methods
 
