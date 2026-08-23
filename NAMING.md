@@ -34,11 +34,14 @@ the suffix, so the name reads the same direction as the conversion happens.
 booleans and null included, so a reader never has to check whether a
 particular type happens to support turning itself into a string.
 
-**Modules are lowercase domains, not types.** `math`, `time`, `random`,
+**Modules are lowercase domains, not types.** `math`, `date`, `random`,
 `console`, `os` name a *place* an operation belongs, not a kind of value.
 Before adding a method to a module, ask which domain the operation is really
-in - randomness belongs in `random`, not `math`; current time belongs in
-`time`, not `os` - rather than adding it to whichever module is already open.
+in - randomness belongs in `random`, not `math`; a calendar instant belongs in
+`date`, not `os`; pausing or ending the program itself belongs in `os`, not
+`date`, which is why `os.sleep()` lives beside `os.exit()` rather than beside
+`date.now()` - rather than adding a method to whichever module is already
+open.
 
 **A name means one thing.** If two modules define a method with the same
 name, they'd better mean the exact same operation with the exact same
@@ -71,7 +74,7 @@ problem. A rename or a consolidation is worth making when:
   elsewhere in the language (console's output methods bypassing the writer
   `print()` respects, before the audit fixed it).
 - A capability lives in the wrong domain entirely (current-time precision
-  living partly in `os`, before it moved to `time`).
+  living partly in `os`, before it moved to `date`).
 
 It is not a problem when two access points deliberately share an
 implementation and agree completely on what they mean - that's the same

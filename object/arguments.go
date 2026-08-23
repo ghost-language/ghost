@@ -102,6 +102,17 @@ func MapArgument(name string, tok token.Token, args []Object, index int) (*Map, 
 	return value.(*Map), nil
 }
 
+// DateArgument reads an argument that has to be a date.
+func DateArgument(name string, tok token.Token, args []Object, index int) (*Date, *Error) {
+	value, err := argument(name, tok, args, index, "a date", DATE)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return value.(*Date), nil
+}
+
 // FunctionArgument reads an argument that has to be something callable.
 func FunctionArgument(name string, tok token.Token, args []Object, index int) (*Function, *Error) {
 	value, err := argument(name, tok, args, index, "a function", FUNCTION)

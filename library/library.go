@@ -12,13 +12,13 @@ var Modules = map[string]*object.LibraryModule{}
 
 func init() {
 	RegisterModule("console", modules.ConsoleMethods, modules.ConsoleProperties)
+	RegisterModule("date", modules.DateMethods, modules.DateProperties)
 	RegisterModule("ghost", modules.GhostMethods, modules.GhostProperties)
 	RegisterModule("http", modules.HttpMethods, modules.HttpProperties)
 	RegisterModule("io", modules.IoMethods, modules.IoProperties)
 	RegisterModule("math", modules.MathMethods, modules.MathProperties)
 	RegisterModule("os", modules.OsMethods, modules.OsProperties)
 	RegisterModule("random", modules.RandomMethods, modules.RandomProperties)
-	RegisterModule("time", modules.TimeMethods, modules.TimeProperties)
 	RegisterModule("json", modules.JsonMethods, modules.JsonProperties)
 
 	RegisterFunction("print", functions.Print)

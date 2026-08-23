@@ -86,6 +86,11 @@ func stringAt(name string, tok token.Token, args []object.Object, index int) (st
 	return str.Value, nil
 }
 
+// dateAt reads a date argument.
+func dateAt(name string, tok token.Token, args []object.Object, index int) (*object.Date, *object.Error) {
+	return object.DateArgument(signature(name), tok, args, index)
+}
+
 // systemFailure reports the world outside the program refusing to cooperate: a
 // file that will not open, a socket that will not bind. The Go error is quoted
 // as-is, because what it says — "no such file or directory", "permission
