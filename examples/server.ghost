@@ -1,5 +1,5 @@
 http.handle("/", function(request) {
-    start = os.clock()
+    start = time.nowNano()
     view = io.read("views/index.html")
 
     print(view)
@@ -9,7 +9,7 @@ http.handle("/", function(request) {
     console.log("content length:", request["contentLength"])
     console.log("body:", request["body"])
 
-    end = os.clock()
+    end = time.nowNano()
     total = ((end - start) / 1e6).toString()
 
     console.log("-->", total, "ms")

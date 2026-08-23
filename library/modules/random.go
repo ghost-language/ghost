@@ -21,7 +21,7 @@ func init() {
 	RegisterMethod(RandomMethods, "seed", randomSeed)
 	RegisterMethod(RandomMethods, "random", randomRandom)
 
-	RegisterProperty(RandomProperties, "seed", randomSeedProperty)
+	RegisterProperty(RandomProperties, "currentSeed", randomCurrentSeed)
 }
 
 // randomRandom returns a uniform pseudo-random real number in the range (0, 1).
@@ -101,7 +101,10 @@ func SeedRandom(value int64) {
 
 // Properties
 
-// randomSeedProperty returns the current seed value used internally.
-func randomSeedProperty(scope *object.Scope, tok token.Token) object.Object {
+// randomCurrentSeed returns the seed currently driving the generator. It is a
+// property rather than a method, and named apart from seed() - the method
+// that sets it - so that setting and reading the seed are not two different
+// calls sharing one name.
+func randomCurrentSeed(scope *object.Scope, tok token.Token) object.Object {
 	return object.NewInt(seed)
 }

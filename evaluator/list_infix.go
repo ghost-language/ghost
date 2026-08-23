@@ -63,44 +63,10 @@ var listOperations = map[token.Type]func(node *ast.Infix, left *object.Number, r
 
 // listsEqual compares two lists by their contents rather than by identity, to
 // any depth. It is what `==` between lists means, and mirrors the comparisons
-// the type-specific infix evaluators make for the values inside.
+// the type-specific infix evaluators make for the values inside. The
+// comparison itself lives in object.ListsEqual, so a list counted equal here
+// is equal wherever else in the language the same comparison is made - List's
+// contains() and unique() among them.
 func listsEqual(left *object.List, right *object.List) bool {
-	if len(left.Elements) != len(right.Elements) {
-		return false
-	}
-
-	for index, element := range left.Elements {
-		if !valuesEqual(element, right.Elements[index]) {
-			return false
-		}
-	}
-
-	return true
-}
-
-func valuesEqual(left object.Object, right object.Object) bool {
-	if left == nil || right == nil {
-		return left == nil && right == nil
-	}
-
-	if left.Type() != right.Type() {
-		return false
-	}
-
-	switch left := left.(type) {
-	case *object.Number:
-		return left.Equal(right.(*object.Number))
-	case *object.String:
-		return left.Value == right.(*object.String).Value
-	case *object.Boolean:
-		return left.Value == right.(*object.Boolean).Value
-	case *object.Null:
-		return true
-	case *object.List:
-		return listsEqual(left, right.(*object.List))
-	}
-
-	// Everything else - instances, functions, maps - compares by identity, the
-	// same rule `==` applies to instances outside a list.
-	return left == right
+	return object.ListsEqual(left, right)
 }

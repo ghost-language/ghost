@@ -109,10 +109,11 @@ func init() {
 	registerElementwise("smoothstep", 3, ternaryFloat(smoothstep))
 	RegisterMethod(MathMethods, "noise", mathNoise)
 
-	// Random numbers. These share the generator behind the random module, so a
-	// single seed governs both and a seeded run stays reproducible no matter
-	// which of the two a program reaches for.
-	RegisterMethod(MathMethods, "random", mathRandom)
+	// A whole-number random value, for when a float in [0, 1) - what
+	// random.random() gives - is not what is wanted. It shares the generator
+	// behind the random module, so a single seed governs both and a seeded run
+	// stays reproducible no matter which of the two a program reaches for.
+	RegisterMethod(MathMethods, "randomInt", mathRandomInt)
 	RegisterMethod(MathMethods, "randomSeed", mathRandomSeed)
 
 	registerMathStatistics()
@@ -351,19 +352,16 @@ func mathNoise(scope *object.Scope, tok token.Token, args ...object.Object) obje
 	return object.NewFloat(noise2D(x, y))
 }
 
-// mathRandom reads its range from how many arguments it is given: none gives a
-// float in [0, 1), one gives a whole number in [1, n], and two give a whole
-// number in [low, high].
-func mathRandom(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
-	if err := arityRange("math.random", tok, args, 0, 2); err != nil {
+// mathRandomInt reads its range from how many arguments it is given: one
+// gives a whole number in [1, n], and two give a whole number in [low, high].
+// A float in [0, 1) is what random.random() is for; math.randomInt() always
+// answers a whole number, which random.random() cannot give directly.
+func mathRandomInt(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
+	if err := arityRange("math.randomInt", tok, args, 1, 2); err != nil {
 		return err
 	}
 
-	if len(args) == 0 {
-		return object.NewFloat(randomizer.Float64())
-	}
-
-	high, err := integerAt("math.random", tok, args, 0)
+	high, err := integerAt("math.randomInt", tok, args, 0)
 
 	if err != nil {
 		return err
@@ -372,7 +370,7 @@ func mathRandom(scope *object.Scope, tok token.Token, args ...object.Object) obj
 	low := int64(1)
 
 	if len(args) == 2 {
-		bound, err := integerAt("math.random", tok, args, 1)
+		bound, err := integerAt("math.randomInt", tok, args, 1)
 
 		if err != nil {
 			return err
@@ -383,7 +381,7 @@ func mathRandom(scope *object.Scope, tok token.Token, args ...object.Object) obj
 	}
 
 	if high < low {
-		return object.NewError(fault.Value, tok, "`math.random()` expects the upper bound to be at least the lower bound")
+		return object.NewError(fault.Value, tok, "`math.randomInt()` expects the upper bound to be at least the lower bound")
 	}
 
 	return object.NewInt(low + randomizer.Int63n(high-low+1))

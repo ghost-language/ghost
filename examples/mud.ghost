@@ -10,9 +10,9 @@ class Game {
     for (i = 1; i <= grid.height; i = i + 1) {
       for (j = 1; j <= grid.width; j = j + 1) {
         if (i == player.y and j == player.x) {
-          console.print('@')
+          console.write('@')
         } else {
-          console.print('.')
+          console.write('.')
         }
       }
 

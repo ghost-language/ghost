@@ -14,6 +14,7 @@ var TimeProperties = map[string]*object.LibraryProperty{}
 func init() {
 	RegisterMethod(TimeMethods, "sleep", timeSleep)
 	RegisterMethod(TimeMethods, "now", timeNow)
+	RegisterMethod(TimeMethods, "nowNano", timeNowNano)
 
 	RegisterProperty(TimeProperties, "nanosecond", timeNanosecond)
 	RegisterProperty(TimeProperties, "microsecond", timeMicrosecond)
@@ -53,6 +54,18 @@ func timeNow(scope *object.Scope, tok token.Token, args ...object.Object) object
 	}
 
 	return object.NewInt(time.Now().Unix())
+}
+
+// timeNowNano is time.now() at nanosecond precision, for measuring how long
+// something took rather than what time it is. It replaces os.clock(), which
+// answered the same question from a module about the operating system rather
+// than about time.
+func timeNowNano(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
+	if err := arity("time.nowNano", tok, args, 0); err != nil {
+		return err
+	}
+
+	return object.NewInt(time.Now().UnixNano())
 }
 
 // properties
