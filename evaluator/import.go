@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"sync"
 
@@ -17,20 +18,26 @@ import (
 	"ghostlang.org/x/ghost/token"
 )
 
-// nativeScheme marks an import path as naming a standard library module
-// rather than a `.ghost` file on disk: `import math from "ghost:math"`. It is
-// how the whole standard library, `console` and `type` excepted (see
-// library.IsGlobal), stops being ambiently available and becomes something a
-// script opts into by name — the same posture Deno's `node:`-prefixed
-// builtins take.
-const nativeScheme = "ghost:"
+// schemePattern recognizes a `scheme:` prefix on an import path — `ghost:`
+// for the standard library, or one a Go host embedding Ghost claims for
+// itself (Lumen's `lumen:`, say — see library.RegisterModuleForScheme). Two
+// or more letters are required before the `:` specifically so a Windows
+// drive letter (`C:\...`) is never mistaken for one; nothing in Ghost's own
+// import paths uses a single-letter prefix.
+var schemePattern = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9+.-]+:`)
 
-func isNativeModule(path string) bool {
-	return strings.HasPrefix(path, nativeScheme)
-}
+// schemeImport splits an import path into its scheme and the name after it,
+// if it has one: `"ghost:math"` splits to `("ghost", "math")`. A path with
+// no such prefix is a `.ghost` file import instead (§8.9) — the two are told
+// apart by this alone, no registration lookup needed to decide which.
+func schemeImport(path string) (scheme string, name string, ok bool) {
+	prefix := schemePattern.FindString(path)
 
-func nativeModuleName(path string) string {
-	return strings.TrimPrefix(path, nativeScheme)
+	if prefix == "" {
+		return "", "", false
+	}
+
+	return prefix[:len(prefix)-1], path[len(prefix):], true
 }
 
 // Imports are process-wide: a module is read, evaluated, and kept, so that
@@ -81,8 +88,8 @@ func lookupImport(filename string) (*object.Scope, bool) {
 // are shared with evaluateImportFrom for that reason); every import of it
 // still has to bind its own name into the importing scope.
 func evaluateImport(node *ast.Import, scope *object.Scope) object.Object {
-	if isNativeModule(node.Path.Value) {
-		return evaluateNativeImport(node, scope)
+	if scheme, name, ok := schemeImport(node.Path.Value); ok {
+		return evaluateSchemeImport(scheme, name, node, scope)
 	}
 
 	filename, err := resolveModule(node.Token, node.Path.Value, scope)
@@ -141,16 +148,17 @@ func moduleValue(moduleScope *object.Scope) *object.Map {
 	return &object.Map{Pairs: pairs}
 }
 
-// evaluateNativeImport handles `import name from "ghost:name"` and `import
-// name as alias from "ghost:name"`: the whole-module form of a standard
-// library import. The module itself — the same *object.LibraryModule a bare
-// `console` resolves to — is bound directly, so dot access (`math.pi`,
-// `math.sqrt()`) works exactly as it does on the still-global modules; only
-// how the name reaches the scope differs.
-func evaluateNativeImport(node *ast.Import, scope *object.Scope) object.Object {
-	name := nativeModuleName(node.Path.Value)
-
-	value, err := lookupNativeBinding(node.Token, name)
+// evaluateSchemeImport handles the whole-value form of a `scheme:name`
+// import — `import name from "scheme:name"` and `import name as alias from
+// "scheme:name"`. The module or function itself — the same value a bare
+// `console` resolves to, for the standard library's own scheme — is bound
+// directly, so dot access on a module (`math.pi`, `math.sqrt()`) works
+// exactly as it does on the still-global modules; only how the name reaches
+// the scope differs. Which scheme is named doesn't matter here: the standard
+// library's `ghost:` and an embedder's own scheme (Lumen's `lumen:`, say)
+// resolve through the exact same lookup.
+func evaluateSchemeImport(scheme string, name string, node *ast.Import, importScope *object.Scope) object.Object {
+	value, err := lookupSchemeBinding(node.Token, scheme, name)
 
 	if err != nil {
 		return err
@@ -162,21 +170,19 @@ func evaluateNativeImport(node *ast.Import, scope *object.Scope) object.Object {
 		binding = node.Alias.Value
 	}
 
-	scope.Environment.Set(binding, value)
+	importScope.Environment.Set(binding, value)
 
 	return nil
 }
 
-// evaluateNativeImportFrom handles `import { a, b as c } from "ghost:name"`
-// and `import * from "ghost:name"` against the standard library. A method
-// pulls in the same *object.LibraryFunction a dotted call would use; a
-// property is evaluated once, immediately, since there is no lazy-getter
-// value to bind — `import { pi } from "ghost:math"` binds a plain number, the
-// way `math.pi` would read as one.
-func evaluateNativeImportFrom(node *ast.ImportFrom, scope *object.Scope) object.Object {
-	name := nativeModuleName(node.Path.Value)
-
-	module, err := lookupNativeModule(node.Token, name)
+// evaluateSchemeImportFrom handles `import { a, b as c } from "scheme:name"`
+// and `import * from "scheme:name"`. A method pulls in the same
+// *object.LibraryFunction a dotted call would use; a property is evaluated
+// once, immediately, since there is no lazy-getter value to bind — `import {
+// pi } from "ghost:math"` binds a plain number, the way `math.pi` would read
+// as one.
+func evaluateSchemeImportFrom(scheme string, name string, node *ast.ImportFrom, importScope *object.Scope) object.Object {
+	module, err := lookupSchemeModule(node.Token, scheme, name)
 
 	if err != nil {
 		return err
@@ -184,17 +190,17 @@ func evaluateNativeImportFrom(node *ast.ImportFrom, scope *object.Scope) object.
 
 	if node.Everything {
 		for methodName, function := range module.Methods {
-			scope.Environment.Set(methodName, function)
+			importScope.Environment.Set(methodName, function)
 		}
 
 		for propertyName, property := range module.Properties {
-			value := unwrapCall(node.Token, property, nil, scope)
+			value := unwrapCall(node.Token, property, nil, importScope)
 
 			if isError(value) {
 				return value
 			}
 
-			scope.Environment.Set(propertyName, value)
+			importScope.Environment.Set(propertyName, value)
 		}
 
 		return nil
@@ -202,26 +208,26 @@ func evaluateNativeImportFrom(node *ast.ImportFrom, scope *object.Scope) object.
 
 	for alias, identifier := range node.Identifiers {
 		if function, ok := module.Methods[identifier.Value]; ok {
-			scope.Environment.Set(alias, function)
+			importScope.Environment.Set(alias, function)
 
 			continue
 		}
 
 		if property, ok := module.Properties[identifier.Value]; ok {
-			value := unwrapCall(node.Token, property, nil, scope)
+			value := unwrapCall(node.Token, property, nil, importScope)
 
 			if isError(value) {
 				return value
 			}
 
-			scope.Environment.Set(alias, value)
+			importScope.Environment.Set(alias, value)
 
 			continue
 		}
 
 		raised := object.NewError(fault.Import, node.Token, "module `%s` does not define `%s`", name, identifier.Value)
 
-		if suggestion, ok := nearestName(identifier.Value, nativeModuleExports(module)); ok {
+		if suggestion, ok := nearestName(identifier.Value, schemeModuleExports(module)); ok {
 			raised.WithHelp("did you mean `%s`?", suggestion)
 		}
 
@@ -231,84 +237,123 @@ func evaluateNativeImportFrom(node *ast.ImportFrom, scope *object.Scope) object.
 	return nil
 }
 
-// lookupNativeModule resolves a `ghost:`-scheme import path against the
-// standard library's own module registry (library.Modules), for the
-// `import { a, b } from "ghost:name"` / `import * from "ghost:name"` forms,
-// which need something with methods and properties to pull members out of.
-// It works for embedder-registered modules too — `ghost.extend` (§9.11)
-// calls the same RegisterModule this reads from — so a plugin's module
-// becomes importable the moment it registers, with no separate mechanism to
-// keep in sync.
-func lookupNativeModule(tok token.Token, name string) (*object.LibraryModule, *object.Error) {
-	if module, ok := library.Modules[name]; ok {
+// lookupSchemeModule resolves a `scheme:name` import path against that
+// scheme's own registry, for the `import { a, b } from "scheme:name"` /
+// `import * from "scheme:name"` forms, which need something with methods and
+// properties to pull members out of. It works for any scheme an embedder has
+// registered under (library.RegisterModuleForScheme) just as it does for the
+// standard library's own `ghost:` — including one registered mid-script by
+// `ghost.extend` (§9.12), since a plugin's module becomes importable the
+// moment it registers, with no separate mechanism to keep in sync.
+func lookupSchemeModule(tok token.Token, scheme string, name string) (*object.LibraryModule, *object.Error) {
+	registry := library.Scheme(scheme)
+
+	if module, ok := registry.Modules[name]; ok {
 		return module, nil
 	}
 
-	if _, ok := library.Functions[name]; ok {
-		return nil, object.NewError(fault.Import, tok, "`%s` is a standalone function, not a module", name).
-			WithHelp("import it directly: `import \"ghost:%s\"`", name)
+	if _, ok := registry.Functions[name]; ok {
+		return nil, object.NewError(fault.Import, tok, "`%s` is a standalone function under `%s:`, not a module", name, scheme).
+			WithHelp("import it directly: `import \"%s:%s\"`", scheme, name)
 	}
 
-	raised := object.NewError(fault.Import, tok, "no standard library module named `%s`", name)
+	if !knownScheme(scheme) {
+		return nil, unknownScheme(tok, scheme)
+	}
 
-	if suggestion, ok := nearestName(name, nativeModuleNames()); ok {
-		raised.WithHelp("did you mean `import { ... } from \"ghost:%s\"`?", suggestion)
+	raised := object.NewError(fault.Import, tok, "no module named `%s` registered under `%s:`", name, scheme)
+
+	if suggestion, ok := nearestName(name, schemeModuleNames(registry)); ok {
+		raised.WithHelp("did you mean `import { ... } from \"%s:%s\"`?", scheme, suggestion)
 	}
 
 	return nil, raised
 }
 
-// lookupNativeBinding resolves a `ghost:`-scheme import path for the
-// whole-value forms, `import name from "ghost:name"` and `import name as
-// alias from "ghost:name"`, which bind the standard library entry itself —
-// a module (dot access works exactly as it does on `console`) or a
-// standalone function (directly callable), whichever `name` turns out to be.
-func lookupNativeBinding(tok token.Token, name string) (object.Object, *object.Error) {
-	if module, ok := library.Modules[name]; ok {
+// lookupSchemeBinding resolves a `scheme:name` import path for the
+// whole-value forms, `import name from "scheme:name"` and `import name as
+// alias from "scheme:name"`, which bind the entry itself — a module (dot
+// access works exactly as it does on `console`) or a standalone function
+// (directly callable), whichever `name` turns out to be.
+func lookupSchemeBinding(tok token.Token, scheme string, name string) (object.Object, *object.Error) {
+	registry := library.Scheme(scheme)
+
+	if module, ok := registry.Modules[name]; ok {
 		return module, nil
 	}
 
-	if function, ok := library.Functions[name]; ok {
+	if function, ok := registry.Functions[name]; ok {
 		return function, nil
 	}
 
-	raised := object.NewError(fault.Import, tok, "no standard library module or function named `%s`", name)
+	if !knownScheme(scheme) {
+		return nil, unknownScheme(tok, scheme)
+	}
 
-	if suggestion, ok := nearestName(name, append(nativeModuleNames(), nativeFunctionNames()...)); ok {
-		raised.WithHelp("did you mean `import \"ghost:%s\"`?", suggestion)
+	raised := object.NewError(fault.Import, tok, "no module or function named `%s` registered under `%s:`", name, scheme)
+
+	if suggestion, ok := nearestName(name, append(schemeModuleNames(registry), schemeFunctionNames(registry)...)); ok {
+		raised.WithHelp("did you mean `import \"%s:%s\"`?", scheme, suggestion)
 	}
 
 	return nil, raised
 }
 
-// nativeModuleNames lists every module registered in the standard library
-// (built-in and embedder-added alike), for suggesting the one a misspelled
-// `ghost:` import path probably meant.
-func nativeModuleNames() []string {
-	names := make([]string, 0, len(library.Modules))
+// knownScheme reports whether anything has ever registered a module or
+// function under this scheme, telling "wrong name within a real scheme"
+// apart from "the scheme prefix itself is wrong or not loaded yet" — the
+// latter needs a different message, since the fix isn't a nearby name within
+// the scheme but the scheme prefix itself (or, for an embedder's scheme not
+// registered until some setup step runs, waiting until after that step).
+func knownScheme(scheme string) bool {
+	for _, known := range library.Schemes() {
+		if known == scheme {
+			return true
+		}
+	}
 
-	for name := range library.Modules {
+	return false
+}
+
+// unknownScheme reports an import naming a scheme prefix nothing has ever
+// registered under, suggesting the nearest one that does exist.
+func unknownScheme(tok token.Token, scheme string) *object.Error {
+	raised := object.NewError(fault.Import, tok, "no scheme named `%s:` is registered", scheme)
+
+	if suggestion, ok := nearestName(scheme, library.Schemes()); ok {
+		raised.WithHelp("did you mean `%s:`?", suggestion)
+	}
+
+	return raised
+}
+
+// schemeModuleNames lists every module registered under a scheme, for
+// suggesting the one a misspelled import path probably meant.
+func schemeModuleNames(registry *library.Registry) []string {
+	names := make([]string, 0, len(registry.Modules))
+
+	for name := range registry.Modules {
 		names = append(names, name)
 	}
 
 	return names
 }
 
-// nativeFunctionNames is nativeModuleNames for standalone library functions.
-func nativeFunctionNames() []string {
-	names := make([]string, 0, len(library.Functions))
+// schemeFunctionNames is schemeModuleNames for standalone functions.
+func schemeFunctionNames(registry *library.Registry) []string {
+	names := make([]string, 0, len(registry.Functions))
 
-	for name := range library.Functions {
+	for name := range registry.Functions {
 		names = append(names, name)
 	}
 
 	return names
 }
 
-// nativeModuleExports lists the names a `ghost:` module actually offers —
-// its methods and its properties together — for suggesting the one a
-// misspelled `import { x } from "ghost:..."` probably meant.
-func nativeModuleExports(module *object.LibraryModule) []string {
+// schemeModuleExports lists the names a module actually offers — its methods
+// and its properties together — for suggesting the one a misspelled `import
+// { x } from "scheme:..."` probably meant.
+func schemeModuleExports(module *object.LibraryModule) []string {
 	names := make([]string, 0, len(module.Methods)+len(module.Properties))
 
 	for name := range module.Methods {
@@ -323,8 +368,8 @@ func nativeModuleExports(module *object.LibraryModule) []string {
 }
 
 func evaluateImportFrom(node *ast.ImportFrom, scope *object.Scope) object.Object {
-	if isNativeModule(node.Path.Value) {
-		return evaluateNativeImportFrom(node, scope)
+	if scheme, name, ok := schemeImport(node.Path.Value); ok {
+		return evaluateSchemeImportFrom(scheme, name, node, scope)
 	}
 
 	filename, err := resolveModule(node.Token, node.Path.Value, scope)

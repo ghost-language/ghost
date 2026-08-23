@@ -610,6 +610,9 @@ import "ghost:math"                    // the whole standard library module, bou
 import "ghost:math" as m               // aliased
 import { pi, sqrt } from "ghost:math"  // named imports from the standard library
 import pi, sqrt from "ghost:math"      // unbraced named imports read the same way
+
+import "lumen:font"                    // an embedding host's own scheme, resolved the same way
+import { load } from "lumen:font"      // named imports work identically for any scheme
 ```
 
 **File imports** (no scheme — any other string) name a `.ghost` file:
@@ -629,27 +632,45 @@ import pi, sqrt from "ghost:math"      // unbraced named imports read the same w
   the nearest name it does, the same typo-correction machinery used
   everywhere else (§8.11).
 
-**Standard library imports** name an entry in `library.Modules`/
-`library.Functions` (§6) with a `ghost:` prefix instead of a file path —
-`import "ghost:math"`, `import { pi } from "ghost:math"`. This is how the
-whole standard library reaches a script, `console` and `type` excepted: they
-are the only names still reachable without an import (§9.1), and every other
-module — `math`, `date`, `random`, `os`, `file`, `path`, `json`, `http`,
-`ghost` — as well as anything a Go embedder adds at runtime with
-`library.RegisterModule`/`RegisterFunction` (§10.3) or a script loads with
-`ghost.extend()` (§9.12), has to be imported by name before a script can use
-it. There is one registry either way, so an embedder's or a plugin's module
-becomes importable the moment it registers, with no separate mechanism to
-keep in sync — a plugin loaded partway through a script (`ghost.extend(...)`
-followed later by `import "ghost:itsModule"`) works precisely because
-`import` resolves at the point it runs, not ahead of time.
+**Scheme imports** name an entry in a `library.Registry` (§6) with a
+`scheme:` prefix instead of a file path — any import path matching
+`^[A-Za-z][A-Za-z0-9+.-]+:` (two or more letters before the colon, so a
+Windows drive letter is never mistaken for one) is a scheme import rather
+than a file path, decided by that pattern alone, with no lookup needed to
+tell the two apart. `ghost:` is the scheme the standard library itself
+registers under — `import "ghost:math"`, `import { pi } from "ghost:math"`
+— and is how the whole standard library reaches a script, `console` and
+`type` excepted: they are the only names still reachable without an import
+(§9.1), and every other module — `math`, `date`, `random`, `os`, `file`,
+`path`, `json`, `http`, `ghost` — has to be imported by name before a script
+can use it.
 
-- The bare forms — `import "ghost:name"` and `import "ghost:name" as alias`
-  — bind the module or function itself. For a module this is the exact same
-  value a bare `console` resolves to, so dot access afterward
+`ghost:` is not special-cased, though — it is simply the one scheme Ghost
+itself pre-registers. **A Go program embedding Ghost can claim a scheme of
+its own** with `library.RegisterModuleForScheme`/`RegisterFunctionForScheme`
+(§10.3) — e.g. a host built as "Lumen" registering `RegisterModuleForScheme
+("lumen", "font", methods, properties)` so its own scripts write `import
+font from "lumen:font"` rather than borrowing Ghost's own `ghost:`
+namespace. The existing unscoped `RegisterModule`/`RegisterFunction` still
+target `ghost:` specifically, for backward compatibility with embedding code
+written before scheme registration existed; reaching for
+`RegisterModuleForScheme` instead is how a host gets a namespace that reads
+as its own. Either way there is one registry per scheme and one `scheme:`
+import mechanism underneath every scheme, so a module becomes importable the
+moment it registers, with no separate mechanism to keep in sync — a plugin
+loaded partway through a script (`ghost.extend(...)` followed later by
+`import "ghost:itsModule"`, §9.12) works precisely because `import` resolves
+at the point it runs, not ahead of time, and the same is true of a host
+registering a scheme before running a script versus a plugin registering one
+while a script is already running.
+
+- The bare forms — `import "scheme:name"` and `import "scheme:name" as
+  alias` — bind the module or function itself. For a module this is the
+  exact same value a bare `console` resolves to, so dot access afterward
   (`math.pi`, `math.sqrt()`) works unchanged; for a standalone function
-  (there is currently only `type`, but an embedder can register more) it
-  binds the function, directly callable.
+  (there is currently only `type` in the standard library, but an embedder
+  can register more under its own scheme) it binds the function, directly
+  callable.
 - The `from` forms — braced or not, `import { pi } from "ghost:math"` and
   `import pi from "ghost:math"` mean the same thing — pull individual
   methods and properties out of a module by name, exactly like a named
@@ -660,12 +681,19 @@ followed later by `import "ghost:itsModule"`) works precisely because
   module has. The `from` form only applies to modules; naming a standalone
   function this way (there being nothing on it to destructure) is a
   dedicated `Import` fault pointing at the bare form instead.
-- A name that used to work as a bare global and no longer does (`math.pi`
-  written with no import) is reported as a `Name` fault with help naming the
-  exact import to add, not a generic "did you mean" — see §8.11.
+- A name registered under exactly one scheme, written bare with no import
+  (`math.pi` with no import at all) is reported as a `Name` fault with help
+  naming the exact import to add, not a generic "did you mean" — see §8.11.
+  A name two different schemes both register (unusual, but not prevented)
+  lists every import that would resolve it, so the fix names the scheme
+  instead of guessing one.
 - Misspelling the module name itself (`"ghost:mathh"`), or a name inside the
   `from` form the module does not actually export, gets the same
   nearest-match suggestion as every other unresolved name in Ghost (§8.11).
+- Naming a scheme nothing has ever registered under (`"nosuchscheme:thing"`)
+  is a distinct `Import` fault from a misspelled name within a real scheme —
+  the fix is a different scheme prefix, or waiting until whatever registers
+  it has run, not a nearby name within it.
 
 ### 8.10 Template Literals
 
@@ -1200,20 +1228,33 @@ value := instance.Call("fnName", []object.Object{...})  // call into the script 
 
 ghost.RegisterFunction("myFn", myGoFunc)
 ghost.RegisterModule("myModule", methods, properties)
+
+// Or, to claim a namespace of the embedder's own instead of borrowing
+// ghost:, e.g. for a host built as "Lumen":
+ghost.RegisterFunctionForScheme("lumen", "myFn", myGoFunc)
+ghost.RegisterModuleForScheme("lumen", "myModule", methods, properties)
 ```
 
-`RegisterFunction`/`RegisterModule` are process-global (they write into the
-shared `library.Functions`/`library.Modules` maps). §14 decides this is not a
+`RegisterFunction`/`RegisterModule`/`RegisterFunctionForScheme`/
+`RegisterModuleForScheme` are process-global (they write into shared
+registries — `library.Functions`/`library.Modules` for the first two, a
+`library.Registry` per scheme for the latter two). §14 decides this is not a
 1.0 requirement to change: a host needing isolated configurations runs
 separate processes for now.
 
 A module or function registered this way is not automatically global to
 scripts — nothing is, `console`/`type` aside (§9.1). It becomes reachable
 the same way every built-in module is: `import "ghost:myModule"` or
-`import { myFn } from "ghost:myFn"` (§8.9). There is exactly one registry
-and one import mechanism for both, so an embedder gets `ghost:`-scheme
-importability for free rather than having to build its own convention for
-exposing what it registers.
+`import { myFn } from "ghost:myFn"` for the unscoped calls, `import
+"lumen:myModule"` for a call made `ForScheme("lumen", ...)` (§8.9).
+`RegisterFunction`/`RegisterModule` are the original, unscoped calls and
+keep targeting `ghost:` specifically, for embedding code written before
+scheme registration existed; `RegisterFunctionForScheme`/
+`RegisterModuleForScheme` are how a host claims a scheme that reads as its
+own rather than Ghost's. Both pairs write into the same kind of registry and
+resolve through the same `import` mechanism (§8.9), so there is no second
+convention to learn or keep in sync for a host that wants its own
+namespace — only which of the two calls to make.
 
 ### 10.4 Extending Ghost from Ghost itself
 
@@ -1244,8 +1285,9 @@ already meets — except where flagged.
 - [x] First-class functions, closures, default parameters
 - [x] Classes, single inheritance, traits/mixins, `this`/`super`
 - [x] Per-instance field initialization (no shared-mutable-default bug)
-- [x] Module system (`import`, named imports, `import *`, circular-import detection, `ghost:`-scheme standard library imports)
+- [x] Module system (`import`, named imports, `import *`, circular-import detection, `scheme:`-prefixed imports)
 - [x] Import-only standard library — `console`/`type` global, everything else imported by name (§8.9, §9.1)
+- [x] Embedder-claimable import schemes (`RegisterModuleForScheme`/`RegisterFunctionForScheme`, §10.3) — a Go host gets its own `host:name` namespace alongside `ghost:`
 - [x] Bounded recursion with a clean error instead of a stack overflow
 - [x] Structured, uniform error model with call traces and typo suggestions
 - [x] Constant folding and identifier-classification optimization pass

@@ -1,6 +1,7 @@
 package evaluator
 
 import (
+	"fmt"
 	"sort"
 	"strings"
 
@@ -20,20 +21,14 @@ import (
 func undefined(tok token.Token, name string, scope *object.Scope) *object.Error {
 	raised := object.NewError(fault.Name, tok, "`%s` is not defined", name)
 
-	// A name that is exactly a standard library module or function is
-	// probably not a typo at all — it is almost certainly someone reaching
-	// for `math`/`file`/... the way it used to work, before the standard
-	// library (`console`/`type` excepted) became import-only. That is a
-	// different mistake from a misspelling, and deserves a different help
-	// line: the import to write, not a "did you mean" pointing at itself.
-	if _, ok := library.Modules[name]; ok {
-		raised.WithHelp("`%s` is standard library, not a global — import it: `import %s from \"ghost:%s\"`", name, name, name)
-
-		return raised
-	}
-
-	if _, ok := library.Functions[name]; ok {
-		raised.WithHelp("`%s` is standard library, not a global — import it: `import { %s } from \"ghost:%s\"`", name, name, name)
+	// A name that is exactly a registered module or function — the standard
+	// library's, or one an embedder registered under a scheme of its own
+	// (library.RegisterModuleForScheme) — is probably not a typo at all. That
+	// is a different mistake from a misspelling, and deserves a different
+	// help line: the import to write, not a "did you mean" pointing at
+	// itself.
+	if schemes := library.Locate(name); len(schemes) > 0 {
+		raised.WithHelp("`%s` is not a global — import it: %s", name, importHints(schemes, name))
 
 		return raised
 	}
@@ -44,28 +39,45 @@ func undefined(tok token.Token, name string, scope *object.Scope) *object.Error 
 		return raised
 	}
 
-	// Nothing in scope was close, so try a near-miss on a standard library
-	// name too — `mathh.pi` should still point at `math`, just with the
-	// import it now needs rather than a bare "did you mean".
+	// Nothing in scope was close, so try a near-miss on a registered name
+	// too — `mathh.pi` should still point at `math`, just with the import it
+	// now needs rather than a bare "did you mean".
 	if suggestion, ok := nearestName(name, stdlibNames()); ok {
-		raised.WithHelp("did you mean the standard library `%s`? import it: `import %s from \"ghost:%s\"`", suggestion, suggestion, suggestion)
+		raised.WithHelp("did you mean `%s`? import it: %s", suggestion, importHints(library.Locate(suggestion), suggestion))
 	}
 
 	return raised
 }
 
-// stdlibNames lists every module and function the standard library registers,
-// import-only ones included, for suggesting a near-miss once no in-scope name
-// is close enough.
-func stdlibNames() []string {
-	names := make([]string, 0, len(library.Modules)+len(library.Functions))
+// importHints renders the `import "scheme:name"` to add, or — on the rare
+// occasion more than one scheme registers the same name — every scheme it
+// would have to be disambiguated between.
+func importHints(schemes []string, name string) string {
+	hints := make([]string, len(schemes))
 
-	for name := range library.Modules {
-		names = append(names, name)
+	for index, scheme := range schemes {
+		hints[index] = fmt.Sprintf("`import \"%s:%s\"`", scheme, name)
 	}
 
-	for name := range library.Functions {
-		names = append(names, name)
+	return strings.Join(hints, " or ")
+}
+
+// stdlibNames lists every module and function registered under any scheme —
+// the standard library's own and every embedder's — for suggesting a
+// near-miss once no in-scope name is close enough.
+func stdlibNames() []string {
+	names := make([]string, 0, 32)
+
+	for _, scheme := range library.Schemes() {
+		registry := library.Scheme(scheme)
+
+		for name := range registry.Modules {
+			names = append(names, name)
+		}
+
+		for name := range registry.Functions {
+			names = append(names, name)
+		}
 	}
 
 	return names

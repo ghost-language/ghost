@@ -114,3 +114,83 @@ func TestAPanicBecomesAnInternalError(t *testing.T) {
 		t.Error("an internal error should ask to be reported")
 	}
 }
+
+// An embedding host isn't limited to the standard library's own `ghost:`
+// import scheme — it can claim one of its own, so its scripts read as its
+// own rather than borrowing Ghost's namespace (a Go program embedding Ghost
+// as "Lumen" registering "font" under "lumen:", say).
+func TestEmbedderCanRegisterAModuleUnderItsOwnScheme(t *testing.T) {
+	methods := map[string]*object.LibraryFunction{
+		"name": {Name: "name", Function: func(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
+			return &object.String{Value: "Lumen Sans"}
+		}},
+	}
+
+	RegisterModuleForScheme("lumen", "font", methods, map[string]*object.LibraryProperty{})
+
+	instance := New()
+	instance.SetQuiet(true)
+	instance.SetFile("test.ghost")
+	instance.SetSource("import \"lumen:font\"\nfont.name()")
+
+	result := instance.Execute()
+
+	str, ok := result.(*object.String)
+
+	if !ok {
+		t.Fatalf("expected a string, got %T (%v)", result, result)
+	}
+
+	if str.Value != "Lumen Sans" {
+		t.Errorf("got=%q", str.Value)
+	}
+}
+
+// A standalone function registered under a custom scheme is reached the
+// bare way (`import "lumen:greet"`), the same as a standalone standard
+// library function (`import "ghost:type"` would work identically) — not
+// through the `from` form, which is for pulling members out of a module.
+func TestEmbedderCanRegisterAFunctionUnderItsOwnScheme(t *testing.T) {
+	RegisterFunctionForScheme("lumen", "greet", func(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
+		return &object.String{Value: "hi from lumen"}
+	})
+
+	instance := New()
+	instance.SetQuiet(true)
+	instance.SetFile("test.ghost")
+	instance.SetSource("import \"lumen:greet\"\ngreet()")
+
+	result := instance.Execute()
+
+	str, ok := result.(*object.String)
+
+	if !ok {
+		t.Fatalf("expected a string, got %T (%v)", result, result)
+	}
+
+	if str.Value != "hi from lumen" {
+		t.Errorf("got=%q", str.Value)
+	}
+}
+
+// Importing from a scheme nothing has ever registered under is a distinct,
+// named failure - not a generic "not found" indistinguishable from a
+// misspelled name within a real scheme.
+func TestImportingAnUnregisteredSchemeIsReported(t *testing.T) {
+	instance := New()
+	instance.SetQuiet(true)
+	instance.SetFile("test.ghost")
+	instance.SetSource("import \"nosuchscheme:thing\"")
+
+	result := instance.Execute()
+
+	raised, ok := result.(*object.Error)
+
+	if !ok {
+		t.Fatalf("expected an error, got %T", result)
+	}
+
+	if raised.Fault.Kind != fault.Import {
+		t.Errorf("got kind=%v, expected import", raised.Fault.Kind)
+	}
+}

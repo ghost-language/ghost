@@ -172,6 +172,18 @@ func RegisterModule(name string, methods map[string]*object.LibraryFunction, pro
 	library.RegisterModule(name, methods, properties)
 }
 
+// RegisterFunctionForScheme and RegisterModuleForScheme are RegisterFunction/
+// RegisterModule for a Go host that wants its own import prefix rather than
+// the standard library's `ghost:` — Lumen registering its own `font` module
+// so a script can write `import font from "lumen:font"`, for instance.
+func RegisterFunctionForScheme(scheme string, name string, function object.GoFunction) {
+	library.RegisterFunctionForScheme(scheme, name, function)
+}
+
+func RegisterModuleForScheme(scheme string, name string, methods map[string]*object.LibraryFunction, properties map[string]*object.LibraryProperty) {
+	library.RegisterModuleForScheme(scheme, name, methods, properties)
+}
+
 // Call invokes a function defined in the script, with the (optional) passed
 // arguments.
 func (ghost *Ghost) Call(function string, args []object.Object) object.Object {
