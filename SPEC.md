@@ -52,7 +52,7 @@ design.** Concretely, that means three commitments, in priority order:
 Ghost is **not** trying to be a general-purpose, standalone application
 language competing with Python or Node. It has no package manager, no
 concurrency primitives of its own (concurrency comes from the Go host — see
-§8.10 and §11), and no ambition to run outside a host process or a script file.
+§3 and §8.10), and no ambition to run outside a host process or a script file.
 It is, and should remain, a *scripting* language: something a larger system
 loads, configures, and calls into.
 
@@ -65,32 +65,32 @@ simply stops existing... made deliberately... and called out in the version's
 release notes"). Concretely, 1.0 should mean:
 
 - **The core language is complete for its stated feature set.** Classes,
-  traits, closures, the control-flow forms in §8.6, and the operator set in
-  §8.4 do what a reader coming from JS/TS/PHP expects them to do, with no
+  traits, closures, the control-flow forms in §7.6, and the operator set in
+  §7.4 do what a reader coming from JS/TS/PHP expects them to do, with no
   silent gaps (see §12 for where that is not yet true).
 - **Every standard library module is internally consistent** — one naming
   convention, one style of argument validation, one style of error — and
   externally complete for the domain it claims to own. `math` and `date` meet
   this bar today; `http` and `io` do not yet (§12).
 - **No script can crash the host.** This is already true in the general case
-  (`ghost.Execute` recovers panics — see §8.11) but the RNG data race in §13.1
+  (`ghost.Execute` recovers panics — see §7.11) but the RNG data race in §12.1
   is a live counterexample under concurrent use.
 - **The CLI and its own documentation agree with each other and with the
-  code.** They currently do not (§14).
+  code.** They currently do not (§12.4, §12.10).
 - **The naming and design conventions written down in `NAMING.md` are actually
   enforced**, not just documented — the property-vs-method inconsistencies in
-  §13.9 are exactly the kind of drift that document exists to prevent.
+  §13 are exactly the kind of drift that document exists to prevent.
 
 ## 3. Non-Goals
 
 Explicitly out of scope, so they are not mistaken for gaps:
 
 - **Exceptions, `try`/`catch`, or `throw`.** Ghost's error model is values, not
-  control flow (§8.11). This is a deliberate, load-bearing design decision
+  control flow (§7.11). This is a deliberate, load-bearing design decision
   documented at length in `CLAUDE.md`, not an oversight.
 - **Static typing or type annotations.** Ghost is dynamically typed throughout.
 - **A package manager or module registry.** `import` resolves `.ghost` files
-  on disk, next to the importing file (§8.9); there is no remote fetch, no
+  on disk, next to the importing file (§7.9); there is no remote fetch, no
   lockfile, no version resolution.
 - **Concurrency primitives in the language itself** (no `async`/`await`, no
   goroutine-equivalent, no channels). Concurrency, where it exists, comes from
@@ -98,7 +98,7 @@ Explicitly out of scope, so they are not mistaken for gaps:
   the one built-in example) — Ghost code itself is single-threaded per call.
 - **Access modifiers, static members, interfaces, or abstract classes.**
   Every class member is public; there is no `static`, `private`, `protected`,
-  `interface`, or `abstract` keyword (§8.7).
+  `interface`, or `abstract` keyword (§7.8).
 
 ## 4. Current Status
 
@@ -111,7 +111,7 @@ Explicitly out of scope, so they are not mistaken for gaps:
 | External dependencies | `github.com/peterh/liner` (REPL line editing) only |
 | Distribution | GitHub Releases via GoReleaser, Homebrew tap, `go install` |
 | CI | GitHub Actions: format check, vet, build, test, benchmarks (single-iteration, to catch parse breaks), GoReleaser config validation |
-| Test coverage | Present for scanner, parser, evaluator (per-feature files), object equality/broadcast, math, date, JSON, OS — no end-to-end coverage of the CLI flags themselves (which is how §14's `-i` gap went unnoticed) |
+| Test coverage | Present for scanner, parser, evaluator (per-feature files), object equality/broadcast, math, date, JSON, OS — no end-to-end coverage of the CLI flags themselves (which is how §12.4's `-i` gap went unnoticed) |
 
 ## 5. Architecture
 
@@ -133,18 +133,18 @@ Source text ──▶ Scanner ──▶ Parser ──▶ AST ──▶ Optimizer
 | `token` | Token type constants and the `Token` struct (lexeme, literal, line/column/length, file). |
 | `scanner` | Hand-written lexer. Produces tokens on demand (`ScanToken()`); collects lexical faults but keeps scanning past them. |
 | `parser` | Recursive-descent, Pratt-style parser (prefix/infix/postfix function tables keyed by token type, precedence climbing). One file per grammar construct. Collects faults, merges them with the scanner's, and resynchronizes at statement boundaries so one file reports every syntax error in a single pass rather than stopping at the first. |
-| `ast` | Plain data: one struct per node kind. `ast.Node`/`StatementNode`/`ExpressionNode`/`AssignmentNode` are empty marker interfaces with no shared fields or methods — see §13.11. |
+| `ast` | Plain data: one struct per node kind. `ast.Node`/`StatementNode`/`ExpressionNode`/`AssignmentNode` are empty marker interfaces with no shared fields or methods. |
 | `optimizer` | A conservative constant-folding pass (`optimizer.Optimize`) plus one-time classification of every identifier as a library global or an ordinary variable, so the evaluator can skip two map lookups per read of a local. Only rewrites a node when the result is guaranteed identical, including on the error path. |
 | `evaluator` | `Evaluate(node, scope)` — one big type switch, delegating to one `evaluate*` function per node kind, in `evaluator/evaluator.go`. |
 | `object` | Runtime value types (`Number`, `String`, `Boolean`, `List`, `Map`, `Function`, `Class`, `Instance`, `Trait`, `Super`, `Date`, `Error`, `Scope`, `Environment`, the three `Library*` wrapper types). Every value type implements `Method(name, token, args) (Object, bool)`. Shared argument-reading/validation helpers live in `object/arguments.go`. |
 | `library` | The registry (`library.Functions`, `library.Modules`) that global functions and modules install themselves into via `init()`. |
 | `library/functions` | Global (unqualified) functions: `print`, `type`. |
-| `library/modules` | The nine built-in modules — see §9. |
+| `library/modules` | The nine built-in modules — see §8. |
 | `fault` | The one error model: `Kind`, `Position`, `Frame` (call trace entries), `Fault` itself, and the single renderer (`fault/render.go`) that turns a fault into the boxed, captioned, underlined report every failure in Ghost prints. |
 | `source` | A process-wide registry of scanned source text, keyed by filename, so a fault raised long after parsing can still quote the line it happened on. |
 | `color` | Decides *whether* output can carry ANSI styling (`color.Detect`, honoring `NO_COLOR`/`TERM=dumb`/`FORCE_COLOR`/`CLICOLOR*`) and exposes styling only by *role* (`Error`, `Help`, `Gutter`, `Caret`, ...), never by raw escape code. |
 | `value` | Shared singleton instances: `value.TRUE`, `value.FALSE`, `value.NULL`, `value.BREAK`, `value.CONTINUE`. |
-| `ghost` | The embedding facade (`ghost.New()`, `.Execute()`, `.Call()`, `.SetQuiet()`, ...) — the one place a Go host talks to Ghost, and the one place a Go panic anywhere below it is recovered and turned into an internal `fault.Fault` (see §8.11). |
+| `ghost` | The embedding facade (`ghost.New()`, `.Execute()`, `.Call()`, `.SetQuiet()`, ...) — the one place a Go host talks to Ghost, and the one place a Go panic anywhere below it is recovered and turned into an internal `fault.Fault` (see §7.11). |
 | `log` | A small leveled logger used by the CLI and REPL themselves (not by scripts). |
 | `repl` | The interactive shell, built on `github.com/peterh/liner` for line editing and history. |
 | `cmd` | The `ghost` binary's `main()` and flag handling. |
@@ -193,7 +193,7 @@ index:
   property, `random.seed()` the method).
 
 Places the current codebase does not yet fully live up to this are tracked in
-§13.9 rather than repeated here.
+§13 rather than repeated here.
 
 ---
 
@@ -214,13 +214,13 @@ Places the current codebase does not yet fully live up to this are tracked in
   \\ \" \'`; any other escaped character is passed through literally
   (backslash included). Strings may span multiple lines literally.
 - **Template literals:** backtick-delimited, JS-style, with `${expr}`
-  interpolation (see §7.9). Interpolations nest (`` `${ `${x}` }` ``); the
+  interpolation (see §7.10). Interpolations nest (`` `${ `${x}` }` ``); the
   scanner tracks brace depth per open interpolation so a `}` belonging to a
   nested map literal or block does not close the interpolation early.
 - **Keywords** (30, case-sensitive, all lowercase): `and as break case class
   continue default else extends false for from function if import in new
   null or return super switch this trait true use while`.
-  `print` is **not** a keyword — see §13.4.
+  `print` is **not** a keyword — see §12.9.
 - **Statement separation:** a trailing `;` is optional and consumed when
   present; otherwise a statement simply ends where its grammar says it ends
   (there is no significant-newline rule and no automatic-semicolon-insertion
@@ -269,7 +269,7 @@ so a loop variable does not leak a stray binding into surrounding code, but
 *does* transparently shadow-and-restore an existing variable of the same name.
 
 There is no destructuring assignment (`[a, b] = list` or `{a, b} = map` are
-not supported — see §12) and no chained assignment (`a = b = 5` does not
+not supported — see §11) and no chained assignment (`a = b = 5` does not
 parse as one assignment to both).
 
 ### 7.4 Operators
@@ -278,15 +278,15 @@ parse as one assignment to both).
 |---|---|---|
 | Arithmetic | `+ - * / %` | On numbers: standard, with the int/float promotion rules above. On lists: elementwise with **NumPy-style broadcasting** — see below. On strings: only `+` (concatenation); `-`/`*`/`/`/`%` on strings are a type error. |
 | Comparison | `< <= > >=` | Numbers and strings only (strings compare lexicographically). **Not supported between two lists** — deliberately: neither an elementwise nor a lexicographic reading was judged obviously correct (`CLAUDE.md`). Dates support `< <= > >=` as instant ordering. |
-| Equality | `== !=` | See §7.5 — this is one of the language's most distinctive (and most incomplete — §13.2) behaviors. |
-| Logical | `and`, `or`, `!` | Word operators, not `&& \|\|` — there is no `&&`/`\|\|` token at all. `!` is the only prefix logical operator. Both operands of `and`/`or` are evaluated as ordinary booleans (no built-in short-circuit special-casing beyond ordinary infix evaluation order: left is evaluated, then right, then combined — see §13 note on constant folding for why both sides always run). |
+| Equality | `== !=` | See §7.5 — this is one of the language's most distinctive (and most incomplete — §12.2) behaviors. |
+| Logical | `and`, `or`, `!` | Word operators, not `&& \|\|` — there is no `&&`/`\|\|` token at all. `!` is the only prefix logical operator. Both operands of `and`/`or` are evaluated as ordinary booleans (no built-in short-circuit special-casing beyond ordinary infix evaluation order: left is evaluated, then right, then combined). |
 | Unary | `-`, `!` | `-` negates a number only. `!` follows Ghost's truthiness rules (§7.5), not "must be boolean." |
 | Range | `a..b` | Inclusive integer range, producing a `list`: `1..5` → `[1, 2, 3, 4, 5]`. Descending (`a > b`) produces an empty list rather than counting down. Not foldable at compile time (would require a shared mutable literal). |
 | Ternary | `cond ? a : b` | Standard. |
 | Assignment | `=` | Also declares. Valid targets: a bare identifier, an index expression (`list[0] =`, `map["k"] =`), or a property expression (`instance.field =`, `map.key =`). |
 | Compound assignment | `+= -= *= /=` | **No `%=`.** Desugars to `target = target OP value`. |
 | Increment/decrement | `++ --` | Postfix only (`x++`, not `++x`); operates only on a variable holding a number. |
-| Indexing | `a[b]` | Lists (integer index), maps (any hashable key), strings (integer index, returns a one-character string). Out-of-range list/string indices and missing map keys all answer `null` rather than erroring — contrast with `list.slice()`, which errors (see §13.6). |
+| Indexing | `a[b]` | Lists (integer index), maps (any hashable key), strings (integer index, returns a one-character string). Out-of-range list/string indices and missing map keys all answer `null` rather than erroring — contrast with `list.slice()`, which errors (see §12.6). |
 | Member access | `a.b`, `a.b()` | Property read/assignment vs. method call, disambiguated by whether `(` follows. |
 
 **List broadcasting** (`object.Broadcast`, `object/broadcast.go`) is the same
@@ -323,7 +323,7 @@ depending on the pair of types involved:
 | Both `list` | **Deep structural equality**, to any depth (`object.ValuesEqual`/`ListsEqual`). |
 | Both `instance` | **Identity** — two separate instances with identical fields are not `==`. |
 | Both `date` | Instant equality. |
-| Both any other same type (`map`, `function`, `class`, `trait`, ...) | **Type error** — see §13.2; this is very likely an unintended gap, not a design choice. |
+| Both any other same type (`map`, `function`, `class`, `trait`, ...) | **Type error** — see §12.2; this is very likely an unintended gap, not a design choice. |
 | Different, non-null types (`5 == "5"`, `[1] == {}`) | **Type error**, not `false`. This is deliberate and covered by an explicit test (`evaluator_test.go`), consistent with `CLAUDE.md`'s "operators keep one meaning" principle — but it is a sharp departure from JS/PHP/Python's loose (or at least non-throwing) cross-type comparison, and is likely to be the single most-reported "surprise" from developers new to Ghost. Worth an explicit, prominent callout in user-facing docs regardless of whether it stays as-is for 1.0. |
 
 ### 7.6 Control Flow
@@ -337,13 +337,13 @@ depending on the pair of types involved:
   increment/decrement, but not an arbitrary expression.
 - **`for (key, value in iterable) { }`** and **`for (value in iterable) { }`**
   — iterates a `list` (key = integer index) or a `map` (key = the map key,
-  in Go's randomized map order — see §13.5). Iterating anything else is a
+  in Go's randomized map order — see §12.5). Iterating anything else is a
   type error with the help text *"`for ... in` walks a list or a map."*
 - **`switch (value) { case a { } case b, c { } default { } }`** — this is a
   **match-expression**, not a C-style switch: there is no fallthrough, no
   `break` is needed or accepted between cases, and a `case` may list several
   comma-separated values that all run the same block. At most one `default`
-  is allowed (a second is a parse error). See §13.1 for a correctness gap in
+  is allowed (a second is a parse error). See §12.3 for a correctness gap in
   how case values are compared.
 - **`break`** and **`continue`** — valid inside `while`, `for`, and
   `for ... in`; propagate through nested blocks via the same
@@ -376,7 +376,7 @@ add = function(a, b) { return a + b }   // anonymous, assignable
   the missing parameters unbound (reading them raises the ordinary
   "not defined" name error, not a dedicated arity error — user-defined
   functions get no arity checking at all, unlike every library function and
-  method, which validate arity strictly; see §12).
+  method, which validate arity strictly; see §11).
 - Recursion is bounded at **4096** call frames (`evaluator/call.go`,
   `maxCallDepth`), reported as an ordinary value error rather than a Go
   stack overflow, and tracked per-`Scope` (not a shared global counter) so
@@ -441,7 +441,7 @@ new Dog("Fido").shout()
 - **No static members, no access modifiers (`public`/`private`/`protected`),
   no `interface`, no `abstract`, no getters/setters syntax.** Every member is
   a plain, public, instance-level field or method (§3 — deliberate for now,
-  tracked as an open question in §15).
+  tracked as an open question in §14).
 - Instantiation is **`new ClassName(args)`**; `ClassName.new()` is explicitly
   rejected at parse time with a message pointing at the correct syntax
   (leftover PHP/old-JS muscle memory is anticipated and corrected, not just
@@ -469,7 +469,7 @@ import * from "math_ext"               // everything
   failure, with a call frame naming the import that pulled it in.
 - `import name from "..."` for a name the module does not export suggests
   the nearest name it does, the same typo-correction machinery used
-  everywhere else (§8.11).
+  everywhere else (§7.11).
 
 ### 7.10 Template Literals
 
@@ -537,7 +537,7 @@ that *does* panic is recovered at the top of `Execute` and reported as an
 `Internal` fault asking the reader to file a bug, with the Go stack trace
 attached only when `GHOST_DEBUG` is set in the environment. The one
 documented exception to "nothing crashes the host" is the RNG data race
-described in §13.1, which is a real gap in that guarantee under concurrent
+described in §12.1, which is a real gap in that guarantee under concurrent
 use, not a deliberate carve-out.
 
 ---
@@ -554,7 +554,7 @@ shared helpers in `object/arguments.go` (wrapped, for modules, by
 
 | Function | Signature | Behavior |
 |---|---|---|
-| `print` | `print(...values)` | Writes each argument's `String()`, space-joined, plus a trailing newline, to the current output writer. Zero arguments prints a bare blank line. Not arity-checked (variadic by design). Not a keyword — see §13.4. |
+| `print` | `print(...values)` | Writes each argument's `String()`, space-joined, plus a trailing newline, to the current output writer. Zero arguments prints a bare blank line. Not arity-checked (variadic by design). Not a keyword — see §12.9. |
 | `type` | `type(value)` | Returns the value's type name as a `string` — the exact same name used in every error message (§7.2). Arity: exactly 1. |
 
 ### 8.2 Built-in Methods on Core Types
@@ -575,7 +575,7 @@ the module system.
 | `toString()` | 0 | |
 
 *No `ceil()` instance method* despite `round`/`floor` both existing — only
-reachable via `math.ceil()` (§13.10). No `abs()`, `pow()`, `sqrt()`,
+reachable via `math.ceil()` (§11). No `abs()`, `pow()`, `sqrt()`,
 `clamp()`, or any of the `isX` predicates as instance methods either; all of
 those live only in the `math` module.
 
@@ -583,7 +583,7 @@ those live only in the `math` module.
 
 | Method | Arity | Behavior |
 |---|---|---|
-| `find(subject)` | 1 | **The string itself is compiled as a regular expression**; `subject` is the text searched. Returns the first match, or `""` if none. See §13.7. |
+| `find(subject)` | 1 | **The string itself is compiled as a regular expression**; `subject` is the text searched. Returns the first match, or `""` if none. See §12.7. |
 | `findAll(subject)` | 1 | As `find`, but returns a `list` of the submatches of the *first* match (despite the name, this does not find every match in the subject — likely a bug worth a closer look; it calls `FindStringSubmatch`, not `FindAllString`). |
 | `matches(subject)` | 1 | As `find`, returning a `boolean`. |
 | `format(...args)` | any | `fmt.Sprintf`-style formatting using the receiver as the format string and each argument's `String()`. |
@@ -598,7 +598,7 @@ those live only in the `math` module.
 | `trim()` / `trimStart()` / `trimEnd()` | 0 | Whitespace trim. |
 
 *No* `contains`/`includes`, `indexOf`, `repeat`, `padStart`/`padEnd`,
-`charAt`/`at`, `slice`/`substring`, `reverse`, or `isEmpty` — see §12.
+`charAt`/`at`, `slice`/`substring`, `reverse`, or `isEmpty` — see §11.
 
 **`list`**
 
@@ -618,14 +618,14 @@ those live only in the `math` module.
 | `push(value)` | 1 | Mutates in place; returns the new length. |
 | `pop()` | 0 | Mutates in place; removes and returns the last element, `null` if empty. |
 | `shift()` | 0 | Mutates in place; removes and returns the first element, `null` if empty. |
-| `slice(start[, end])` | 1–2 | New list; `end` defaults to the list's length. **Out-of-range `start`/`end` is an `Index` error** — contrast with `[]` indexing, which is lenient (§13.6). |
+| `slice(start[, end])` | 1–2 | New list; `end` defaults to the list's length. **Out-of-range `start`/`end` is an `Index` error** — contrast with `[]` indexing, which is lenient (§12.6). |
 | `join(separator)` | 1 | String-joins each element's `String()`. |
 | `length()` | 0 | |
 | `toString()` | 0 | |
 
 *No* `indexOf`/`find`/`findIndex`, `flatten`, `some`/`any`, `every`/`all`,
 `splice`/`insertAt`/`removeAt`, `fill`, `chunk`, `flatMap`, or `isEmpty` —
-see §12. There is also no `push`-equivalent that inserts at an arbitrary
+see §11. There is also no `push`-equivalent that inserts at an arbitrary
 index or a front-insert (`unshift`).
 
 **`map`**
@@ -635,16 +635,16 @@ index or a front-insert (`unshift`).
 | `get(key[, default])` | 1–2 | `default` if given and the key is absent, else `null`. |
 | `has(key)` | 1 | True if the key is present, regardless of its value (distinguishes "absent" from "present and `null`"). |
 | `set(key, value)` | 2 | Mutates in place; returns the map itself (chainable). |
-| `keys()` / `values()` | 0 | Returns a `list`, in Go's randomized map-iteration order — see §13.5. |
+| `keys()` / `values()` | 0 | Returns a `list`, in Go's randomized map-iteration order — see §12.5. |
 | `merge(other)` | 1 | New map; on a key collision, `other`'s value wins (same rule a later assignment to the same key would follow). |
 | `length()` | 0 | |
 
 *No `delete`/`remove` method* — once a key is set, there is no way to
-remove it from a Ghost script (§12, and see §13.2 for the related equality
+remove it from a Ghost script (§11, and see §12.2 for the related equality
 gap). No `entries()`, no `forEach` (use `for ... in`).
 
 **`date`** — `toString()` only (ISO-8601/RFC3339, always UTC). Every other
-date operation is a function in the `date` module (§8.4), not a method,
+date operation is a function in the `date` module (§8.5), not a method,
 which keeps `Date` itself immutable and side-effect-free and is a
 deliberate design choice modeled on `date-fns` rather than a mutable
 built-in `Date` class — see the doc comment on `object.Date`. Dates support
@@ -667,7 +667,7 @@ callback, is respected — see §8.10), not directly to the process's stdout.
 | `write(...values)` | any | Like `log`, but **no trailing newline** — the `write`/`writeln` distinction Symfony's Console component draws, and the reason it is named apart from `print`. |
 | `newLine()` | 0 | Writes a single newline. |
 | `read([prompt])` | 0–1 | Reads one line from stdin (printing `prompt` first, if given); `null` at EOF. |
-| `clear()` | 0 | Clears the terminal (`cls`/`clear`, shelling out — see §12 for the portability implication). |
+| `clear()` | 0 | Clears the terminal (`cls`/`clear`, shelling out to the OS rather than using an in-process terminal library). |
 
 No properties currently registered on `console` (`ConsoleProperties` exists
 but is empty).
@@ -692,7 +692,7 @@ natural log without a base).
 **Trigonometry** (radians throughout) — `sin`, `cos`, `tan`, `asin`, `acos`,
 `atan`, `sinh`, `cosh`, `tanh`, `asinh`, `acosh`, `atanh` (arity 1);
 `atan2(y, x)` (arity 2); `degrees(x)`, `radians(x)` (arity 1, unit
-conversion — see §13.9 for a naming-convention note).
+conversion — see §13 for a naming-convention note).
 
 **Special functions** — `gamma`, `logGamma`, `erf`, `erfc` (arity 1).
 
@@ -716,7 +716,7 @@ variation, distinct from `random`).
 `randomInt(low, high)` (arity 1–2, inclusive whole number; the one way to
 get a whole random number, since `random.random()` always answers a float),
 `randomSeed(n)` (arity 1, seeds the same generator `random.seed()` seeds —
-see §13.1 for the concurrency gap in this shared state).
+see §12.1 for the concurrency gap in this shared state).
 
 **Statistics** (reductions — each accepts a flat argument list, a single
 list, or a list of lists, flattened before reducing; arity ≥1) — `sum`,
@@ -783,7 +783,7 @@ layout — see below).
 rolling over — Jan 31 + 1 month = Feb 28/29, not Mar 2/3),
 `addYears`/`subYears`, `addHours`, `addMinutes`, `addSeconds` (all arity 2:
 date, count). *No `subHours`/`subMinutes`/`subSeconds`* — asymmetric with
-every other pair (§12).
+every other pair (§11).
 
 **Predicates** — `isSameDay(a, b)`, `isWeekend(date)`, `isLeapYear(date)`.
 
@@ -794,7 +794,7 @@ a)` always, never off-by-one from truncation direction).
 **Period boundaries** — `startOfDay`, `endOfDay`, `startOfMonth`,
 `endOfMonth`. *No `startOfWeek`/`endOfWeek`/`startOfYear`/`endOfYear`* —
 gap relative to the `date-fns` surface this module is explicitly modeled on
-(§12).
+(§11).
 
 **Components** — `year`, `month`, `day`, `hour`, `minute`, `second`,
 `weekday` (0 = Sunday, matching `date-fns`'s `getDay`).
@@ -815,7 +815,7 @@ letters), `H`/`h` (24h/12h hour), `m` (minute), `s` (second), `a` (AM/PM).
 `SeedRandom` is also exported at the Go level so an embedding host can fix
 reproducibility before a script ever runs. **This generator is shared with
 `math.randomInt`/`math.randomSeed`, and neither module synchronizes access
-to it** — see §13.1, the most serious correctness gap found in this review.
+to it** — see §12.1, the most serious correctness gap found in this review.
 
 ### 8.7 `os`
 
@@ -827,7 +827,7 @@ to it** — see §13.1, the most serious correctness gap found in this review.
 | `name` *(property)* | — | The OS name (`runtime.GOOS`: `"linux"`, `"darwin"`, `"windows"`, ...). |
 
 Note the property/method inconsistency between `args()` and `name` — both
-are pure, argument-free reads of process state; see §13.9.
+are pure, argument-free reads of process state; see §13.
 
 ### 8.8 `io`
 
@@ -844,7 +844,7 @@ regardless of where `ghost` was invoked from.
 This is the entire filesystem surface: no `exists`, `delete`/`remove`,
 `mkdir`, `listDir`/`readDir`, `stat`, `copy`, `move`/`rename`, or streaming
 read/write. Adequate for simple config/log scripts; a real gap for anything
-that wants to act as a build tool or file-management script (§12).
+that wants to act as a build tool or file-management script (§11).
 
 ### 8.9 `json`
 
@@ -872,7 +872,7 @@ parse a route parameter (`/:id`) — everything beyond "handle a path,
 write a body" is left to the script to build by hand today. That may be
 entirely appropriate for what `http` is meant to demonstrate rather than
 replace, but it is worth deciding deliberately for 1.0 rather than by
-default (§12, §15).
+default (§11, §14).
 
 ### 8.11 `ghost`
 
@@ -882,7 +882,7 @@ Reflective/meta operations over the running Ghost instance itself.
 |---|---|---|
 | `abort(reason)` | 1 | `reason` a `string` raises it as a `Value` error (the one place a *script* raises an error deliberately, rather than an operation failing on its own); `reason` `null` is a silent no-op; anything else is an `Argument` error. |
 | `execute(code)` | 1 | Parses and evaluates `code` as a fresh Ghost program in the *current* scope — dynamic `eval`, in effect. Its own syntax errors are reported as this call's failure. |
-| `extend(pluginPath)` | 1 | Loads a Go plugin (`.so`) via Go's `plugin` package and calls its exported `Register()` function, which is expected to call back into `library.RegisterFunction`/`RegisterModule`. **Linux/macOS only — the Go `plugin` package has no Windows support**, a real portability gap given Ghost ships Windows binaries (§13.8). |
+| `extend(pluginPath)` | 1 | Loads a Go plugin (`.so`) via Go's `plugin` package and calls its exported `Register()` function, which is expected to call back into `library.RegisterFunction`/`RegisterModule`. **Linux/macOS only — the Go `plugin` package has no Windows support**, a real portability gap given Ghost ships Windows binaries (§12.8). |
 | `identifiers()` | 0 | Every name currently bound in scope, as a `list` of strings (introspection/debugging aid). |
 | `version` *(property)* | — | The running Ghost version string. |
 
@@ -902,8 +902,8 @@ ghost [flags] [file]
 | `file` | Executes the file, then exits with status 1 if it failed. | Works. |
 | `-h` | Prints usage and exits. | Works. |
 | `-v` | Prints the binary name and version. | Works. |
-| `-t` | Prints how long execution took. | Works, but **undocumented** in `helpCommand()`'s own printed help (§14). |
-| `-i` | *(documented)* Runs a file, then drops into a REPL with the script's environment intact. | **Not implemented** — not registered as a flag at all in `cmd/ghost.go`. Documented in both `README.md` and the CLI's own `-h` output. See §14. |
+| `-t` | Prints how long execution took. | Works, but **undocumented** in `helpCommand()`'s own printed help (§12.10). |
+| `-i` | *(documented)* Runs a file, then drops into a REPL with the script's environment intact. | **Not implemented** — not registered as a flag at all in `cmd/ghost.go`. Documented in both `README.md` and the CLI's own `-h` output. See §12.4. |
 
 ### 9.2 REPL
 
@@ -936,7 +936,7 @@ ghost.RegisterModule("myModule", methods, properties)
 `RegisterFunction`/`RegisterModule` are process-global (they write into the
 shared `library.Functions`/`library.Modules` maps), so a Go program hosting
 more than one independent Ghost configuration cannot scope registrations
-per-instance today — worth deciding whether that matters for 1.0 (§15).
+per-instance today — worth deciding whether that matters for 1.0 (§14).
 
 ### 9.4 Extending Ghost from Ghost itself
 
@@ -989,14 +989,14 @@ where flagged.
 - [x] REPL with history and line editing
 - [x] File execution with exit-status propagation
 - [x] `-h`/`-v`/`-t` CLI flags
-- [ ] `-i` CLI flag — documented, not implemented (§14)
+- [ ] `-i` CLI flag — documented, not implemented (§12.4)
 
 ---
 
 ## 11. Gap Analysis — Missing Functionality for 1.0
 
 Organized by area, in roughly descending order of how likely each is to be
-hit by an ordinary user. None of these are "bugs" in the sense of §13 — they
+hit by an ordinary user. None of these are "bugs" in the sense of §12 — they
 are absences, and each is a judgment call about whether it belongs in the
 1.0 surface or is deliberately out of scope (§3).
 
@@ -1300,3 +1300,8 @@ before 1.0:
 6. Should cross-type `==`/`!=` (§12.12) continue to raise a type error, or
    return `false` the way most host languages in Ghost's stated inspiration
    set (JS, PHP, even Python) do?
+7. Does hosting more than one independent Ghost configuration in a single Go
+   process need to be supported? `RegisterFunction`/`RegisterModule` are
+   process-global today (§9.3), which is fine for a single embedded
+   interpreter but would leak registrations across configurations for a host
+   that runs several.
