@@ -9,12 +9,29 @@ import (
 
 	"ghostlang.org/x/ghost/ast"
 	"ghostlang.org/x/ghost/fault"
+	"ghostlang.org/x/ghost/library"
 	"ghostlang.org/x/ghost/object"
 	"ghostlang.org/x/ghost/optimizer"
 	"ghostlang.org/x/ghost/parser"
 	"ghostlang.org/x/ghost/scanner"
 	"ghostlang.org/x/ghost/token"
 )
+
+// nativeScheme marks an import path as naming a standard library module
+// rather than a `.ghost` file on disk: `import math from "ghost:math"`. It is
+// how the whole standard library, `console` and `type` excepted (see
+// library.IsGlobal), stops being ambiently available and becomes something a
+// script opts into by name — the same posture Deno's `node:`-prefixed
+// builtins take.
+const nativeScheme = "ghost:"
+
+func isNativeModule(path string) bool {
+	return strings.HasPrefix(path, nativeScheme)
+}
+
+func nativeModuleName(path string) string {
+	return strings.TrimPrefix(path, nativeScheme)
+}
 
 // Imports are process-wide: a module is read, evaluated, and kept, so that
 // importing it from two places runs it once. That makes this shared state, and
@@ -64,6 +81,10 @@ func lookupImport(filename string) (*object.Scope, bool) {
 // are shared with evaluateImportFrom for that reason); every import of it
 // still has to bind its own name into the importing scope.
 func evaluateImport(node *ast.Import, scope *object.Scope) object.Object {
+	if isNativeModule(node.Path.Value) {
+		return evaluateNativeImport(node, scope)
+	}
+
 	filename, err := resolveModule(node.Token, node.Path.Value, scope)
 
 	if err != nil {
@@ -120,7 +141,192 @@ func moduleValue(moduleScope *object.Scope) *object.Map {
 	return &object.Map{Pairs: pairs}
 }
 
+// evaluateNativeImport handles `import name from "ghost:name"` and `import
+// name as alias from "ghost:name"`: the whole-module form of a standard
+// library import. The module itself — the same *object.LibraryModule a bare
+// `console` resolves to — is bound directly, so dot access (`math.pi`,
+// `math.sqrt()`) works exactly as it does on the still-global modules; only
+// how the name reaches the scope differs.
+func evaluateNativeImport(node *ast.Import, scope *object.Scope) object.Object {
+	name := nativeModuleName(node.Path.Value)
+
+	value, err := lookupNativeBinding(node.Token, name)
+
+	if err != nil {
+		return err
+	}
+
+	binding := name
+
+	if node.Alias != nil {
+		binding = node.Alias.Value
+	}
+
+	scope.Environment.Set(binding, value)
+
+	return nil
+}
+
+// evaluateNativeImportFrom handles `import { a, b as c } from "ghost:name"`
+// and `import * from "ghost:name"` against the standard library. A method
+// pulls in the same *object.LibraryFunction a dotted call would use; a
+// property is evaluated once, immediately, since there is no lazy-getter
+// value to bind — `import { pi } from "ghost:math"` binds a plain number, the
+// way `math.pi` would read as one.
+func evaluateNativeImportFrom(node *ast.ImportFrom, scope *object.Scope) object.Object {
+	name := nativeModuleName(node.Path.Value)
+
+	module, err := lookupNativeModule(node.Token, name)
+
+	if err != nil {
+		return err
+	}
+
+	if node.Everything {
+		for methodName, function := range module.Methods {
+			scope.Environment.Set(methodName, function)
+		}
+
+		for propertyName, property := range module.Properties {
+			value := unwrapCall(node.Token, property, nil, scope)
+
+			if isError(value) {
+				return value
+			}
+
+			scope.Environment.Set(propertyName, value)
+		}
+
+		return nil
+	}
+
+	for alias, identifier := range node.Identifiers {
+		if function, ok := module.Methods[identifier.Value]; ok {
+			scope.Environment.Set(alias, function)
+
+			continue
+		}
+
+		if property, ok := module.Properties[identifier.Value]; ok {
+			value := unwrapCall(node.Token, property, nil, scope)
+
+			if isError(value) {
+				return value
+			}
+
+			scope.Environment.Set(alias, value)
+
+			continue
+		}
+
+		raised := object.NewError(fault.Import, node.Token, "module `%s` does not define `%s`", name, identifier.Value)
+
+		if suggestion, ok := nearestName(identifier.Value, nativeModuleExports(module)); ok {
+			raised.WithHelp("did you mean `%s`?", suggestion)
+		}
+
+		return raised
+	}
+
+	return nil
+}
+
+// lookupNativeModule resolves a `ghost:`-scheme import path against the
+// standard library's own module registry (library.Modules), for the
+// `import { a, b } from "ghost:name"` / `import * from "ghost:name"` forms,
+// which need something with methods and properties to pull members out of.
+// It works for embedder-registered modules too — `ghost.extend` (§9.11)
+// calls the same RegisterModule this reads from — so a plugin's module
+// becomes importable the moment it registers, with no separate mechanism to
+// keep in sync.
+func lookupNativeModule(tok token.Token, name string) (*object.LibraryModule, *object.Error) {
+	if module, ok := library.Modules[name]; ok {
+		return module, nil
+	}
+
+	if _, ok := library.Functions[name]; ok {
+		return nil, object.NewError(fault.Import, tok, "`%s` is a standalone function, not a module", name).
+			WithHelp("import it directly: `import \"ghost:%s\"`", name)
+	}
+
+	raised := object.NewError(fault.Import, tok, "no standard library module named `%s`", name)
+
+	if suggestion, ok := nearestName(name, nativeModuleNames()); ok {
+		raised.WithHelp("did you mean `import { ... } from \"ghost:%s\"`?", suggestion)
+	}
+
+	return nil, raised
+}
+
+// lookupNativeBinding resolves a `ghost:`-scheme import path for the
+// whole-value forms, `import name from "ghost:name"` and `import name as
+// alias from "ghost:name"`, which bind the standard library entry itself —
+// a module (dot access works exactly as it does on `console`) or a
+// standalone function (directly callable), whichever `name` turns out to be.
+func lookupNativeBinding(tok token.Token, name string) (object.Object, *object.Error) {
+	if module, ok := library.Modules[name]; ok {
+		return module, nil
+	}
+
+	if function, ok := library.Functions[name]; ok {
+		return function, nil
+	}
+
+	raised := object.NewError(fault.Import, tok, "no standard library module or function named `%s`", name)
+
+	if suggestion, ok := nearestName(name, append(nativeModuleNames(), nativeFunctionNames()...)); ok {
+		raised.WithHelp("did you mean `import \"ghost:%s\"`?", suggestion)
+	}
+
+	return nil, raised
+}
+
+// nativeModuleNames lists every module registered in the standard library
+// (built-in and embedder-added alike), for suggesting the one a misspelled
+// `ghost:` import path probably meant.
+func nativeModuleNames() []string {
+	names := make([]string, 0, len(library.Modules))
+
+	for name := range library.Modules {
+		names = append(names, name)
+	}
+
+	return names
+}
+
+// nativeFunctionNames is nativeModuleNames for standalone library functions.
+func nativeFunctionNames() []string {
+	names := make([]string, 0, len(library.Functions))
+
+	for name := range library.Functions {
+		names = append(names, name)
+	}
+
+	return names
+}
+
+// nativeModuleExports lists the names a `ghost:` module actually offers —
+// its methods and its properties together — for suggesting the one a
+// misspelled `import { x } from "ghost:..."` probably meant.
+func nativeModuleExports(module *object.LibraryModule) []string {
+	names := make([]string, 0, len(module.Methods)+len(module.Properties))
+
+	for name := range module.Methods {
+		names = append(names, name)
+	}
+
+	for name := range module.Properties {
+		names = append(names, name)
+	}
+
+	return names
+}
+
 func evaluateImportFrom(node *ast.ImportFrom, scope *object.Scope) object.Object {
+	if isNativeModule(node.Path.Value) {
+		return evaluateNativeImportFrom(node, scope)
+	}
+
 	filename, err := resolveModule(node.Token, node.Path.Value, scope)
 
 	if err != nil {

@@ -20,11 +20,55 @@ import (
 func undefined(tok token.Token, name string, scope *object.Scope) *object.Error {
 	raised := object.NewError(fault.Name, tok, "`%s` is not defined", name)
 
+	// A name that is exactly a standard library module or function is
+	// probably not a typo at all — it is almost certainly someone reaching
+	// for `math`/`file`/... the way it used to work, before the standard
+	// library (`console`/`type` excepted) became import-only. That is a
+	// different mistake from a misspelling, and deserves a different help
+	// line: the import to write, not a "did you mean" pointing at itself.
+	if _, ok := library.Modules[name]; ok {
+		raised.WithHelp("`%s` is standard library, not a global — import it: `import %s from \"ghost:%s\"`", name, name, name)
+
+		return raised
+	}
+
+	if _, ok := library.Functions[name]; ok {
+		raised.WithHelp("`%s` is standard library, not a global — import it: `import { %s } from \"ghost:%s\"`", name, name, name)
+
+		return raised
+	}
+
 	if suggestion, ok := nearestName(name, visibleNames(scope)); ok {
 		raised.WithHelp("did you mean `%s`?", suggestion)
+
+		return raised
+	}
+
+	// Nothing in scope was close, so try a near-miss on a standard library
+	// name too — `mathh.pi` should still point at `math`, just with the
+	// import it now needs rather than a bare "did you mean".
+	if suggestion, ok := nearestName(name, stdlibNames()); ok {
+		raised.WithHelp("did you mean the standard library `%s`? import it: `import %s from \"ghost:%s\"`", suggestion, suggestion, suggestion)
 	}
 
 	return raised
+}
+
+// stdlibNames lists every module and function the standard library registers,
+// import-only ones included, for suggesting a near-miss once no in-scope name
+// is close enough.
+func stdlibNames() []string {
+	names := make([]string, 0, len(library.Modules)+len(library.Functions))
+
+	for name := range library.Modules {
+		names = append(names, name)
+	}
+
+	for name := range library.Functions {
+		names = append(names, name)
+	}
+
+	return names
 }
 
 // tooDeep reports a recursion that never bottomed out. It is the one error in
@@ -146,7 +190,11 @@ func indexTypeError(node *ast.Index, left object.Object, index object.Object) *o
 }
 
 // visibleNames collects every name the code at this point could have meant: the
-// bindings in scope, walking outwards, and the library globals.
+// bindings in scope, walking outwards, and the names reachable without an
+// import (console, type). The rest of the standard library is deliberately
+// left out here — a near-miss on an import-only name is handled by undefined()
+// itself, which offers the import to write rather than pretending the bare
+// name would resolve.
 func visibleNames(scope *object.Scope) []string {
 	names := make([]string, 0, 32)
 
@@ -157,11 +205,15 @@ func visibleNames(scope *object.Scope) []string {
 	}
 
 	for name := range library.Functions {
-		names = append(names, name)
+		if library.IsGlobal(name) {
+			names = append(names, name)
+		}
 	}
 
 	for name := range library.Modules {
-		names = append(names, name)
+		if library.IsGlobal(name) {
+			names = append(names, name)
+		}
 	}
 
 	return names

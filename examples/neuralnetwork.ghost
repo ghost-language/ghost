@@ -5,6 +5,9 @@
 // matrix of four, which works because shapes line up from the right and the
 // row stretches down the batch.
 
+import "ghost:math"
+import "ghost:random"
+
 math.randomSeed(7)
 
 function sigmoid(z) { return 1 / (1 + math.exp(z * -1)) }
@@ -51,14 +54,14 @@ for (epoch = 0; epoch < 4000; epoch++) {
     bias1 -= columnSums(delta1, batch) * rate
 
     if (epoch % 1000 == 0) {
-        print("epoch " + epoch.toString() + "  loss " + math.round(math.sum(error * error), 5).toString())
+        console.log("epoch " + epoch.toString() + "  loss " + math.round(math.sum(error * error), 5).toString())
     }
 }
 
-print("")
+console.log("")
 hidden = sigmoid(math.dot(inputs, weights1) + bias1)
 output = sigmoid(math.dot(hidden, weights2) + bias2)
 
 for (i = 0; i < 4; i++) {
-    print(inputs[i].toString() + " -> " + math.round(output[i][0], 3).toString() + "  (want " + targets[i][0].toString() + ")")
+    console.log(inputs[i].toString() + " -> " + math.round(output[i][0], 3).toString() + "  (want " + targets[i][0].toString() + ")")
 }

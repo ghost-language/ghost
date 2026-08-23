@@ -92,7 +92,7 @@ func TestAPanicBecomesAnInternalError(t *testing.T) {
 	instance := New()
 	instance.SetQuiet(true)
 	instance.SetFile("test.ghost")
-	instance.SetSource("explode()")
+	instance.SetSource("import \"ghost:explode\"\nexplode()")
 
 	result := instance.Execute()
 

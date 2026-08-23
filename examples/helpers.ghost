@@ -1,15 +1,15 @@
 function strUpper() {
-    print("strUpper called")
+    console.log("strUpper called")
 }
 
 function strLower() {
-    print("strLower called")
+    console.log("strLower called")
 }
 
 function strReverse() {
-    print("strReverse")
+    console.log("strReverse")
 }
 
 function isString() {
-    print("isString")
+    console.log("isString")
 }

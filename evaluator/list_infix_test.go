@@ -86,10 +86,10 @@ func TestListEquality(t *testing.T) {
 		// The operators and the math module's methods are the same operation
 		// reached two ways, so they have to agree exactly - including on the
 		// broadcasting rule.
-		{"[1, 2] + [3, 4] == math.add([1, 2], [3, 4])", true},
-		{"[[1, 2], [3, 4]] + [10, 20] == math.add([[1, 2], [3, 4]], [10, 20])", true},
-		{"[[1, 2], [3, 4]] * 2 == math.multiply([[1, 2], [3, 4]], 2)", true},
-		{"[10, 20] / 4 == math.divide([10, 20], 4)", true},
+		{"import \"ghost:math\";[1, 2] + [3, 4] == math.add([1, 2], [3, 4])", true},
+		{"import \"ghost:math\";[[1, 2], [3, 4]] + [10, 20] == math.add([[1, 2], [3, 4]], [10, 20])", true},
+		{"import \"ghost:math\";[[1, 2], [3, 4]] * 2 == math.multiply([[1, 2], [3, 4]], 2)", true},
+		{"import \"ghost:math\";[10, 20] / 4 == math.divide([10, 20], 4)", true},
 	}
 
 	for _, tt := range tests {

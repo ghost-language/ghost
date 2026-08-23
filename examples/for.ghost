@@ -1,12 +1,12 @@
 for (x = 0; x < 10; x = x + 1) {
-    print(x)
+    console.log(x)
 }
 
 bob = ["b", "o", "b"]
 
 for (key, value in bob) {
-    print(key)
-    print(value)
+    console.log(key)
+    console.log(value)
 }
 
 foobar = {
@@ -15,6 +15,6 @@ foobar = {
 }
 
 for (key, value in foobar) {
-    print(key)
-    print(value)
+    console.log(key)
+    console.log(value)
 }

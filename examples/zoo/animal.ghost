@@ -4,6 +4,6 @@ class Animal {
     }
 
     function speak() {
-        print("> %s roars.".format(this.breed))
+        console.log("> %s roars.".format(this.breed))
     }
 }

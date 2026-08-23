@@ -9,7 +9,7 @@ glossary = [
 index = 0
 
 while (index < 5) {
-    print(glossary[index])
+    console.log(glossary[index])
 
     index = index + 1
 }

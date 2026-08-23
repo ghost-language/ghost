@@ -1,8 +1,10 @@
-print("Hello world!")
-print("The screen will clear itself in 3 seconds.")
+import "ghost:os"
+
+console.log("Hello world!")
+console.log("The screen will clear itself in 3 seconds.")
 
 os.sleep(3000)
 
 console.clear()
 
-print("The screen has been cleared.")
+console.log("The screen has been cleared.")

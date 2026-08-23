@@ -57,12 +57,19 @@ communities' best tooling already does well (see §2 for the specific sources).
    comes back as a value the embedding program (or a human at a REPL) can see
    and read.
 
-Ghost is **not** trying to be a general-purpose, standalone application
-language competing with Python or Node. It has no package manager, no
-concurrency primitives of its own (concurrency comes from the Go host — see
-§4 and §9.10), and no ambition to run outside a host process or a script file.
-It is, and should remain, a *scripting* language: something a larger system
-loads, configures, and calls into.
+For 1.0, Ghost is still first and foremost the embeddable scripting layer
+described above, not a general-purpose, standalone application language
+competing with Python or Node in its own right — it has no concurrency
+primitives of its own (concurrency comes from the Go host — see §4 and
+§9.11), and 1.0 ships no package manager (§4). That is a scope decision for
+this release, not a ceiling on what Ghost is meant to become: the intent is
+for Ghost to keep growing into a fully-featured general-purpose language —
+standalone scripts and applications, a package system, and whatever else that
+implies — over the releases that follow 1.0. Nothing in this document treats
+that future as already built; where a 1.0 design decision was made
+specifically to leave room for it rather than foreclose it (the `ghost:`
+import scheme in §8.9 is the clearest example), that is called out where it
+happens, not promised as delivered.
 
 ## 2. Inspirations
 
@@ -83,9 +90,9 @@ resemblances:
 - **NumPy** — the broadcasting rules for `+ - * / %` on lists, and for the
   `math` module's arithmetic-as-methods (§9.4), are NumPy's rules exactly:
   shapes align from the right, and an axis of length one repeats.
-- **Symfony Console** — `console.write()` versus `console.log()`/`print()`
-  (§9.3) follows the `write()`/`writeln()` distinction Symfony's Console
-  component draws between output with and without a trailing newline.
+- **Symfony Console** — `console.write()` versus `console.log()` (§9.3)
+  follows the `write()`/`writeln()` distinction Symfony's Console component
+  draws between output with and without a trailing newline.
 - **Rust's compiler, and modern PHP's error pages** — the fault format (a
   kind, a located and underlined snippet, a call trace, a suggested fix; see
   §8.11) takes its shape from what both already do well: an error a reader
@@ -116,7 +123,11 @@ the version's release notes"). Concretely, 1.0 means:
 - **Every standard library module is internally consistent** — one naming
   convention, one style of argument validation, one style of error — and
   externally complete for the domain it claims to own. `math` and `date` meet
-  this bar today; `http` and `io` do not yet (§12, §13).
+  this bar today; `http` stays deliberately minimal by design (§14). `file`
+  (renamed and substantially expanded from `io` — §9.8) and `path` (new —
+  §9.9) close most of the concrete gap this bar used to name, but have not
+  had the same exhaustive audit `math`/`date` went through, so treat them as
+  close rather than confirmed complete.
 - **No script can crash the host.** This is already true in the general case
   (`ghost.Execute` recovers panics — see §8.11) but the RNG data race in §13.1
   is a live counterexample under concurrent use, and closing it is a
@@ -135,9 +146,14 @@ Explicitly out of scope, so they are not mistaken for gaps:
   control flow (§8.11). This is a deliberate, load-bearing design decision
   documented at length in `CLAUDE.md`, not an oversight.
 - **Static typing or type annotations.** Ghost is dynamically typed throughout.
-- **A package manager or module registry.** `import` resolves `.ghost` files
-  on disk, next to the importing file (§8.9); there is no remote fetch, no
-  lockfile, no version resolution.
+- **A package manager or module registry, for 1.0.** `import` resolves either
+  a `.ghost` file on disk next to the importing file, or a standard library
+  name behind the `ghost:` scheme (§8.9); there is no remote fetch, no
+  lockfile, no version resolution. This is a scope decision for 1.0, not a
+  permanent one (§1) — the `ghost:` scheme exists as a distinct, URL-shaped
+  namespace precisely so a future package host can claim its own scheme
+  (`pkg:name`, or similar) later without colliding with it or requiring
+  `import` itself to change shape.
 - **Concurrency primitives in the language itself** (no `async`/`await`, no
   goroutine-equivalent, no channels). Concurrency, where it exists, comes from
   the Go host calling into Ghost from multiple goroutines (`http.handle` is
@@ -184,9 +200,9 @@ Source text ──▶ Scanner ──▶ Parser ──▶ AST ──▶ Optimizer
 | `optimizer` | A conservative constant-folding pass (`optimizer.Optimize`) plus one-time classification of every identifier as a library global or an ordinary variable, so the evaluator can skip two map lookups per read of a local. Only rewrites a node when the result is guaranteed identical, including on the error path. |
 | `evaluator` | `Evaluate(node, scope)` — one big type switch, delegating to one `evaluate*` function per node kind, in `evaluator/evaluator.go`. |
 | `object` | Runtime value types (`Number`, `String`, `Boolean`, `List`, `Map`, `Function`, `Class`, `Instance`, `Trait`, `Super`, `Date`, `Error`, `Scope`, `Environment`, the three `Library*` wrapper types). Every value type implements `Method(name, token, args) (Object, bool)`. Shared argument-reading/validation helpers live in `object/arguments.go`. |
-| `library` | The registry (`library.Functions`, `library.Modules`) that global functions and modules install themselves into via `init()`. |
-| `library/functions` | Global (unqualified) functions: `print`, `type`. |
-| `library/modules` | The nine built-in modules — see §9. |
+| `library` | The registry (`library.Functions`, `library.Modules`) that functions and modules install themselves into via `init()`, plus `library.IsGlobal`/`GlobalModule`/`GlobalFunction`, which name the small subset of that registry (`console`, `type`) reachable without an `import` — everything else, built-in or embedder-registered alike, is reached through the `ghost:` import scheme (§8.9, §9.1). |
+| `library/functions` | Unqualified library functions. `type` is the one still global (§9.1); a future addition need not be. |
+| `library/modules` | The ten built-in modules — see §9. |
 | `fault` | The one error model: `Kind`, `Position`, `Frame` (call trace entries), `Fault` itself, and the single renderer (`fault/render.go`) that turns a fault into the boxed, captioned, underlined report every failure in Ghost prints. |
 | `source` | A process-wide registry of scanned source text, keyed by filename, so a fault raised long after parsing can still quote the line it happened on. |
 | `color` | Decides *whether* output can carry ANSI styling (`color.Detect`, honoring `NO_COLOR`/`TERM=dumb`/`FORCE_COLOR`/`CLICOLOR*`) and exposes styling only by *role* (`Error`, `Help`, `Gutter`, `Caret`, ...), never by raw escape code. |
@@ -310,7 +326,7 @@ pattern as arithmetic operators and the math module's methods, and it doesn't
 need fixing, only documenting. Two names checked against this list while
 writing this specification, both confirmed as fine as they stand:
 
-- `console.read([prompt])` and `io.read(path)` share a word for operations in
+- `console.read([prompt])` and `file.read(path)` share a word for operations in
   clearly different domains — interactive input versus a file — with
   different arguments and different failure behavior. A reader is not going
   to mistake one for the other; no rename needed.
@@ -375,7 +391,7 @@ the version's release notes.
 | `instance` | `object.Instance` | `new Name(...)` |
 | `trait` | `object.Trait` | `trait Name {...}` |
 | `date` | `object.Date` | only ever produced by the `date` module |
-| `error` | `object.Error` | any failed operation; also the value a Ghost script cannot construct directly (see §9.11) |
+| `error` | `object.Error` | any failed operation; also the value a Ghost script cannot construct directly (see §9.12) |
 | `super` | `object.Super` | the value of a bare `super` expression |
 | `scope` | `object.Scope` | not user-constructible; exists as a `Type()` for internal completeness |
 | `library_function`, `library_module`, `library_property` | wrapper types | the value of a bare reference to a module or global function, e.g. `x = math` |
@@ -582,16 +598,25 @@ new Dog("Fido").shout()
 
 ### 8.9 Modules and Imports
 
+Two things can appear on the right of an `import`, told apart by scheme:
+
 ```ghost
-import "helpers"                       // whole-file import for side effects
-import add, subtract from "math_ext"   // named imports
+import "helpers"                       // a .ghost file, whole-file import for side effects
+import add, subtract from "math_ext"   // named imports from a .ghost file
 import add as plus from "math_ext"     // aliased
 import * from "math_ext"               // everything
+
+import "ghost:math"                    // the whole standard library module, bound to `math`
+import "ghost:math" as m               // aliased
+import { pi, sqrt } from "ghost:math"  // named imports from the standard library
+import pi, sqrt from "ghost:math"      // unbraced named imports read the same way
 ```
+
+**File imports** (no scheme — any other string) name a `.ghost` file:
 
 - A module is a `.ghost` file, looked up **next to the file that imports
   it** (there is no notion of a project root, a search path list beyond
-  that, or a package registry).
+  that, or a package registry — see §4).
 - Imports are **process-wide and memoized**: a module is read, parsed, and
   evaluated once no matter how many files import it, guarded by a mutex
   (Ghost code can run on more than one goroutine — e.g. concurrent HTTP
@@ -603,6 +628,44 @@ import * from "math_ext"               // everything
 - `import name from "..."` for a name the module does not export suggests
   the nearest name it does, the same typo-correction machinery used
   everywhere else (§8.11).
+
+**Standard library imports** name an entry in `library.Modules`/
+`library.Functions` (§6) with a `ghost:` prefix instead of a file path —
+`import "ghost:math"`, `import { pi } from "ghost:math"`. This is how the
+whole standard library reaches a script, `console` and `type` excepted: they
+are the only names still reachable without an import (§9.1), and every other
+module — `math`, `date`, `random`, `os`, `file`, `path`, `json`, `http`,
+`ghost` — as well as anything a Go embedder adds at runtime with
+`library.RegisterModule`/`RegisterFunction` (§10.3) or a script loads with
+`ghost.extend()` (§9.12), has to be imported by name before a script can use
+it. There is one registry either way, so an embedder's or a plugin's module
+becomes importable the moment it registers, with no separate mechanism to
+keep in sync — a plugin loaded partway through a script (`ghost.extend(...)`
+followed later by `import "ghost:itsModule"`) works precisely because
+`import` resolves at the point it runs, not ahead of time.
+
+- The bare forms — `import "ghost:name"` and `import "ghost:name" as alias`
+  — bind the module or function itself. For a module this is the exact same
+  value a bare `console` resolves to, so dot access afterward
+  (`math.pi`, `math.sqrt()`) works unchanged; for a standalone function
+  (there is currently only `type`, but an embedder can register more) it
+  binds the function, directly callable.
+- The `from` forms — braced or not, `import { pi } from "ghost:math"` and
+  `import pi from "ghost:math"` mean the same thing — pull individual
+  methods and properties out of a module by name, exactly like a named
+  import from a `.ghost` file. A property (`pi`) is evaluated once,
+  immediately, at the import — there is no lazy getter to bind, so
+  `import { pi } from "ghost:math"` binds a plain number, the same value
+  reading `math.pi` would. `import *` binds every method and property the
+  module has. The `from` form only applies to modules; naming a standalone
+  function this way (there being nothing on it to destructure) is a
+  dedicated `Import` fault pointing at the bare form instead.
+- A name that used to work as a bare global and no longer does (`math.pi`
+  written with no import) is reported as a `Name` fault with help naming the
+  exact import to add, not a generic "did you mean" — see §8.11.
+- Misspelling the module name itself (`"ghost:mathh"`), or a name inside the
+  `from` form the module does not actually export, gets the same
+  nearest-match suggestion as every other unresolved name in Ghost (§8.11).
 
 ### 8.10 Template Literals
 
@@ -683,12 +746,30 @@ shared helpers in `object/arguments.go` (wrapped, for modules, by
 `Argument` fault naming the call (`` `math.sqrt()` expects 1 argument, got 0
 ``), never a Go-level crash.
 
-### 9.1 Global Functions
+Every section below except §9.3 (`console`) documents a module that has to be
+imported before use — `import "ghost:name"` or `import { a, b } from
+"ghost:name"`, per §8.9 — because §9.1 is the complete list of what a script
+can use without one.
 
-| Function | Signature | Behavior |
-|---|---|---|
-| `print` | `print(...values)` | Writes each argument's `String()`, space-joined, plus a trailing newline, to the current output writer. Zero arguments prints a bare blank line. Not arity-checked (variadic by design). Not a keyword — see §13.9. |
-| `type` | `type(value)` | Returns the value's type name as a `string` — the exact same name used in every error message (§8.2). Arity: exactly 1. |
+### 9.1 What's Global
+
+Two names are reachable with no `import` at all — everything else in the
+standard library is import-only (§8.9), a deliberate change from earlier
+0.x releases where the whole standard library sat in global scope. `console`
+and `type` stay global because they are used constantly enough, and small
+enough in surface, to earn the same standing print/type-checking primitives
+have in other scripting languages — not because "frequently used" is a
+standing invitation to add a third.
+
+| Name | Kind | Signature | Behavior |
+|---|---|---|---|
+| `console` | module | — | Interactive/diagnostic I/O — see §9.3. |
+| `type` | function | `type(value)` | Returns the value's type name as a `string` — the exact same name used in every error message (§8.2). Arity: exactly 1. |
+
+There is no bare `print` in 1.0: `console.log(...)` is the one way to write a
+line to output. `token.PRINT` (§13.9) was already dead code before this
+removal and stays exactly as dead after it — that defect is about an unused
+token constant, not about `print` the function.
 
 ### 9.2 Built-in Methods on Core Types
 
@@ -787,9 +868,11 @@ pointing at the `date` module).
 
 ### 9.3 `console`
 
+Global — no import needed (§9.1).
+
 Interactive/diagnostic I/O. All output-producing methods write through the
 current scope's writer (so redirected output, e.g. inside an `http.handle`
-callback, is respected — see §9.10), not directly to the process's stdout.
+callback, is respected — see §9.11), not directly to the process's stdout.
 
 | Method | Arity | Behavior |
 |---|---|---|
@@ -806,6 +889,9 @@ No properties currently registered on `console` (`ConsoleProperties` exists
 but is empty).
 
 ### 9.4 `math`
+
+Import: `import "ghost:math"` or `import { sqrt, pi, ... } from "ghost:math"`
+(§8.9).
 
 The most complete module in the standard library, and the model for what
 "complete" should mean elsewhere. Organized here exactly as the source
@@ -898,6 +984,9 @@ than returning `NaN`/`Inf`).
 
 ### 9.5 `date`
 
+Import: `import "ghost:date"` or `import { now, of, ... } from "ghost:date"`
+(§8.9).
+
 Modeled deliberately on `date-fns` (§2): every function takes a date (or two)
 and returns a new value; nothing mutates. Every `Date` is UTC-normalized —
 Ghost does not model time zones at all, so a date built once compares the
@@ -940,6 +1029,9 @@ letters), `H`/`h` (24h/12h hour), `m` (minute), `s` (second), `a` (AM/PM).
 
 ### 9.6 `random`
 
+Import: `import "ghost:random"` or `import { random, seed } from "ghost:random"`
+(§8.9).
+
 | Method/Property | Arity | Behavior |
 |---|---|---|
 | `random()` / `random(max)` / `random(min, max)` | 0–2 | Uniform float; no args → `[0, 1)`; one arg → `[0, max)`; two args → `[min, max)`. |
@@ -953,6 +1045,9 @@ to it** — see §13.1, the most serious correctness gap in this specification.
 
 ### 9.7 `os`
 
+Import: `import "ghost:os"` or `import { sleep, exit } from "ghost:os"`
+(§8.9).
+
 | Method/Property | Arity | Behavior |
 |---|---|---|
 | `args()` | 0 | The process's own command-line arguments (excluding the binary name). |
@@ -963,24 +1058,59 @@ to it** — see §13.1, the most serious correctness gap in this specification.
 `args()` and `name` correctly follow the property-vs-method rule in §7: one
 does real work (builds a list from argv), the other answers a stored value.
 
-### 9.8 `io`
+### 9.8 `file`
+
+Import: `import "ghost:file"` or `import { read, write } from "ghost:file"`
+(§8.9). Renamed from `io` — the old name was a placeholder that never named
+what the module actually does (read and write files), and nothing else was
+ever added under it to justify the more generic name.
 
 | Method | Arity | Behavior |
 |---|---|---|
 | `read(path)` | 1 | Reads a whole file as a string. |
-| `write(path, content)` | 2 | Overwrites an **existing** file's contents, keeping its permissions; errors (with help text) if the file does not already exist — pointed deliberately at `io.append` for creating one. |
+| `write(path, content)` | 2 | Overwrites an **existing** file's contents, keeping its permissions; errors (with help text) if the file does not already exist — pointed deliberately at `file.append` for creating one. |
 | `append(path, content)` | 2 | Creates the file if needed (mode `0644`); appends `content` plus a trailing newline. |
+| `exists(path)` | 1 | `boolean` — whether anything (file or directory) is at `path`. |
+| `isDirectory(path)` | 1 | `boolean` — a `System` error, not `false`, if `path` does not exist at all (distinct from `exists`, which answers the existence question itself). |
+| `size(path)` | 1 | The file's size in bytes, as a `number`. |
+| `delete(path)` | 1 | Removes a file or an **empty** directory (the same reach as `os.Remove` in Go) — a non-empty directory is left alone, a `System` error, rather than wiped. |
+| `mkdir(path)` | 1 | Creates a directory, and any missing parent directories along the way (`mkdir -p`), mode `0755`. |
+| `list(path)` | 1 | The entry names (not full paths) directly inside a directory, as a `list` of strings — not recursive. |
+| `copy(source, destination)` | 2 | Copies a file's contents and permissions to `destination`, which is created or overwritten. |
+| `move(source, destination)` | 2 | Renames/moves a file or directory. |
 
 All paths are resolved **relative to the running script's own directory**,
-not the process's current working directory — so a script behaves the same
-regardless of where `ghost` was invoked from.
+not the process's current working directory (an absolute path is used as
+given) — so a script behaves the same regardless of where `ghost` was
+invoked from.
 
-This is the entire filesystem surface: no `exists`, `delete`/`remove`,
-`mkdir`, `listDir`/`readDir`, `stat`, `copy`, `move`/`rename`, or streaming
-read/write. Adequate for simple config/log scripts; a real gap for anything
-that wants to act as a build tool or file-management script (§12).
+Closes the gap the old `io` module left (§12 used to list `exists`,
+`delete`/`remove`, `mkdir`, `listDir`/`readDir`, `copy`, `move`/`rename` as
+missing — all now present here). Still no streaming read/write and no
+recursive `list`/`delete`; a script working with very large files or deep
+directory trees has to shell out or wait for a future addition.
 
-### 9.9 `json`
+### 9.9 `path`
+
+Import: `import "ghost:path"` or `import { join, basename } from "ghost:path"`
+(§8.9). Pure string manipulation — nothing here touches the filesystem or
+knows where the running script lives, which is the actual line between this
+module and `file` (§7: a module names a domain, and *building* a path is a
+different domain from *reading* one, even though a script usually does both
+together).
+
+| Method | Arity | Behavior |
+|---|---|---|
+| `join(...parts)` | ≥1 | Joins path segments with the OS's own separator, cleaning the result (`..`/`.` resolved, redundant separators collapsed) the way `filepath.Join` does. |
+| `basename(path)` | 1 | The last path element. |
+| `dirname(path)` | 1 | Everything but the last path element. |
+| `extname(path)` | 1 | The extension, dot included (`".ghost"`), or `""` if there is none. |
+| `isAbsolute(path)` | 1 | `boolean`. |
+
+### 9.10 `json`
+
+Import: `import "ghost:json"` or `import { decode, encode } from "ghost:json"`
+(§8.9).
 
 | Method | Arity | Behavior |
 |---|---|---|
@@ -993,11 +1123,13 @@ structure falls through `object.ObjectToAnyValue`'s unhandled-type case to
 Go's `nil`/`null` silently (worth confirming as intended, since it is easy
 to lose a date value with no error raised).
 
-### 9.10 `http`
+### 9.11 `http`
+
+Import: `import "ghost:http"` (§8.9).
 
 | Method | Arity | Behavior |
 |---|---|---|
-| `handle(path, callback)` | 2 | Registers `callback(request)` for `path` via Go's `net/http.HandleFunc`. `request` is a `map` with `method`, `host`, `contentLength`, `protocol`, `protocolMajor`, `protocolMinor`, `body` (the raw request body as a string). **The callback's own output writer is redirected to the HTTP response** — so a handler produces its response body by calling `print`/`console.log`/etc. *inside* the callback, not by returning a value or calling a dedicated "respond" function. A panic inside a handler goroutine is recovered locally and answered with a 500, rather than taking the whole server down. |
+| `handle(path, callback)` | 2 | Registers `callback(request)` for `path` via Go's `net/http.HandleFunc`. `request` is a `map` with `method`, `host`, `contentLength`, `protocol`, `protocolMajor`, `protocolMinor`, `body` (the raw request body as a string). **The callback's own output writer is redirected to the HTTP response** — so a handler produces its response body by calling `console.log`/etc. *inside* the callback, not by returning a value or calling a dedicated "respond" function. A panic inside a handler goroutine is recovered locally and answered with a 500, rather than taking the whole server down. |
 | `listen(port[, ready])` | 1–2 | Starts the server (blocking) on `port` (1–65535); `ready`, if given, is called once binding is confirmed set up (before the blocking call, in practice — see note below). Handles `SIGINT` for graceful shutdown (30s timeout). A port that cannot be bound is a `System` error, not a silent hang. |
 
 This module is, and stays, intentionally minimal for 1.0 (§14): a script
@@ -1006,7 +1138,12 @@ parameters, read cookies, or parse a route parameter (`/:id`) —
 everything beyond "handle a path, write a body" is out of scope for this
 release.
 
-### 9.11 `ghost`
+### 9.12 `ghost`
+
+Import: `import "ghost:ghost"` (§8.9) — the module name and the scheme
+prefix are spelled the same by coincidence of domain, not because the
+prefix is special-cased for it; `import { abort } from "ghost:ghost"` works
+the same as any other named import.
 
 Reflective/meta operations over the running Ghost instance itself.
 
@@ -1052,7 +1189,7 @@ The primary way a Go program hosts Ghost:
 
 ```go
 instance := ghost.New()
-instance.SetDirectory(dir)      // for import/io path resolution
+instance.SetDirectory(dir)      // for import/file path resolution
 instance.SetFile(name)          // for error reporting
 instance.SetSource(code)
 instance.SetQuiet(true)         // suppress ghost's own error printing
@@ -1070,9 +1207,17 @@ shared `library.Functions`/`library.Modules` maps). §14 decides this is not a
 1.0 requirement to change: a host needing isolated configurations runs
 separate processes for now.
 
+A module or function registered this way is not automatically global to
+scripts — nothing is, `console`/`type` aside (§9.1). It becomes reachable
+the same way every built-in module is: `import "ghost:myModule"` or
+`import { myFn } from "ghost:myFn"` (§8.9). There is exactly one registry
+and one import mechanism for both, so an embedder gets `ghost:`-scheme
+importability for free rather than having to build its own convention for
+exposing what it registers.
+
 ### 10.4 Extending Ghost from Ghost itself
 
-`ghost.extend(path)` (§9.11) is the only in-language extension point, and it
+`ghost.extend(path)` (§9.12) is the only in-language extension point, and it
 requires the extension to be a **compiled Go plugin**, built with a matching
 Go toolchain and OS/arch, and only on Linux/macOS. There is no
 pure-Ghost plugin/extension mechanism (e.g., a convention for a `.ghost`
@@ -1099,7 +1244,8 @@ already meets — except where flagged.
 - [x] First-class functions, closures, default parameters
 - [x] Classes, single inheritance, traits/mixins, `this`/`super`
 - [x] Per-instance field initialization (no shared-mutable-default bug)
-- [x] Module system (`import`, named imports, `import *`, circular-import detection)
+- [x] Module system (`import`, named imports, `import *`, circular-import detection, `ghost:`-scheme standard library imports)
+- [x] Import-only standard library — `console`/`type` global, everything else imported by name (§8.9, §9.1)
 - [x] Bounded recursion with a clean error instead of a stack overflow
 - [x] Structured, uniform error model with call traces and typo suggestions
 - [x] Constant folding and identifier-classification optimization pass
@@ -1112,7 +1258,8 @@ already meets — except where flagged.
 - [x] `date` — ~35 functions, `date-fns`-modeled, UTC-only
 - [x] `random` — seeded PRNG, shared with `math`
 - [x] `os` — args/exit/sleep/name
-- [x] `io` — read/write/append, script-relative paths
+- [x] `file` — read/write/append/exists/isDirectory/size/delete/mkdir/list/copy/move, script-relative paths
+- [x] `path` — join/basename/dirname/extname/isAbsolute
 - [x] `json` — encode/decode
 - [x] `http` — minimal handler/listen server
 - [x] `ghost` — abort/execute/extend/identifiers/version (reflection + plugin loading)
@@ -1154,10 +1301,6 @@ predicates as instance methods.
 **Date module:** `subHours`/`subMinutes`/`subSeconds` (asymmetric with
 every other add/sub pair), `startOfWeek`/`endOfWeek`/`startOfYear`/`endOfYear`.
 
-**`io` module:** no `exists`, `delete`/`remove`, `mkdir`, `listDir`, `stat`,
-`copy`, or `rename` — the whole module is read/write/append on a single
-file and nothing else.
-
 **Language-level gaps:**
 - No destructuring assignment (`[a, b] = list`, `{x, y} = map`).
 - No rest/variadic parameters or spread syntax, in either direction (call
@@ -1184,7 +1327,7 @@ by `randomRandom`, `randomSeed`, the exported `SeedRandom`, and — from
 
 Go's `*rand.Rand` is explicitly **not** safe for concurrent use by multiple
 goroutines (only the package-level top-level functions, which use their own
-internal mutex, are). Ghost's own `http.handle` (§9.10) runs every request's
+internal mutex, are). Ghost's own `http.handle` (§9.11) runs every request's
 callback on its own goroutine, and the codebase elsewhere (`evaluator/import.go`'s
 `moduleState sync.Mutex`, `object.Scope.Depth`'s doc comment) shows the team
 is already deliberately careful about exactly this class of bug — this one
@@ -1306,7 +1449,7 @@ receiver/argument flip above.
 
 ### 13.8 `ghost.extend()` is unavailable on Windows
 
-Go's `plugin` package (used by `ghost.extend`, §9.11) only supports
+Go's `plugin` package (used by `ghost.extend`, §9.12) only supports
 Linux and macOS; there is no Windows implementation at all (it's a build
 failure/`ErrNotSupported` situation, not a degraded one). Ghost itself
 builds and ships Windows binaries (`Makefile`, `.goreleaser.yml`). The only
@@ -1320,10 +1463,11 @@ a real fallback is a larger question outside this specification's scope.
 `token/token.go` defines `PRINT` as a token type, but the scanner's
 `keywords` map (`scanner/scanner.go`) never maps the string `"print"` to it
 — so this token can never actually be produced by the scanner, and nothing
-in the parser or evaluator references it either. `print` is, correctly,
-just a registered global function (§9.1), not a keyword. `PRINT` is pure
-dead code, presumably left over from an earlier design. **Fix:** delete it
-(and its `typeNames` entry).
+in the parser or evaluator references it either. Ghost has no `print` at all
+in 1.0 (§9.1) — `console.log(...)` replaced it — so there is no live
+identifier this token could even be mistaken for. `PRINT` is pure dead code,
+presumably left over from an earlier design. **Fix:** delete it (and its
+`typeNames` entry).
 
 ### 13.10 `-t` is implemented but undocumented
 

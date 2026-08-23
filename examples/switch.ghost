@@ -2,15 +2,15 @@ beverage = "tea"
 
 switch (beverage) {
   case "water" {
-    print("Water is $0.75 per bottle.")
+    console.log("Water is $0.75 per bottle.")
   }
   case "juice" {
-    print("Juice is $1.25 per bottle.")
+    console.log("Juice is $1.25 per bottle.")
   }
   case "coffee", "latte" {
-    print("Coffee and lattes are $2.75 per 12oz.")
+    console.log("Coffee and lattes are $2.75 per 12oz.")
   }
   default {
-    print("Unknown beverage.")
+    console.log("Unknown beverage.")
   }
 }

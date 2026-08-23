@@ -12,11 +12,11 @@ func evaluateIdentifier(node *ast.Identifier, scope *object.Scope) object.Object
 	// string-keyed map lookups per read. An unoptimized AST is left unmarked
 	// and still consults the registries.
 	if node.LibraryBinding != ast.LibraryBindingLocal {
-		if libraryModule, ok := library.Modules[node.Value]; ok {
+		if libraryModule, ok := library.GlobalModule(node.Value); ok {
 			return libraryModule
 		}
 
-		if libraryFunction, ok := library.Functions[node.Value]; ok {
+		if libraryFunction, ok := library.GlobalFunction(node.Value); ok {
 			return libraryFunction
 		}
 	}
