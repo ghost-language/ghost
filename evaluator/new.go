@@ -23,20 +23,46 @@ func evaluateNew(node *ast.New, scope *object.Scope) object.Object {
 			WithHelp("`new` needs a class, as in `new Point(1, 2)`")
 	}
 
-	class, ok := callee.(*object.Class)
+	// *Class (a Ghost-source class) is handled directly, since building an
+	// instance and running its constructor is tree-walking work that only the
+	// evaluator can do. Anything else claiming to be constructible —
+	// currently only *object.NativeClass, a class registered by a Go program
+	// embedding Ghost (§8.9, §10.3) — goes through object.Constructible
+	// instead, which `new` doesn't need to know any more about than that it
+	// can be asked to build an instance.
+	switch class := callee.(type) {
+	case *object.Class:
+		arguments, err := evaluateNewArguments(node, scope)
 
-	if !ok {
+		if err != nil {
+			return err
+		}
+
+		return instantiate(class, arguments, node.Token, scope)
+	case object.Constructible:
+		arguments, err := evaluateNewArguments(node, scope)
+
+		if err != nil {
+			return err
+		}
+
+		return class.New(scope, node.Token, arguments...)
+	default:
 		return object.NewError(fault.Type, node.Token, "cannot instantiate %s, which is not a class", object.TypeName(callee)).
 			WithHelp("`new` needs a class, as in `new Point(1, 2)`")
 	}
+}
 
+// evaluateNewArguments evaluates a `new` expression's argument list, the one
+// piece the Ghost-class and native-class construction paths need identically.
+func evaluateNewArguments(node *ast.New, scope *object.Scope) ([]object.Object, object.Object) {
 	arguments := evaluateExpressions(node.Arguments, scope)
 
 	if len(arguments) == 1 && isError(arguments[0]) {
-		return arguments[0]
+		return nil, arguments[0]
 	}
 
-	return instantiate(class, arguments, node.Token, scope)
+	return arguments, nil
 }
 
 // instantiate builds an instance of the class, initializes its fields, and runs

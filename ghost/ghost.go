@@ -172,6 +172,36 @@ func RegisterModule(name string, methods map[string]*object.LibraryFunction, pro
 	library.RegisterModule(name, methods, properties)
 }
 
+// RegisterFunctionForScheme and RegisterModuleForScheme are RegisterFunction/
+// RegisterModule for a Go host that wants its own import prefix rather than
+// the standard library's `ghost:` — Lumen registering its own `font` module
+// so a script can write `import font from "lumen:font"`, for instance.
+func RegisterFunctionForScheme(scheme string, name string, function object.GoFunction) {
+	library.RegisterFunctionForScheme(scheme, name, function)
+}
+
+func RegisterModuleForScheme(scheme string, name string, methods map[string]*object.LibraryFunction, properties map[string]*object.LibraryProperty) {
+	library.RegisterModuleForScheme(scheme, name, methods, properties)
+}
+
+// RegisterClass and RegisterClassForScheme register a native class — one
+// whose instances are built and driven entirely by Go code, e.g. wrapping a
+// stateful host resource like an audio handle — as a member of a module, the
+// same way a method or a property is. A script then reaches it exactly like
+// any other class: `import { Audio } from "lumen:audio"` (for a call to
+// RegisterClassForScheme("lumen", "audio", "Audio", constructor)), followed
+// by `new Audio(path)`. constructor receives the same (scope, token,
+// arguments) any other registered function does, and returns whatever value
+// Audio's own instances should be — that value's own Method() decides what
+// calling something on an instance does, entirely on the embedder's side.
+func RegisterClass(moduleName string, className string, constructor object.GoFunction) {
+	library.RegisterClass(moduleName, className, constructor)
+}
+
+func RegisterClassForScheme(scheme string, moduleName string, className string, constructor object.GoFunction) {
+	library.RegisterClassForScheme(scheme, moduleName, className, constructor)
+}
+
 // Call invokes a function defined in the script, with the (optional) passed
 // arguments.
 func (ghost *Ghost) Call(function string, args []object.Object) object.Object {

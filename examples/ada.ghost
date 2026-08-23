@@ -1,5 +1,8 @@
 // WIP: not complete
 
+import "ghost:random"
+import "ghost:ghost"
+
 class Ada {
     knowledge = []
 
@@ -28,7 +31,7 @@ class Ada {
     }
 
     function respond(text = "") {
-        print("responding to: " + text + "...")
+        console.log("responding to: " + text + "...")
         foundMatch = false
 
         // Loop through our collected knowledge base.
@@ -42,7 +45,7 @@ class Ada {
                     response = response.replace("{" + index + "}", this.reflect(match))
                 }
 
-                print("== " + response)
+                console.log("== " + response)
             }
         }
     }
@@ -62,14 +65,14 @@ class Ada {
 
 version = "0.3"
 
-print("=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=")
-print("  Ada:   v" + version)
-print("  Ghost: v" + ghost.version)
-print()
-print("  Ada is a rudimentary AI based on ELIZA.")
-print("  Speak with Ada in plain English, and they will reply.")
-print("=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=")
-print()
+console.log("=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=")
+console.log("  Ada:   v" + version)
+console.log("  Ghost: v" + ghost.version)
+console.log()
+console.log("  Ada is a rudimentary AI based on ELIZA.")
+console.log("  Speak with Ada in plain English, and they will reply.")
+console.log("=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=")
+console.log()
 
 ada = Ada()
 

@@ -16,13 +16,13 @@ func TestUndefinedNamesSuggestTheNearest(t *testing.T) {
 		source   string
 		expected string
 	}{
-		{"a transposed variable", `name = "ghost" print(nmae)`, "did you mean `name`?"},
-		{"a dropped letter", `total = 1 print(totl)`, "did you mean `total`?"},
-		{"a library function", `prnt("hello")`, "did you mean `print`?"},
-		{"a library module", `mathh.abs(-1)`, "did you mean `math`?"},
+		{"a transposed variable", `name = "ghost" type(nmae)`, "did you mean `name`?"},
+		{"a dropped letter", `total = 1 type(totl)`, "did you mean `total`?"},
+		{"a library function", `typ(5)`, "did you mean `type`?"},
+		{"a library module", `mathh.abs(-1)`, "did you mean `math`? import it: `import \"ghost:math\"`"},
 		{"a method on a class", `class Point { distance() { return 1 } } new Point().distence()`, "did you mean `distance`?"},
-		{"a module method", `math.sqrtt(4)`, "did you mean `math.sqrt()`?"},
-		{"a module property", `math.pii`, "did you mean `math.pi`?"},
+		{"a module method", "import \"ghost:math\"\nmath.sqrtt(4)", "did you mean `math.sqrt()`?"},
+		{"a module property", "import \"ghost:math\"\nmath.pii", "did you mean `math.pi`?"},
 	}
 
 	for _, test := range tests {
@@ -39,7 +39,7 @@ func TestUndefinedNamesSuggestTheNearest(t *testing.T) {
 // Guessing wrongly is worse than not guessing: a name with nothing like it in
 // scope gets no suggestion at all.
 func TestUnrelatedNamesGetNoSuggestion(t *testing.T) {
-	raised := errorFrom(t, `name = "ghost" print(quixotic)`)
+	raised := errorFrom(t, `name = "ghost" type(quixotic)`)
 
 	if raised.Fault.Help != "" {
 		t.Errorf("expected no suggestion, got %q", raised.Fault.Help)
@@ -138,7 +138,7 @@ func TestErrorsAreClassified(t *testing.T) {
 		{`1 / 0`, fault.Value},
 		{`5.nope()`, fault.Property},
 		{`import "not-a-real-module"`, fault.Import},
-		{`io.read("not-a-real-file")`, fault.System},
+		{"import \"ghost:file\"\nfile.read(\"not-a-real-file\")", fault.System},
 	}
 
 	for _, test := range tests {

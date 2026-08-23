@@ -92,7 +92,7 @@ func TestAPanicBecomesAnInternalError(t *testing.T) {
 	instance := New()
 	instance.SetQuiet(true)
 	instance.SetFile("test.ghost")
-	instance.SetSource("explode()")
+	instance.SetSource("import \"ghost:explode\"\nexplode()")
 
 	result := instance.Execute()
 
@@ -112,5 +112,227 @@ func TestAPanicBecomesAnInternalError(t *testing.T) {
 
 	if raised.Fault.Help == "" {
 		t.Error("an internal error should ask to be reported")
+	}
+}
+
+// An embedding host isn't limited to the standard library's own `ghost:`
+// import scheme — it can claim one of its own, so its scripts read as its
+// own rather than borrowing Ghost's namespace (a Go program embedding Ghost
+// as "Lumen" registering "font" under "lumen:", say).
+func TestEmbedderCanRegisterAModuleUnderItsOwnScheme(t *testing.T) {
+	methods := map[string]*object.LibraryFunction{
+		"name": {Name: "name", Function: func(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
+			return &object.String{Value: "Lumen Sans"}
+		}},
+	}
+
+	RegisterModuleForScheme("lumen", "font", methods, map[string]*object.LibraryProperty{})
+
+	instance := New()
+	instance.SetQuiet(true)
+	instance.SetFile("test.ghost")
+	instance.SetSource("import \"lumen:font\"\nfont.name()")
+
+	result := instance.Execute()
+
+	str, ok := result.(*object.String)
+
+	if !ok {
+		t.Fatalf("expected a string, got %T (%v)", result, result)
+	}
+
+	if str.Value != "Lumen Sans" {
+		t.Errorf("got=%q", str.Value)
+	}
+}
+
+// A standalone function registered under a custom scheme is reached the
+// bare way (`import "lumen:greet"`), the same as a standalone standard
+// library function (`import "ghost:type"` would work identically) — not
+// through the `from` form, which is for pulling members out of a module.
+func TestEmbedderCanRegisterAFunctionUnderItsOwnScheme(t *testing.T) {
+	RegisterFunctionForScheme("lumen", "greet", func(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
+		return &object.String{Value: "hi from lumen"}
+	})
+
+	instance := New()
+	instance.SetQuiet(true)
+	instance.SetFile("test.ghost")
+	instance.SetSource("import \"lumen:greet\"\ngreet()")
+
+	result := instance.Execute()
+
+	str, ok := result.(*object.String)
+
+	if !ok {
+		t.Fatalf("expected a string, got %T (%v)", result, result)
+	}
+
+	if str.Value != "hi from lumen" {
+		t.Errorf("got=%q", str.Value)
+	}
+}
+
+// audioInstance stands in for what a real embedder's native instance looks
+// like: its own Go type, its own state, its own Method() dispatch - nothing
+// about it is Ghost-specific beyond implementing object.Object, exactly as
+// object/native_class.go promises a NativeClass's Constructor is free to
+// return.
+type audioInstance struct {
+	path string
+}
+
+func (audio *audioInstance) String() string    { return "audio instance" }
+func (audio *audioInstance) Type() object.Type { return object.INSTANCE }
+
+func (audio *audioInstance) Method(method string, tok token.Token, args []object.Object) (object.Object, bool) {
+	if method == "path" {
+		return &object.String{Value: audio.path}, true
+	}
+
+	return nil, false
+}
+
+func audioConstructor(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
+	if err := object.Arity("Audio()", tok, args, 1); err != nil {
+		return err
+	}
+
+	path, err := object.StringArgument("Audio()", tok, args, 0)
+
+	if err != nil {
+		return err
+	}
+
+	return &audioInstance{path: path.Value}
+}
+
+// A native class - the Lumen "Audio" example from the design discussion -
+// is `new`-able and its instances behave like any other object, once
+// registered as a member of a module the same way a method or property is.
+func TestNativeClassCanBeNewedAfterNamedImport(t *testing.T) {
+	RegisterClassForScheme("lumen", "audio", "Audio", audioConstructor)
+
+	instance := New()
+	instance.SetQuiet(true)
+	instance.SetFile("test.ghost")
+	instance.SetSource(`import { Audio } from "lumen:audio"` + "\n" + `new Audio("path/to/file.mp3").path()`)
+
+	result := instance.Execute()
+
+	str, ok := result.(*object.String)
+
+	if !ok {
+		t.Fatalf("expected a string, got %T (%v)", result, result)
+	}
+
+	if str.Value != "path/to/file.mp3" {
+		t.Errorf("got=%q", str.Value)
+	}
+}
+
+// A class reached through the whole-module bare import, then dotted access,
+// resolves identically - `audio.Audio` reads a class off a module exactly
+// like it reads a method or a property.
+func TestNativeClassCanBeNewedViaModuleDotAccess(t *testing.T) {
+	RegisterClassForScheme("lumen", "audio", "Audio", audioConstructor)
+
+	instance := New()
+	instance.SetQuiet(true)
+	instance.SetFile("test.ghost")
+	instance.SetSource(`import "lumen:audio"` + "\n" + `new audio.Audio("x.mp3").path()`)
+
+	result := instance.Execute()
+
+	str, ok := result.(*object.String)
+
+	if !ok {
+		t.Fatalf("expected a string, got %T (%v)", result, result)
+	}
+
+	if str.Value != "x.mp3" {
+		t.Errorf("got=%q", str.Value)
+	}
+}
+
+// Calling or reading off a native class itself (not an instance) is refused
+// with the same help a Ghost-defined class already gives - a script author
+// hitting this shouldn't be able to tell which kind of class it is.
+func TestNativeClassRejectsMethodAndPropertyOnTheClassItself(t *testing.T) {
+	RegisterClassForScheme("lumen", "audio", "Audio", audioConstructor)
+
+	tests := []struct {
+		name     string
+		source   string
+		expected string
+	}{
+		{"method call on the class", `import { Audio } from "lumen:audio"` + "\n" + `Audio.path()`, "class `Audio` has no method `path` to call on the class itself"},
+		{"property read on the class", `import { Audio } from "lumen:audio"` + "\n" + `Audio.path`, "class `Audio` has no property `path` to read on the class itself"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			instance := New()
+			instance.SetQuiet(true)
+			instance.SetFile("test.ghost")
+			instance.SetSource(tt.source)
+
+			result := instance.Execute()
+
+			raised, ok := result.(*object.Error)
+
+			if !ok {
+				t.Fatalf("expected an error, got %T", result)
+			}
+
+			if !strings.Contains(raised.Message(), tt.expected) {
+				t.Errorf("got=%q, expected to contain %q", raised.Message(), tt.expected)
+			}
+		})
+	}
+}
+
+// A misspelled named import of a class gets the same nearest-name
+// suggestion a misspelled method or property does.
+func TestNativeClassTypoSuggestsTheClassName(t *testing.T) {
+	RegisterClassForScheme("lumen", "audio", "Audio", audioConstructor)
+
+	instance := New()
+	instance.SetQuiet(true)
+	instance.SetFile("test.ghost")
+	instance.SetSource(`import { Audoi } from "lumen:audio"`)
+
+	result := instance.Execute()
+
+	raised, ok := result.(*object.Error)
+
+	if !ok {
+		t.Fatalf("expected an error, got %T", result)
+	}
+
+	if raised.Fault.Help != "did you mean `Audio`?" {
+		t.Errorf("got help=%q", raised.Fault.Help)
+	}
+}
+
+// Importing from a scheme nothing has ever registered under is a distinct,
+// named failure - not a generic "not found" indistinguishable from a
+// misspelled name within a real scheme.
+func TestImportingAnUnregisteredSchemeIsReported(t *testing.T) {
+	instance := New()
+	instance.SetQuiet(true)
+	instance.SetFile("test.ghost")
+	instance.SetSource("import \"nosuchscheme:thing\"")
+
+	result := instance.Execute()
+
+	raised, ok := result.(*object.Error)
+
+	if !ok {
+		t.Fatalf("expected an error, got %T", result)
+	}
+
+	if raised.Fault.Kind != fault.Import {
+		t.Errorf("got kind=%v, expected import", raised.Fault.Kind)
 	}
 }

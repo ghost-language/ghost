@@ -1,5 +1,5 @@
-print(foo)
+console.log(foo)
 
-// print("start c")
+// console.log("start c")
 // import "a"
-// print("end c")
+// console.log("end c")

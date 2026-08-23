@@ -1,13 +1,13 @@
 direction = 'up'
 
 if (direction == 'left') {
-    print("left.")
+    console.log("left.")
 } else if (direction == 'right') {
-    print("right.")
+    console.log("right.")
 } else if (direction == 'up') {
-    print("up.")
+    console.log("up.")
 } else if (direction == 'down') {
-    print("down.")
+    console.log("down.")
 } else {
-    print("unknown direction")
+    console.log("unknown direction")
 }

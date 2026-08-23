@@ -1,6 +1,6 @@
 foo = "bar"
 three = 3
 
-print(3 * three)
+console.log(3 * three)
 
-print(foo)
+console.log(foo)

@@ -1,16 +1,16 @@
 function foobar(x = "foo", y = "bar") {
-    print("foobar function called")
-    print(x == "foo")
+    console.log("foobar function called")
+    console.log(x == "foo")
 
     if (x == "foo") {
-        print("x == foo")
+        console.log("x == foo")
         return
     }
 
-    print(x)
-    print(y)
+    console.log(x)
+    console.log(y)
 }
 
 result = foobar()
 
-print(result)
+console.log(result)

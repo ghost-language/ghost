@@ -1,5 +1,5 @@
 class Person {
     function speak() {
-        print("> Person says hello.")
+        console.log("> Person says hello.")
     }
 }

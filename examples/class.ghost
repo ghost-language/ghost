@@ -1,6 +1,6 @@
 class Beverage {
     serve() {
-        print("serving beverage...")
+        console.log("serving beverage...")
     }
 }
 
