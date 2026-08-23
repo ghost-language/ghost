@@ -8,12 +8,16 @@ import (
 )
 
 func evaluatePostfix(node *ast.Postfix, scope *object.Scope) object.Object {
-	name := node.Token.Lexeme
+	current := Evaluate(node.Left, scope)
 
-	number, err := readCounter(node, scope, name)
+	if isError(current) {
+		return current
+	}
 
-	if err != nil {
-		return err
+	number, ok := current.(*object.Number)
+
+	if !ok {
+		return object.NewError(fault.Type, node.Token, "cannot use `%s` on %s", node.Operator, object.TypeName(current))
 	}
 
 	var updated object.Object
@@ -27,26 +31,21 @@ func evaluatePostfix(node *ast.Postfix, scope *object.Scope) object.Object {
 		return object.NewError(fault.Internal, node.Token, "`%s` was parsed as a postfix operator but has no behaviour behind it", node.Operator)
 	}
 
-	scope.Environment.Set(name, updated)
+	switch target := node.Left.(type) {
+	case *ast.Identifier:
+		scope.Environment.Set(target.Value, updated)
+	case *ast.Index:
+		if result := evaluateIndexAssignment(target, updated, scope); isError(result) {
+			return result
+		}
+	case *ast.Property:
+		if result := evaluatePropertyAssignment(target, updated, scope); isError(result) {
+			return result
+		}
+	default:
+		return object.NewError(fault.Syntax, node.Token, "cannot assign to this expression with `%s`", node.Operator).
+			WithHelp("only a variable, a list or map entry, or a property can be assigned to")
+	}
 
 	return updated
-}
-
-// readCounter reads the variable a `++` or `--` is applied to. Both operators
-// fail the same two ways, so they ask the same question and report the same
-// answers rather than each spelling them out.
-func readCounter(node *ast.Postfix, scope *object.Scope, name string) (*object.Number, *object.Error) {
-	current, ok := scope.Environment.Get(name)
-
-	if !ok {
-		return nil, undefined(node.Token, name, scope)
-	}
-
-	number, ok := current.(*object.Number)
-
-	if !ok {
-		return nil, object.NewError(fault.Type, node.Token, "cannot use `%s` on `%s`, which is a %s, not a number", node.Operator, name, object.TypeName(current))
-	}
-
-	return number, nil
 }

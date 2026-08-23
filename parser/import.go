@@ -16,6 +16,18 @@ func (parser *Parser) importStatement() ast.ExpressionNode {
 
 	statement.Path = &ast.String{Token: parser.currentToken, Value: parser.currentToken.Literal.(string)}
 
+	// `import "math" as m` binds the whole module to `m` instead of the name
+	// derived from its path.
+	if parser.nextTokenIs(token.AS) {
+		parser.readToken()
+
+		if !parser.expectNextTokenIs(token.IDENTIFIER) {
+			return nil
+		}
+
+		statement.Alias = &ast.Identifier{Token: parser.currentToken, Value: parser.currentToken.Lexeme}
+	}
+
 	return statement
 }
 
@@ -23,6 +35,15 @@ func (parser *Parser) importFromStatement(parent *ast.Import) ast.ExpressionNode
 	statement := &ast.ImportFrom{Token: parent.Token}
 
 	statement.Identifiers = make(map[string]*ast.Identifier)
+
+	// The names being imported can optionally be wrapped in `{ }`, e.g.
+	// `import { pi, e } from "math"`. Braced or not, the name list is parsed
+	// the same way; only what ends it differs.
+	braced := parser.currentTokenIs(token.LEFTBRACE)
+
+	if braced {
+		parser.readToken()
+	}
 
 	if parser.currentTokenIs(token.STAR) {
 		statement.Everything = true
@@ -34,15 +55,25 @@ func (parser *Parser) importFromStatement(parent *ast.Import) ast.ExpressionNode
 		return nil
 	}
 
+	stop := token.FROM
+
+	if braced {
+		stop = token.RIGHTBRACE
+	}
+
 	// Each turn of this loop has to consume a token, and has to stop at the end
 	// of the file. An import written the wrong way round — `from "lib" import
-	// x` — would otherwise sit here forever looking for a `from` that has
-	// already gone past, which is a worse failure than any error: the program
-	// never runs and never says why.
-	for !parser.currentTokenIs(token.FROM) {
+	// x` — would otherwise sit here forever looking for a `from` (or a closing
+	// `}`) that has already gone past, which is a worse failure than any
+	// error: the program never runs and never says why.
+	for !parser.currentTokenIs(stop) {
 		if parser.isAtEnd() {
-			parser.report(statement.Token, "expected `from` after the names being imported").
-				WithHelp("an import reads `import name from \"module\"`")
+			if braced {
+				parser.report(statement.Token, "expected `}` to close the names being imported")
+			} else {
+				parser.report(statement.Token, "expected `from` after the names being imported").
+					WithHelp("an import reads `import name from \"module\"`")
+			}
 
 			return nil
 		}
@@ -73,7 +104,17 @@ func (parser *Parser) importFromStatement(parent *ast.Import) ast.ExpressionNode
 		}
 	}
 
+	if braced {
+		// Consumes the `}`, landing on what should be `from`.
+		parser.readToken()
+	}
+
 	if !parser.currentTokenIs(token.FROM) {
+		if braced {
+			parser.report(parser.currentToken, "expected `from` after the closing `}`, found %s", parser.currentToken.Describe()).
+				WithHelp("an import reads `import { name } from \"module\"`")
+		}
+
 		return nil
 	}
 

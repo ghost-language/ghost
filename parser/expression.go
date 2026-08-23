@@ -6,12 +6,6 @@ import (
 )
 
 func (parser *Parser) parseExpression(precedence int) ast.ExpressionNode {
-	postfix := parser.postfixParserFns[parser.currentToken.Type]
-
-	if postfix != nil {
-		return postfix()
-	}
-
 	prefix := parser.prefixParserFns[parser.currentToken.Type]
 
 	if prefix == nil {

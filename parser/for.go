@@ -136,9 +136,11 @@ func (parser *Parser) forIncrement() ast.ExpressionNode {
 	}
 
 	if parser.currentTokenIs(token.IDENTIFIER) && (parser.nextTokenIs(token.PLUSPLUS) || parser.nextTokenIs(token.MINUSMINUS)) {
+		identifier := parser.identifierLiteral()
+
 		parser.readToken()
 
-		return parser.postfixExpression()
+		return parser.postfixExpression(identifier)
 	}
 
 	return nil

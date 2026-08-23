@@ -34,6 +34,15 @@ var precedences = map[token.Type]int{
 	token.SLASHEQUAL:   PRODUCT,
 	token.DOTDOT:       RANGE,
 	token.QUESTION:     TERNARY,
+
+	// `++`/`--` bind at the same precedence as `.` and `[]` (not tighter), so
+	// that when they trail a property or index chain, the chain's own
+	// recursive parse (e.g. dotExpression parsing the property name at INDEX
+	// precedence) stops before consuming the operator itself, leaving it for
+	// the outer loop to attach to the whole chain rather than just its last
+	// segment.
+	token.PLUSPLUS:   INDEX,
+	token.MINUSMINUS: INDEX,
 }
 
 // The following list of constants define the available precedence levels.
@@ -55,13 +64,12 @@ const (
 )
 
 type (
-	prefixParserFn  func() ast.ExpressionNode
-	infixParserFn   func(ast.ExpressionNode) ast.ExpressionNode
-	postfixParserFn func() ast.ExpressionNode
+	prefixParserFn func() ast.ExpressionNode
+	infixParserFn  func(ast.ExpressionNode) ast.ExpressionNode
 )
 
 // Parser holds a slice of tokens, its position, and errors
-// as well as the prefix, infix, and postfix parse functions.
+// as well as the prefix and infix parse functions.
 type Parser struct {
 	scanner *scanner.Scanner
 	errors  []*fault.Fault
@@ -73,9 +81,8 @@ type Parser struct {
 	previousIndex    *ast.Index
 	previousProperty *ast.Property
 
-	prefixParserFns  map[token.Type]prefixParserFn
-	infixParserFns   map[token.Type]infixParserFn
-	postfixParserFns map[token.Type]postfixParserFn
+	prefixParserFns map[token.Type]prefixParserFn
+	infixParserFns  map[token.Type]infixParserFn
 
 	inTernaryExpression bool
 }
@@ -83,11 +90,10 @@ type Parser struct {
 // New creates a new parser instance.
 func New(scanner *scanner.Scanner) *Parser {
 	parser := &Parser{
-		scanner:          scanner,
-		errors:           []*fault.Fault{},
-		prefixParserFns:  make(map[token.Type]prefixParserFn),
-		infixParserFns:   make(map[token.Type]infixParserFn),
-		postfixParserFns: make(map[token.Type]postfixParserFn),
+		scanner:         scanner,
+		errors:          []*fault.Fault{},
+		prefixParserFns: make(map[token.Type]prefixParserFn),
+		infixParserFns:  make(map[token.Type]infixParserFn),
 	}
 
 	// Register all of our prefix parse functions
@@ -142,10 +148,8 @@ func New(scanner *scanner.Scanner) *Parser {
 	parser.registerInfix(token.STAREQUAL, parser.compoundExpression)
 	parser.registerInfix(token.SLASHEQUAL, parser.compoundExpression)
 	parser.registerInfix(token.QUESTION, parser.ternaryExpression)
-
-	// Register all of our postfix parse functions
-	parser.registerPostfix(token.PLUSPLUS, parser.postfixExpression)
-	parser.registerPostfix(token.MINUSMINUS, parser.postfixExpression)
+	parser.registerInfix(token.PLUSPLUS, parser.postfixExpression)
+	parser.registerInfix(token.MINUSMINUS, parser.postfixExpression)
 
 	// Read the first two tokens, so currentToken and nextToken are both set.
 	parser.readToken()
@@ -162,11 +166,6 @@ func (parser *Parser) registerPrefix(tokenType token.Type, fn prefixParserFn) {
 // registerInfix registers a new infix parse function.
 func (parser *Parser) registerInfix(tokenType token.Type, fn infixParserFn) {
 	parser.infixParserFns[tokenType] = fn
-}
-
-// registerPostfix registers a new postfix parse function.
-func (parser *Parser) registerPostfix(tokenType token.Type, fn postfixParserFn) {
-	parser.postfixParserFns[tokenType] = fn
 }
 
 // Parse parses tokens and creates an AST. It returns the Program node,

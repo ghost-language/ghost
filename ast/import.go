@@ -6,4 +6,5 @@ type Import struct {
 	ExpressionNode
 	Token token.Token
 	Path  *String
+	Alias *Identifier
 }
