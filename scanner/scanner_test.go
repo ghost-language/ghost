@@ -252,6 +252,123 @@ func TestMultiLineStringsAdvanceTheLine(t *testing.T) {
 	}
 }
 
+// A template literal with no interpolation scans as a single closing chunk;
+// each `${...}` splits it into a chunk that hands off to ordinary expression
+// tokens and a chunk that resumes template text afterward.
+func TestTemplateLiteralTokens(t *testing.T) {
+	tests := []struct {
+		name     string
+		source   string
+		expected []struct {
+			expectedType   token.Type
+			expectedLexeme string
+		}
+	}{
+		{
+			name:   "no interpolation",
+			source: "`hello`",
+			expected: []struct {
+				expectedType   token.Type
+				expectedLexeme string
+			}{
+				{token.TEMPLATESTRINGEND, "hello"},
+				{token.EOF, ""},
+			},
+		},
+		{
+			name:   "single interpolation",
+			source: "`count: ${1 + 2}`",
+			expected: []struct {
+				expectedType   token.Type
+				expectedLexeme string
+			}{
+				{token.TEMPLATESTRING, "count: "},
+				{token.NUMBER, "1"},
+				{token.PLUS, "+"},
+				{token.NUMBER, "2"},
+				{token.TEMPLATESTRINGEND, ""},
+				{token.EOF, ""},
+			},
+		},
+		{
+			name:   "text after an interpolation is preserved literally",
+			source: "`${a} units`",
+			expected: []struct {
+				expectedType   token.Type
+				expectedLexeme string
+			}{
+				{token.TEMPLATESTRING, ""},
+				{token.IDENTIFIER, "a"},
+				{token.TEMPLATESTRINGEND, " units"},
+				{token.EOF, ""},
+			},
+		},
+		{
+			name:   "a map literal inside an interpolation does not close it early",
+			source: "`${ {\"a\": 1}[\"a\"] }`",
+			expected: []struct {
+				expectedType   token.Type
+				expectedLexeme string
+			}{
+				{token.TEMPLATESTRING, ""},
+				{token.LEFTBRACE, "{"},
+				{token.STRING, "a"},
+				{token.COLON, ":"},
+				{token.NUMBER, "1"},
+				{token.RIGHTBRACE, "}"},
+				{token.LEFTBRACKET, "["},
+				{token.STRING, "a"},
+				{token.RIGHTBRACKET, "]"},
+				{token.TEMPLATESTRINGEND, ""},
+				{token.EOF, ""},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			scanner := New(test.source, "test.ghost")
+
+			for _, expected := range test.expected {
+				scanned := scanner.ScanToken()
+
+				if scanned.Type != expected.expectedType {
+					t.Fatalf("token type is wrong. expected=%q, got=%q", expected.expectedType, scanned.Type)
+				}
+
+				if scanned.Lexeme != expected.expectedLexeme {
+					t.Fatalf("token lexeme is wrong. expected=%q, got=%q", expected.expectedLexeme, scanned.Lexeme)
+				}
+			}
+
+			if len(scanner.Faults()) != 0 {
+				t.Errorf("unexpected faults: %v", scanner.Faults())
+			}
+		})
+	}
+}
+
+// An unterminated template literal is reported rather than left to run off the
+// end of the file, matching how an unterminated string is handled.
+func TestTemplateLiteralUnterminated(t *testing.T) {
+	scanner := New("`hello", "test.ghost")
+
+	for scanner.ScanToken().Type != token.EOF {
+	}
+
+	faults := scanner.Faults()
+
+	if len(faults) != 1 {
+		t.Fatalf("got %d faults, expected 1: %v", len(faults), faults)
+	}
+
+	expected := "test.ghost:1:1: syntax error: unterminated template literal"
+
+	if faults[0].String() != expected {
+		t.Errorf("got=%q, expected=%q", faults[0].String(), expected)
+	}
+}
+
 // The source is filed as scanning starts so that a failure much later — in the
 // evaluator, long after parsing finished — can still quote the line.
 func TestScanningRegistersTheSource(t *testing.T) {

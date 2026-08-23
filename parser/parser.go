@@ -97,6 +97,8 @@ func New(scanner *scanner.Scanner) *Parser {
 	parser.registerPrefix(token.TRUE, parser.booleanLiteral)
 	parser.registerPrefix(token.FALSE, parser.booleanLiteral)
 	parser.registerPrefix(token.STRING, parser.stringLiteral)
+	parser.registerPrefix(token.TEMPLATESTRING, parser.templateLiteral)
+	parser.registerPrefix(token.TEMPLATESTRINGEND, parser.templateLiteral)
 	parser.registerPrefix(token.BANG, parser.prefixExpression)
 	parser.registerPrefix(token.MINUS, parser.prefixExpression)
 	parser.registerPrefix(token.IF, parser.ifExpression)

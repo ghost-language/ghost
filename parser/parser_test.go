@@ -527,6 +527,75 @@ func TestStringLiteral(t *testing.T) {
 	}
 }
 
+func TestTemplateStringLiteral(t *testing.T) {
+	input := "`count: ${1 + 2} done`"
+
+	scanner := scanner.New(input, "test.ghost")
+	parser := New(scanner)
+	program := parser.Parse()
+
+	failIfParserHasErrors(t, parser)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("program.Statements does not contain 1 statement. got=%d", len(program.Statements))
+	}
+
+	statement, ok := program.Statements[0].(*ast.Expression)
+
+	if !ok {
+		t.Fatalf("program.Statements[0] is not ast.Expression. got=%T", program.Statements[0])
+	}
+
+	template, ok := statement.Expression.(*ast.TemplateString)
+
+	if !ok {
+		t.Fatalf("statement is not ast.TemplateString. got=%T", statement.Expression)
+	}
+
+	expectedChunks := []string{"count: ", " done"}
+
+	if len(template.Chunks) != len(expectedChunks) {
+		t.Fatalf("template.Chunks has wrong length. expected=%d, got=%d", len(expectedChunks), len(template.Chunks))
+	}
+
+	for index, chunk := range expectedChunks {
+		if template.Chunks[index] != chunk {
+			t.Errorf("template.Chunks[%d] is not %q. got=%q", index, chunk, template.Chunks[index])
+		}
+	}
+
+	if len(template.Expressions) != 1 {
+		t.Fatalf("template.Expressions has wrong length. expected=1, got=%d", len(template.Expressions))
+	}
+
+	isInfixExpression(t, template.Expressions[0], 1, "+", 2)
+}
+
+func TestTemplateStringLiteralWithNoInterpolation(t *testing.T) {
+	input := "`hello`"
+
+	scanner := scanner.New(input, "test.ghost")
+	parser := New(scanner)
+	program := parser.Parse()
+
+	failIfParserHasErrors(t, parser)
+
+	statement := program.Statements[0].(*ast.Expression)
+	template, ok := statement.Expression.(*ast.TemplateString)
+
+	if !ok {
+		t.Fatalf("statement is not ast.TemplateString. got=%T", statement.Expression)
+	}
+
+	if len(template.Expressions) != 0 {
+		t.Fatalf("template.Expressions should be empty. got=%d", len(template.Expressions))
+	}
+
+	if len(template.Chunks) != 1 || template.Chunks[0] != "hello" {
+		t.Fatalf("template.Chunks is wrong. got=%v", template.Chunks)
+	}
+}
+
 func TestListLiteral(t *testing.T) {
 	input := `[1, 4, 6]`
 

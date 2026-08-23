@@ -45,11 +45,17 @@ All object types implement the `Method(method string, tok token.Token, args []Ob
 
 ## Language Features
 
-Ghost supports: classes with inheritance (`extends`), traits (`trait`/`use`), first-class functions, closures, lists, maps, for/for-in/while loops, switch statements, imports, and compound operators (`+=`, `++`, etc.).
+Ghost supports: classes with inheritance (`extends`), traits (`trait`/`use`), first-class functions, closures, lists, maps, for/for-in/while loops, switch statements, imports, compound operators (`+=`, `++`, etc.), and backtick template literals with `${}` interpolation.
 
 ### List operators
 
 Arithmetic operators on lists are elementwise and broadcast (`[1, 2] * 2`, `[[1, 2], [3, 4]] + [10, 20]`). `==` and `!=` compare contents to any depth. Joining two lists is `concat()`, a method, because the operators are arithmetic — do not reintroduce `+` as concatenation. Ordering (`<`, `>`) between lists is deliberately unsupported: neither an elementwise nor a lexicographic reading is obviously right.
+
+### Template literals
+
+Backtick strings interpolate with `${expr}`, JS-style: `` `count: ${count}` ``. Each interpolated value is converted with the same `String()` representation every other native stringification point already uses (`console.log`, `print`, `string.format`), so no type needs an explicit `toString()` call to appear in a template. This is deliberately kept separate from `+`: plain string concatenation between mismatched types (`"count: " + count`) stays a type error, because operators keep one meaning — a template literal is the fluent way to build a mixed-type string, not a loosening of `+`.
+
+The scanner does the work: a template is scanned as alternating chunk and expression tokens (`TEMPLATESTRING`/`TEMPLATESTRINGEND` for text, ordinary tokens for each `${...}`), tracked through a brace-depth stack (`Scanner.templateDepth`) so a `}` from a nested map literal or block doesn't close the interpolation early, and nesting (`` `${ `${x}` }` ``) falls out of the same stack. `parser.templateLiteral()` assembles the chunks and parsed expressions into `ast.TemplateString`; `evaluateTemplateString` stitches the result together at runtime.
 
 ### Class syntax
 

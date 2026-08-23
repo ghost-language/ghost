@@ -32,6 +32,14 @@ type Scanner struct {
 	// not hide the rest of the file — so each is recorded, the offending text is
 	// skipped, and scanning carries on.
 	faults []*fault.Fault
+
+	// templateDepth tracks how deep the scanner is inside `${ }` interpolations,
+	// one entry per still-open interpolation (the top of the stack is the
+	// innermost). Each entry counts the braces opened by ordinary code inside
+	// that interpolation, so the scanner can tell an interpolation's own closing
+	// `}` apart from one belonging to a map literal or block nested inside it:
+	// only a `}` seen while the top entry is zero closes the interpolation.
+	templateDepth []int
 }
 
 // keywords contains a list of all reserved keywords.
@@ -137,6 +145,24 @@ func (scanner *Scanner) ScanToken() token.Token {
 
 	scanner.skipWhitespace()
 
+	// A `}` that closes the innermost open interpolation resumes template text
+	// rather than becoming a RIGHTBRACE token. Whitespace ahead of it is still
+	// skipped normally — it belongs to the expression (`${a + b }`) — but once
+	// this `}` is found, scanTemplateChunk takes over character-by-character so
+	// that whatever follows it (e.g. the space in `${a} units`) is read as
+	// literal template text rather than being skipped again.
+	if scanner.character == '}' && len(scanner.templateDepth) > 0 && scanner.templateDepth[len(scanner.templateDepth)-1] == 0 {
+		scanner.templateDepth = scanner.templateDepth[:len(scanner.templateDepth)-1]
+
+		scanner.tokenLine = scanner.line
+		scanner.tokenColumn = scanner.column - 1
+		scanner.tokenPosition = scanner.position
+
+		scanner.readCharacter()
+
+		return scanner.scanTemplateChunk()
+	}
+
 	scanner.tokenLine = scanner.line
 	scanner.tokenColumn = scanner.column - 1
 	scanner.tokenPosition = scanner.position
@@ -151,8 +177,16 @@ func (scanner *Scanner) ScanToken() token.Token {
 	case rune(']'):
 		scannedToken = scanner.newToken(token.RIGHTBRACKET, "]", 1)
 	case rune('{'):
+		if len(scanner.templateDepth) > 0 {
+			scanner.templateDepth[len(scanner.templateDepth)-1]++
+		}
+
 		scannedToken = scanner.newToken(token.LEFTBRACE, "{", 1)
 	case rune('}'):
+		if len(scanner.templateDepth) > 0 {
+			scanner.templateDepth[len(scanner.templateDepth)-1]--
+		}
+
 		scannedToken = scanner.newToken(token.RIGHTBRACE, "}", 1)
 	case rune(','):
 		scannedToken = scanner.newToken(token.COMMA, ",", 1)
@@ -242,6 +276,10 @@ func (scanner *Scanner) ScanToken() token.Token {
 		value := scanner.scanString('\'')
 
 		scannedToken = scanner.newToken(token.STRING, value, scanner.span())
+	case rune('`'):
+		scanner.readCharacter()
+
+		return scanner.scanTemplateChunk()
 	case 0:
 		scannedToken = scanner.newToken(token.EOF, "", 1)
 	default:
@@ -324,6 +362,74 @@ func (scanner *Scanner) scanString(closing rune) string {
 	}
 
 	return string(result)
+}
+
+// scanTemplateChunk reads a run of template-literal text, called with
+// scanner.character already positioned at the chunk's first character (just
+// past the opening backtick, or just past the `}` that closed the previous
+// interpolation). It stops at whichever comes first: the closing backtick,
+// which ends the literal, or `${`, which opens an interpolation — pushing a
+// new entry onto templateDepth so the matching `}` is recognised however much
+// nested brace-using code the interpolation itself contains.
+func (scanner *Scanner) scanTemplateChunk() token.Token {
+	var result []rune
+
+	for {
+		if scanner.isAtEnd() {
+			scanner.report(fault.Syntax, "unterminated template literal").
+				WithHelp("add a closing \"`\" before the end of the file")
+
+			return scanner.newToken(token.TEMPLATESTRINGEND, string(result), scanner.span())
+		}
+
+		if scanner.character == '`' {
+			scanner.readCharacter()
+
+			return scanner.newToken(token.TEMPLATESTRINGEND, string(result), scanner.span())
+		}
+
+		if scanner.character == '$' && scanner.peekCharacter() == '{' {
+			scanner.readCharacter()
+			scanner.readCharacter()
+
+			scanner.templateDepth = append(scanner.templateDepth, 0)
+
+			return scanner.newToken(token.TEMPLATESTRING, string(result), scanner.span())
+		}
+
+		if scanner.character == '\n' {
+			scanner.advanceLine()
+		}
+
+		if scanner.character == '\\' {
+			scanner.readCharacter()
+
+			switch scanner.character {
+			case 'n':
+				result = append(result, '\n')
+			case 't':
+				result = append(result, '\t')
+			case 'r':
+				result = append(result, '\r')
+			case '\\':
+				result = append(result, '\\')
+			case '`':
+				result = append(result, '`')
+			case '$':
+				result = append(result, '$')
+			default:
+				result = append(result, '\\')
+				result = append(result, scanner.character)
+			}
+
+			scanner.readCharacter()
+
+			continue
+		}
+
+		result = append(result, scanner.character)
+		scanner.readCharacter()
+	}
 }
 
 // scanNumber consumes all digits for the integer part of the literal, and then

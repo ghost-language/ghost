@@ -76,6 +76,8 @@ func Evaluate(node ast.Node, scope *object.Scope) object.Object {
 		return evaluateSuper(node, scope)
 	case *ast.Switch:
 		return evaluateSwitch(node, scope)
+	case *ast.TemplateString:
+		return evaluateTemplateString(node, scope)
 	case *ast.Ternary:
 		return evaluateTernary(node, scope)
 	case *ast.Trait:
