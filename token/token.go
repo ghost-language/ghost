@@ -78,6 +78,8 @@ const (
 	IDENTIFIER
 	STRING
 	NUMBER
+	TEMPLATESTRING
+	TEMPLATESTRINGEND
 
 	// keywords
 	AND
@@ -148,9 +150,11 @@ var typeNames = [...]string{
 	STAREQUAL:    "*=",
 	SLASHEQUAL:   "/=",
 
-	IDENTIFIER: "IDENTIFIER",
-	STRING:     "STRING",
-	NUMBER:     "NUMBER",
+	IDENTIFIER:        "IDENTIFIER",
+	STRING:            "STRING",
+	NUMBER:            "NUMBER",
+	TEMPLATESTRING:    "TEMPLATESTRING",
+	TEMPLATESTRINGEND: "TEMPLATESTRINGEND",
 
 	AND:      "and",
 	AS:       "as",
@@ -196,6 +200,8 @@ func (t Type) Describe() string {
 		return "a string"
 	case NUMBER:
 		return "a number"
+	case TEMPLATESTRING, TEMPLATESTRINGEND:
+		return "a template literal"
 	case EOF:
 		return "the end of the file"
 	case INVALID:

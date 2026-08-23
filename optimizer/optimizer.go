@@ -97,6 +97,11 @@ func optimize(node ast.Node) ast.Node {
 
 		return node
 
+	case *ast.TemplateString:
+		optimizeExpressions(node.Expressions)
+
+		return node
+
 	case *ast.Ternary:
 		node.Condition = optimize(node.Condition)
 		node.IfTrue = optimize(node.IfTrue)

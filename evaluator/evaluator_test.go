@@ -572,6 +572,9 @@ func TestOptimizerPreservesSemantics(t *testing.T) {
 		// Strings.
 		`"hello" + " " + "world"`, `"" + "a"`,
 
+		// Template literals.
+		"`hello`", "`count: ${1 + 2}`", "x = 5 `x is ${x}`",
+
 		// Expressions the optimizer must leave alone: each raises a runtime
 		// error whose message and position must survive.
 		"1 / 0", "1 % 0", "1.0 / 0.0", "1 + true", `1 + "a"`, "-true",
