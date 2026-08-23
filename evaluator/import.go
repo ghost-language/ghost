@@ -180,7 +180,10 @@ func evaluateSchemeImport(scheme string, name string, node *ast.Import, importSc
 // *object.LibraryFunction a dotted call would use; a property is evaluated
 // once, immediately, since there is no lazy-getter value to bind — `import {
 // pi } from "ghost:math"` binds a plain number, the way `math.pi` would read
-// as one.
+// as one. A class (§8.9, §10.3 — e.g. `import { Audio } from "lumen:audio"`)
+// binds the class value itself, unevaluated, the same way reading it off the
+// module with `.` does — there is nothing to call it needs at import time,
+// only `new` does that.
 func evaluateSchemeImportFrom(scheme string, name string, node *ast.ImportFrom, importScope *object.Scope) object.Object {
 	module, err := lookupSchemeModule(node.Token, scheme, name)
 
@@ -203,6 +206,10 @@ func evaluateSchemeImportFrom(scheme string, name string, node *ast.ImportFrom, 
 			importScope.Environment.Set(propertyName, value)
 		}
 
+		for className, class := range module.Classes {
+			importScope.Environment.Set(className, class)
+		}
+
 		return nil
 	}
 
@@ -221,6 +228,12 @@ func evaluateSchemeImportFrom(scheme string, name string, node *ast.ImportFrom, 
 			}
 
 			importScope.Environment.Set(alias, value)
+
+			continue
+		}
+
+		if class, ok := module.Classes[identifier.Value]; ok {
+			importScope.Environment.Set(alias, class)
 
 			continue
 		}
@@ -350,17 +363,21 @@ func schemeFunctionNames(registry *library.Registry) []string {
 	return names
 }
 
-// schemeModuleExports lists the names a module actually offers — its methods
-// and its properties together — for suggesting the one a misspelled `import
-// { x } from "scheme:..."` probably meant.
+// schemeModuleExports lists the names a module actually offers — its
+// methods, properties, and classes together — for suggesting the one a
+// misspelled `import { x } from "scheme:..."` probably meant.
 func schemeModuleExports(module *object.LibraryModule) []string {
-	names := make([]string, 0, len(module.Methods)+len(module.Properties))
+	names := make([]string, 0, len(module.Methods)+len(module.Properties)+len(module.Classes))
 
 	for name := range module.Methods {
 		names = append(names, name)
 	}
 
 	for name := range module.Properties {
+		names = append(names, name)
+	}
+
+	for name := range module.Classes {
 		names = append(names, name)
 	}
 

@@ -58,6 +58,9 @@ func evaluateMethod(node *ast.Method, scope *object.Scope) object.Object {
 	case *object.Class:
 		return object.NewError(fault.Property, at, "class `%s` has no method `%s` to call on the class itself", receiver.Name.Value, name.Value).
 			WithHelp("methods are called on instances: `new %s().%s()`", receiver.Name.Value, name.Value)
+	case *object.NativeClass:
+		return object.NewError(fault.Property, at, "class `%s` has no method `%s` to call on the class itself", receiver.Name, name.Value).
+			WithHelp("methods are called on instances: `new %s().%s()`", receiver.Name, name.Value)
 	case *object.LibraryModule:
 		if function, ok := receiver.Methods[name.Value]; ok {
 			return unwrapCall(at, function, arguments, scope)

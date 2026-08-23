@@ -129,8 +129,64 @@ func RegisterFunctionForScheme(scheme string, name string, function object.GoFun
 	registry(scheme).Functions[name] = &object.LibraryFunction{Name: name, Function: function}
 }
 
+// RegisterModuleForScheme merges methods and properties into the named
+// module, creating it if this is the first thing registered under that
+// name. It merges rather than replaces specifically so it composes with
+// RegisterClassForScheme regardless of which runs first — a module built up
+// from two separate registrations (Lumen's "audio" module getting its
+// classes and its free functions from two different calls, say) ends up
+// whole either way, instead of one call's registration silently wiping out
+// the other's.
 func RegisterModuleForScheme(scheme string, name string, methods map[string]*object.LibraryFunction, properties map[string]*object.LibraryProperty) {
-	registry(scheme).Modules[name] = &object.LibraryModule{Name: name, Methods: methods, Properties: properties}
+	module := moduleFor(scheme, name)
+
+	for methodName, function := range methods {
+		module.Methods[methodName] = function
+	}
+
+	for propertyName, property := range properties {
+		module.Properties[propertyName] = property
+	}
+}
+
+// RegisterClass and RegisterClassForScheme register a NativeClass as a
+// member of a module — creating the module if nothing has registered under
+// that name yet, or adding to one that already has methods/properties (or
+// other classes) registered, the same merge RegisterModuleForScheme does.
+// This is how `import { Audio } from "lumen:audio"` and `new Audio(path)`
+// (§8.9, §10.3) both resolve: "audio" is a module like any other, "Audio" is
+// simply one of the things it exports, alongside whatever methods or
+// properties it may also have. RegisterClass is RegisterClassForScheme for
+// the standard library's own "ghost" scheme, mirroring RegisterFunction/
+// RegisterModule.
+func RegisterClass(moduleName string, className string, constructor object.GoFunction) {
+	RegisterClassForScheme(StandardScheme, moduleName, className, constructor)
+}
+
+func RegisterClassForScheme(scheme string, moduleName string, className string, constructor object.GoFunction) {
+	module := moduleFor(scheme, moduleName)
+
+	module.Classes[className] = &object.NativeClass{Name: className, Constructor: constructor}
+}
+
+// moduleFor returns the module a scheme registers under, creating an empty
+// one — with every field ready to write into, never nil — on first use.
+func moduleFor(scheme string, name string) *object.LibraryModule {
+	reg := registry(scheme)
+
+	module, ok := reg.Modules[name]
+
+	if !ok {
+		module = &object.LibraryModule{
+			Name:       name,
+			Methods:    map[string]*object.LibraryFunction{},
+			Properties: map[string]*object.LibraryProperty{},
+			Classes:    map[string]*object.NativeClass{},
+		}
+		reg.Modules[name] = module
+	}
+
+	return module
 }
 
 // Scheme returns the registry a `scheme:name` import resolves against,

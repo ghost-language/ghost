@@ -149,10 +149,14 @@ func moduleSuggestion(module *object.LibraryModule, name string) string {
 
 // modulePropertySuggestion offers the nearest property a module actually has.
 func modulePropertySuggestion(module *object.LibraryModule, name string) string {
-	names := make([]string, 0, len(module.Properties))
+	names := make([]string, 0, len(module.Properties)+len(module.Classes))
 
 	for property := range module.Properties {
 		names = append(names, property)
+	}
+
+	for class := range module.Classes {
+		names = append(names, class)
 	}
 
 	suggestion, ok := nearestName(name, names)

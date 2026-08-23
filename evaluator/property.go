@@ -34,11 +34,22 @@ func evaluateProperty(node *ast.Property, scope *object.Scope) object.Object {
 			return unwrapCall(property.Token, function, nil, scope)
 		}
 
+		// A class is a module member like any other — reading it off the
+		// module (rather than calling it, or `new`-ing it through a further
+		// dotted call) just answers the class value itself, the way
+		// `audio.Audio` has to for `new audio.Audio(...)` to work.
+		if class, ok := left.Classes[property.Value]; ok {
+			return class
+		}
+
 		return object.NewError(fault.Property, property.Token, "module `%s` has no property `%s`", left.Name, property.Value).
 			WithHelp("%s", modulePropertySuggestion(left, property.Value))
 	case *object.Class:
 		return object.NewError(fault.Property, node.Token, "class `%s` has no property `%s` to read on the class itself", left.Name.Value, property.Value).
 			WithHelp("properties are read on instances: `new %s().%s`", left.Name.Value, property.Value)
+	case *object.NativeClass:
+		return object.NewError(fault.Property, node.Token, "class `%s` has no property `%s` to read on the class itself", left.Name, property.Value).
+			WithHelp("properties are read on instances: `new %s().%s`", left.Name, property.Value)
 	case *object.Map:
 		key := &object.String{Value: property.Value}
 

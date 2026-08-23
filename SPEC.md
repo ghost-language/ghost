@@ -199,7 +199,7 @@ Source text ──▶ Scanner ──▶ Parser ──▶ AST ──▶ Optimizer
 | `ast` | Plain data: one struct per node kind. `ast.Node`/`StatementNode`/`ExpressionNode`/`AssignmentNode` are empty marker interfaces with no shared fields or methods. |
 | `optimizer` | A conservative constant-folding pass (`optimizer.Optimize`) plus one-time classification of every identifier as a library global or an ordinary variable, so the evaluator can skip two map lookups per read of a local. Only rewrites a node when the result is guaranteed identical, including on the error path. |
 | `evaluator` | `Evaluate(node, scope)` — one big type switch, delegating to one `evaluate*` function per node kind, in `evaluator/evaluator.go`. |
-| `object` | Runtime value types (`Number`, `String`, `Boolean`, `List`, `Map`, `Function`, `Class`, `Instance`, `Trait`, `Super`, `Date`, `Error`, `Scope`, `Environment`, the three `Library*` wrapper types). Every value type implements `Method(name, token, args) (Object, bool)`. Shared argument-reading/validation helpers live in `object/arguments.go`. |
+| `object` | Runtime value types (`Number`, `String`, `Boolean`, `List`, `Map`, `Function`, `Class`, `Instance`, `Trait`, `Super`, `Date`, `Error`, `Scope`, `Environment`, the three `Library*` wrapper types, `NativeClass`). Every value type implements `Method(name, token, args) (Object, bool)`. `new` handles `*Class` directly (building an instance and running its constructor is tree-walking work only the evaluator can do) and falls back to the small `Constructible` interface (`New(scope, token, args...) Object`) for anything else — `*NativeClass` being the one implementation today (§8.9, §10.3). Shared argument-reading/validation helpers live in `object/arguments.go`. |
 | `library` | The registry (`library.Functions`, `library.Modules`) that functions and modules install themselves into via `init()`, plus `library.IsGlobal`/`GlobalModule`/`GlobalFunction`, which name the small subset of that registry (`console`, `type`) reachable without an `import` — everything else, built-in or embedder-registered alike, is reached through the `ghost:` import scheme (§8.9, §9.1). |
 | `library/functions` | Unqualified library functions. `type` is the one still global (§9.1); a future addition need not be. |
 | `library/modules` | The ten built-in modules — see §9. |
@@ -613,6 +613,9 @@ import pi, sqrt from "ghost:math"      // unbraced named imports read the same w
 
 import "lumen:font"                    // an embedding host's own scheme, resolved the same way
 import { load } from "lumen:font"      // named imports work identically for any scheme
+
+import { Audio } from "lumen:audio"    // a class exported from a module works the same way too
+new Audio("path/to/file.mp3")          // `new` on it works exactly like a Ghost-defined class
 ```
 
 **File imports** (no scheme — any other string) name a `.ghost` file:
@@ -673,14 +676,18 @@ while a script is already running.
   callable.
 - The `from` forms — braced or not, `import { pi } from "ghost:math"` and
   `import pi from "ghost:math"` mean the same thing — pull individual
-  methods and properties out of a module by name, exactly like a named
-  import from a `.ghost` file. A property (`pi`) is evaluated once,
+  methods, properties, and classes out of a module by name, exactly like a
+  named import from a `.ghost` file. A property (`pi`) is evaluated once,
   immediately, at the import — there is no lazy getter to bind, so
   `import { pi } from "ghost:math"` binds a plain number, the same value
-  reading `math.pi` would. `import *` binds every method and property the
-  module has. The `from` form only applies to modules; naming a standalone
-  function this way (there being nothing on it to destructure) is a
-  dedicated `Import` fault pointing at the bare form instead.
+  reading `math.pi` would. A class (`import { Audio } from "lumen:audio"`,
+  §10.3) binds the class value itself, unevaluated — there is nothing to
+  call at import time, only `new` does that, and it works on an imported
+  native class exactly as it does on a Ghost-defined one (§8.8). `import *`
+  binds every method, property, and class the module has. The `from` form
+  only applies to modules; naming a standalone function this way (there
+  being nothing on it to destructure) is a dedicated `Import` fault pointing
+  at the bare form instead.
 - A name registered under exactly one scheme, written bare with no import
   (`math.pi` with no import at all) is reported as a `Name` fault with help
   naming the exact import to add, not a generic "did you mean" — see §8.11.
@@ -1233,6 +1240,13 @@ ghost.RegisterModule("myModule", methods, properties)
 // ghost:, e.g. for a host built as "Lumen":
 ghost.RegisterFunctionForScheme("lumen", "myFn", myGoFunc)
 ghost.RegisterModuleForScheme("lumen", "myModule", methods, properties)
+
+// A class whose instances are built and driven entirely by Go code — a
+// stateful host resource (an audio handle, say) the host wants scripts to
+// `new` and call methods on, rather than expose as a bag of functions:
+ghost.RegisterClassForScheme("lumen", "audio", "Audio", audioConstructor)
+// -> import { Audio } from "lumen:audio"
+// -> new Audio("path/to/file.mp3")
 ```
 
 `RegisterFunction`/`RegisterModule`/`RegisterFunctionForScheme`/
@@ -1255,6 +1269,43 @@ own rather than Ghost's. Both pairs write into the same kind of registry and
 resolve through the same `import` mechanism (§8.9), so there is no second
 convention to learn or keep in sync for a host that wants its own
 namespace — only which of the two calls to make.
+
+**`RegisterClass`/`RegisterClassForScheme`** register a class the same way —
+a member of a module, alongside whatever methods and properties it may also
+have — except its instances are built and driven entirely by Go rather than
+by evaluating a Ghost class body. `object.NativeClass` is what gets
+registered (`Name` and a `Constructor` with the exact signature `object.
+GoFunction` already has); `new` accepts one through a small `object.
+Constructible` interface (`New(scope, tok, args...) Object`) — a second,
+generic path alongside the dedicated one `*object.Class` already had, not a
+parallel class system, since `Constructible` is the only thing `new` needs
+to know about a class it didn't build itself. `Constructor` returns whatever
+value a `new Audio(...)` should
+produce — any `object.Object` at all, with its own `Method()` implementation
+deciding what calling something on an instance does, entirely on the host's
+side; Ghost does not prescribe an instance shape beyond "is an `object.
+Object`". Reading a property or calling a method on the class value itself,
+rather than an instance (`Audio.path`, `Audio.path()`), is refused with the
+same wording a Ghost-defined class gives for the same mistake — a script
+using it has no way to tell, and no reason to need to tell, which kind of
+class `Audio` actually is.
+
+This is a Go-level extension point only: there is still exactly one way to
+declare a class in `.ghost` source (§8.8), and nothing here adds a second.
+A bundled Ghost-source "prelude" — classes written in `.ghost`, evaluated
+once at startup, calling down into native functions for the primitive work —
+was considered as an alternative and deliberately not built: it would have
+split embedding into two conventions (a Go-level one for functions/modules,
+a Ghost-source one for anything class-shaped) for no benefit an embedder
+actually needs today. `NativeClass` keeps embedding to the one, Go-level
+convention throughout. It is the right tool specifically when the class
+wraps a genuinely native operation with no meaningful Ghost-level logic
+around it (opening a file handle, decoding audio) — tree-walking a method
+that only ever calls straight back into Go buys nothing. A class that is mostly orchestration over calls that are themselves already
+native — a hypothetical future `file.File` wrapping `file.read`/`file.write`
+(§9.8), say — would be the case for reconsidering a Ghost-source prelude, if
+one ever turns up in the standard library itself; nothing here forecloses
+that, it just isn't needed yet.
 
 ### 10.4 Extending Ghost from Ghost itself
 
@@ -1288,6 +1339,7 @@ already meets — except where flagged.
 - [x] Module system (`import`, named imports, `import *`, circular-import detection, `scheme:`-prefixed imports)
 - [x] Import-only standard library — `console`/`type` global, everything else imported by name (§8.9, §9.1)
 - [x] Embedder-claimable import schemes (`RegisterModuleForScheme`/`RegisterFunctionForScheme`, §10.3) — a Go host gets its own `host:name` namespace alongside `ghost:`
+- [x] Native classes (`RegisterClassForScheme`, `object.NativeClass`/`Constructible`, §8.9, §10.3) — a Go host can register a class whose instances are built and driven entirely by Go, `new`-able exactly like a Ghost-defined class
 - [x] Bounded recursion with a clean error instead of a stack overflow
 - [x] Structured, uniform error model with call traces and typo suggestions
 - [x] Constant folding and identifier-classification optimization pass
