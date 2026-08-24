@@ -1466,6 +1466,102 @@ func TestImportStatements(t *testing.T) {
 			t.Fatal("expected an error for an unclosed brace")
 		}
 	})
+
+	t.Run("combined module and named import (JS-style)", func(t *testing.T) {
+		program := New(scanner.New(`import image, { Spritesheet } from "lumen:image"`, "test.ghost")).Parse()
+
+		statement := program.Statements[0].(*ast.Expression)
+		imp, ok := statement.Expression.(*ast.Import)
+
+		if !ok {
+			t.Fatalf("expected ast.Import, got %T", statement.Expression)
+		}
+
+		if imp.Path.Value != "lumen:image" {
+			t.Fatalf("expected path %q, got %q", "lumen:image", imp.Path.Value)
+		}
+
+		if imp.Alias == nil || imp.Alias.Value != "image" {
+			t.Fatalf("expected the module bound to %q, got %v", "image", imp.Alias)
+		}
+
+		identifier, ok := imp.Identifiers["Spritesheet"]
+
+		if !ok {
+			t.Fatalf("expected %q to be bound, got %v", "Spritesheet", imp.Identifiers)
+		}
+
+		if identifier.Value != "Spritesheet" {
+			t.Fatalf("expected identifier %q, got %q", "Spritesheet", identifier.Value)
+		}
+	})
+
+	t.Run("combined module and named import with a named alias", func(t *testing.T) {
+		program := New(scanner.New(`import image, { Spritesheet as Sheet } from "lumen:image"`, "test.ghost")).Parse()
+
+		statement := program.Statements[0].(*ast.Expression)
+		imp := statement.Expression.(*ast.Import)
+
+		if imp.Alias == nil || imp.Alias.Value != "image" {
+			t.Fatalf("expected the module bound to %q, got %v", "image", imp.Alias)
+		}
+
+		identifier, ok := imp.Identifiers["Sheet"]
+
+		if !ok {
+			t.Fatalf("expected alias %q to be bound, got %v", "Sheet", imp.Identifiers)
+		}
+
+		if identifier.Value != "Spritesheet" {
+			t.Fatalf("expected alias %q to name %q, got %q", "Sheet", "Spritesheet", identifier.Value)
+		}
+	})
+
+	t.Run("combined module and everything import", func(t *testing.T) {
+		program := New(scanner.New(`import image, { * } from "lumen:image"`, "test.ghost")).Parse()
+
+		statement := program.Statements[0].(*ast.Expression)
+		imp := statement.Expression.(*ast.Import)
+
+		if !imp.Everything {
+			t.Fatal("expected Everything to be true")
+		}
+	})
+
+	t.Run("combined form requires braces around the named list", func(t *testing.T) {
+		parser := New(scanner.New(`import image, Spritesheet from "lumen:image"`, "test.ghost"))
+		program := parser.Parse()
+
+		// `image, Spritesheet` with no brace isn't the combined form at all —
+		// it's an ordinary unbraced named-import list of two names, so this
+		// parses fine but pulls two names (`image`, `Spritesheet`) rather than
+		// binding the module.
+		if len(parser.Errors()) != 0 {
+			t.Fatalf("expected no error, got %v", parser.Errors())
+		}
+
+		statement := program.Statements[0].(*ast.Expression)
+		importFrom, ok := statement.Expression.(*ast.ImportFrom)
+
+		if !ok {
+			t.Fatalf("expected ast.ImportFrom, got %T", statement.Expression)
+		}
+
+		if len(importFrom.Identifiers) != 2 {
+			t.Fatalf("expected 2 identifiers, got %d", len(importFrom.Identifiers))
+		}
+	})
+
+	t.Run("unbraced named list still works alongside the combined form", func(t *testing.T) {
+		program := New(scanner.New(`import pi, e, tau from "math"`, "test.ghost")).Parse()
+
+		statement := program.Statements[0].(*ast.Expression)
+		importFrom := statement.Expression.(*ast.ImportFrom)
+
+		if len(importFrom.Identifiers) != 3 {
+			t.Fatalf("expected 3 identifiers, got %d", len(importFrom.Identifiers))
+		}
+	})
 }
 
 func TestParserSuggestsAMissingOpener(t *testing.T) {
