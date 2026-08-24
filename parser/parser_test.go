@@ -1466,6 +1466,76 @@ func TestImportStatements(t *testing.T) {
 			t.Fatal("expected an error for an unclosed brace")
 		}
 	})
+
+	t.Run("combined module and named import", func(t *testing.T) {
+		program := New(scanner.New(`import "lumen:image", { Spritesheet }`, "test.ghost")).Parse()
+
+		statement := program.Statements[0].(*ast.Expression)
+		imp, ok := statement.Expression.(*ast.Import)
+
+		if !ok {
+			t.Fatalf("expected ast.Import, got %T", statement.Expression)
+		}
+
+		if imp.Path.Value != "lumen:image" {
+			t.Fatalf("expected path %q, got %q", "lumen:image", imp.Path.Value)
+		}
+
+		if imp.Alias != nil {
+			t.Fatalf("expected no alias, got %q", imp.Alias.Value)
+		}
+
+		identifier, ok := imp.Identifiers["Spritesheet"]
+
+		if !ok {
+			t.Fatalf("expected %q to be bound, got %v", "Spritesheet", imp.Identifiers)
+		}
+
+		if identifier.Value != "Spritesheet" {
+			t.Fatalf("expected identifier %q, got %q", "Spritesheet", identifier.Value)
+		}
+	})
+
+	t.Run("combined module and named import with alias and named alias", func(t *testing.T) {
+		program := New(scanner.New(`import "lumen:image" as img, { Spritesheet as Sheet }`, "test.ghost")).Parse()
+
+		statement := program.Statements[0].(*ast.Expression)
+		imp := statement.Expression.(*ast.Import)
+
+		if imp.Alias == nil || imp.Alias.Value != "img" {
+			t.Fatalf("expected alias %q, got %v", "img", imp.Alias)
+		}
+
+		identifier, ok := imp.Identifiers["Sheet"]
+
+		if !ok {
+			t.Fatalf("expected alias %q to be bound, got %v", "Sheet", imp.Identifiers)
+		}
+
+		if identifier.Value != "Spritesheet" {
+			t.Fatalf("expected alias %q to name %q, got %q", "Sheet", "Spritesheet", identifier.Value)
+		}
+	})
+
+	t.Run("combined module and everything import", func(t *testing.T) {
+		program := New(scanner.New(`import "lumen:image", { * }`, "test.ghost")).Parse()
+
+		statement := program.Statements[0].(*ast.Expression)
+		imp := statement.Expression.(*ast.Import)
+
+		if !imp.Everything {
+			t.Fatal("expected Everything to be true")
+		}
+	})
+
+	t.Run("combined form requires braces around the named list", func(t *testing.T) {
+		parser := New(scanner.New(`import "lumen:image", Spritesheet`, "test.ghost"))
+		parser.Parse()
+
+		if len(parser.Errors()) == 0 {
+			t.Fatal("expected an error for an unbraced trailing name list")
+		}
+	})
 }
 
 func TestParserSuggestsAMissingOpener(t *testing.T) {

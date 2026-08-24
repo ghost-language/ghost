@@ -74,6 +74,24 @@ func TestImportFromWithBracesAndAlias(t *testing.T) {
 	isStringObject(t, result, "hi")
 }
 
+func TestImportCombinedModuleAndNamed(t *testing.T) {
+	dir := t.TempDir()
+
+	writeModule(t, dir, "greeting.ghost", `hello = "hi"`)
+
+	result := evaluateInDirectory(dir, "import \"greeting\", { hello }\ngreeting.hello + \" \" + hello")
+
+	isStringObject(t, result, "hi hi")
+}
+
+func TestImportCombinedSchemeModuleAndNamed(t *testing.T) {
+	dir := t.TempDir()
+
+	result := evaluateInDirectory(dir, "import \"ghost:math\", { pi }\nmath.pi == pi")
+
+	isBooleanObject(t, result, true)
+}
+
 func TestImportReimportStillBinds(t *testing.T) {
 	dir := t.TempDir()
 
