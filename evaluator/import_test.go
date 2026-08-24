@@ -79,7 +79,7 @@ func TestImportCombinedModuleAndNamed(t *testing.T) {
 
 	writeModule(t, dir, "greeting.ghost", `hello = "hi"`)
 
-	result := evaluateInDirectory(dir, "import \"greeting\", { hello }\ngreeting.hello + \" \" + hello")
+	result := evaluateInDirectory(dir, "import greeting, { hello } from \"greeting\"\ngreeting.hello + \" \" + hello")
 
 	isStringObject(t, result, "hi hi")
 }
@@ -87,7 +87,7 @@ func TestImportCombinedModuleAndNamed(t *testing.T) {
 func TestImportCombinedSchemeModuleAndNamed(t *testing.T) {
 	dir := t.TempDir()
 
-	result := evaluateInDirectory(dir, "import \"ghost:math\", { pi }\nmath.pi == pi")
+	result := evaluateInDirectory(dir, "import math, { pi } from \"ghost:math\"\nmath.pi == pi")
 
 	isBooleanObject(t, result, true)
 }

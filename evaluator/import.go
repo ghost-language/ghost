@@ -83,14 +83,16 @@ func lookupImport(filename string) (*object.Scope, bool) {
 
 // evaluateImport handles the bare form of an import: `import "math"` binds
 // the whole module to a variable named after its path, and `import "math" as
-// m` binds it to `m` instead. `import "math", { pi }` does both at once —
-// the whole module bound as above, plus named exports pulled out of it in
-// the same statement (bindModuleMembers), so a script that needs both the
-// module and one of its members doesn't need two imports of the same path.
-// The module is only read, parsed, and evaluated once no matter how many
-// places import it (loadModule/rememberImport below are shared with
-// evaluateImportFrom for that reason); every import of it still has to bind
-// its own name(s) into the importing scope.
+// m` binds it to `m` instead. `import m, { pi } from "math"` — the parser's
+// JS-style combined form (parser.combinedImportStatement) — reaches here too:
+// node.Alias carries the chosen name (`m`) exactly as an `as` alias would,
+// and node.Identifiers/node.Everything additionally pull named exports out of
+// the same module in the same statement (bindModuleMembers), so a script
+// that needs both the module and one of its members doesn't need two imports
+// of the same path. The module is only read, parsed, and evaluated once no
+// matter how many places import it (loadModule/rememberImport below are
+// shared with evaluateImportFrom for that reason); every import of it still
+// has to bind its own name(s) into the importing scope.
 func evaluateImport(node *ast.Import, scope *object.Scope) object.Object {
 	if scheme, name, ok := schemeImport(node.Path.Value); ok {
 		return evaluateSchemeImport(scheme, name, node, scope)
@@ -166,13 +168,15 @@ func moduleValue(moduleScope *object.Scope) *object.Map {
 // embedder's own scheme (Lumen's `lumen:`, say) resolve through the exact
 // same lookup.
 //
-// `import "scheme:name", { a }` combines this with a `from`-style pull in one
-// statement: the module is still bound as above, and named exports are
-// additionally read off it (bindSchemeMembers) — the fix for needing both
-// `import "lumen:image"` and `import { Spritesheet } from "lumen:image"` to
-// get at `image.someMethod()` and `Spritesheet` together. That only makes
-// sense for a module (there is nothing to pull a name out of a standalone
-// function), so it is rejected the same way the `from` form itself is.
+// `import image, { Spritesheet } from "scheme:name"` combines this with a
+// `from`-style pull in one statement: the module is still bound (under
+// `image`, via node.Alias, the same as node.Alias would mean for the bare
+// form above) and named exports are additionally read off it
+// (bindSchemeMembers) — the fix for needing both `import "lumen:image"` and
+// `import { Spritesheet } from "lumen:image"` to get at
+// `image.someMethod()` and `Spritesheet` together. That only makes sense for
+// a module (there is nothing to pull a name out of a standalone function),
+// so it is rejected the same way the `from` form itself is.
 func evaluateSchemeImport(scheme string, name string, node *ast.Import, importScope *object.Scope) object.Object {
 	value, err := lookupSchemeBinding(node.Token, scheme, name)
 
@@ -224,8 +228,8 @@ func evaluateSchemeImportFrom(scheme string, name string, node *ast.ImportFrom, 
 // bindSchemeMembers pulls named exports (or everything, for `import *`) out
 // of an already-resolved scheme module and binds them into importScope.
 // Shared between `import { a } from "scheme:name"` and the combined
-// `import "scheme:name", { a }` form, which differ only in whether the whole
-// module is also bound.
+// `import name, { a } from "scheme:name"` form, which differ only in whether
+// the whole module is also bound.
 func bindSchemeMembers(module *object.LibraryModule, identifiers map[string]*ast.Identifier, everything bool, tok token.Token, name string, importScope *object.Scope) object.Object {
 	if everything {
 		for methodName, function := range module.Methods {
@@ -453,8 +457,9 @@ func evaluateImportFrom(node *ast.ImportFrom, scope *object.Scope) object.Object
 
 // bindModuleMembers pulls named exports (or everything, for `import *`) out
 // of an already-evaluated module scope and binds them into importScope.
-// Shared between `import { a } from "path"` and the combined `import "path",
-// { a }` form, which differ only in whether the whole module is also bound.
+// Shared between `import { a } from "path"` and the combined `import name,
+// { a } from "path"` form, which differ only in whether the whole module is
+// also bound.
 func bindModuleMembers(moduleScope *object.Scope, identifiers map[string]*ast.Identifier, everything bool, tok token.Token, path string, importScope *object.Scope) object.Object {
 	if everything {
 		for alias, value := range moduleScope.Environment.All() {

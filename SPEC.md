@@ -623,9 +623,9 @@ import { load } from "lumen:font"      // named imports work identically for any
 import { Audio } from "lumen:audio"    // a class exported from a module works the same way too
 new Audio("path/to/file.mp3")          // `new` on it works exactly like a Ghost-defined class
 
-import "lumen:image", { Spritesheet }  // binds `image` *and* `Spritesheet` in one statement
-image.something()                      // the whole module, same as a bare `import "lumen:image"`
-new Spritesheet("sheet.png")           // the named export, same as `import { Spritesheet } from ...`
+import image, { Spritesheet } from "lumen:image"  // JS-style: `image` *and* `Spritesheet`, one statement
+image.something()                                  // the whole module, same as `import "lumen:image" as image`
+new Spritesheet("sheet.png")                       // the named export, same as `import { Spritesheet } from ...`
 ```
 
 **File imports** (no scheme — any other string) name a `.ghost` file:
@@ -644,9 +644,9 @@ new Spritesheet("sheet.png")           // the named export, same as `import { Sp
 - `import name from "..."` for a name the module does not export suggests
   the nearest name it does, the same typo-correction machinery used
   everywhere else (§8.11).
-- The combined form works here too: `import "helpers", { greet }` binds
-  `helpers` (a `Map` of the module's top-level bindings, same as the bare
-  form) and `greet` in one statement.
+- The combined form works here too: `import helpers, { greet } from
+  "helpers"` binds `helpers` (a `Map` of the module's top-level bindings,
+  same as the bare form) and `greet` in one statement.
 
 **Scheme imports** name an entry in a `library.Registry` (§6) with a
 `scheme:` prefix instead of a file path — any import path matching
@@ -701,19 +701,22 @@ while a script is already running.
   only applies to modules; naming a standalone function this way (there
   being nothing on it to destructure) is a dedicated `Import` fault pointing
   at the bare form instead.
-- **The two forms combine**: `import "path", { a, b }` binds the whole
-  module — exactly as the bare form does, alias and all (`import "path" as
-  m, { a, b }` also works) — *and* pulls `a`/`b` out of it by name, in one
-  statement. This is the fix for needing both the module itself and one of
-  its members: `import "lumen:image", { Spritesheet }` binds `image` (so
+- **The two forms combine, JS-style**: `import name, { a, b } from "path"`
+  binds the whole module under `name` — exactly what `import "path" as name`
+  does, except the name is chosen positionally here instead of via `as` —
+  *and* pulls `a`/`b` out of it by name, in one statement. This is the fix
+  for needing both the module itself and one of its members:
+  `import image, { Spritesheet } from "lumen:image"` binds `image` (so
   `image.something()` works, if the module has any methods of its own) and
   `Spritesheet` (so `new Spritesheet(...)` does too), where before this took
-  two separate `import` lines naming the same path. `import "path", { * }`
-  combines the whole module with every export. The trailing name list has
-  to be braced here — unlike the standalone `from` form, there is no
-  trailing `from` left to mark where an unbraced list would end — and, since
-  a standalone function has nothing to pull a name out of, is rejected the
-  same way `import { x } from "scheme:someFunction"` already is.
+  two separate `import` lines naming the same path. `import name, { * } from
+  "path"` combines the whole module with every export. The named part has to
+  be braced here, the same as it does standing alone — a bare
+  `import a, b from "path"` (no brace after the comma) keeps its existing,
+  unrelated meaning of two named imports, told apart from the combined form
+  by that brace alone. Since a standalone function has nothing to pull a
+  name out of, naming one this way is rejected the same way
+  `import { x } from "scheme:someFunction"` already is.
 - A name registered under exactly one scheme, written bare with no import
   (`math.pi` with no import at all) is reported as a `Name` fault with help
   naming the exact import to add, not a generic "did you mean" — see §8.11.
