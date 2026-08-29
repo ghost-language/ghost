@@ -852,12 +852,22 @@ the module system.
 |---|---|---|
 | `round([places])` | 0–1 | Rounds to the nearest integer, or to `places` decimal places. An already-integral `Number` is returned unchanged (not converted through a float round-trip). |
 | `floor()` | 0 | Rounds down. Integral input returned unchanged. |
+| `ceil()` | 0 | Rounds up. Integral input returned unchanged. |
+| `abs()` | 0 | Absolute value; integral input stays an integer. |
+| `pow(exponent)` | 1 | Raised to `exponent`. An integer receiver raised to a non-negative integer exponent stays an integer (exact, checked for overflow) so the result can index a list; otherwise falls back to floating point, matching `math.pow()`. |
+| `clamp(low, high)` | 2 | The receiver, pulled inside `[low, high]`; answers with one of the three values given rather than a computed one, so clamping whole numbers leaves them whole. A `Value` error if `low` is greater than `high`. |
+| `isNaN()` / `isFinite()` / `isInfinite()` | 0 | Only ever true for a float (an integer `Number` can't hold any of the three). |
+| `isInteger()` | 0 | True for every non-float `Number`, and for a float only if it is finite with no fractional part. |
+| `isEven()` / `isOdd()` | 0 | True only for an integral value (§`isInteger()`) of the matching parity. |
+| `isNegative()` / `isPositive()` / `isZero()` | 0 | |
 | `toString()` | 0 | |
 
-*No `ceil()` instance method* despite `round`/`floor` both existing — only
-reachable via `math.ceil()` (§12). No `abs()`, `pow()`, `sqrt()`,
-`clamp()`, or any of the `isX` predicates as instance methods either; all of
-those live only in the `math` module.
+Each mirrors its `math` counterpart (§9.4) exactly, so `n.pow(2)` and
+`math.pow(n, 2)` agree for every input — see §12. `sqrt()`, `lerp()`, and
+the rest of `math`'s scalar operations were not given instance-method
+counterparts: they have no natural "call this on the receiver" reading the
+way `abs`/`pow`/`clamp`/the `isX` predicates do, so they stay reachable
+only through `math`.
 
 **`string`**
 
@@ -1449,10 +1459,15 @@ the finished reference table (`remove` was picked over `delete` to match
 `list.removeAt()` rather than add a second spelling for the same
 operation).
 
-**Number methods:** `ceil()` (exists on `math` but not as an instance
-method, unlike its sibling `round`/`floor`), and, depending on how far
-parity with `math` should go, `abs()`/`pow()`/`clamp()`/the `isX`
-predicates as instance methods.
+**Number methods — done.** `ceil()`, `abs()`, `pow(exponent)`,
+`clamp(low, high)`, and the `isX` predicates (`isNaN`, `isFinite`,
+`isInfinite`, `isInteger`, `isEven`, `isOdd`, `isNegative`, `isPositive`,
+`isZero`) are implemented as instance methods (`object/number.go`, tested
+in `evaluator/number_methods_test.go`); see §9.2 for the finished
+reference table. Full parity with `math` was picked over the minimal
+`ceil()`-only fix, since `math`'s own predicates and bounds/interpolation
+methods (`sqrt()`, `lerp()`, etc.) have no natural instance-method reading
+the way `abs`/`pow`/`clamp`/`isX` do — those stay `math`-only.
 
 **Date module:** `subHours`/`subMinutes`/`subSeconds` (asymmetric with
 every other add/sub pair), `startOfWeek`/`endOfWeek`/`startOfYear`/`endOfYear`.
