@@ -14,6 +14,18 @@ func (parser *Parser) mapLiteral() ast.ExpressionNode {
 
 		key := parser.parseExpression(LOWEST)
 
+		identifier, isIdentifier := key.(*ast.Identifier)
+
+		if isIdentifier && (parser.nextTokenIs(token.COMMA) || parser.nextTokenIs(token.RIGHTBRACE)) {
+			mapLiteral.Pairs[key] = &ast.Identifier{Token: identifier.Token, Value: identifier.Value}
+
+			if !parser.nextTokenIs(token.RIGHTBRACE) && !parser.expectNextTokenIs(token.COMMA) {
+				return nil
+			}
+
+			continue
+		}
+
 		if !parser.expectNextTokenIs(token.COLON) {
 			return nil
 		}
