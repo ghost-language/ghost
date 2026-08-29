@@ -5,6 +5,7 @@ import (
 	"math"
 	"strconv"
 
+	"ghostlang.org/x/ghost/fault"
 	"ghostlang.org/x/ghost/token"
 )
 
@@ -99,6 +100,32 @@ func (n *Number) Method(method string, tok token.Token, args []Object) (Object, 
 		return n.round(tok, args)
 	case "floor":
 		return n.floor(tok, args)
+	case "ceil":
+		return n.ceil(tok, args)
+	case "abs":
+		return n.abs(tok, args)
+	case "pow":
+		return n.pow(tok, args)
+	case "clamp":
+		return n.clamp(tok, args)
+	case "isNaN":
+		return n.isNaNMethod(tok, args)
+	case "isFinite":
+		return n.isFiniteMethod(tok, args)
+	case "isInfinite":
+		return n.isInfiniteMethod(tok, args)
+	case "isInteger":
+		return n.isIntegerMethod(tok, args)
+	case "isEven":
+		return n.isEvenMethod(tok, args)
+	case "isOdd":
+		return n.isOddMethod(tok, args)
+	case "isNegative":
+		return n.isNegativeMethod(tok, args)
+	case "isPositive":
+		return n.isPositiveMethod(tok, args)
+	case "isZero":
+		return n.isZeroMethod(tok, args)
 	case "toString":
 		return n.toString(tok, args)
 	}
@@ -156,6 +183,225 @@ func (n *Number) floor(tok token.Token, args []Object) (Object, bool) {
 	}
 
 	return NewInt(int64(math.Floor(n.f))), true
+}
+
+func (n *Number) ceil(tok token.Token, args []Object) (Object, bool) {
+	if err := Arity("number.ceil()", tok, args, 0); err != nil {
+		return err, true
+	}
+
+	if !n.isFloat {
+		return n, true
+	}
+
+	return NewInt(int64(math.Ceil(n.f))), true
+}
+
+func (n *Number) abs(tok token.Token, args []Object) (Object, bool) {
+	if err := Arity("number.abs()", tok, args, 0); err != nil {
+		return err, true
+	}
+
+	return n.Abs(), true
+}
+
+// pow keeps whole numbers whole where it can, mirroring math.pow: an integer
+// base raised to a non-negative integer exponent has an exact integer answer,
+// so `4.pow(2)` stays a Number that can index a list. When the answer would
+// not fit an int64, or either operand is a float, it falls back to floating
+// point rather than wrapping.
+func (n *Number) pow(tok token.Token, args []Object) (Object, bool) {
+	if err := Arity("number.pow()", tok, args, 1); err != nil {
+		return err, true
+	}
+
+	exponent, err := NumberArgument("number.pow()", tok, args, 0)
+
+	if err != nil {
+		return err, true
+	}
+
+	if !n.isFloat && !exponent.isFloat && !exponent.IsNeg() {
+		if result, ok := integerPower(n.i, exponent.i); ok {
+			return NewInt(result), true
+		}
+	}
+
+	return NewFloat(math.Pow(n.Float64(), exponent.Float64())), true
+}
+
+// clamp keeps the receiver inside [low, high], answering with one of the
+// three values it was given rather than a computed one, so clamping whole
+// numbers leaves them whole.
+func (n *Number) clamp(tok token.Token, args []Object) (Object, bool) {
+	if err := Arity("number.clamp()", tok, args, 2); err != nil {
+		return err, true
+	}
+
+	low, err := NumberArgument("number.clamp()", tok, args, 0)
+
+	if err != nil {
+		return err, true
+	}
+
+	high, err := NumberArgument("number.clamp()", tok, args, 1)
+
+	if err != nil {
+		return err, true
+	}
+
+	if low.GreaterThan(high) {
+		return NewError(fault.Value, tok, "`number.clamp()` expects the lower bound to be no greater than the upper bound"), true
+	}
+
+	if n.LessThan(low) {
+		return low, true
+	}
+
+	if n.GreaterThan(high) {
+		return high, true
+	}
+
+	return n, true
+}
+
+func (n *Number) isNaNMethod(tok token.Token, args []Object) (Object, bool) {
+	if err := Arity("number.isNaN()", tok, args, 0); err != nil {
+		return err, true
+	}
+
+	return &Boolean{Value: n.isFloat && math.IsNaN(n.f)}, true
+}
+
+func (n *Number) isInfiniteMethod(tok token.Token, args []Object) (Object, bool) {
+	if err := Arity("number.isInfinite()", tok, args, 0); err != nil {
+		return err, true
+	}
+
+	return &Boolean{Value: n.isFloat && math.IsInf(n.f, 0)}, true
+}
+
+func (n *Number) isFiniteMethod(tok token.Token, args []Object) (Object, bool) {
+	if err := Arity("number.isFinite()", tok, args, 0); err != nil {
+		return err, true
+	}
+
+	finite := !(n.isFloat && math.IsNaN(n.f)) && !(n.isFloat && math.IsInf(n.f, 0))
+
+	return &Boolean{Value: finite}, true
+}
+
+func (n *Number) isIntegerMethod(tok token.Token, args []Object) (Object, bool) {
+	if err := Arity("number.isInteger()", tok, args, 0); err != nil {
+		return err, true
+	}
+
+	return &Boolean{Value: n.isIntegerValue()}, true
+}
+
+func (n *Number) isEvenMethod(tok token.Token, args []Object) (Object, bool) {
+	if err := Arity("number.isEven()", tok, args, 0); err != nil {
+		return err, true
+	}
+
+	return &Boolean{Value: n.isIntegerValue() && math.Mod(n.Float64(), 2) == 0}, true
+}
+
+func (n *Number) isOddMethod(tok token.Token, args []Object) (Object, bool) {
+	if err := Arity("number.isOdd()", tok, args, 0); err != nil {
+		return err, true
+	}
+
+	return &Boolean{Value: n.isIntegerValue() && math.Abs(math.Mod(n.Float64(), 2)) == 1}, true
+}
+
+func (n *Number) isNegativeMethod(tok token.Token, args []Object) (Object, bool) {
+	if err := Arity("number.isNegative()", tok, args, 0); err != nil {
+		return err, true
+	}
+
+	return &Boolean{Value: n.IsNeg()}, true
+}
+
+func (n *Number) isPositiveMethod(tok token.Token, args []Object) (Object, bool) {
+	if err := Arity("number.isPositive()", tok, args, 0); err != nil {
+		return err, true
+	}
+
+	return &Boolean{Value: n.IsPos()}, true
+}
+
+func (n *Number) isZeroMethod(tok token.Token, args []Object) (Object, bool) {
+	if err := Arity("number.isZero()", tok, args, 0); err != nil {
+		return err, true
+	}
+
+	return &Boolean{Value: n.IsZero()}, true
+}
+
+// isIntegerValue reports whether n holds a mathematically whole value: every
+// non-float Number does, and a float only if it is finite and has no
+// fractional part.
+func (n *Number) isIntegerValue() bool {
+	if !n.isFloat {
+		return true
+	}
+
+	return !math.IsNaN(n.f) && !math.IsInf(n.f, 0) && n.f == math.Trunc(n.f)
+}
+
+// integerPower computes base^exponent for a non-negative exponent, reporting
+// false if the exact int64 result would overflow.
+func integerPower(base int64, exponent int64) (int64, bool) {
+	result := int64(1)
+
+	for exponent > 0 {
+		if exponent&1 == 1 {
+			product, ok := multiplyChecked(result, base)
+
+			if !ok {
+				return 0, false
+			}
+
+			result = product
+		}
+
+		exponent >>= 1
+
+		if exponent == 0 {
+			break
+		}
+
+		square, ok := multiplyChecked(base, base)
+
+		if !ok {
+			return 0, false
+		}
+
+		base = square
+	}
+
+	return result, true
+}
+
+// multiplyChecked multiplies two int64s, reporting false if the exact result
+// would overflow rather than silently wrapping.
+func multiplyChecked(left int64, right int64) (int64, bool) {
+	if left == 0 || right == 0 {
+		return 0, true
+	}
+
+	if (left == -1 && right == math.MinInt64) || (right == -1 && left == math.MinInt64) {
+		return 0, false
+	}
+
+	product := left * right
+
+	if product/right != left {
+		return 0, false
+	}
+
+	return product, true
 }
 
 // =============================================================================

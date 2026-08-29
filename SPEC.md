@@ -425,7 +425,7 @@ parse as one assignment to both).
 | Category | Operators | Notes |
 |---|---|---|
 | Arithmetic | `+ - * / %` | On numbers: standard, with the int/float promotion rules above. On lists: elementwise with **NumPy-style broadcasting** — see below. On strings: only `+` (concatenation); `-`/`*`/`/`/`%` on strings are a type error. |
-| Comparison | `< <= > >=` | Numbers and strings only (strings compare lexicographically). **Not supported between two lists** — deliberately: neither an elementwise nor a lexicographic reading was judged obviously correct (`CLAUDE.md`). Dates support `< <= > >=` as instant ordering. |
+| Comparison | `< <= > >=` | Numbers and strings only (strings compare lexicographically). **Not supported between two lists** — deliberately: neither an elementwise nor a lexicographic reading was judged obviously correct (`CLAUDE.md`). Dates support `< <= > >=` as instant ordering, independent of which time zone either `Date` is attached to (§9.5). |
 | Equality | `== !=` | See §8.5 — this is one of the language's most distinctive (and most incomplete — §13.2) behaviors. |
 | Logical | `and`, `or`, `!` | Word operators, not `&& \|\|` — there is no `&&`/`\|\|` token at all. `!` is the only prefix logical operator. Both operands of `and`/`or` are evaluated as ordinary booleans (no built-in short-circuit special-casing beyond ordinary infix evaluation order: left is evaluated, then right, then combined). |
 | Unary | `-`, `!` | `-` negates a number only. `!` follows Ghost's truthiness rules (§8.5), not "must be boolean." |
@@ -852,12 +852,22 @@ the module system.
 |---|---|---|
 | `round([places])` | 0–1 | Rounds to the nearest integer, or to `places` decimal places. An already-integral `Number` is returned unchanged (not converted through a float round-trip). |
 | `floor()` | 0 | Rounds down. Integral input returned unchanged. |
+| `ceil()` | 0 | Rounds up. Integral input returned unchanged. |
+| `abs()` | 0 | Absolute value; integral input stays an integer. |
+| `pow(exponent)` | 1 | Raised to `exponent`. An integer receiver raised to a non-negative integer exponent stays an integer (exact, checked for overflow) so the result can index a list; otherwise falls back to floating point, matching `math.pow()`. |
+| `clamp(low, high)` | 2 | The receiver, pulled inside `[low, high]`; answers with one of the three values given rather than a computed one, so clamping whole numbers leaves them whole. A `Value` error if `low` is greater than `high`. |
+| `isNaN()` / `isFinite()` / `isInfinite()` | 0 | Only ever true for a float (an integer `Number` can't hold any of the three). |
+| `isInteger()` | 0 | True for every non-float `Number`, and for a float only if it is finite with no fractional part. |
+| `isEven()` / `isOdd()` | 0 | True only for an integral value (§`isInteger()`) of the matching parity. |
+| `isNegative()` / `isPositive()` / `isZero()` | 0 | |
 | `toString()` | 0 | |
 
-*No `ceil()` instance method* despite `round`/`floor` both existing — only
-reachable via `math.ceil()` (§12). No `abs()`, `pow()`, `sqrt()`,
-`clamp()`, or any of the `isX` predicates as instance methods either; all of
-those live only in the `math` module.
+Each mirrors its `math` counterpart (§9.4) exactly, so `n.pow(2)` and
+`math.pow(n, 2)` agree for every input — see §12. `sqrt()`, `lerp()`, and
+the rest of `math`'s scalar operations were not given instance-method
+counterparts: they have no natural "call this on the receiver" reading the
+way `abs`/`pow`/`clamp`/the `isX` predicates do, so they stay reachable
+only through `math`.
 
 **`string`**
 
@@ -945,14 +955,15 @@ style rather than one call that both removes and inserts.
 
 No `forEach` (use `for ... in`).
 
-**`date`** — `toString()` only (ISO-8601/RFC3339, always UTC). Every other
-date operation is a function in the `date` module (§9.5), not a method,
-which keeps `Date` itself immutable and side-effect-free and is a
+**`date`** — `toString()` only (ISO-8601/RFC3339, in the date's own attached
+time zone — `Z` for the UTC default, an explicit offset otherwise; §9.5).
+Every other date operation is a function in the `date` module (§9.5), not a
+method, which keeps `Date` itself immutable and side-effect-free and is a
 deliberate design choice modeled on `date-fns` (§2) rather than a mutable
 built-in `Date` class — see the doc comment on `object.Date`. Dates support
-`< <= > >= == !=` directly as operators (instant comparison) but no
-arithmetic operators (`date1 + date2` is a type error, with help text
-pointing at the `date` module).
+`< <= > >= == !=` directly as operators (instant comparison, independent of
+either operand's attached zone) but no arithmetic operators (`date1 + date2`
+is a type error, with help text pointing at the `date` module).
 
 ### 9.3 `console`
 
@@ -1076,39 +1087,83 @@ Import: `import "ghost:date"` or `import { now, of, ... } from "ghost:date"`
 (§8.9).
 
 Modeled deliberately on `date-fns` (§2): every function takes a date (or two)
-and returns a new value; nothing mutates. Every `Date` is UTC-normalized —
-Ghost does not model time zones at all, so a date built once compares the
-same everywhere the program runs (the same reproducibility guarantee a
-seeded `random` run gets).
+and returns a new value; nothing mutates. A `Date` is an instant plus the
+time zone it should be read in, defaulting to UTC — `now()`, `today()`,
+`of()`, and `fromUnix()` all build one this way. The instant is what `<`,
+`>`, and `==` compare (§8.5) and stays independent of the attached zone, so a
+comparison is reproducible everywhere the program runs, the same
+reproducibility guarantee a seeded `random` run gets; the zone only governs
+what reading a *calendar* position out of that instant answers —
+`year()`/`hour()`/`weekday()`, `format()`, `isWeekend()`, `startOfDay()`, and
+`toString()` (§14 decision 8, revising the earlier UTC-only design).
+
+Time zones are always explicit and named (IANA identifiers like
+`America/New_York`, resolved through the tz database Ghost embeds in its own
+binary — see `library/modules/date.go`'s package doc comment), never read
+from the host machine's configured zone: there is no `date.local()` or
+equivalent. That preserves the original reproducibility goal for the one
+case that actually threatened it — a script whose output depended on which
+machine ran it — while making the zone-explicit case (`"the same script run
+anywhere resolves \`America/New_York\` the same way"`) available, which the
+UTC-only design didn't need to give up to get the first guarantee.
 
 **Construction/conversion** — `now()`, `today()` (midnight UTC),
 `of(year, month, day[, hour, minute, second])` (month is 1–12; an
 out-of-range day/hour/minute/second is a `Value` error rather than silently
-rolling into the next period), `parseISO(text)` (RFC3339 or bare
-`YYYY-MM-DD`), `fromUnix(seconds)`, `toUnix(date)`, `toUnixNano(date)`,
-`format(date, pattern)` (date-fns-style pattern letters, not Go's reference
-layout — see below).
+rolling into the next period), `ofInZone(year, month, day[, hour, minute,
+second], zone)` — `of()` with a required, trailing zone argument: the
+components are read as civil time *in that zone*, not in UTC and then
+relabeled (`ofInZone(2024, 7, 15, 9, 0, 0, "America/New_York")` is a
+different instant than `inTimeZone(of(2024, 7, 15, 9, 0, 0), "America/New_York")`
+— the latter keeps the UTC instant and only changes how it is read back),
+`parseISO(text)` (RFC3339 or bare `YYYY-MM-DD`; an explicit offset in the
+text is preserved rather than normalized away), `fromUnix(seconds)`,
+`toUnix(date)`, `toUnixNano(date)`, `format(date, pattern)` (date-fns-style
+pattern letters, not Go's reference layout — see below; reads the date's own
+zone).
+
+**Time zones** — `inTimeZone(date, zone)` moves a `Date` to a named zone
+without changing the instant it names, only what every zone-aware read
+answers from that point on; `timeZone(date)` answers the zone's IANA name
+(`""` for a `Date` built from a bare numeric offset rather than a named
+zone — `parseISO("...-05:00")`, say — since there is no name to report);
+`zoneOffset(date)` answers the offset from UTC in seconds, east-positive, at
+that specific instant — daylight-saving-aware, so the same named zone can
+answer differently for two `Date`s a few months apart. An unrecognized zone
+name is a `Value` error naming it.
 
 **Arithmetic** — `addDays`/`subDays`, `addWeeks`/`subWeeks`,
 `addMonths`/`subMonths` (clamps to the target month's last day rather than
-rolling over — Jan 31 + 1 month = Feb 28/29, not Mar 2/3),
+rolling over — Jan 31 + 1 month = Feb 28/29, not Mar 2/3, and keeps the
+result's wall-clock reading in the date's own zone across a daylight-saving
+change, the way a calendar app's "same time next month" does),
 `addYears`/`subYears`, `addHours`, `addMinutes`, `addSeconds` (all arity 2:
-date, count). *No `subHours`/`subMinutes`/`subSeconds`* — asymmetric with
-every other pair (§12).
+date, count; these shift by a fixed real duration regardless of zone, so
+"add 3 hours" always means 3 real hours, matching `date-fns`). *No
+`subHours`/`subMinutes`/`subSeconds`* — asymmetric with every other pair
+(§12).
 
-**Predicates** — `isSameDay(a, b)`, `isWeekend(date)`, `isLeapYear(date)`.
+**Predicates** — `isSameDay(a, b)`, `isWeekend(date)`, `isLeapYear(date)`
+(each reads the date's own attached zone — `isWeekend` on an instant that is
+Saturday in UTC but already Sunday in Tokyo answers for Tokyo once moved
+there with `inTimeZone`).
 
 **Differences** — `differenceInDays`/`Hours`/`Minutes`/`Seconds(a, b)`,
 truncated toward zero (so `differenceInDays(a, b) == -differenceInDays(b,
-a)` always, never off-by-one from truncation direction).
+a)` always, never off-by-one from truncation direction); these compare
+instants, so which zone either `Date` is attached to makes no difference to
+the result.
 
 **Period boundaries** — `startOfDay`, `endOfDay`, `startOfMonth`,
-`endOfMonth`. *No `startOfWeek`/`endOfWeek`/`startOfYear`/`endOfYear`* —
-gap relative to the `date-fns` surface this module is explicitly modeled on
-(§12).
+`endOfMonth` — computed in the date's own attached zone (midnight in Tokyo
+for a `Date` moved there, not midnight UTC). *No
+`startOfWeek`/`endOfWeek`/`startOfYear`/`endOfYear`* — gap relative to the
+`date-fns` surface this module is explicitly modeled on (§12).
 
 **Components** — `year`, `month`, `day`, `hour`, `minute`, `second`,
-`weekday` (0 = Sunday, matching `date-fns`'s `getDay`).
+`weekday` (0 = Sunday, matching `date-fns`'s `getDay`) — each reads the
+date's own attached zone, so the same instant can answer a different day,
+hour, or weekday depending on which zone it was last moved to.
 
 **Format pattern letters** (a run of the same letter is one token; anything
 else copies through literally): `y` (year), `M` (month, 1/01/Jan/January by
@@ -1449,10 +1504,15 @@ the finished reference table (`remove` was picked over `delete` to match
 `list.removeAt()` rather than add a second spelling for the same
 operation).
 
-**Number methods:** `ceil()` (exists on `math` but not as an instance
-method, unlike its sibling `round`/`floor`), and, depending on how far
-parity with `math` should go, `abs()`/`pow()`/`clamp()`/the `isX`
-predicates as instance methods.
+**Number methods — done.** `ceil()`, `abs()`, `pow(exponent)`,
+`clamp(low, high)`, and the `isX` predicates (`isNaN`, `isFinite`,
+`isInfinite`, `isInteger`, `isEven`, `isOdd`, `isNegative`, `isPositive`,
+`isZero`) are implemented as instance methods (`object/number.go`, tested
+in `evaluator/number_methods_test.go`); see §9.2 for the finished
+reference table. Full parity with `math` was picked over the minimal
+`ceil()`-only fix, since `math`'s own predicates and bounds/interpolation
+methods (`sqrt()`, `lerp()`, etc.) have no natural instance-method reading
+the way `abs`/`pow`/`clamp`/`isX` do — those stay `math`-only.
 
 **Date module:** `subHours`/`subMinutes`/`subSeconds` (asymmetric with
 every other add/sub pair), `startOfWeek`/`endOfWeek`/`startOfYear`/`endOfYear`.
@@ -1690,3 +1750,23 @@ targets.
    `RegisterFunction`/`RegisterModule` stay process-global (§10.3); a host
    that needs isolated configurations runs separate processes for 1.0.
    Revisit only if an embedding use case actually needs it.
+8. **Date time zones.** This reverses the earlier UTC-only design (previously
+   documented directly in §9.5 and `object.Date`'s doc comment, not merely
+   proposed): a `Date` now carries an explicit time zone, defaulting to UTC,
+   moved with `date.inTimeZone()` or set at construction with
+   `date.ofInZone()` (§9.5). The reproducibility guarantee that motivated the
+   original design — a date built once means the same thing no matter which
+   machine runs the script — is kept in full for the operations it actually
+   protects: instant comparison (`< <= > >= == !=`) and every function that
+   reduces to comparing or measuring instants (`differenceInX`, `toUnix`,
+   `isSameDay`, ...) stay zone-independent, unaffected by this change. What
+   changes is that a *calendar* reading (`year()`, `format()`, `toString()`,
+   `startOfDay()`, ...) can now be asked for in an explicit zone. Reproducing
+   the original problem would require reading the host machine's *ambient*
+   configured zone with no name in the script naming it — that stays absent
+   by design (no `date.local()` or equivalent); every zone this module
+   resolves is a name the script itself wrote down, looked up against the
+   IANA tz database Ghost embeds in its own binary (`time/tzdata`), so the
+   same name resolves the same way on every platform Ghost ships for. A
+   script that never calls `inTimeZone`/`ofInZone` behaves exactly as it did
+   under the old design.

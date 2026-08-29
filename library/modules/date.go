@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	_ "time/tzdata" // embed the IANA database so zone lookups are identical on every platform Ghost ships for, independent of what the host OS has installed.
 
 	"ghostlang.org/x/ghost/fault"
 	"ghostlang.org/x/ghost/object"
@@ -17,10 +18,19 @@ import (
 // answers a new value, none of them mutate the one they were given, and there
 // is no method-chasing through an object's own methods.
 //
-// A Date is always UTC; the module does not model time zones. That keeps a
-// date built once and compared later the same value no matter where the
-// program runs, the same way a seeded random run is reproducible regardless
-// of machine.
+// A Date is an instant plus the time zone it should be read in, defaulting to
+// UTC. The instant is what `<`, `>`, and `==` compare (object.Date's doc
+// comment) and stays independent of the attached zone, so a comparison is
+// reproducible no matter where the program runs, the same guarantee a seeded
+// random run gets. The zone governs everything that reads a *calendar*
+// position out of that instant instead - year()/hour()/weekday(), format(),
+// isWeekend(), startOfDay(), toString() - inTimeZone() moves a Date to a
+// named IANA zone without changing the instant it names, and ofInZone()
+// builds one directly from civil time in a zone. There is deliberately no way
+// to read the host machine's configured local zone: only an explicit, named
+// zone (resolved through the tz database embedded above) is reproducible
+// across machines, which is the same reason there is no bare, ambient
+// "local" reading anywhere else in this module.
 //
 // format() reads a pattern the way date-fns does - a run of the same letter
 // is one token (`yyyy`, `MM`, `dd`), and anything else in the pattern is
@@ -35,11 +45,19 @@ func init() {
 	RegisterMethod(DateMethods, "now", dateNow)
 	RegisterMethod(DateMethods, "today", dateToday)
 	RegisterMethod(DateMethods, "of", dateOf)
+	RegisterMethod(DateMethods, "ofInZone", dateOfInZone)
 	RegisterMethod(DateMethods, "parseISO", dateParseISO)
 	RegisterMethod(DateMethods, "fromUnix", dateFromUnix)
 	RegisterMethod(DateMethods, "toUnix", dateToUnix)
 	RegisterMethod(DateMethods, "toUnixNano", dateToUnixNano)
 	RegisterMethod(DateMethods, "format", dateFormat)
+
+	// Time zones. Everything else in the module reads/writes the instant a
+	// Date carries; these are the only functions that touch which zone it is
+	// attached to - see the package doc comment above.
+	RegisterMethod(DateMethods, "inTimeZone", dateInTimeZone)
+	RegisterMethod(DateMethods, "timeZone", dateTimeZone)
+	RegisterMethod(DateMethods, "zoneOffset", dateZoneOffset)
 
 	// Arithmetic. Each has a sub counterpart rather than accepting a negative
 	// count, because "3 months before this one" reads as subMonths(d, 3), not
@@ -85,11 +103,14 @@ func init() {
 	RegisterMethod(DateMethods, "weekday", dateWeekday)
 }
 
-// newDate wraps a time.Time as a Date, normalizing it to UTC so that every
-// Date the module hands back agrees with every other one on what "the same
-// instant" means.
+// newDate wraps a time.Time as a Date, keeping whatever zone t is already in.
+// Every construction path that should default to UTC (now, today, of,
+// fromUnix) says so explicitly at the call site rather than relying on this
+// to normalize it - time.Now() and time.Unix() both hand back the host's
+// local zone otherwise, which is exactly the non-reproducible reading this
+// module avoids (see the package doc comment).
 func newDate(t time.Time) *object.Date {
-	return &object.Date{Time: t.UTC()}
+	return &object.Date{Time: t}
 }
 
 // =============================================================================
@@ -100,7 +121,7 @@ func dateNow(scope *object.Scope, tok token.Token, args ...object.Object) object
 		return err
 	}
 
-	return newDate(time.Now())
+	return newDate(time.Now().UTC())
 }
 
 func dateToday(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
@@ -120,87 +141,121 @@ func dateOf(scope *object.Scope, tok token.Token, args ...object.Object) object.
 		return err
 	}
 
-	year, err := integerAt("date.of", tok, args, 0)
+	return dateFromComponents("date.of", tok, args, time.UTC)
+}
+
+// dateOfInZone is date.of with a required, trailing zone argument: the
+// calendar/time-of-day components are read as civil time *in that zone*,
+// rather than in UTC and then relabeled - "9am in Tokyo" and "9am UTC
+// relabeled Tokyo" are different instants, and only this function builds the
+// former. See the package doc comment.
+func dateOfInZone(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
+	if err := arityRange("date.ofInZone", tok, args, 4, 7); err != nil {
+		return err
+	}
+
+	loc, zoneErr := zoneAt("date.ofInZone", tok, args, len(args)-1)
+
+	if zoneErr != nil {
+		return zoneErr
+	}
+
+	return dateFromComponents("date.ofInZone", tok, args[:len(args)-1], loc)
+}
+
+// dateFromComponents builds a Date from already arity-checked year/month/day
+// and optional hour/minute/second arguments, inside loc - the shared body of
+// date.of (loc always time.UTC) and date.ofInZone (loc resolved from its
+// trailing argument).
+func dateFromComponents(name string, tok token.Token, args []object.Object, loc *time.Location) object.Object {
+	year, month, day, hour, minute, second, err := dateBuildComponents(name, tok, args)
 
 	if err != nil {
 		return err
 	}
 
-	month, err := integerAt("date.of", tok, args, 1)
-
-	if err != nil {
-		return err
-	}
-
-	if month < 1 || month > 12 {
-		return object.NewError(fault.Value, tok, "`date.of()` expects a month between 1 and 12, got %d", month)
-	}
-
-	day, err := integerAt("date.of", tok, args, 2)
-
-	if err != nil {
-		return err
-	}
-
-	hour, minute, second, timeErr := dateOfTimeComponents(tok, args)
-
-	if timeErr != nil {
-		return timeErr
-	}
-
-	built := time.Date(int(year), time.Month(month), int(day), int(hour), int(minute), int(second), 0, time.UTC)
+	built := time.Date(int(year), time.Month(month), int(day), int(hour), int(minute), int(second), 0, loc)
 
 	// time.Date normalizes an out-of-range day or component by rolling it into
 	// the following period rather than reporting it, which would turn a typo
 	// into a silently different date. Catching the roll here reports it
 	// instead.
 	if built.Day() != int(day) || built.Month() != time.Month(month) {
-		return object.NewError(fault.Value, tok, "`date.of()` has no day %d in month %d", day, month)
+		return object.NewError(fault.Value, tok, "`%s()` has no day %d in month %d", name, day, month)
 	}
 
 	return newDate(built)
 }
 
-func dateOfTimeComponents(tok token.Token, args []object.Object) (int64, int64, int64, *object.Error) {
+func dateBuildComponents(name string, tok token.Token, args []object.Object) (year int64, month int64, day int64, hour int64, minute int64, second int64, err *object.Error) {
+	year, err = integerAt(name, tok, args, 0)
+
+	if err != nil {
+		return
+	}
+
+	month, err = integerAt(name, tok, args, 1)
+
+	if err != nil {
+		return
+	}
+
+	if month < 1 || month > 12 {
+		err = object.NewError(fault.Value, tok, "`%s()` expects a month between 1 and 12, got %d", name, month)
+		return
+	}
+
+	day, err = integerAt(name, tok, args, 2)
+
+	if err != nil {
+		return
+	}
+
+	hour, minute, second, err = dateOfTimeComponents(name, tok, args)
+
+	return
+}
+
+func dateOfTimeComponents(name string, tok token.Token, args []object.Object) (int64, int64, int64, *object.Error) {
 	var hour, minute, second int64
 
 	if len(args) >= 4 {
-		value, err := integerAt("date.of", tok, args, 3)
+		value, err := integerAt(name, tok, args, 3)
 
 		if err != nil {
 			return 0, 0, 0, err
 		}
 
 		if value < 0 || value > 23 {
-			return 0, 0, 0, object.NewError(fault.Value, tok, "`date.of()` expects an hour between 0 and 23, got %d", value)
+			return 0, 0, 0, object.NewError(fault.Value, tok, "`%s()` expects an hour between 0 and 23, got %d", name, value)
 		}
 
 		hour = value
 	}
 
 	if len(args) >= 5 {
-		value, err := integerAt("date.of", tok, args, 4)
+		value, err := integerAt(name, tok, args, 4)
 
 		if err != nil {
 			return 0, 0, 0, err
 		}
 
 		if value < 0 || value > 59 {
-			return 0, 0, 0, object.NewError(fault.Value, tok, "`date.of()` expects a minute between 0 and 59, got %d", value)
+			return 0, 0, 0, object.NewError(fault.Value, tok, "`%s()` expects a minute between 0 and 59, got %d", name, value)
 		}
 
 		minute = value
 	}
 
 	if len(args) == 6 {
-		value, err := integerAt("date.of", tok, args, 5)
+		value, err := integerAt(name, tok, args, 5)
 
 		if err != nil {
 			return 0, 0, 0, err
 		}
 
 		if value < 0 || value > 59 {
-			return 0, 0, 0, object.NewError(fault.Value, tok, "`date.of()` expects a second between 0 and 59, got %d", value)
+			return 0, 0, 0, object.NewError(fault.Value, tok, "`%s()` expects a second between 0 and 59, got %d", name, value)
 		}
 
 		second = value
@@ -245,7 +300,9 @@ func dateFromUnix(scope *object.Scope, tok token.Token, args ...object.Object) o
 		return err
 	}
 
-	return newDate(time.Unix(seconds, 0))
+	// time.Unix defaults to the host's local zone; force UTC so fromUnix
+	// agrees with now/today/of on what a zone-less Date defaults to.
+	return newDate(time.Unix(seconds, 0).UTC())
 }
 
 func dateToUnix(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
@@ -294,6 +351,92 @@ func dateFormat(scope *object.Scope, tok token.Token, args ...object.Object) obj
 	}
 
 	return &object.String{Value: formatDate(date.Time, pattern)}
+}
+
+// =============================================================================
+// Time zones
+
+// dateInTimeZone moves a Date to a named zone without changing the instant it
+// names - only what year()/hour()/format()/toString() and the rest of the
+// module read out of it going forward. See the package doc comment for how
+// this differs from date.ofInZone.
+func dateInTimeZone(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
+	if err := arity("date.inTimeZone", tok, args, 2); err != nil {
+		return err
+	}
+
+	date, err := dateAt("date.inTimeZone", tok, args, 0)
+
+	if err != nil {
+		return err
+	}
+
+	loc, zoneErr := zoneAt("date.inTimeZone", tok, args, 1)
+
+	if zoneErr != nil {
+		return zoneErr
+	}
+
+	return newDate(date.Time.In(loc))
+}
+
+// dateTimeZone answers the IANA name of the zone a Date is attached to - the
+// same string inTimeZone/ofInZone accept, so a Date's own zone round-trips
+// through it. A Date built from an explicit numeric offset rather than a
+// named zone (parseISO("...-05:00"), say) has no name to report and answers
+// "" - zoneOffset() still answers its offset.
+func dateTimeZone(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
+	if err := arity("date.timeZone", tok, args, 1); err != nil {
+		return err
+	}
+
+	date, err := dateAt("date.timeZone", tok, args, 0)
+
+	if err != nil {
+		return err
+	}
+
+	return &object.String{Value: date.Time.Location().String()}
+}
+
+// dateZoneOffset answers the offset from UTC, in seconds and east-positive, a
+// Date's zone has at that instant - accounting for daylight saving, so the
+// same named zone can answer differently for two dates a few months apart.
+func dateZoneOffset(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
+	if err := arity("date.zoneOffset", tok, args, 1); err != nil {
+		return err
+	}
+
+	date, err := dateAt("date.zoneOffset", tok, args, 0)
+
+	if err != nil {
+		return err
+	}
+
+	_, offset := date.Time.Zone()
+
+	return object.NewInt(int64(offset))
+}
+
+// zoneAt reads a time zone name argument and resolves it against the IANA
+// database embedded in this binary (see the package doc comment), so the
+// same name resolves to the same zone on every platform Ghost ships for,
+// independent of what the host OS has installed.
+func zoneAt(name string, tok token.Token, args []object.Object, index int) (*time.Location, *object.Error) {
+	zoneName, err := stringAt(name, tok, args, index)
+
+	if err != nil {
+		return nil, err
+	}
+
+	loc, loadErr := time.LoadLocation(zoneName)
+
+	if loadErr != nil {
+		return nil, object.NewError(fault.Value, tok, "`%s()` does not recognize the time zone `%s`", name, zoneName).
+			WithHelp("time zones are IANA names like `America/New_York` or `Europe/London`, or `UTC`")
+	}
+
+	return loc, nil
 }
 
 // =============================================================================
@@ -355,7 +498,7 @@ func addCalendarMonths(t time.Time, months int) time.Time {
 		day = lastDayOfTargetMonth
 	}
 
-	return time.Date(targetYear, time.Month(targetMonth+1), day, hour, minute, second, t.Nanosecond(), time.UTC)
+	return time.Date(targetYear, time.Month(targetMonth+1), day, hour, minute, second, t.Nanosecond(), t.Location())
 }
 
 func dateAddHours(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
@@ -508,7 +651,7 @@ func dateStartOfDay(scope *object.Scope, tok token.Token, args ...object.Object)
 		return err
 	}
 
-	return newDate(time.Date(date.Time.Year(), date.Time.Month(), date.Time.Day(), 0, 0, 0, 0, time.UTC))
+	return newDate(time.Date(date.Time.Year(), date.Time.Month(), date.Time.Day(), 0, 0, 0, 0, date.Time.Location()))
 }
 
 func dateEndOfDay(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
@@ -518,7 +661,7 @@ func dateEndOfDay(scope *object.Scope, tok token.Token, args ...object.Object) o
 		return err
 	}
 
-	return newDate(time.Date(date.Time.Year(), date.Time.Month(), date.Time.Day(), 23, 59, 59, 999999999, time.UTC))
+	return newDate(time.Date(date.Time.Year(), date.Time.Month(), date.Time.Day(), 23, 59, 59, 999999999, date.Time.Location()))
 }
 
 func dateStartOfMonth(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
@@ -528,7 +671,7 @@ func dateStartOfMonth(scope *object.Scope, tok token.Token, args ...object.Objec
 		return err
 	}
 
-	return newDate(time.Date(date.Time.Year(), date.Time.Month(), 1, 0, 0, 0, 0, time.UTC))
+	return newDate(time.Date(date.Time.Year(), date.Time.Month(), 1, 0, 0, 0, 0, date.Time.Location()))
 }
 
 func dateEndOfMonth(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
@@ -538,7 +681,7 @@ func dateEndOfMonth(scope *object.Scope, tok token.Token, args ...object.Object)
 		return err
 	}
 
-	startOfNextMonth := time.Date(date.Time.Year(), date.Time.Month(), 1, 0, 0, 0, 0, time.UTC).AddDate(0, 1, 0)
+	startOfNextMonth := time.Date(date.Time.Year(), date.Time.Month(), 1, 0, 0, 0, 0, date.Time.Location()).AddDate(0, 1, 0)
 
 	return newDate(startOfNextMonth.Add(-time.Nanosecond))
 }
