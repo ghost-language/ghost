@@ -399,3 +399,158 @@ func TestDateArgumentErrors(t *testing.T) {
 		}
 	}
 }
+
+// TestDateInTimeZone covers moving a Date to a named zone: the instant it
+// names must not change (only its calendar reading does), and the offset
+// must be daylight-saving-aware.
+func TestDateInTimeZone(t *testing.T) {
+	utc := dateOfHelper(t, 2024, 1, 15, 9, 30, 0) // winter: EST, UTC-5
+
+	zoned := mustDate(t, callDate(t, "inTimeZone", utc, &object.String{Value: "America/New_York"}))
+
+	if zoned.String() != "2024-01-15T04:30:00-05:00" {
+		t.Errorf("inTimeZone winter: got=%s", zoned.String())
+	}
+
+	if !utc.Time.Equal(zoned.Time) {
+		t.Errorf("inTimeZone must not change the instant: utc=%s zoned=%s", utc.String(), zoned.String())
+	}
+
+	if mustInt(t, callDate(t, "hour", zoned)) != 4 {
+		t.Errorf("hour() should read the zoned wall clock, got=%d", mustInt(t, callDate(t, "hour", zoned)))
+	}
+
+	summer := mustDate(t, callDate(t, "inTimeZone", dateOfHelper(t, 2024, 7, 15, 9, 30, 0), &object.String{Value: "America/New_York"}))
+
+	if summer.String() != "2024-07-15T05:30:00-04:00" {
+		t.Errorf("inTimeZone summer (EDT): got=%s", summer.String())
+	}
+}
+
+func TestDateInTimeZoneUnknownZone(t *testing.T) {
+	result := callDate(t, "inTimeZone", dateOfHelper(t, 2024, 1, 1), &object.String{Value: "Not/AZone"})
+
+	if !object.IsError(result) {
+		t.Fatalf("expected an error for an unrecognized zone, got=%v", result)
+	}
+}
+
+// TestDateOfInZone covers building a Date directly from civil time in a
+// zone: "9am in New York" is a different instant than "9am UTC relabeled
+// New York", and only ofInZone builds the former.
+func TestDateOfInZone(t *testing.T) {
+	inZone := mustDate(t, callDate(t, "ofInZone", object.NewInt(2024), object.NewInt(7), object.NewInt(15), object.NewInt(9), object.NewInt(30), object.NewInt(0), &object.String{Value: "America/New_York"}))
+
+	if inZone.String() != "2024-07-15T09:30:00-04:00" {
+		t.Errorf("ofInZone: got=%s", inZone.String())
+	}
+
+	relabeled := mustDate(t, callDate(t, "inTimeZone", dateOfHelper(t, 2024, 7, 15, 9, 30, 0), &object.String{Value: "America/New_York"}))
+
+	if inZone.Time.Equal(relabeled.Time) {
+		t.Errorf("ofInZone(9am NY) and relabeling 9am UTC as NY must be different instants")
+	}
+
+	// Without a time-of-day: year, month, day, zone.
+	midnight := mustDate(t, callDate(t, "ofInZone", object.NewInt(2024), object.NewInt(7), object.NewInt(15), &object.String{Value: "America/New_York"}))
+
+	if midnight.String() != "2024-07-15T00:00:00-04:00" {
+		t.Errorf("ofInZone with no time of day: got=%s", midnight.String())
+	}
+}
+
+func TestDateOfInZoneRejectsImpossibleDays(t *testing.T) {
+	result := callDate(t, "ofInZone", object.NewInt(2023), object.NewInt(2), object.NewInt(29), &object.String{Value: "America/New_York"})
+
+	if !object.IsError(result) {
+		t.Fatalf("expected an error for February 29 in a non-leap year, got=%s", result.String())
+	}
+}
+
+func TestDateTimeZoneAndOffset(t *testing.T) {
+	utc := dateOfHelper(t, 2024, 1, 15)
+
+	if got := mustString(t, callDate(t, "timeZone", utc)); got != "UTC" {
+		t.Errorf("timeZone() on a UTC-default date: got=%s", got)
+	}
+
+	if got := mustInt(t, callDate(t, "zoneOffset", utc)); got != 0 {
+		t.Errorf("zoneOffset() on a UTC-default date: got=%d", got)
+	}
+
+	winter := mustDate(t, callDate(t, "inTimeZone", dateOfHelper(t, 2024, 1, 15), &object.String{Value: "America/New_York"}))
+	summer := mustDate(t, callDate(t, "inTimeZone", dateOfHelper(t, 2024, 7, 15), &object.String{Value: "America/New_York"}))
+
+	if got := mustString(t, callDate(t, "timeZone", winter)); got != "America/New_York" {
+		t.Errorf("timeZone() round-trip: got=%s", got)
+	}
+
+	if got := mustInt(t, callDate(t, "zoneOffset", winter)); got != -18000 {
+		t.Errorf("zoneOffset() in EST: got=%d", got)
+	}
+
+	if got := mustInt(t, callDate(t, "zoneOffset", summer)); got != -14400 {
+		t.Errorf("zoneOffset() in EDT: got=%d, expected the DST offset to differ from winter's", got)
+	}
+}
+
+// TestDateZoneIndependentComparison confirms `==`/`<`/`>` (evaluator/date.go)
+// keep comparing the instant regardless of which zone a Date is attached to
+// - the one guarantee the module's reproducibility rests on.
+func TestDateZoneIndependentComparison(t *testing.T) {
+	utc := dateOfHelper(t, 2024, 1, 15, 9, 30, 0)
+	zoned := mustDate(t, callDate(t, "inTimeZone", utc, &object.String{Value: "America/New_York"}))
+
+	if !utc.Time.Equal(zoned.Time) {
+		t.Errorf("same instant in two zones must compare equal: utc=%s zoned=%s", utc.String(), zoned.String())
+	}
+
+	if utc.Time.Before(zoned.Time) || utc.Time.After(zoned.Time) {
+		t.Errorf("same instant in two zones must not order before/after each other")
+	}
+}
+
+// TestDateStartAndEndOfRespectsZone confirms period boundaries are computed
+// in the Date's own zone, not forced through UTC.
+func TestDateStartAndEndOfRespectsZone(t *testing.T) {
+	zoned := mustDate(t, callDate(t, "inTimeZone", dateOfHelper(t, 2024, 2, 15, 13, 45, 30), &object.String{Value: "America/New_York"}))
+
+	startOfDay := mustDate(t, callDate(t, "startOfDay", zoned))
+	if startOfDay.String() != "2024-02-15T00:00:00-05:00" {
+		t.Errorf("startOfDay in a named zone: got=%s", startOfDay.String())
+	}
+
+	endOfDay := mustDate(t, callDate(t, "endOfDay", zoned))
+	if endOfDay.Time.Hour() != 23 || endOfDay.String()[len(endOfDay.String())-6:] != "-05:00" {
+		t.Errorf("endOfDay in a named zone: got=%s", endOfDay.String())
+	}
+}
+
+// TestDateAddMonthsAcrossZoneDST confirms month/year arithmetic keeps a
+// Date's zone (and its own wall-clock reading) rather than reconstructing in
+// UTC, crossing a daylight-saving boundary in the process.
+func TestDateAddMonthsAcrossZoneDST(t *testing.T) {
+	summer := mustDate(t, callDate(t, "ofInZone", object.NewInt(2024), object.NewInt(7), object.NewInt(15), object.NewInt(9), object.NewInt(30), object.NewInt(0), &object.String{Value: "America/New_York"}))
+
+	winter := mustDate(t, callDate(t, "subMonths", summer, object.NewInt(6)))
+
+	if winter.String() != "2024-01-15T09:30:00-05:00" {
+		t.Errorf("subMonths across the DST boundary: got=%s", winter.String())
+	}
+}
+
+func mustString(t *testing.T, result object.Object) string {
+	t.Helper()
+
+	if object.IsError(result) {
+		t.Fatalf("unexpected error: %s", result.String())
+	}
+
+	str, ok := result.(*object.String)
+
+	if !ok {
+		t.Fatalf("object is not String. got=%T (%+v)", result, result)
+	}
+
+	return str.Value
+}

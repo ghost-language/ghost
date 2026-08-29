@@ -6,10 +6,13 @@ import (
 	"ghostlang.org/x/ghost/token"
 )
 
-// Date objects hold a single instant, always in UTC. Ghost does not model
-// time zones - every Date is the same instant no matter where the program
-// runs, which keeps a seeded, procedurally generated, or scheduled result
-// reproducible the same way a seeded random run is.
+// Date objects hold a single instant together with the time zone it should
+// be read in, defaulting to UTC. The instant is what `<`, `>`, and `==`
+// compare (evaluateDateInfix) and stays independent of the attached zone, so
+// a comparison is reproducible no matter where the program runs, the same
+// guarantee a seeded random run has. The zone only governs what reading a
+// *calendar* position out of that instant answers - String() included - the
+// date module's inTimeZone/ofInZone are the one way to change it (§9.5).
 //
 // A Date does not support arithmetic operators. What `date1 + date2` or
 // `date * 2` would even mean is not obvious the way `date1 < date2` is, so
@@ -20,10 +23,12 @@ type Date struct {
 	Time time.Time
 }
 
-// String represents the date as an ISO 8601 timestamp, the one format that
-// reads the same regardless of where it is printed.
+// String represents the date as an ISO 8601 timestamp in whatever zone the
+// Date is attached to - "Z" for the UTC default, an explicit offset
+// otherwise (RFC3339 always writes one or the other, never a bare local
+// time), so the string alone is always enough to reconstruct the instant.
 func (date *Date) String() string {
-	return date.Time.UTC().Format(time.RFC3339)
+	return date.Time.Format(time.RFC3339)
 }
 
 // Type returns the date object type.

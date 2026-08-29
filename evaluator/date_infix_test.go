@@ -44,3 +44,31 @@ func TestDateToString(t *testing.T) {
 
 	isStringObject(t, result, "2024-06-15T09:30:00Z")
 }
+
+// TestDateZonedToString confirms toString() reads back through the Date's
+// attached zone, not always UTC (§9.5, object.Date's doc comment).
+func TestDateZonedToString(t *testing.T) {
+	result := evaluate(dateImport + `date.inTimeZone(date.of(2024, 1, 15, 9, 30, 0), "America/New_York").toString()`)
+
+	isStringObject(t, result, "2024-01-15T04:30:00-05:00")
+}
+
+// TestDateComparisonsAreZoneIndependent confirms moving a Date to a named
+// zone never changes what it compares equal, before, or after to - the same
+// instant read through two zones is still the same instant.
+func TestDateComparisonsAreZoneIndependent(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected bool
+	}{
+		{`date.of(2024, 1, 15, 9, 30, 0) == date.inTimeZone(date.of(2024, 1, 15, 9, 30, 0), "America/New_York")`, true},
+		{`date.inTimeZone(date.of(2024, 1, 15, 9, 30, 0), "America/New_York") < date.of(2024, 1, 15, 9, 30, 1)`, true},
+		{`date.ofInZone(2024, 7, 15, 9, 30, 0, "America/New_York") == date.of(2024, 7, 15, 9, 30, 0)`, false},
+	}
+
+	for _, tt := range tests {
+		result := evaluate(dateImport + tt.input)
+
+		isBooleanObject(t, result, tt.expected)
+	}
+}
