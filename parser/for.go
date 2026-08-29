@@ -108,8 +108,15 @@ func (parser *Parser) forInExpression(parent *ast.For) ast.ExpressionNode {
 	return expression
 }
 
-// forIncrement parses the increment expression of a for loop.
-// It can be an assignment (x = x + 1), a postfix expression (x++), or an infix expression (x += 1).
+// forIncrement parses the increment clause of a for loop. A bare identifier
+// followed by `=` goes through assign() the same as any other assignment
+// statement, since plain `=` has no infix parser of its own (§ assign.go).
+// Everything else — a postfix `x++`/`x--`, a compound `x += 1`, or either of
+// those targeting a property or index (`obj.count++`, `list[0] += 1`) —
+// already has an infix parser registered in the normal expression table, so
+// parseExpression handles it the same way it would anywhere else in a
+// program; the increment clause has no business special-casing identifiers
+// only.
 func (parser *Parser) forIncrement() ast.ExpressionNode {
 	if parser.currentTokenIs(token.RIGHTPAREN) {
 		return nil
@@ -124,24 +131,5 @@ func (parser *Parser) forIncrement() ast.ExpressionNode {
 		return parser.assign()
 	}
 
-	if parser.currentTokenIs(token.IDENTIFIER) && (parser.nextTokenIs(token.PLUSEQUAL) ||
-		parser.nextTokenIs(token.MINUSEQUAL) ||
-		parser.nextTokenIs(token.SLASHEQUAL) ||
-		parser.nextTokenIs(token.STAREQUAL)) {
-		identifier := parser.identifierLiteral()
-
-		parser.readToken()
-
-		return parser.compoundExpression(identifier)
-	}
-
-	if parser.currentTokenIs(token.IDENTIFIER) && (parser.nextTokenIs(token.PLUSPLUS) || parser.nextTokenIs(token.MINUSMINUS)) {
-		identifier := parser.identifierLiteral()
-
-		parser.readToken()
-
-		return parser.postfixExpression(identifier)
-	}
-
-	return nil
+	return parser.parseExpression(LOWEST)
 }

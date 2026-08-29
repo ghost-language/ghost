@@ -82,12 +82,46 @@ func TestNumbers(t *testing.T) {
 		{"x = 6; x--; x", 5},
 		{"class Counter { score = 0\nadd() { this.score++ } }\nc = new Counter()\nc.add()\nc.add()\nc.add()\nc.score", 3},
 		{"list = [5]; list[0]++; list[0]", 6},
+		{"x = 5; x++", 5},
+		{"x = 5; x--", 5},
+		{"x = 5; y = x++; y", 5},
+		{"list = [\"a\", \"b\"]; i = 0; list[i++]; i", 1},
+		{"list = [0]; for (i = 0; i < 3; list[0]++) { i++ }; list[0]", 3},
+		{"class Counter { count = 0 }\nc = new Counter()\nfor (i = 0; i < 3; c.count++) { i++ }\nc.count", 3},
+		{"list = [0]; for (i = 0; i < 3; list[0] += 1) { i++ }; list[0]", 3},
 	}
 
 	for _, tt := range tests {
 		result := evaluate(tt.input)
 
 		isNumberObject(t, result, tt.expected)
+	}
+}
+
+func TestMapShorthandKeys(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected int64
+	}{
+		{`name = "Fido"; age = 3; pet = {name, age}; pet.get("age")`, 3},
+		{`x = 1; y = 2; m = {x, y: 5}; m.get("y")`, 5},
+	}
+
+	for _, tt := range tests {
+		result := evaluate(tt.input)
+
+		isNumberObject(t, result, tt.expected)
+	}
+
+	result := evaluate(`name = "Fido"; pet = {name}; pet.get("name")`)
+	str, ok := result.(*object.String)
+
+	if !ok {
+		t.Fatalf("object is not String. got=%T (%+v)", result, result)
+	}
+
+	if str.Value != "Fido" {
+		t.Errorf("wrong value. wanted=%q, got=%q", "Fido", str.Value)
 	}
 }
 

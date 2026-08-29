@@ -433,7 +433,7 @@ parse as one assignment to both).
 | Ternary | `cond ? a : b` | Standard. |
 | Assignment | `=` | Also declares. Valid targets: a bare identifier, an index expression (`list[0] =`, `map["k"] =`), or a property expression (`instance.field =`, `map.key =`). |
 | Compound assignment | `+= -= *= /=` | **No `%=`.** Desugars to `target = target OP value`. |
-| Increment/decrement | `++ --` | Postfix only (`x++`, not `++x`); operates only on a variable holding a number. |
+| Increment/decrement | `++ --` | Postfix only (`x++`, not `++x`); operates on a variable, an index, or a property holding a number, mutating the target and evaluating to its value *before* the change — `list[i++]` reads index `i` and then advances it, `while (j++ < n)` tests the old `j`, matching C/JS postfix semantics. |
 | Indexing | `a[b]` | Lists (integer index), maps (any hashable key), strings (integer index, returns a one-character string). Out-of-range list/string indices and missing map keys all answer `null` rather than erroring — contrast with `list.slice()`, which errors (see §13.6). |
 | Member access | `a.b`, `a.b()` | Property read/assignment vs. method call, disambiguated by whether `(` follows. |
 
@@ -481,8 +481,10 @@ depending on the pair of types involved:
   brace-less single-statement form.
 - **`while (cond) { }`**.
 - **`for (i = 0; i < n; i++) { }`** — C-style three-clause form. The increment
-  clause accepts an assignment, a compound assignment, or a postfix
-  increment/decrement, but not an arbitrary expression.
+  clause accepts a plain assignment (`i = i + 1`) or, for any target an
+  assignment can reach — a variable, an index (`list[0]++`), or a property
+  (`obj.count++`) — a compound assignment or a postfix increment/decrement,
+  the same as anywhere else an expression is allowed.
 - **`for (key, value in iterable) { }`** and **`for (value in iterable) { }`**
   — iterates a `list` (key = integer index) or a `map` (key = the map key, in
   insertion order once §13.5 is fixed — today it is Go's randomized map

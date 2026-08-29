@@ -849,6 +849,55 @@ func TestMapLiteralsWithVariableKeys(t *testing.T) {
 	}
 }
 
+func TestMapLiteralsWithShorthandKeys(t *testing.T) {
+	input := `{foo, bar, baz: 3}`
+
+	scanner := scanner.New(input, "test.ghost")
+	parser := New(scanner)
+	program := parser.Parse()
+
+	failIfParserHasErrors(t, parser)
+
+	statement, ok := program.Statements[0].(*ast.Expression)
+
+	if !ok {
+		t.Fatalf("program.Statements[0] is not ast.Expression. got=%T", program.Statements[0])
+	}
+
+	mapLiteral, ok := statement.Expression.(*ast.Map)
+
+	if !ok {
+		t.Fatalf("statement is not ast.Map. got=%T", statement.Expression)
+	}
+
+	if len(mapLiteral.Pairs) != 3 {
+		t.Fatalf("map.Pairs has wrong length. got=%d", len(mapLiteral.Pairs))
+	}
+
+	for key, value := range mapLiteral.Pairs {
+		keyIdentifier, ok := key.(*ast.Identifier)
+
+		if !ok {
+			t.Fatalf("key is not ast.Identifier. got=%T", key)
+		}
+
+		if keyIdentifier.Value == "baz" {
+			isNumberLiteral(t, value, 3)
+			continue
+		}
+
+		valueIdentifier, ok := value.(*ast.Identifier)
+
+		if !ok {
+			t.Fatalf("value for shorthand key %q is not ast.Identifier. got=%T", keyIdentifier.Value, value)
+		}
+
+		if valueIdentifier.Value != keyIdentifier.Value {
+			t.Errorf("shorthand value should reference %q, got=%q", keyIdentifier.Value, valueIdentifier.Value)
+		}
+	}
+}
+
 func TestEmptyMapLiterals(t *testing.T) {
 	input := `{}`
 

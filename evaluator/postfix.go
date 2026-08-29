@@ -47,5 +47,5 @@ func evaluatePostfix(node *ast.Postfix, scope *object.Scope) object.Object {
 			WithHelp("only a variable, a list or map entry, or a property can be assigned to")
 	}
 
-	return updated
+	return number
 }
