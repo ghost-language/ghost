@@ -74,7 +74,7 @@ func TestScanTokens(t *testing.T) {
 		},
 	}
 
-	scanner := New(test.input, "test.ghost")
+	scanner := New(test.input, "test.gs")
 
 	for _, tok := range test.expected {
 		token := scanner.ScanToken()
@@ -172,7 +172,7 @@ func TestTokenPositions(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			scanner := New(test.source, "test.ghost")
+			scanner := New(test.source, "test.gs")
 
 			for index, expected := range test.expected {
 				scanned := scanner.ScanToken()
@@ -199,14 +199,14 @@ func TestScannerReportsLexicalFaults(t *testing.T) {
 		source   string
 		expected string
 	}{
-		{"unterminated string", `x = "ghost`, "test.ghost:1:5: syntax error: unterminated string"},
-		{"unterminated comment", "x = 1\n/* forever", "test.ghost:2:1: syntax error: unterminated block comment"},
-		{"unexpected character", "x = 1\ny = @", "test.ghost:2:5: syntax error: unexpected character `@`"},
+		{"unterminated string", `x = "ghost`, "test.gs:1:5: syntax error: unterminated string"},
+		{"unterminated comment", "x = 1\n/* forever", "test.gs:2:1: syntax error: unterminated block comment"},
+		{"unexpected character", "x = 1\ny = @", "test.gs:2:5: syntax error: unexpected character `@`"},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			scanner := New(test.source, "test.ghost")
+			scanner := New(test.source, "test.gs")
 
 			for scanner.ScanToken().Type != token.EOF {
 			}
@@ -227,7 +227,7 @@ func TestScannerReportsLexicalFaults(t *testing.T) {
 // A stray character is stepped over rather than swallowed into the name that
 // follows it, so the rest of the line still scans.
 func TestScanningContinuesPastAStrayCharacter(t *testing.T) {
-	scanner := New("@ total", "test.ghost")
+	scanner := New("@ total", "test.gs")
 
 	scanned := scanner.ScanToken()
 
@@ -239,7 +239,7 @@ func TestScanningContinuesPastAStrayCharacter(t *testing.T) {
 // A string may hold newlines, and the line counter has to follow them or every
 // position after one points at the wrong line.
 func TestMultiLineStringsAdvanceTheLine(t *testing.T) {
-	scanner := New("x = \"one\ntwo\"\ny = 1", "test.ghost")
+	scanner := New("x = \"one\ntwo\"\ny = 1", "test.gs")
 
 	for index := 0; index < 3; index++ {
 		scanner.ScanToken()
@@ -327,7 +327,7 @@ func TestTemplateLiteralTokens(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			scanner := New(test.source, "test.ghost")
+			scanner := New(test.source, "test.gs")
 
 			for _, expected := range test.expected {
 				scanned := scanner.ScanToken()
@@ -351,7 +351,7 @@ func TestTemplateLiteralTokens(t *testing.T) {
 // An unterminated template literal is reported rather than left to run off the
 // end of the file, matching how an unterminated string is handled.
 func TestTemplateLiteralUnterminated(t *testing.T) {
-	scanner := New("`hello", "test.ghost")
+	scanner := New("`hello", "test.gs")
 
 	for scanner.ScanToken().Type != token.EOF {
 	}
@@ -362,7 +362,7 @@ func TestTemplateLiteralUnterminated(t *testing.T) {
 		t.Fatalf("got %d faults, expected 1: %v", len(faults), faults)
 	}
 
-	expected := "test.ghost:1:1: syntax error: unterminated template literal"
+	expected := "test.gs:1:1: syntax error: unterminated template literal"
 
 	if faults[0].String() != expected {
 		t.Errorf("got=%q, expected=%q", faults[0].String(), expected)
@@ -374,9 +374,9 @@ func TestTemplateLiteralUnterminated(t *testing.T) {
 func TestScanningRegistersTheSource(t *testing.T) {
 	source.Reset()
 
-	New("first\nsecond", "registered.ghost")
+	New("first\nsecond", "registered.gs")
 
-	line, ok := source.Line("registered.ghost", 2)
+	line, ok := source.Line("registered.gs", 2)
 
 	if !ok || line != "second" {
 		t.Errorf("got=(%q, %v), expected=(%q, true)", line, ok, "second")

@@ -30,7 +30,7 @@ func Start(in io.Reader, out io.Writer) {
 	directory, _ := os.Getwd()
 
 	instance.SetDirectory(directory)
-	instance.SetFile("repl.ghost")
+	instance.SetFile("repl.gs")
 
 	for {
 		source, err := line.Prompt(prompt)

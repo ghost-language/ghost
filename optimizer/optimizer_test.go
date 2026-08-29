@@ -11,7 +11,7 @@ import (
 func optimizeSource(t *testing.T, source string) ast.Node {
 	t.Helper()
 
-	p := parser.New(scanner.New(source, "test.ghost"))
+	p := parser.New(scanner.New(source, "test.gs"))
 	program := Optimize(p.Parse())
 
 	if len(p.Errors()) != 0 {
@@ -189,7 +189,7 @@ func TestFoldsInsideNestedConstructs(t *testing.T) {
 		return 8 - 3
 	}`
 
-	p := parser.New(scanner.New(source, "test.ghost"))
+	p := parser.New(scanner.New(source, "test.gs"))
 	program := Optimize(p.Parse())
 
 	if len(p.Errors()) != 0 {

@@ -36,7 +36,7 @@ func TestDateComparisons(t *testing.T) {
 func TestDateArithmeticOperatorsAreRejected(t *testing.T) {
 	result := evaluate(dateImport + "date.now() + date.now()")
 
-	isErrorObject(t, result, "test.ghost:2:12: type error: cannot use `+` between two dates")
+	isErrorObject(t, result, "test.gs:2:12: type error: cannot use `+` between two dates")
 }
 
 func TestDateToString(t *testing.T) {

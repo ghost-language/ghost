@@ -20,7 +20,7 @@ func evaluateInDirectory(dir string, input string) object.Object {
 	object.RegisterEvaluator(Evaluate)
 	modules.RegisterEvaluator(Evaluate)
 
-	p := parser.New(scanner.New(input, "main.ghost"))
+	p := parser.New(scanner.New(input, "main.gs"))
 	program := p.Parse()
 
 	return Evaluate(program, scope)
@@ -37,7 +37,7 @@ func writeModule(t *testing.T, dir, name, source string) {
 func TestImportBindsDefaultName(t *testing.T) {
 	dir := t.TempDir()
 
-	writeModule(t, dir, "greeting.ghost", `hello = "hi"`)
+	writeModule(t, dir, "greeting.gs", `hello = "hi"`)
 
 	result := evaluateInDirectory(dir, "import \"greeting\"\ngreeting.hello")
 
@@ -47,7 +47,7 @@ func TestImportBindsDefaultName(t *testing.T) {
 func TestImportAsBindsAlias(t *testing.T) {
 	dir := t.TempDir()
 
-	writeModule(t, dir, "greeting.ghost", `hello = "hi"`)
+	writeModule(t, dir, "greeting.gs", `hello = "hi"`)
 
 	result := evaluateInDirectory(dir, "import \"greeting\" as g\ng.hello")
 
@@ -57,7 +57,7 @@ func TestImportAsBindsAlias(t *testing.T) {
 func TestImportFromWithBraces(t *testing.T) {
 	dir := t.TempDir()
 
-	writeModule(t, dir, "greeting.ghost", "hello = \"hi\"\nbye = \"bye\"")
+	writeModule(t, dir, "greeting.gs", "hello = \"hi\"\nbye = \"bye\"")
 
 	result := evaluateInDirectory(dir, "import { hello, bye } from \"greeting\"\nhello + \" \" + bye")
 
@@ -67,7 +67,7 @@ func TestImportFromWithBraces(t *testing.T) {
 func TestImportFromWithBracesAndAlias(t *testing.T) {
 	dir := t.TempDir()
 
-	writeModule(t, dir, "greeting.ghost", `hello = "hi"`)
+	writeModule(t, dir, "greeting.gs", `hello = "hi"`)
 
 	result := evaluateInDirectory(dir, "import { hello as h } from \"greeting\"\nh")
 
@@ -77,7 +77,7 @@ func TestImportFromWithBracesAndAlias(t *testing.T) {
 func TestImportCombinedModuleAndNamed(t *testing.T) {
 	dir := t.TempDir()
 
-	writeModule(t, dir, "greeting.ghost", `hello = "hi"`)
+	writeModule(t, dir, "greeting.gs", `hello = "hi"`)
 
 	result := evaluateInDirectory(dir, "import greeting, { hello } from \"greeting\"\ngreeting.hello + \" \" + hello")
 
@@ -95,7 +95,7 @@ func TestImportCombinedSchemeModuleAndNamed(t *testing.T) {
 func TestImportReimportStillBinds(t *testing.T) {
 	dir := t.TempDir()
 
-	writeModule(t, dir, "shared.ghost", `value = 1`)
+	writeModule(t, dir, "shared.gs", `value = 1`)
 
 	// Importing the same module twice from two different places must not skip
 	// the second binding just because the module itself only needs to run

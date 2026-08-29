@@ -127,20 +127,20 @@ func TestListOperatorErrors(t *testing.T) {
 		input           string
 		expectedMessage string
 	}{
-		{"[1, 2] + [1, 2, 3]", "test.ghost:1:8: value error: cannot use `+` between these values: shapes 2 and 3 cannot be combined"},
-		{`["a"] + [1]`, "test.ghost:1:7: value error: cannot use `+` between these values: expected a number or a list of numbers, found string"},
-		{"[[1, 2], [3]] + 1", "test.ghost:1:15: value error: cannot use `+` between these values: lists have to be rectangular to combine elementwise"},
-		{"[1, 2] / 0", "test.ghost:1:8: value error: cannot divide by zero"},
-		{"[1, 2] % 0", "test.ghost:1:8: value error: cannot take the remainder of a division by zero"},
+		{"[1, 2] + [1, 2, 3]", "test.gs:1:8: value error: cannot use `+` between these values: shapes 2 and 3 cannot be combined"},
+		{`["a"] + [1]`, "test.gs:1:7: value error: cannot use `+` between these values: expected a number or a list of numbers, found string"},
+		{"[[1, 2], [3]] + 1", "test.gs:1:15: value error: cannot use `+` between these values: lists have to be rectangular to combine elementwise"},
+		{"[1, 2] / 0", "test.gs:1:8: value error: cannot divide by zero"},
+		{"[1, 2] % 0", "test.gs:1:8: value error: cannot take the remainder of a division by zero"},
 
 		// A list against something that is neither a list nor a number stays a
 		// type mismatch, which says more than a broadcasting failure would.
-		{"[1, 2] + true", "test.ghost:1:8: type error: cannot use `+` between list and boolean"},
-		{`"a" + [1]`, "test.ghost:1:5: type error: cannot use `+` between string and list"},
+		{"[1, 2] + true", "test.gs:1:8: type error: cannot use `+` between list and boolean"},
+		{`"a" + [1]`, "test.gs:1:5: type error: cannot use `+` between string and list"},
 
 		// Ordering between two lists has no obvious reading, so it stays
 		// unsupported rather than guessing at one.
-		{"[1, 2] < [3, 4]", "test.ghost:1:8: type error: cannot use `<` between two lists"},
+		{"[1, 2] < [3, 4]", "test.gs:1:8: type error: cannot use `<` between two lists"},
 	}
 
 	for _, tt := range tests {

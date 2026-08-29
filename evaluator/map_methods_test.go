@@ -60,9 +60,9 @@ func TestMapMethodErrors(t *testing.T) {
 		input           string
 		expectedMessage string
 	}{
-		{`{}.get()`, "test.ghost:1:4: argument error: `map.get()` expects between 1 and 2 arguments, got 0"},
-		{`{}.set("a")`, "test.ghost:1:4: argument error: `map.set()` expects 2 arguments, got 1"},
-		{`{}.merge(1)`, "test.ghost:1:4: argument error: `map.merge()` expects argument 1 to be a map, got number"},
+		{`{}.get()`, "test.gs:1:4: argument error: `map.get()` expects between 1 and 2 arguments, got 0"},
+		{`{}.set("a")`, "test.gs:1:4: argument error: `map.set()` expects 2 arguments, got 1"},
+		{`{}.merge(1)`, "test.gs:1:4: argument error: `map.merge()` expects argument 1 to be a map, got number"},
 	}
 
 	for _, tt := range tests {

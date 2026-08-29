@@ -28,7 +28,7 @@ var schemePattern = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9+.-]+:`)
 
 // schemeImport splits an import path into its scheme and the name after it,
 // if it has one: `"ghost:math"` splits to `("ghost", "math")`. A path with
-// no such prefix is a `.ghost` file import instead (§8.9) — the two are told
+// no such prefix is a `.gs` file import instead (§8.9) — the two are told
 // apart by this alone, no registration lookup needed to decide which.
 func schemeImport(path string) (scheme string, name string, ok bool) {
 	prefix := schemePattern.FindString(path)
@@ -495,7 +495,7 @@ func resolveModule(tok token.Token, name string, scope *object.Scope) (string, *
 	filename := findFile(name)
 
 	if filename == "" {
-		return "", object.NewError(fault.Import, tok, "no module found at `%s.ghost`", name).
+		return "", object.NewError(fault.Import, tok, "no module found at `%s.gs`", name).
 			WithHelp("modules are looked for next to the file importing them")
 	}
 
@@ -568,7 +568,7 @@ func findFile(name string) string {
 	moduleState.Lock()
 	defer moduleState.Unlock()
 
-	basename := fmt.Sprintf("%s.ghost", name)
+	basename := fmt.Sprintf("%s.gs", name)
 
 	for _, path := range searchPaths {
 		file := filepath.Join(path, basename)
