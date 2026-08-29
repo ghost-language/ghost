@@ -876,9 +876,22 @@ those live only in the `math` module.
 | `toString()` | 0 | Returns the receiver unchanged. |
 | `toNumber()` | 0 | Parses as an integer first, then a float; a `Value` error (with help text) if neither parses. |
 | `trim()` / `trimStart()` / `trimEnd()` | 0 | Whitespace trim. |
+| `contains(substring)` | 1 | Substring search; named to match `list.contains()` rather than adding a second `includes` spelling. |
+| `indexOf(substring)` / `lastIndexOf(substring)` | 1 | First/last match position, as a rune index (not byte offset); `-1` if not found. |
+| `repeat(n)` | 1 | `n` copies concatenated; a `Value` error if `n` is negative. |
+| `padStart(length, pad = " ")` / `padEnd(length, pad = " ")` | 1–2 | Grows to `length` runes by repeating `pad` on the named side, truncated to fit; a receiver already at or past `length`, or an empty `pad`, comes back unchanged. |
+| `charAt(index)` | 1 | The single-rune string at a rune position; `""` for a position out of range — a *position* read is lenient, per §13.6 (`at` was not added as a second name for the same thing). |
+| `slice(start, end = length())` | 1–2 | New string of the runes from `start` up to `end`; out-of-range bounds raise an `Index` error, matching `list.slice()` (a *range* read validates, per §13.6). `substring` was not added as a second spelling. |
+| `reverse()` | 0 | New string, runes reversed. |
+| `isEmpty()` | 0 | `length() == 0`. |
 
-*No* `contains`/`includes`, `indexOf`, `repeat`, `padStart`/`padEnd`,
-`charAt`/`at`, `slice`/`substring`, `reverse`, or `isEmpty` — see §12.
+Where §12 listed two spellings for one behavior (`contains`/`includes`,
+`charAt`/`at`, `slice`/`substring`), only one was implemented — matching
+the name `list` already uses where one exists (`contains`, `slice`), and
+picking the plainer of the two otherwise (`charAt`, not `at`, since `at`
+elsewhere implies negative-index wraparound that nothing in Ghost supports
+today). `indexOf`/`lastIndexOf` and `padStart`/`padEnd` are genuinely
+different operations, not spelling variants, so both were added.
 
 **`list`**
 
@@ -1404,11 +1417,12 @@ The following close the gap between the target this specification sets and
 what the implementation does today. Organized by area, in roughly descending
 order of how likely each is to be hit by an ordinary user.
 
-**String methods:** `contains`/`includes`, `indexOf`/`lastIndexOf`,
-`repeat(n)`, `padStart`/`padEnd`, `charAt`/`at`, `slice`/`substring`,
-`reverse`, `isEmpty`. Several of these (`contains`, `slice`) exist on `list`
-already, so their absence on `string` is a gap to close, not a decision to
-revisit.
+**String methods — done.** `contains`, `indexOf`/`lastIndexOf`, `repeat(n)`,
+`padStart`/`padEnd`, `charAt`, `slice`, `reverse`, `isEmpty` are implemented
+(`object/string.go`, tested in `evaluator/string_methods_test.go`); see §9.1
+for the finished reference table and the naming calls made along the way
+(`includes`/`at`/`substring` were deliberately not added as second spellings
+of `contains`/`charAt`/`slice`).
 
 **List methods:** `indexOf`/`find`/`findIndex`, `flatten`, `some`/`any`,
 `every`/`all`, `splice`/`insertAt`/`removeAt`, `unshift` (front-insert, to

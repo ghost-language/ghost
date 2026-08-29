@@ -168,3 +168,61 @@ points at the callee's name, a bad method at the method's name.
 ## Version
 
 Update `version/version.go` when releasing. GoReleaser handles binary distribution.
+
+## Working through SPEC.md §11–14 (the 1.0 gap list)
+
+`SPEC.md` §12 (functionality to add) and §13 (defects to fix) are the punch
+list for a stable 1.0; §14 records product-direction decisions the list
+raises. Sessions pick this work up incrementally, one item at a time, so the
+following are standing rules rather than one-off notes:
+
+- **One callout per session, start to finish.** Implement it, test it, and
+  update `SPEC.md` before ending the session — don't leave an item
+  half-done or the spec stale relative to the code. Mark the finished
+  callout in §12/§13 (e.g. "— done." with a pointer to where it landed and
+  where it's tested) rather than deleting it, so the document stays a
+  record of what happened, not just what's left. Add newly-implemented
+  methods/behavior to the relevant reference table in §8/§9 too — that
+  table is what §12/§13 point back to.
+- **Match existing naming before inventing new names.** When a gap item
+  overlaps a method another type already has (e.g. `string` gaining what
+  `list` already calls `contains`/`slice`), reuse that exact name rather
+  than a same-meaning synonym — one vocabulary for one operation, the same
+  principle §"Error handling" already applies to error wording.
+- **A gap item that lists two spellings for one behavior isn't asking for
+  both.** Where §12 writes `contains`/`includes` or `charAt`/`at` or
+  `slice`/`substring`, that's flagging that *some* name for the operation is
+  missing, not requesting synonym methods. Pick one (matching an existing
+  convention if there is one) and write down which was picked and why —
+  don't add both spellings "to be safe." Genuinely different operations
+  written the same way (`indexOf`/`lastIndexOf`, `padStart`/`padEnd`) are
+  not this case — implement both.
+- **Follow the position-vs-range bounds rule from §13.6.** A method that
+  reads *a position* (`charAt`, list/map/string indexing) is lenient —
+  return `null`/`""` out of range, never an error. A method that reads *a
+  range* (`slice`) validates both ends and raises an `Index` error out of
+  range, matching `list.slice()`. Don't mix the two conventions on a new
+  method without a documented reason.
+- **String/list methods operate on runes, not bytes**, matching
+  `string.length()`'s existing `utf8.RuneCountInString`. A new
+  position/range-taking method converts to `[]rune` (or converts a byte
+  offset back to a rune count, as `indexOf`/`lastIndexOf` do) rather than
+  indexing `str.Value` directly — otherwise it silently disagrees with
+  `length()` on what a "character" is for any non-ASCII input.
+- **Route every new argument check through `object/arguments.go`'s
+  helpers** (`Arity`, `ArityRange`, `NumberArgument`, `StringArgument`, ...)
+  — never assert a type inline. This is what keeps a new method's error
+  messages reading identically to every existing one.
+- **Tests live next to the type they cover**, following
+  `evaluator/list_methods_test.go` / `evaluator/map_methods_test.go`:
+  one `evaluator/<type>_methods_test.go`, using the `evaluate()` /
+  `isStringObject`/`isNumberObject`/`isBooleanObject`/`isErrorObject`
+  helpers already in `evaluator/evaluator_test.go`, with a table per return
+  type and one `Test<Type>MethodErrors` table for argument-error wording
+  (assert the *exact* rendered message, position included).
+- **Before ending a session on this list**, run `go build ./...` and
+  `go test ./...` clean, then leave the next session a clear entry point —
+  the next unclaimed item in §12/§13, in the order those sections already
+  list them (§12: roughly descending likelihood of being hit by an ordinary
+  user; §13: roughly descending damage) unless the user asks for a specific
+  item instead.

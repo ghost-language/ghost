@@ -44,20 +44,40 @@ func (str *String) MapKey() MapKey {
 // is threaded this far down.
 func (str *String) Method(method string, tok token.Token, args []Object) (Object, bool) {
 	switch method {
+	case "charAt":
+		return str.charAt(tok, args)
+	case "contains":
+		return str.contains(tok, args)
+	case "endsWith":
+		return str.endsWith(tok, args)
 	case "find":
 		return str.find(tok, args)
 	case "findAll":
 		return str.findAll(tok, args)
 	case "format":
 		return str.format(tok, args)
-	case "endsWith":
-		return str.endsWith(tok, args)
+	case "indexOf":
+		return str.indexOf(tok, args)
+	case "isEmpty":
+		return str.isEmpty(tok, args)
+	case "lastIndexOf":
+		return str.lastIndexOf(tok, args)
 	case "length":
 		return str.length(tok, args)
 	case "matches":
 		return str.matches(tok, args)
+	case "padEnd":
+		return str.padEnd(tok, args)
+	case "padStart":
+		return str.padStart(tok, args)
+	case "repeat":
+		return str.repeat(tok, args)
 	case "replace":
 		return str.replace(tok, args)
+	case "reverse":
+		return str.reverse(tok, args)
+	case "slice":
+		return str.slice(tok, args)
 	case "split":
 		return str.split(tok, args)
 	case "startsWith":
@@ -110,6 +130,54 @@ func patternReason(err error) string {
 	}
 
 	return reason
+}
+
+// runes is the rune-indexed view of the string, so a method that names a
+// position or a range agrees with length() about what a "character" is -
+// one multi-byte rune, not one byte.
+func (str *String) runes() []rune {
+	return []rune(str.Value)
+}
+
+// charAt answers the single-character string at a rune position, or an empty
+// string for a position out of range - the same leniency list indexing
+// already gives a position that names a spot rather than a range (§13.6).
+func (str *String) charAt(tok token.Token, args []Object) (Object, bool) {
+	if err := Arity("string.charAt()", tok, args, 1); err != nil {
+		return err, true
+	}
+
+	index, err := NumberArgument("string.charAt()", tok, args, 0)
+
+	if err != nil {
+		return err, true
+	}
+
+	runes := str.runes()
+	idx := index.Int64()
+
+	if idx < 0 || idx >= int64(len(runes)) {
+		return &String{}, true
+	}
+
+	return &String{Value: string(runes[idx])}, true
+}
+
+// contains reports whether a substring appears anywhere in the string,
+// mirroring list.contains() so "does this collection have this value" reads
+// the same on both types.
+func (str *String) contains(tok token.Token, args []Object) (Object, bool) {
+	if err := Arity("string.contains()", tok, args, 1); err != nil {
+		return err, true
+	}
+
+	substr, err := StringArgument("string.contains()", tok, args, 0)
+
+	if err != nil {
+		return err, true
+	}
+
+	return &Boolean{Value: strings.Contains(str.Value, substr.Value)}, true
 }
 
 func (str *String) find(tok token.Token, args []Object) (Object, bool) {
@@ -196,6 +264,59 @@ func (str *String) length(tok token.Token, args []Object) (Object, bool) {
 	return NewInt(int64(utf8.RuneCountInString(str.Value))), true
 }
 
+// indexOf answers the rune position of the first occurrence of a substring,
+// or -1 if it never appears - the byte offset strings.Index finds is
+// converted to a rune count so it lines up with charAt() and length().
+func (str *String) indexOf(tok token.Token, args []Object) (Object, bool) {
+	if err := Arity("string.indexOf()", tok, args, 1); err != nil {
+		return err, true
+	}
+
+	substr, err := StringArgument("string.indexOf()", tok, args, 0)
+
+	if err != nil {
+		return err, true
+	}
+
+	byteIndex := strings.Index(str.Value, substr.Value)
+
+	if byteIndex < 0 {
+		return NewInt(-1), true
+	}
+
+	return NewInt(int64(utf8.RuneCountInString(str.Value[:byteIndex]))), true
+}
+
+func (str *String) isEmpty(tok token.Token, args []Object) (Object, bool) {
+	if err := Arity("string.isEmpty()", tok, args, 0); err != nil {
+		return err, true
+	}
+
+	return &Boolean{Value: len(str.Value) == 0}, true
+}
+
+// lastIndexOf answers the rune position of the last occurrence of a
+// substring, or -1 if it never appears.
+func (str *String) lastIndexOf(tok token.Token, args []Object) (Object, bool) {
+	if err := Arity("string.lastIndexOf()", tok, args, 1); err != nil {
+		return err, true
+	}
+
+	substr, err := StringArgument("string.lastIndexOf()", tok, args, 0)
+
+	if err != nil {
+		return err, true
+	}
+
+	byteIndex := strings.LastIndex(str.Value, substr.Value)
+
+	if byteIndex < 0 {
+		return NewInt(-1), true
+	}
+
+	return NewInt(int64(utf8.RuneCountInString(str.Value[:byteIndex]))), true
+}
+
 func (str *String) matches(tok token.Token, args []Object) (Object, bool) {
 	if err := Arity("string.matches()", tok, args, 1); err != nil {
 		return err, true
@@ -216,6 +337,105 @@ func (str *String) matches(tok token.Token, args []Object) (Object, bool) {
 	return &Boolean{Value: expression.MatchString(subject.Value)}, true
 }
 
+// pad grows a string to a target rune length by adding copies of a pad
+// string to one side, truncated to fit exactly. A string already at or past
+// the target length, or an empty pad string, comes back unchanged - there is
+// nothing to repeat that would make it longer.
+func pad(runes []rune, targetLength int64, padStr string, before bool) string {
+	deficit := targetLength - int64(len(runes))
+
+	if deficit <= 0 || padStr == "" {
+		return string(runes)
+	}
+
+	padRunes := []rune(padStr)
+	fill := make([]rune, 0, deficit)
+
+	for int64(len(fill)) < deficit {
+		fill = append(fill, padRunes...)
+	}
+
+	fill = fill[:deficit]
+
+	if before {
+		return string(fill) + string(runes)
+	}
+
+	return string(runes) + string(fill)
+}
+
+func (str *String) padEnd(tok token.Token, args []Object) (Object, bool) {
+	if err := ArityRange("string.padEnd()", tok, args, 1, 2); err != nil {
+		return err, true
+	}
+
+	targetLength, err := NumberArgument("string.padEnd()", tok, args, 0)
+
+	if err != nil {
+		return err, true
+	}
+
+	padStr := " "
+
+	if len(args) == 2 {
+		padArg, err := StringArgument("string.padEnd()", tok, args, 1)
+
+		if err != nil {
+			return err, true
+		}
+
+		padStr = padArg.Value
+	}
+
+	return &String{Value: pad(str.runes(), targetLength.Int64(), padStr, false)}, true
+}
+
+func (str *String) padStart(tok token.Token, args []Object) (Object, bool) {
+	if err := ArityRange("string.padStart()", tok, args, 1, 2); err != nil {
+		return err, true
+	}
+
+	targetLength, err := NumberArgument("string.padStart()", tok, args, 0)
+
+	if err != nil {
+		return err, true
+	}
+
+	padStr := " "
+
+	if len(args) == 2 {
+		padArg, err := StringArgument("string.padStart()", tok, args, 1)
+
+		if err != nil {
+			return err, true
+		}
+
+		padStr = padArg.Value
+	}
+
+	return &String{Value: pad(str.runes(), targetLength.Int64(), padStr, true)}, true
+}
+
+func (str *String) repeat(tok token.Token, args []Object) (Object, bool) {
+	if err := Arity("string.repeat()", tok, args, 1); err != nil {
+		return err, true
+	}
+
+	count, err := NumberArgument("string.repeat()", tok, args, 0)
+
+	if err != nil {
+		return err, true
+	}
+
+	times := count.Int64()
+
+	if times < 0 {
+		return NewError(fault.Value, tok, "`string.repeat()` count cannot be negative, got %d", times), true
+	}
+
+	return &String{Value: strings.Repeat(str.Value, int(times))}, true
+}
+
 func (str *String) replace(tok token.Token, args []Object) (Object, bool) {
 	if err := Arity("string.replace()", tok, args, 2); err != nil {
 		return err, true
@@ -234,6 +454,63 @@ func (str *String) replace(tok token.Token, args []Object) (Object, bool) {
 	}
 
 	return &String{Value: strings.ReplaceAll(str.Value, from.Value, to.Value)}, true
+}
+
+func (str *String) reverse(tok token.Token, args []Object) (Object, bool) {
+	if err := Arity("string.reverse()", tok, args, 0); err != nil {
+		return err, true
+	}
+
+	runes := str.runes()
+	length := len(runes)
+	reversed := make([]rune, length)
+
+	for index, r := range runes {
+		reversed[length-1-index] = r
+	}
+
+	return &String{Value: string(reversed)}, true
+}
+
+// slice answers a new string holding the runes from start up to, but not
+// including, end - which defaults to the length of the string. Bounds are
+// validated the same way list.slice() validates them (§13.6): a range names
+// two positions, so both are checked rather than clamped.
+func (str *String) slice(tok token.Token, args []Object) (Object, bool) {
+	if err := ArityRange("string.slice()", tok, args, 1, 2); err != nil {
+		return err, true
+	}
+
+	start, err := NumberArgument("string.slice()", tok, args, 0)
+
+	if err != nil {
+		return err, true
+	}
+
+	runes := str.runes()
+	length := int64(len(runes))
+	from := start.Int64()
+	to := length
+
+	if len(args) == 2 {
+		end, err := NumberArgument("string.slice()", tok, args, 1)
+
+		if err != nil {
+			return err, true
+		}
+
+		to = end.Int64()
+	}
+
+	if from < 0 || from > length {
+		return NewError(fault.Index, tok, "`string.slice()` start index %d is out of range for a string of length %d", from, length), true
+	}
+
+	if to < from || to > length {
+		return NewError(fault.Index, tok, "`string.slice()` end index %d is out of range for a string of length %d", to, length), true
+	}
+
+	return &String{Value: string(runes[from:to])}, true
 }
 
 func (str *String) split(tok token.Token, args []Object) (Object, bool) {
