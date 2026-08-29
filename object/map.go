@@ -48,6 +48,8 @@ func (mapObject *Map) Type() Type {
 // Method defines the set of methods available on map objects.
 func (mapObject *Map) Method(method string, tok token.Token, args []Object) (Object, bool) {
 	switch method {
+	case "entries":
+		return mapObject.entries(tok, args)
 	case "get":
 		return mapObject.get(tok, args)
 	case "has":
@@ -58,6 +60,8 @@ func (mapObject *Map) Method(method string, tok token.Token, args []Object) (Obj
 		return mapObject.length(tok, args)
 	case "merge":
 		return mapObject.merge(tok, args)
+	case "remove":
+		return mapObject.remove(tok, args)
 	case "set":
 		return mapObject.set(tok, args)
 	case "values":
@@ -114,6 +118,22 @@ func (mapObject *Map) has(tok token.Token, args []Object) (Object, bool) {
 	return &Boolean{Value: ok}, true
 }
 
+// entries answers a list of [key, value] pairs, one per entry - the same
+// shape keys()/values() would zip together, kept here as a single call.
+func (mapObject *Map) entries(tok token.Token, args []Object) (Object, bool) {
+	if err := Arity("map.entries()", tok, args, 0); err != nil {
+		return err, true
+	}
+
+	elements := make([]Object, 0, len(mapObject.Pairs))
+
+	for _, pair := range mapObject.Pairs {
+		elements = append(elements, &List{Elements: []Object{pair.Key, pair.Value}})
+	}
+
+	return &List{Elements: elements}, true
+}
+
 func (mapObject *Map) keys(tok token.Token, args []Object) (Object, bool) {
 	if err := Arity("map.keys()", tok, args, 0); err != nil {
 		return err, true
@@ -161,6 +181,31 @@ func (mapObject *Map) merge(tok token.Token, args []Object) (Object, bool) {
 	}
 
 	return &Map{Pairs: pairs}, true
+}
+
+// remove deletes a key from the map, mutating in place, and answers the
+// value that was stored there - null if the key was not present, the same
+// leniency pop()/shift() give an empty list rather than an error.
+func (mapObject *Map) remove(tok token.Token, args []Object) (Object, bool) {
+	if err := Arity("map.remove()", tok, args, 1); err != nil {
+		return err, true
+	}
+
+	_, hashed, err := mapKey("map.remove()", tok, args, 0)
+
+	if err != nil {
+		return err, true
+	}
+
+	pair, ok := mapObject.Pairs[hashed]
+
+	if !ok {
+		return &Null{}, true
+	}
+
+	delete(mapObject.Pairs, hashed)
+
+	return pair.Value, true
 }
 
 // set stores a value under a key, adding it if the key is new, and answers

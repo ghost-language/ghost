@@ -27,6 +27,18 @@ func TestMapMethods(t *testing.T) {
 		{`{"a": 1}.merge({"b": 2}).keys().sort().toString()`, "[a, b]"},
 		{`{"a": 1}.merge({"a": 2}).get("a").toString()`, "2"},
 		{`x = {"a": 1}; x.merge({"b": 2}); x.keys().sort().toString()`, "[a]"},
+
+		// entries() answers [key, value] pairs; sort by the joined string,
+		// since element order across pairs is not something a test should
+		// depend on either.
+		{`{"a": 1, "b": 2}.entries().map(function(pair) { return pair.join(":") }).sort().toString()`, "[a:1, b:2]"},
+		{`{}.entries().toString()`, "[]"},
+
+		// remove() mutates in place and answers the value that was there,
+		// or null when the key was never present.
+		{`m = {"a": 1, "b": 2}; m.remove("a").toString()`, "1"},
+		{`m = {"a": 1, "b": 2}; m.remove("a"); m.keys().sort().toString()`, "[b]"},
+		{`{"a": 1}.remove("missing").toString()`, "null"},
 	}
 
 	for _, tt := range tests {
@@ -63,6 +75,9 @@ func TestMapMethodErrors(t *testing.T) {
 		{`{}.get()`, "test.gs:1:4: argument error: `map.get()` expects between 1 and 2 arguments, got 0"},
 		{`{}.set("a")`, "test.gs:1:4: argument error: `map.set()` expects 2 arguments, got 1"},
 		{`{}.merge(1)`, "test.gs:1:4: argument error: `map.merge()` expects argument 1 to be a map, got number"},
+		{`{}.remove()`, "test.gs:1:4: argument error: `map.remove()` expects 1 argument, got 0"},
+		{`{}.remove([1])`, "test.gs:1:4: type error: `map.remove()` cannot use list as a map key"},
+		{`{}.entries(1)`, "test.gs:1:4: argument error: `map.entries()` expects 0 arguments, got 1"},
 	}
 
 	for _, tt := range tests {

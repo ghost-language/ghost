@@ -940,10 +940,10 @@ style rather than one call that both removes and inserts.
 | `keys()` / `values()` | 0 | Returns a `list`, in insertion order once §13.5 is fixed (today, Go's randomized map-iteration order). |
 | `merge(other)` | 1 | New map; on a key collision, `other`'s value wins (same rule a later assignment to the same key would follow). |
 | `length()` | 0 | |
+| `remove(key)` | 1 | Mutates in place; answers the value that was stored under `key`, or `null` if the key was not present — the same leniency `pop()`/`shift()` give an empty list. Named to match `list.removeAt()` rather than adding `delete` as a second spelling (§12). |
+| `entries()` | 0 | New `list` of `[key, value]` two-element lists, one per entry — for symmetry with `keys()`/`values()`. |
 
-*No `delete`/`remove` method* — once a key is set, there is no way to
-remove it from a Ghost script (§12, and see §13.2 for the related equality
-gap). No `entries()`, no `forEach` (use `for ... in`).
+No `forEach` (use `for ... in`).
 
 **`date`** — `toString()` only (ISO-8601/RFC3339, always UTC). Every other
 date operation is a function in the `date` module (§9.5), not a method,
@@ -1443,9 +1443,11 @@ generic multi-purpose `splice` was not added at all — `insertAt`/`removeAt`
 cover the same ground as two single-purpose methods, matching the existing
 `push`/`pop`/`shift` style better than one do-everything call would).
 
-**Map methods:** `delete`/`remove` (there is currently no way to remove a
-key from a map at all), `entries()` (as a list of `[key, value]` pairs, for
-symmetry with `keys()`/`values()`).
+**Map methods — done.** `remove(key)` and `entries()` are implemented
+(`object/map.go`, tested in `evaluator/map_methods_test.go`); see §9.2 for
+the finished reference table (`remove` was picked over `delete` to match
+`list.removeAt()` rather than add a second spelling for the same
+operation).
 
 **Number methods:** `ceil()` (exists on `math` but not as an instance
 method, unlike its sibling `round`/`floor`), and, depending on how far
