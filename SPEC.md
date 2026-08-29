@@ -915,11 +915,20 @@ different operations, not spelling variants, so both were added.
 | `join(separator)` | 1 | String-joins each element's `String()`. |
 | `length()` | 0 | |
 | `toString()` | 0 | |
+| `indexOf(value)` | 1 | Position of the first element equal to `value` (`object.ValuesEqual`, same rule as `contains`), or `-1`. Value-based search, pairing with the predicate-based `find`/`findIndex`. |
+| `find(fn)` / `findIndex(fn)` | 1 | `fn(element, index)` → truthy; answers the first matching element (`null` if none) or its index (`-1` if none). |
+| `some(fn)` / `every(fn)` | 1 | `fn(element, index)` → truthy; short-circuits, mirroring `\|\|`/`&&`. |
+| `flatten()` | 0 | New list with every nested list's elements spliced in, recursively. No depth argument — one unambiguous behavior rather than a JS-style default depth. |
+| `flatMap(fn)` | 1 | `fn(element, index)` → new list, with each result spliced in one level if it is itself a list, else kept as-is. |
+| `chunk(size)` | 1 | New list of new lists of at most `size` elements each, in order; the last chunk holds whatever remains. `size` must be positive (`Value` error otherwise). |
+| `fill(value[, start[, end]])` | 1–3 | New list with `value` in place of every element from `start` up to `end` (defaulting to the whole list); out-of-range bounds raise an `Index` error, the same range convention `slice()` uses. Does not mutate, matching `sort()`/`reverse()`/`slice()`. |
+| `isEmpty()` | 0 | `length() == 0`. |
+| `unshift(value)` | 1 | Mutates in place; front-insert, returns the new length — the front-insert counterpart to `push`. |
+| `insertAt(index, value)` / `removeAt(index)` | 2 / 1 | Mutate in place. `insertAt` returns the new length like `push`; an out-of-range `index` clamps to the nearest end rather than erroring. `removeAt` returns the removed element, or `null` for an out-of-range index — the same leniency `pop()`/`shift()` give an empty list. |
 
-*No* `indexOf`/`find`/`findIndex`, `flatten`, `some`/`any`, `every`/`all`,
-`splice`/`insertAt`/`removeAt`, `fill`, `chunk`, `flatMap`, or `isEmpty` —
-see §12. There is also no `push`-equivalent that inserts at an arbitrary
-index or a front-insert (`unshift`).
+There is no generic `splice` — `insertAt`/`removeAt` cover the same ground
+as two single-purpose methods, matching the existing `push`/`pop`/`shift`
+style rather than one call that both removes and inserts.
 
 **`map`**
 
@@ -1424,9 +1433,15 @@ for the finished reference table and the naming calls made along the way
 (`includes`/`at`/`substring` were deliberately not added as second spellings
 of `contains`/`charAt`/`slice`).
 
-**List methods:** `indexOf`/`find`/`findIndex`, `flatten`, `some`/`any`,
-`every`/`all`, `splice`/`insertAt`/`removeAt`, `unshift` (front-insert, to
-pair with `push`/`pop`/`shift`), `fill`, `chunk`, `flatMap`, `isEmpty`.
+**List methods — done.** `indexOf`, `find`/`findIndex`, `flatten`, `some`,
+`every`, `insertAt`/`removeAt`, `unshift` (front-insert, to pair with
+`push`/`pop`/`shift`), `fill`, `chunk`, `flatMap`, `isEmpty` are implemented
+(`object/list.go`, tested in `evaluator/list_methods_test.go`); see §9.2 for
+the finished reference table and the naming calls made along the way
+(`any`/`all` were not added as second spellings of `some`/`every`, and the
+generic multi-purpose `splice` was not added at all — `insertAt`/`removeAt`
+cover the same ground as two single-purpose methods, matching the existing
+`push`/`pop`/`shift` style better than one do-everything call would).
 
 **Map methods:** `delete`/`remove` (there is currently no way to remove a
 key from a map at all), `entries()` (as a list of `[key, value]` pairs, for

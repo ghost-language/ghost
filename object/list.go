@@ -39,16 +39,36 @@ func (list *List) Type() Type {
 // Method defines the set of methods available on list objects.
 func (list *List) Method(method string, tok token.Token, args []Object) (Object, bool) {
 	switch method {
+	case "chunk":
+		return list.chunk(tok, args)
 	case "concat":
 		return list.concat(tok, args)
 	case "contains":
 		return list.contains(tok, args)
 	case "each":
 		return list.each(tok, args)
+	case "every":
+		return list.every(tok, args)
+	case "fill":
+		return list.fill(tok, args)
 	case "filter":
 		return list.filter(tok, args)
+	case "find":
+		return list.find(tok, args)
+	case "findIndex":
+		return list.findIndex(tok, args)
 	case "first":
 		return list.first(tok, args)
+	case "flatMap":
+		return list.flatMap(tok, args)
+	case "flatten":
+		return list.flatten(tok, args)
+	case "indexOf":
+		return list.indexOf(tok, args)
+	case "insertAt":
+		return list.insertAt(tok, args)
+	case "isEmpty":
+		return list.isEmpty(tok, args)
 	case "join":
 		return list.join(tok, args)
 	case "last":
@@ -63,12 +83,16 @@ func (list *List) Method(method string, tok token.Token, args []Object) (Object,
 		return list.push(tok, args)
 	case "reduce":
 		return list.reduce(tok, args)
+	case "removeAt":
+		return list.removeAt(tok, args)
 	case "reverse":
 		return list.reverse(tok, args)
 	case "shift":
 		return list.shift(tok, args)
 	case "slice":
 		return list.slice(tok, args)
+	case "some":
+		return list.some(tok, args)
 	case "sort":
 		return list.sort(tok, args)
 	case "tail":
@@ -77,6 +101,8 @@ func (list *List) Method(method string, tok token.Token, args []Object) (Object,
 		return list.toString(tok, args)
 	case "unique":
 		return list.unique(tok, args)
+	case "unshift":
+		return list.unshift(tok, args)
 	}
 
 	return nil, false
@@ -192,6 +218,388 @@ func (list *List) filter(tok token.Token, args []Object) (Object, bool) {
 	}
 
 	return &List{Elements: elements}, true
+}
+
+// every reports whether a function is truthy for every element, short
+// circuiting on the first falsy result the way `&&` would.
+func (list *List) every(tok token.Token, args []Object) (Object, bool) {
+	if err := Arity("list.every()", tok, args, 1); err != nil {
+		return err, true
+	}
+
+	fn, err := FunctionArgument("list.every()", tok, args, 0)
+
+	if err != nil {
+		return err, true
+	}
+
+	for index, element := range list.Elements {
+		result := fn.Call([]Object{element, NewInt(int64(index))})
+
+		if IsError(result) {
+			return result, true
+		}
+
+		if !isTruthy(result) {
+			return &Boolean{Value: false}, true
+		}
+	}
+
+	return &Boolean{Value: true}, true
+}
+
+// some reports whether a function is truthy for at least one element, short
+// circuiting on the first truthy result the way `||` would.
+func (list *List) some(tok token.Token, args []Object) (Object, bool) {
+	if err := Arity("list.some()", tok, args, 1); err != nil {
+		return err, true
+	}
+
+	fn, err := FunctionArgument("list.some()", tok, args, 0)
+
+	if err != nil {
+		return err, true
+	}
+
+	for index, element := range list.Elements {
+		result := fn.Call([]Object{element, NewInt(int64(index))})
+
+		if IsError(result) {
+			return result, true
+		}
+
+		if isTruthy(result) {
+			return &Boolean{Value: true}, true
+		}
+	}
+
+	return &Boolean{Value: false}, true
+}
+
+// find answers the first element a function is truthy for, or null if none
+// qualifies - the value-returning counterpart to findIndex.
+func (list *List) find(tok token.Token, args []Object) (Object, bool) {
+	if err := Arity("list.find()", tok, args, 1); err != nil {
+		return err, true
+	}
+
+	fn, err := FunctionArgument("list.find()", tok, args, 0)
+
+	if err != nil {
+		return err, true
+	}
+
+	for index, element := range list.Elements {
+		result := fn.Call([]Object{element, NewInt(int64(index))})
+
+		if IsError(result) {
+			return result, true
+		}
+
+		if isTruthy(result) {
+			return element, true
+		}
+	}
+
+	return &Null{}, true
+}
+
+// findIndex answers the index of the first element a function is truthy
+// for, or -1 if none qualifies.
+func (list *List) findIndex(tok token.Token, args []Object) (Object, bool) {
+	if err := Arity("list.findIndex()", tok, args, 1); err != nil {
+		return err, true
+	}
+
+	fn, err := FunctionArgument("list.findIndex()", tok, args, 0)
+
+	if err != nil {
+		return err, true
+	}
+
+	for index, element := range list.Elements {
+		result := fn.Call([]Object{element, NewInt(int64(index))})
+
+		if IsError(result) {
+			return result, true
+		}
+
+		if isTruthy(result) {
+			return NewInt(int64(index)), true
+		}
+	}
+
+	return NewInt(-1), true
+}
+
+// indexOf answers the position of the first element equal to a value - the
+// same content comparison contains() uses - or -1 if it never appears. It is
+// the value-based search that pairs with the predicate-based find/findIndex.
+func (list *List) indexOf(tok token.Token, args []Object) (Object, bool) {
+	if err := Arity("list.indexOf()", tok, args, 1); err != nil {
+		return err, true
+	}
+
+	needle, err := AnyArgument("list.indexOf()", tok, args, 0)
+
+	if err != nil {
+		return err, true
+	}
+
+	for index, element := range list.Elements {
+		if ValuesEqual(element, needle) {
+			return NewInt(int64(index)), true
+		}
+	}
+
+	return NewInt(-1), true
+}
+
+// flatMap maps every element and then flattens one level into the result,
+// the way a map() immediately followed by a one-level flatten() would, but
+// without building the intermediate list.
+func (list *List) flatMap(tok token.Token, args []Object) (Object, bool) {
+	if err := Arity("list.flatMap()", tok, args, 1); err != nil {
+		return err, true
+	}
+
+	fn, err := FunctionArgument("list.flatMap()", tok, args, 0)
+
+	if err != nil {
+		return err, true
+	}
+
+	elements := make([]Object, 0, len(list.Elements))
+
+	for index, element := range list.Elements {
+		result := fn.Call([]Object{element, NewInt(int64(index))})
+
+		if IsError(result) {
+			return result, true
+		}
+
+		if nested, ok := result.(*List); ok {
+			elements = append(elements, nested.Elements...)
+		} else {
+			elements = append(elements, result)
+		}
+	}
+
+	return &List{Elements: elements}, true
+}
+
+// flatten answers a new list with every nested list's elements spliced in,
+// recursively - there is no depth argument, since a single unambiguous
+// behavior needs no default to get right.
+func (list *List) flatten(tok token.Token, args []Object) (Object, bool) {
+	if err := Arity("list.flatten()", tok, args, 0); err != nil {
+		return err, true
+	}
+
+	return &List{Elements: flattenElements(list.Elements)}, true
+}
+
+func flattenElements(elements []Object) []Object {
+	flat := make([]Object, 0, len(elements))
+
+	for _, element := range elements {
+		if nested, ok := element.(*List); ok {
+			flat = append(flat, flattenElements(nested.Elements)...)
+		} else {
+			flat = append(flat, element)
+		}
+	}
+
+	return flat
+}
+
+// chunk splits the list into new lists of at most size elements each, in
+// order, with the final chunk holding whatever remains.
+func (list *List) chunk(tok token.Token, args []Object) (Object, bool) {
+	if err := Arity("list.chunk()", tok, args, 1); err != nil {
+		return err, true
+	}
+
+	size, err := NumberArgument("list.chunk()", tok, args, 0)
+
+	if err != nil {
+		return err, true
+	}
+
+	length := size.Int64()
+
+	if length <= 0 {
+		return NewError(fault.Value, tok, "`list.chunk()` size has to be positive, got %d", length), true
+	}
+
+	chunks := make([]Object, 0, (len(list.Elements)+int(length)-1)/int(length))
+
+	for start := 0; start < len(list.Elements); start += int(length) {
+		end := start + int(length)
+
+		if end > len(list.Elements) {
+			end = len(list.Elements)
+		}
+
+		elements := make([]Object, end-start)
+		copy(elements, list.Elements[start:end])
+
+		chunks = append(chunks, &List{Elements: elements})
+	}
+
+	return &List{Elements: chunks}, true
+}
+
+// fill answers a new list with the elements from start up to, but not
+// including, end replaced by value - defaulting to the whole list, the same
+// range convention slice() uses. It does not mutate, matching the rest of
+// the list's range/transformation methods (slice, sort, reverse).
+func (list *List) fill(tok token.Token, args []Object) (Object, bool) {
+	if err := ArityRange("list.fill()", tok, args, 1, 3); err != nil {
+		return err, true
+	}
+
+	value, err := AnyArgument("list.fill()", tok, args, 0)
+
+	if err != nil {
+		return err, true
+	}
+
+	length := int64(len(list.Elements))
+	from := int64(0)
+	to := length
+
+	if len(args) >= 2 {
+		start, err := NumberArgument("list.fill()", tok, args, 1)
+
+		if err != nil {
+			return err, true
+		}
+
+		from = start.Int64()
+	}
+
+	if len(args) == 3 {
+		end, err := NumberArgument("list.fill()", tok, args, 2)
+
+		if err != nil {
+			return err, true
+		}
+
+		to = end.Int64()
+	}
+
+	if from < 0 || from > length {
+		return NewError(fault.Index, tok, "`list.fill()` start index %d is out of range for a list of length %d", from, length), true
+	}
+
+	if to < from || to > length {
+		return NewError(fault.Index, tok, "`list.fill()` end index %d is out of range for a list of length %d", to, length), true
+	}
+
+	elements := make([]Object, length)
+	copy(elements, list.Elements)
+
+	for i := from; i < to; i++ {
+		elements[i] = value
+	}
+
+	return &List{Elements: elements}, true
+}
+
+// isEmpty reports whether the list has no elements.
+func (list *List) isEmpty(tok token.Token, args []Object) (Object, bool) {
+	if err := Arity("list.isEmpty()", tok, args, 0); err != nil {
+		return err, true
+	}
+
+	return &Boolean{Value: len(list.Elements) == 0}, true
+}
+
+// unshift inserts a value at the front, mutating in place and answering the
+// new length - the front-insert counterpart to push, so a list can grow from
+// either end.
+func (list *List) unshift(tok token.Token, args []Object) (Object, bool) {
+	if err := Arity("list.unshift()", tok, args, 1); err != nil {
+		return err, true
+	}
+
+	value, err := AnyArgument("list.unshift()", tok, args, 0)
+
+	if err != nil {
+		return err, true
+	}
+
+	list.Elements = append([]Object{value}, list.Elements...)
+
+	return NewInt(int64(len(list.Elements))), true
+}
+
+// insertAt inserts a value at an index, mutating in place and answering the
+// new length, like push. An out-of-range index clamps to the nearest end
+// rather than erroring, the same leniency position-based operations get
+// elsewhere (§13.6) - there is no invalid position to insert at, only a
+// nearest one.
+func (list *List) insertAt(tok token.Token, args []Object) (Object, bool) {
+	if err := Arity("list.insertAt()", tok, args, 2); err != nil {
+		return err, true
+	}
+
+	index, err := NumberArgument("list.insertAt()", tok, args, 0)
+
+	if err != nil {
+		return err, true
+	}
+
+	value, err := AnyArgument("list.insertAt()", tok, args, 1)
+
+	if err != nil {
+		return err, true
+	}
+
+	at := index.Int64()
+	length := int64(len(list.Elements))
+
+	if at < 0 {
+		at = 0
+	} else if at > length {
+		at = length
+	}
+
+	elements := make([]Object, 0, length+1)
+	elements = append(elements, list.Elements[:at]...)
+	elements = append(elements, value)
+	elements = append(elements, list.Elements[at:]...)
+
+	list.Elements = elements
+
+	return NewInt(int64(len(list.Elements))), true
+}
+
+// removeAt removes and answers the element at an index, mutating in place.
+// An out-of-range index answers null without changing the list, the same
+// leniency pop()/shift() already give an empty list.
+func (list *List) removeAt(tok token.Token, args []Object) (Object, bool) {
+	if err := Arity("list.removeAt()", tok, args, 1); err != nil {
+		return err, true
+	}
+
+	index, err := NumberArgument("list.removeAt()", tok, args, 0)
+
+	if err != nil {
+		return err, true
+	}
+
+	at := index.Int64()
+
+	if at < 0 || at >= int64(len(list.Elements)) {
+		return &Null{}, true
+	}
+
+	removed := list.Elements[at]
+	list.Elements = append(list.Elements[:at], list.Elements[at+1:]...)
+
+	return removed, true
 }
 
 func (list *List) join(tok token.Token, args []Object) (Object, bool) {
