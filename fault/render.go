@@ -28,7 +28,7 @@ const (
 // and what to do about it.
 //
 //	type error: cannot use `+` between number and boolean
-//	  --> example.ghost:3:12
+//	  --> example.gs:3:12
 //	   |
 //	 3 | total = count + true
 //	   |               ^

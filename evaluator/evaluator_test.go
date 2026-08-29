@@ -15,17 +15,17 @@ func TestErrorHandling(t *testing.T) {
 		input           string
 		expectedMessage string
 	}{
-		{"5 + true", "test.ghost:1:3: type error: cannot use `+` between number and boolean"},
-		{"5 + true; 5", "test.ghost:1:3: type error: cannot use `+` between number and boolean"},
-		{"-true", "test.ghost:1:1: type error: cannot negate boolean"},
-		{"true + false", "test.ghost:1:6: type error: cannot use `+` between two booleans"},
-		{"5; true + false; 5", "test.ghost:1:9: type error: cannot use `+` between two booleans"},
-		{"if (10 > 1) { if (10 > 1) { return true + false } return 1 }", "test.ghost:1:41: type error: cannot use `+` between two booleans"},
-		{"foobar", "test.ghost:1:1: name error: `foobar` is not defined"},
-		{`"Hello" - "World"`, "test.ghost:1:9: type error: cannot use `-` between two strings"},
-		{`{"name": "Ghost"}[function() { 123 }]`, "test.ghost:1:18: type error: function cannot be used as a map key"},
-		{`function foo() { a } foo()`, "test.ghost:1:18: name error: `a` is not defined"},
-		{`class Test { function foo() { a } } test = new Test() test.foo()`, "test.ghost:1:31: name error: `a` is not defined"},
+		{"5 + true", "test.gs:1:3: type error: cannot use `+` between number and boolean"},
+		{"5 + true; 5", "test.gs:1:3: type error: cannot use `+` between number and boolean"},
+		{"-true", "test.gs:1:1: type error: cannot negate boolean"},
+		{"true + false", "test.gs:1:6: type error: cannot use `+` between two booleans"},
+		{"5; true + false; 5", "test.gs:1:9: type error: cannot use `+` between two booleans"},
+		{"if (10 > 1) { if (10 > 1) { return true + false } return 1 }", "test.gs:1:41: type error: cannot use `+` between two booleans"},
+		{"foobar", "test.gs:1:1: name error: `foobar` is not defined"},
+		{`"Hello" - "World"`, "test.gs:1:9: type error: cannot use `-` between two strings"},
+		{`{"name": "Ghost"}[function() { 123 }]`, "test.gs:1:18: type error: function cannot be used as a map key"},
+		{`function foo() { a } foo()`, "test.gs:1:18: name error: `a` is not defined"},
+		{`class Test { function foo() { a } } test = new Test() test.foo()`, "test.gs:1:31: name error: `a` is not defined"},
 	}
 
 	for _, tt := range tests {
@@ -150,9 +150,9 @@ func TestForExpressions(t *testing.T) {
 		input    string
 		expected interface{}
 	}{
-		{`x = 10; for (x = y; x > 0; x = x - 1) { x }`, "test.ghost:1:18: name error: `y` is not defined"},
-		{`for (x = 0; x < 10; x = x + 1) { y }`, "test.ghost:1:34: name error: `y` is not defined"},
-		{`bar = true; for (x = 0; x < 10; x = x + 1) { y; print(bar) }`, "test.ghost:1:46: name error: `y` is not defined"},
+		{`x = 10; for (x = y; x > 0; x = x - 1) { x }`, "test.gs:1:18: name error: `y` is not defined"},
+		{`for (x = 0; x < 10; x = x + 1) { y }`, "test.gs:1:34: name error: `y` is not defined"},
+		{`bar = true; for (x = 0; x < 10; x = x + 1) { y; print(bar) }`, "test.gs:1:46: name error: `y` is not defined"},
 	}
 
 	for _, tt := range tests {
@@ -172,7 +172,7 @@ func TestForInExpressions(t *testing.T) {
 		input    string
 		expected interface{}
 	}{
-		{`list = [1, 2, 3]; for(x in lists) { x }`, "test.ghost:1:28: name error: `lists` is not defined"},
+		{`list = [1, 2, 3]; for(x in lists) { x }`, "test.gs:1:28: name error: `lists` is not defined"},
 	}
 
 	for _, tt := range tests {
@@ -523,17 +523,17 @@ func TestThisOutsideClass(t *testing.T) {
 		{
 			name:     "this at top level",
 			input:    `this`,
-			expected: "test.ghost:1:1: name error: `this` can only be used inside a class",
+			expected: "test.gs:1:1: name error: `this` can only be used inside a class",
 		},
 		{
 			name:     "this in regular function",
 			input:    `function foo() { return this } foo()`,
-			expected: "test.ghost:1:25: name error: `this` can only be used inside a class",
+			expected: "test.gs:1:25: name error: `this` can only be used inside a class",
 		},
 		{
 			name:     "this.property at top level",
 			input:    `this.name`,
-			expected: "test.ghost:1:1: name error: `this` can only be used inside a class",
+			expected: "test.gs:1:1: name error: `this` can only be used inside a class",
 		},
 	}
 
@@ -679,7 +679,7 @@ func evaluateOptimized(input string) object.Object {
 	object.RegisterEvaluator(Evaluate)
 	modules.RegisterEvaluator(Evaluate)
 
-	p := parser.New(scanner.New(input, "test.ghost"))
+	p := parser.New(scanner.New(input, "test.gs"))
 
 	return Evaluate(optimizer.Optimize(p.Parse()), scope)
 }
@@ -694,7 +694,7 @@ func evaluate(input string) object.Object {
 	object.RegisterEvaluator(evaluatorInstance)
 	modules.RegisterEvaluator(evaluatorInstance)
 
-	scanner := scanner.New(input, "test.ghost")
+	scanner := scanner.New(input, "test.gs")
 	parser := parser.New(scanner)
 	program := parser.Parse()
 
@@ -1267,62 +1267,62 @@ func TestClassRuntimeErrors(t *testing.T) {
 		{
 			name:     "property access on a class",
 			input:    "class A { value() { return 1 } }\nA.value",
-			expected: "test.ghost:2:2: property error: class `A` has no property `value` to read on the class itself",
+			expected: "test.gs:2:2: property error: class `A` has no property `value` to read on the class itself",
 		},
 		{
 			name:     "method call on a class",
 			input:    "class A { value() { return 1 } }\nA.value()",
-			expected: "test.ghost:2:3: property error: class `A` has no method `value` to call on the class itself",
+			expected: "test.gs:2:3: property error: class `A` has no method `value` to call on the class itself",
 		},
 		{
 			name:     "unknown method on a primitive",
 			input:    "5.nope()",
-			expected: "test.ghost:1:3: property error: number has no method `nope`",
+			expected: "test.gs:1:3: property error: number has no method `nope`",
 		},
 		{
 			name:     "extending an undefined identifier",
 			input:    "class A extends Nope {}",
-			expected: "test.ghost:1:17: name error: `Nope` is not defined",
+			expected: "test.gs:1:17: name error: `Nope` is not defined",
 		},
 		{
 			name:     "extending a non-class",
 			input:    "x = 5\nclass A extends x {}",
-			expected: "test.ghost:2:17: type error: cannot extend `x`, which is a number, not a class",
+			expected: "test.gs:2:17: type error: cannot extend `x`, which is a number, not a class",
 		},
 		{
 			name:     "using a non-trait",
 			input:    "x = 5\nclass A { use x }",
-			expected: "test.ghost:2:15: type error: cannot use `x`, which is a number, not a trait",
+			expected: "test.gs:2:15: type error: cannot use `x`, which is a number, not a trait",
 		},
 		{
 			name:     "declaring constructor as a field",
 			input:    "class A { constructor = 5 }",
-			expected: "test.ghost:1:23: syntax error: `constructor` has to be declared as a method, not a field",
+			expected: "test.gs:1:23: syntax error: `constructor` has to be declared as a method, not a field",
 		},
 		{
 			name:     "instantiating a non-class",
 			input:    "x = 5\nnew x()",
-			expected: "test.ghost:2:1: type error: cannot instantiate number, which is not a class",
+			expected: "test.gs:2:1: type error: cannot instantiate number, which is not a class",
 		},
 		{
 			name:     "super outside a class",
 			input:    "super",
-			expected: "test.ghost:1:1: name error: `super` can only be used inside a class",
+			expected: "test.gs:1:1: name error: `super` can only be used inside a class",
 		},
 		{
 			name:     "super in a class with no superclass",
 			input:    "class A { value() { return super.value() } }\nnew A().value()",
-			expected: "test.ghost:1:28: name error: class `A` has no superclass",
+			expected: "test.gs:1:28: name error: class `A` has no superclass",
 		},
 		{
 			name:     "calling an undefined method",
 			input:    "class A {}\nnew A().nope()",
-			expected: "test.ghost:2:9: property error: class `A` has no method `nope`",
+			expected: "test.gs:2:9: property error: class `A` has no method `nope`",
 		},
 		{
 			name:     "calling a field that is not a function",
 			input:    "class A { value = 5 }\nnew A().value()",
-			expected: "test.ghost:2:9: property error: class `A` has no method `value`",
+			expected: "test.gs:2:9: property error: class `A` has no method `value`",
 		},
 	}
 
@@ -1405,5 +1405,5 @@ func TestEqualityComparisons(t *testing.T) {
 func TestEqualityTypeMismatch(t *testing.T) {
 	result := evaluate(`1 == "a"`)
 
-	isErrorObject(t, result, "test.ghost:1:3: type error: cannot use `==` between number and string")
+	isErrorObject(t, result, "test.gs:1:3: type error: cannot use `==` between number and string")
 }

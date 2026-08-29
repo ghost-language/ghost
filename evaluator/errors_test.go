@@ -92,14 +92,14 @@ func TestValueMethodsReportBadArguments(t *testing.T) {
 		source   string
 		expected string
 	}{
-		{`"a,b".split()`, "test.ghost:1:7: argument error: `string.split()` expects 1 argument, got 0"},
-		{`"a,b".split(5)`, "test.ghost:1:7: argument error: `string.split()` expects argument 1 to be a string, got number"},
-		{`[1, 2].join()`, "test.ghost:1:8: argument error: `list.join()` expects 1 argument, got 0"},
-		{`[1, 2].join(5)`, "test.ghost:1:8: argument error: `list.join()` expects argument 1 to be a string, got number"},
-		{`[1, 2].push()`, "test.ghost:1:8: argument error: `list.push()` expects 1 argument, got 0"},
-		{`[1, 2].concat(3)`, "test.ghost:1:8: argument error: `list.concat()` expects argument 1 to be a list, got number"},
-		{`[1, 2].length(3)`, "test.ghost:1:8: argument error: `list.length()` expects 0 arguments, got 1"},
-		{`(1.5).round("two")`, "test.ghost:1:7: argument error: `number.round()` expects argument 1 to be a number, got string"},
+		{`"a,b".split()`, "test.gs:1:7: argument error: `string.split()` expects 1 argument, got 0"},
+		{`"a,b".split(5)`, "test.gs:1:7: argument error: `string.split()` expects argument 1 to be a string, got number"},
+		{`[1, 2].join()`, "test.gs:1:8: argument error: `list.join()` expects 1 argument, got 0"},
+		{`[1, 2].join(5)`, "test.gs:1:8: argument error: `list.join()` expects argument 1 to be a string, got number"},
+		{`[1, 2].push()`, "test.gs:1:8: argument error: `list.push()` expects 1 argument, got 0"},
+		{`[1, 2].concat(3)`, "test.gs:1:8: argument error: `list.concat()` expects argument 1 to be a list, got number"},
+		{`[1, 2].length(3)`, "test.gs:1:8: argument error: `list.length()` expects 0 arguments, got 1"},
+		{`(1.5).round("two")`, "test.gs:1:7: argument error: `number.round()` expects argument 1 to be a number, got string"},
 	}
 
 	for _, test := range tests {

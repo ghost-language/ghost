@@ -19,7 +19,7 @@ func TestAssignStatement(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		scanner := scanner.New(tt.input, "test.ghost")
+		scanner := scanner.New(tt.input, "test.gs")
 		parser := New(scanner)
 		program := parser.Parse()
 
@@ -55,7 +55,7 @@ func TestBooleanLiteral(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		scanner := scanner.New(tt.input, "test.ghost")
+		scanner := scanner.New(tt.input, "test.gs")
 		parser := New(scanner)
 		program := parser.Parse()
 
@@ -86,7 +86,7 @@ func TestBooleanLiteral(t *testing.T) {
 func TestForExpression(t *testing.T) {
 	input := `for (x = 0; x < 10; x = x + 1) { true }`
 
-	scanner := scanner.New(input, "test.ghost")
+	scanner := scanner.New(input, "test.gs")
 	parser := New(scanner)
 	program := parser.Parse()
 
@@ -128,7 +128,7 @@ func TestForExpression(t *testing.T) {
 func TestForInListExpression(t *testing.T) {
 	input := `for (x in bar) { true }`
 
-	scanner := scanner.New(input, "test.ghost")
+	scanner := scanner.New(input, "test.gs")
 	parser := New(scanner)
 	program := parser.Parse()
 
@@ -168,7 +168,7 @@ func TestIdentifierLiteral(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		scanner := scanner.New(tt.input, "test.ghost")
+		scanner := scanner.New(tt.input, "test.gs")
 		parser := New(scanner)
 		program := parser.Parse()
 
@@ -199,7 +199,7 @@ func TestIdentifierLiteral(t *testing.T) {
 func TestIfExpressions(t *testing.T) {
 	input := `if (x < y) { x }`
 
-	scanner := scanner.New(input, "test.ghost")
+	scanner := scanner.New(input, "test.gs")
 	parser := New(scanner)
 	program := parser.Parse()
 
@@ -247,7 +247,7 @@ func TestIfExpressions(t *testing.T) {
 func TestIfElseExpressions(t *testing.T) {
 	input := `if (x < y) { x } else { y }`
 
-	scanner := scanner.New(input, "test.ghost")
+	scanner := scanner.New(input, "test.gs")
 	parser := New(scanner)
 	program := parser.Parse()
 
@@ -322,7 +322,7 @@ func TestInfixExpressions(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		scanner := scanner.New(tt.input, "test.ghost")
+		scanner := scanner.New(tt.input, "test.gs")
 		parser := New(scanner)
 		program := parser.Parse()
 
@@ -371,7 +371,7 @@ func TestNumberLiteral(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		scanner := scanner.New(tt.input, "test.ghost")
+		scanner := scanner.New(tt.input, "test.gs")
 		parser := New(scanner)
 		program := parser.Parse()
 
@@ -420,7 +420,7 @@ func TestPrefixExpressions(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		scanner := scanner.New(tt.input, "test.ghost")
+		scanner := scanner.New(tt.input, "test.gs")
 		parser := New(scanner)
 		program := parser.Parse()
 
@@ -465,7 +465,7 @@ func TestPostfixExpressions(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		scanner := scanner.New(tt.input, "test.ghost")
+		scanner := scanner.New(tt.input, "test.gs")
 		parser := New(scanner)
 		program := parser.Parse()
 
@@ -517,7 +517,7 @@ func TestStringLiteral(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		scanner := scanner.New(tt.input, "test.ghost")
+		scanner := scanner.New(tt.input, "test.gs")
 		parser := New(scanner)
 		program := parser.Parse()
 
@@ -548,7 +548,7 @@ func TestStringLiteral(t *testing.T) {
 func TestTemplateStringLiteral(t *testing.T) {
 	input := "`count: ${1 + 2} done`"
 
-	scanner := scanner.New(input, "test.ghost")
+	scanner := scanner.New(input, "test.gs")
 	parser := New(scanner)
 	program := parser.Parse()
 
@@ -592,7 +592,7 @@ func TestTemplateStringLiteral(t *testing.T) {
 func TestTemplateStringLiteralWithNoInterpolation(t *testing.T) {
 	input := "`hello`"
 
-	scanner := scanner.New(input, "test.ghost")
+	scanner := scanner.New(input, "test.gs")
 	parser := New(scanner)
 	program := parser.Parse()
 
@@ -617,7 +617,7 @@ func TestTemplateStringLiteralWithNoInterpolation(t *testing.T) {
 func TestListLiteral(t *testing.T) {
 	input := `[1, 4, 6]`
 
-	scanner := scanner.New(input, "test.ghost")
+	scanner := scanner.New(input, "test.gs")
 	parser := New(scanner)
 	program := parser.Parse()
 
@@ -651,7 +651,7 @@ func TestListLiteral(t *testing.T) {
 func TestIndexExpressions(t *testing.T) {
 	input := `example[1 + 1]`
 
-	scanner := scanner.New(input, "test.ghost")
+	scanner := scanner.New(input, "test.gs")
 	parser := New(scanner)
 	program := parser.Parse()
 
@@ -677,7 +677,7 @@ func TestIndexExpressions(t *testing.T) {
 func TestMapLiteralsWithStringKeys(t *testing.T) {
 	input := `{"one": 1, "two": 2, "three": 3}`
 
-	scanner := scanner.New(input, "test.ghost")
+	scanner := scanner.New(input, "test.gs")
 	parser := New(scanner)
 	program := parser.Parse()
 
@@ -721,7 +721,7 @@ func TestMapLiteralsWithStringKeys(t *testing.T) {
 func TestMapLiteralsWithBooleanKeys(t *testing.T) {
 	input := `{true: 1, false: 2}`
 
-	scanner := scanner.New(input, "test.ghost")
+	scanner := scanner.New(input, "test.gs")
 	parser := New(scanner)
 	program := parser.Parse()
 
@@ -764,7 +764,7 @@ func TestMapLiteralsWithBooleanKeys(t *testing.T) {
 func TestMapLiteralsWithIntegerKeys(t *testing.T) {
 	input := `{1: 1, 2: 2, 3: 3}`
 
-	scanner := scanner.New(input, "test.ghost")
+	scanner := scanner.New(input, "test.gs")
 	parser := New(scanner)
 	program := parser.Parse()
 
@@ -808,7 +808,7 @@ func TestMapLiteralsWithIntegerKeys(t *testing.T) {
 func TestMapLiteralsWithVariableKeys(t *testing.T) {
 	input := `{foo: 1, bar: 2, baz: 3}`
 
-	scanner := scanner.New(input, "test.ghost")
+	scanner := scanner.New(input, "test.gs")
 	parser := New(scanner)
 	program := parser.Parse()
 
@@ -852,7 +852,7 @@ func TestMapLiteralsWithVariableKeys(t *testing.T) {
 func TestMapLiteralsWithShorthandKeys(t *testing.T) {
 	input := `{foo, bar, baz: 3}`
 
-	scanner := scanner.New(input, "test.ghost")
+	scanner := scanner.New(input, "test.gs")
 	parser := New(scanner)
 	program := parser.Parse()
 
@@ -901,7 +901,7 @@ func TestMapLiteralsWithShorthandKeys(t *testing.T) {
 func TestEmptyMapLiterals(t *testing.T) {
 	input := `{}`
 
-	scanner := scanner.New(input, "test.ghost")
+	scanner := scanner.New(input, "test.gs")
 	parser := New(scanner)
 	program := parser.Parse()
 
@@ -931,7 +931,7 @@ func TestReturnStatements(t *testing.T) {
 		return 3.14
 	`
 
-	scanner := scanner.New(input, "test.ghost")
+	scanner := scanner.New(input, "test.gs")
 	parser := New(scanner)
 	program := parser.Parse()
 
@@ -964,7 +964,7 @@ func TestSwitchStatements(t *testing.T) {
 		}
 	}`
 
-	scanner := scanner.New(input, "test.ghost")
+	scanner := scanner.New(input, "test.gs")
 	parser := New(scanner)
 	program := parser.Parse()
 
@@ -1000,7 +1000,7 @@ func TestSwitchStatementsWithDefault(t *testing.T) {
 		}
 	}`
 
-	scanner := scanner.New(input, "test.ghost")
+	scanner := scanner.New(input, "test.gs")
 	parser := New(scanner)
 	program := parser.Parse()
 
@@ -1039,7 +1039,7 @@ func TestSwitchStatementsWithMultipleDefaults(t *testing.T) {
 		}
 	}`
 
-	scanner := scanner.New(input, "test.ghost")
+	scanner := scanner.New(input, "test.gs")
 	parser := New(scanner)
 	parser.Parse()
 
@@ -1054,7 +1054,7 @@ func TestTraitExpressions(t *testing.T) {
 		//
 	}`
 
-	scanner := scanner.New(input, "test.ghost")
+	scanner := scanner.New(input, "test.gs")
 	parser := New(scanner)
 	program := parser.Parse()
 
@@ -1185,7 +1185,7 @@ func TestNewExpression(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		scanner := scanner.New(tt.input, "test.ghost")
+		scanner := scanner.New(tt.input, "test.gs")
 		parser := New(scanner)
 		program := parser.Parse()
 
@@ -1222,7 +1222,7 @@ func TestNewExpression(t *testing.T) {
 // TestNewBindsTighterThanCalls confirms `new Foo().bar()` reads as
 // `(new Foo()).bar()` rather than instantiating the result of `Foo().bar()`.
 func TestNewBindsTighterThanCalls(t *testing.T) {
-	scanner := scanner.New(`new Person().greet()`, "test.ghost")
+	scanner := scanner.New(`new Person().greet()`, "test.gs")
 	parser := New(scanner)
 	program := parser.Parse()
 
@@ -1256,7 +1256,7 @@ func TestClassMethodShorthand(t *testing.T) {
 	}
 	`
 
-	scanner := scanner.New(input, "test.ghost")
+	scanner := scanner.New(input, "test.gs")
 	parser := New(scanner)
 	program := parser.Parse()
 
@@ -1300,7 +1300,7 @@ func TestClassMethodShorthand(t *testing.T) {
 }
 
 func TestSuperExpression(t *testing.T) {
-	scanner := scanner.New(`super.greet()`, "test.ghost")
+	scanner := scanner.New(`super.greet()`, "test.gs")
 	parser := New(scanner)
 	program := parser.Parse()
 
@@ -1326,12 +1326,12 @@ func TestSyntaxErrors(t *testing.T) {
 		input    string
 		expected string
 	}{
-		{`Person.new()`, "test.ghost:1:8: syntax error: `new` is not a method"},
-		{`x = ,`, "test.ghost:1:5: syntax error: `,` cannot start an expression"},
+		{`Person.new()`, "test.gs:1:8: syntax error: `new` is not a method"},
+		{`x = ,`, "test.gs:1:5: syntax error: `,` cannot start an expression"},
 	}
 
 	for _, tt := range tests {
-		scanner := scanner.New(tt.input, "test.ghost")
+		scanner := scanner.New(tt.input, "test.gs")
 		parser := New(scanner)
 		parser.Parse()
 
@@ -1351,7 +1351,7 @@ func TestSyntaxErrors(t *testing.T) {
 func TestParserRecoversAndReportsEveryError(t *testing.T) {
 	source := "x = 1\ny = )\nz = 2\n\nfunction ok() { return 3 }\n\nw = ,\n"
 
-	parser := New(scanner.New(source, "test.ghost"))
+	parser := New(scanner.New(source, "test.gs"))
 	parser.Parse()
 
 	errors := parser.Errors()
@@ -1361,8 +1361,8 @@ func TestParserRecoversAndReportsEveryError(t *testing.T) {
 	}
 
 	expected := []string{
-		"test.ghost:2:5: syntax error: `)` cannot start an expression",
-		"test.ghost:7:5: syntax error: `,` cannot start an expression",
+		"test.gs:2:5: syntax error: `)` cannot start an expression",
+		"test.gs:7:5: syntax error: `,` cannot start an expression",
 	}
 
 	for index, want := range expected {
@@ -1375,7 +1375,7 @@ func TestParserRecoversAndReportsEveryError(t *testing.T) {
 // Which pass noticed a problem is Ghost's business, not the reader's, so
 // lexical and grammatical errors come back as one list in source order.
 func TestParserFoldsInScannerFaults(t *testing.T) {
-	parser := New(scanner.New("a = @\nb = )\n", "test.ghost"))
+	parser := New(scanner.New("a = @\nb = )\n", "test.gs"))
 	parser.Parse()
 
 	errors := parser.Errors()
@@ -1388,7 +1388,7 @@ func TestParserFoldsInScannerFaults(t *testing.T) {
 		t.Errorf("errors are out of source order: %v", errors)
 	}
 
-	if errors[0].String() != "test.ghost:1:5: syntax error: unexpected character `@`" {
+	if errors[0].String() != "test.gs:1:5: syntax error: unexpected character `@`" {
 		t.Errorf("got=%q", errors[0].String())
 	}
 }
@@ -1400,12 +1400,12 @@ func TestParserReportsUnreadableNumbers(t *testing.T) {
 		source   string
 		expected string
 	}{
-		{"x = 99999999999999999999999999", "test.ghost:1:5: syntax error: `99999999999999999999999999` is not a valid number"},
-		{"x = 1e", "test.ghost:1:5: syntax error: `1e` is not a valid number"},
+		{"x = 99999999999999999999999999", "test.gs:1:5: syntax error: `99999999999999999999999999` is not a valid number"},
+		{"x = 1e", "test.gs:1:5: syntax error: `1e` is not a valid number"},
 	}
 
 	for _, test := range tests {
-		parser := New(scanner.New(test.source, "test.ghost"))
+		parser := New(scanner.New(test.source, "test.gs"))
 		parser.Parse()
 
 		errors := parser.Errors()
@@ -1424,7 +1424,7 @@ func TestParserReportsUnreadableNumbers(t *testing.T) {
 // opener somewhere above it, and saying so is more use than naming the token.
 func TestImportStatements(t *testing.T) {
 	t.Run("bare import has no alias", func(t *testing.T) {
-		program := New(scanner.New(`import "math"`, "test.ghost")).Parse()
+		program := New(scanner.New(`import "math"`, "test.gs")).Parse()
 
 		statement := program.Statements[0].(*ast.Expression)
 		imp, ok := statement.Expression.(*ast.Import)
@@ -1443,7 +1443,7 @@ func TestImportStatements(t *testing.T) {
 	})
 
 	t.Run("bare import as alias", func(t *testing.T) {
-		program := New(scanner.New(`import "math" as m`, "test.ghost")).Parse()
+		program := New(scanner.New(`import "math" as m`, "test.gs")).Parse()
 
 		statement := program.Statements[0].(*ast.Expression)
 		imp := statement.Expression.(*ast.Import)
@@ -1454,7 +1454,7 @@ func TestImportStatements(t *testing.T) {
 	})
 
 	t.Run("named import without braces still works", func(t *testing.T) {
-		program := New(scanner.New(`import pi, e from "math"`, "test.ghost")).Parse()
+		program := New(scanner.New(`import pi, e from "math"`, "test.gs")).Parse()
 
 		statement := program.Statements[0].(*ast.Expression)
 		importFrom := statement.Expression.(*ast.ImportFrom)
@@ -1465,7 +1465,7 @@ func TestImportStatements(t *testing.T) {
 	})
 
 	t.Run("named import with braces", func(t *testing.T) {
-		program := New(scanner.New(`import { pi, e } from "math"`, "test.ghost")).Parse()
+		program := New(scanner.New(`import { pi, e } from "math"`, "test.gs")).Parse()
 
 		statement := program.Statements[0].(*ast.Expression)
 		importFrom := statement.Expression.(*ast.ImportFrom)
@@ -1480,7 +1480,7 @@ func TestImportStatements(t *testing.T) {
 	})
 
 	t.Run("named import with braces and alias", func(t *testing.T) {
-		program := New(scanner.New(`import { pi as p } from "math"`, "test.ghost")).Parse()
+		program := New(scanner.New(`import { pi as p } from "math"`, "test.gs")).Parse()
 
 		statement := program.Statements[0].(*ast.Expression)
 		importFrom := statement.Expression.(*ast.ImportFrom)
@@ -1497,7 +1497,7 @@ func TestImportStatements(t *testing.T) {
 	})
 
 	t.Run("everything import with braces", func(t *testing.T) {
-		program := New(scanner.New(`import { * } from "math"`, "test.ghost")).Parse()
+		program := New(scanner.New(`import { * } from "math"`, "test.gs")).Parse()
 
 		statement := program.Statements[0].(*ast.Expression)
 		importFrom := statement.Expression.(*ast.ImportFrom)
@@ -1508,7 +1508,7 @@ func TestImportStatements(t *testing.T) {
 	})
 
 	t.Run("unclosed brace reports an error", func(t *testing.T) {
-		parser := New(scanner.New(`import { pi, e from "math"`, "test.ghost"))
+		parser := New(scanner.New(`import { pi, e from "math"`, "test.gs"))
 		parser.Parse()
 
 		if len(parser.Errors()) == 0 {
@@ -1517,7 +1517,7 @@ func TestImportStatements(t *testing.T) {
 	})
 
 	t.Run("combined module and named import (JS-style)", func(t *testing.T) {
-		program := New(scanner.New(`import image, { Spritesheet } from "lumen:image"`, "test.ghost")).Parse()
+		program := New(scanner.New(`import image, { Spritesheet } from "lumen:image"`, "test.gs")).Parse()
 
 		statement := program.Statements[0].(*ast.Expression)
 		imp, ok := statement.Expression.(*ast.Import)
@@ -1546,7 +1546,7 @@ func TestImportStatements(t *testing.T) {
 	})
 
 	t.Run("combined module and named import with a named alias", func(t *testing.T) {
-		program := New(scanner.New(`import image, { Spritesheet as Sheet } from "lumen:image"`, "test.ghost")).Parse()
+		program := New(scanner.New(`import image, { Spritesheet as Sheet } from "lumen:image"`, "test.gs")).Parse()
 
 		statement := program.Statements[0].(*ast.Expression)
 		imp := statement.Expression.(*ast.Import)
@@ -1567,7 +1567,7 @@ func TestImportStatements(t *testing.T) {
 	})
 
 	t.Run("combined module and everything import", func(t *testing.T) {
-		program := New(scanner.New(`import image, { * } from "lumen:image"`, "test.ghost")).Parse()
+		program := New(scanner.New(`import image, { * } from "lumen:image"`, "test.gs")).Parse()
 
 		statement := program.Statements[0].(*ast.Expression)
 		imp := statement.Expression.(*ast.Import)
@@ -1578,7 +1578,7 @@ func TestImportStatements(t *testing.T) {
 	})
 
 	t.Run("combined form requires braces around the named list", func(t *testing.T) {
-		parser := New(scanner.New(`import image, Spritesheet from "lumen:image"`, "test.ghost"))
+		parser := New(scanner.New(`import image, Spritesheet from "lumen:image"`, "test.gs"))
 		program := parser.Parse()
 
 		// `image, Spritesheet` with no brace isn't the combined form at all —
@@ -1602,7 +1602,7 @@ func TestImportStatements(t *testing.T) {
 	})
 
 	t.Run("unbraced named list still works alongside the combined form", func(t *testing.T) {
-		program := New(scanner.New(`import pi, e, tau from "math"`, "test.ghost")).Parse()
+		program := New(scanner.New(`import pi, e, tau from "math"`, "test.gs")).Parse()
 
 		statement := program.Statements[0].(*ast.Expression)
 		importFrom := statement.Expression.(*ast.ImportFrom)
@@ -1614,7 +1614,7 @@ func TestImportStatements(t *testing.T) {
 }
 
 func TestParserSuggestsAMissingOpener(t *testing.T) {
-	parser := New(scanner.New("x = )", "test.ghost"))
+	parser := New(scanner.New("x = )", "test.gs"))
 	parser.Parse()
 
 	errors := parser.Errors()
@@ -1652,7 +1652,7 @@ func TestParsingAlwaysTerminates(t *testing.T) {
 			finished := make(chan []string, 1)
 
 			go func() {
-				parser := New(scanner.New(test.source, "test.ghost"))
+				parser := New(scanner.New(test.source, "test.gs"))
 				parser.Parse()
 
 				messages := make([]string, 0, len(parser.Errors()))

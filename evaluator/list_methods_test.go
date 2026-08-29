@@ -85,10 +85,10 @@ func TestListTransformationErrors(t *testing.T) {
 		input           string
 		expectedMessage string
 	}{
-		{"[1].map()", "test.ghost:1:5: argument error: `list.map()` expects 1 argument, got 0"},
-		{"[].reduce(function(acc, x) { return acc })", "test.ghost:1:4: argument error: `list.reduce()` needs an initial value to reduce an empty list"},
-		{"[3, [1]].sort()", "test.ghost:1:10: argument error: `list.sort()` needs a comparator to sort anything but a list of only numbers or only strings"},
-		{"[1, 2].slice(5)", "test.ghost:1:8: index error: `list.slice()` start index 5 is out of range for a list of length 2"},
+		{"[1].map()", "test.gs:1:5: argument error: `list.map()` expects 1 argument, got 0"},
+		{"[].reduce(function(acc, x) { return acc })", "test.gs:1:4: argument error: `list.reduce()` needs an initial value to reduce an empty list"},
+		{"[3, [1]].sort()", "test.gs:1:10: argument error: `list.sort()` needs a comparator to sort anything but a list of only numbers or only strings"},
+		{"[1, 2].slice(5)", "test.gs:1:8: index error: `list.slice()` start index 5 is out of range for a list of length 2"},
 	}
 
 	for _, tt := range tests {

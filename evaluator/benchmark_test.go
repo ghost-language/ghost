@@ -166,7 +166,7 @@ func BenchmarkEvaluate(b *testing.B) {
 
 			for i := 0; i < b.N; i++ {
 				scope := &object.Scope{Environment: object.NewEnvironment()}
-				s := scanner.New(bm.source, "bench.ghost")
+				s := scanner.New(bm.source, "bench.gs")
 				p := parser.New(s)
 				program := p.Parse()
 

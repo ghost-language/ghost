@@ -4,7 +4,7 @@ import "testing"
 
 func TestLineReturnsRegisteredText(t *testing.T) {
 	Reset()
-	Register("example.ghost", "first\nsecond\nthird\n")
+	Register("example.gs", "first\nsecond\nthird\n")
 
 	tests := []struct {
 		line     int
@@ -18,7 +18,7 @@ func TestLineReturnsRegisteredText(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		line, ok := Line("example.ghost", test.line)
+		line, ok := Line("example.gs", test.line)
 
 		if ok != test.found || line != test.expected {
 			t.Errorf("line %d: got=(%q, %v), expected=(%q, %v)", test.line, line, ok, test.expected, test.found)
@@ -28,9 +28,9 @@ func TestLineReturnsRegisteredText(t *testing.T) {
 
 func TestLineReadsWindowsEndings(t *testing.T) {
 	Reset()
-	Register("example.ghost", "first\r\nsecond\r\n")
+	Register("example.gs", "first\r\nsecond\r\n")
 
-	if line, _ := Line("example.ghost", 2); line != "second" {
+	if line, _ := Line("example.gs", 2); line != "second" {
 		t.Errorf("got=%q, expected=%q", line, "second")
 	}
 }
@@ -39,10 +39,10 @@ func TestLineReadsWindowsEndings(t *testing.T) {
 // replace what was there rather than adding to it.
 func TestRegisterReplaces(t *testing.T) {
 	Reset()
-	Register("repl.ghost", "old")
-	Register("repl.ghost", "new")
+	Register("repl.gs", "old")
+	Register("repl.gs", "new")
 
-	if line, _ := Line("repl.ghost", 1); line != "new" {
+	if line, _ := Line("repl.gs", 1); line != "new" {
 		t.Errorf("got=%q, expected=%q", line, "new")
 	}
 }
@@ -50,17 +50,17 @@ func TestRegisterReplaces(t *testing.T) {
 func TestUnknownFileIsNotAnError(t *testing.T) {
 	Reset()
 
-	if _, ok := Line("never-seen.ghost", 1); ok {
+	if _, ok := Line("never-seen.gs", 1); ok {
 		t.Error("expected an unregistered file to report no line")
 	}
 }
 
 func TestForgetDropsAFile(t *testing.T) {
 	Reset()
-	Register("example.ghost", "text")
-	Forget("example.ghost")
+	Register("example.gs", "text")
+	Forget("example.gs")
 
-	if _, ok := Line("example.ghost", 1); ok {
+	if _, ok := Line("example.gs", 1); ok {
 		t.Error("expected the file to have been forgotten")
 	}
 }

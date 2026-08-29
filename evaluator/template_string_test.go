@@ -41,7 +41,7 @@ func TestTemplateString(t *testing.T) {
 func TestTemplateStringPropagatesErrors(t *testing.T) {
 	result := evaluate("`bad: ${1 + true}`")
 
-	isErrorObject(t, result, "test.ghost:1:11: type error: cannot use `+` between number and boolean")
+	isErrorObject(t, result, "test.gs:1:11: type error: cannot use `+` between number and boolean")
 }
 
 // Interpolating a class instance falls back to the same description

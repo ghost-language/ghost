@@ -20,7 +20,7 @@ var (
 
 // Register records the text of a file under the name its tokens will carry.
 // Registering the same name again replaces what was there, which is what the
-// REPL needs: each entry is a new "repl.ghost".
+// REPL needs: each entry is a new "repl.gs".
 func Register(file string, text string) {
 	if file == "" {
 		return

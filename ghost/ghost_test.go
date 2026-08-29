@@ -15,7 +15,7 @@ func TestExecuteReportsSyntaxErrorsInFull(t *testing.T) {
 
 	instance := New()
 	instance.SetReportWriter(report)
-	instance.SetFile("test.ghost")
+	instance.SetFile("test.gs")
 	instance.SetSource("x = 1\ny = )\n")
 
 	result := instance.Execute()
@@ -26,7 +26,7 @@ func TestExecuteReportsSyntaxErrorsInFull(t *testing.T) {
 
 	written := report.String()
 
-	for _, expected := range []string{"syntax error", "test.ghost:2:5", "y = )", "^"} {
+	for _, expected := range []string{"syntax error", "test.gs:2:5", "y = )", "^"} {
 		if !strings.Contains(written, expected) {
 			t.Errorf("report is missing %q:\n%s", expected, written)
 		}
@@ -38,14 +38,14 @@ func TestExecuteReportsRuntimeErrorsInFull(t *testing.T) {
 
 	instance := New()
 	instance.SetReportWriter(report)
-	instance.SetFile("test.ghost")
+	instance.SetFile("test.gs")
 	instance.SetSource("count = 3\ntotal = count + \"items\"\n")
 
 	instance.Execute()
 
 	written := report.String()
 
-	for _, expected := range []string{"type error", "test.ghost:2:15", "total = count + \"items\""} {
+	for _, expected := range []string{"type error", "test.gs:2:15", "total = count + \"items\""} {
 		if !strings.Contains(written, expected) {
 			t.Errorf("report is missing %q:\n%s", expected, written)
 		}
@@ -60,7 +60,7 @@ func TestQuietStillReturnsTheError(t *testing.T) {
 	instance := New()
 	instance.SetReportWriter(report)
 	instance.SetQuiet(true)
-	instance.SetFile("test.ghost")
+	instance.SetFile("test.gs")
 	instance.SetSource("missing")
 
 	result := instance.Execute()
@@ -91,7 +91,7 @@ func TestAPanicBecomesAnInternalError(t *testing.T) {
 
 	instance := New()
 	instance.SetQuiet(true)
-	instance.SetFile("test.ghost")
+	instance.SetFile("test.gs")
 	instance.SetSource("import \"ghost:explode\"\nexplode()")
 
 	result := instance.Execute()
@@ -130,7 +130,7 @@ func TestEmbedderCanRegisterAModuleUnderItsOwnScheme(t *testing.T) {
 
 	instance := New()
 	instance.SetQuiet(true)
-	instance.SetFile("test.ghost")
+	instance.SetFile("test.gs")
 	instance.SetSource("import \"lumen:font\"\nfont.name()")
 
 	result := instance.Execute()
@@ -157,7 +157,7 @@ func TestEmbedderCanRegisterAFunctionUnderItsOwnScheme(t *testing.T) {
 
 	instance := New()
 	instance.SetQuiet(true)
-	instance.SetFile("test.ghost")
+	instance.SetFile("test.gs")
 	instance.SetSource("import \"lumen:greet\"\ngreet()")
 
 	result := instance.Execute()
@@ -215,7 +215,7 @@ func TestNativeClassCanBeNewedAfterNamedImport(t *testing.T) {
 
 	instance := New()
 	instance.SetQuiet(true)
-	instance.SetFile("test.ghost")
+	instance.SetFile("test.gs")
 	instance.SetSource(`import { Audio } from "lumen:audio"` + "\n" + `new Audio("path/to/file.mp3").path()`)
 
 	result := instance.Execute()
@@ -239,7 +239,7 @@ func TestNativeClassCanBeNewedViaModuleDotAccess(t *testing.T) {
 
 	instance := New()
 	instance.SetQuiet(true)
-	instance.SetFile("test.ghost")
+	instance.SetFile("test.gs")
 	instance.SetSource(`import "lumen:audio"` + "\n" + `new audio.Audio("x.mp3").path()`)
 
 	result := instance.Execute()
@@ -274,7 +274,7 @@ func TestNativeClassRejectsMethodAndPropertyOnTheClassItself(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			instance := New()
 			instance.SetQuiet(true)
-			instance.SetFile("test.ghost")
+			instance.SetFile("test.gs")
 			instance.SetSource(tt.source)
 
 			result := instance.Execute()
@@ -299,7 +299,7 @@ func TestNativeClassTypoSuggestsTheClassName(t *testing.T) {
 
 	instance := New()
 	instance.SetQuiet(true)
-	instance.SetFile("test.ghost")
+	instance.SetFile("test.gs")
 	instance.SetSource(`import { Audoi } from "lumen:audio"`)
 
 	result := instance.Execute()
@@ -321,7 +321,7 @@ func TestNativeClassTypoSuggestsTheClassName(t *testing.T) {
 func TestImportingAnUnregisteredSchemeIsReported(t *testing.T) {
 	instance := New()
 	instance.SetQuiet(true)
-	instance.SetFile("test.ghost")
+	instance.SetFile("test.gs")
 	instance.SetSource("import \"nosuchscheme:thing\"")
 
 	result := instance.Execute()

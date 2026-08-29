@@ -107,12 +107,12 @@ message looks.
 
 ```
 type error: cannot use `+` between number and string
- --> example.ghost:4:15
+ --> example.gs:4:15
   |
 4 | total = count + label
   |               ^
   |
-  = in sum(), called at example.ghost:9:1
+  = in sum(), called at example.gs:9:1
   = help: both sides of `+` have to be the same type
 ```
 

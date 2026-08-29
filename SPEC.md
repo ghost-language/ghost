@@ -147,7 +147,7 @@ Explicitly out of scope, so they are not mistaken for gaps:
   documented at length in `CLAUDE.md`, not an oversight.
 - **Static typing or type annotations.** Ghost is dynamically typed throughout.
 - **A package manager or module registry, for 1.0.** `import` resolves either
-  a `.ghost` file on disk next to the importing file, or a standard library
+  a `.gs` file on disk next to the importing file, or a standard library
   name behind the `ghost:` scheme (§8.9); there is no remote fetch, no
   lockfile, no version resolution. This is a scope decision for 1.0, not a
   permanent one (§1) — the `ghost:` scheme exists as a distinct, URL-shaped
@@ -339,7 +339,7 @@ writing this specification, both confirmed as fine as they stand:
 
 Ghost has no deprecation mechanism today: a renamed method simply stops
 existing under its old name in the next version. A rename is therefore a
-breaking change for any `.ghost` script written against the old name, made
+breaking change for any `.gs` script written against the old name, made
 deliberately rather than as a side effect of a naming pass, and called out in
 the version's release notes.
 
@@ -609,8 +609,8 @@ new Dog("Fido").shout()
 Two things can appear on the right of an `import`, told apart by scheme:
 
 ```ghost
-import "helpers"                       // a .ghost file, whole-file import for side effects
-import add, subtract from "math_ext"   // named imports from a .ghost file
+import "helpers"                       // a .gs file, whole-file import for side effects
+import add, subtract from "math_ext"   // named imports from a .gs file
 import add as plus from "math_ext"     // aliased
 import * from "math_ext"               // everything
 
@@ -630,9 +630,9 @@ image.something()                                  // the whole module, same as 
 new Spritesheet("sheet.png")                       // the named export, same as `import { Spritesheet } from ...`
 ```
 
-**File imports** (no scheme — any other string) name a `.ghost` file:
+**File imports** (no scheme — any other string) name a `.gs` file:
 
-- A module is a `.ghost` file, looked up **next to the file that imports
+- A module is a `.gs` file, looked up **next to the file that imports
   it** (there is no notion of a project root, a search path list beyond
   that, or a package registry — see §4).
 - Imports are **process-wide and memoized**: a module is read, parsed, and
@@ -692,7 +692,7 @@ while a script is already running.
 - The `from` forms — braced or not, `import { pi } from "ghost:math"` and
   `import pi from "ghost:math"` mean the same thing — pull individual
   methods, properties, and classes out of a module by name, exactly like a
-  named import from a `.ghost` file. A property (`pi`) is evaluated once,
+  named import from a `.gs` file. A property (`pi`) is evaluated once,
   immediately, at the import — there is no lazy getter to bind, so
   `import { pi } from "ghost:math"` binds a plain number, the same value
   reading `math.pi` would. A class (`import { Audio } from "lumen:audio"`,
@@ -783,12 +783,12 @@ every failure prints, e.g.:
 
 ```
 type error: cannot use `+` between number and string
- --> example.ghost:4:15
+ --> example.gs:4:15
   |
 4 | total = count + label
   |               ^
   |
-  = in sum(), called at example.ghost:9:1
+  = in sum(), called at example.gs:9:1
   = help: both sides of `+` have to be the same type
 ```
 
@@ -1170,7 +1170,7 @@ together).
 | `join(...parts)` | ≥1 | Joins path segments with the OS's own separator, cleaning the result (`..`/`.` resolved, redundant separators collapsed) the way `filepath.Join` does. |
 | `basename(path)` | 1 | The last path element. |
 | `dirname(path)` | 1 | Everything but the last path element. |
-| `extname(path)` | 1 | The extension, dot included (`".ghost"`), or `""` if there is none. |
+| `extname(path)` | 1 | The extension, dot included (`".gs"`), or `""` if there is none. |
 | `isAbsolute(path)` | 1 | `boolean`. |
 
 ### 9.10 `json`
@@ -1322,8 +1322,8 @@ using it has no way to tell, and no reason to need to tell, which kind of
 class `Audio` actually is.
 
 This is a Go-level extension point only: there is still exactly one way to
-declare a class in `.ghost` source (§8.8), and nothing here adds a second.
-A bundled Ghost-source "prelude" — classes written in `.ghost`, evaluated
+declare a class in `.gs` source (§8.8), and nothing here adds a second.
+A bundled Ghost-source "prelude" — classes written in `.gs`, evaluated
 once at startup, calling down into native functions for the primitive work —
 was considered as an alternative and deliberately not built: it would have
 split embedding into two conventions (a Go-level one for functions/modules,
@@ -1343,7 +1343,7 @@ that, it just isn't needed yet.
 `ghost.extend(path)` (§9.12) is the only in-language extension point, and it
 requires the extension to be a **compiled Go plugin**, built with a matching
 Go toolchain and OS/arch, and only on Linux/macOS. There is no
-pure-Ghost plugin/extension mechanism (e.g., a convention for a `.ghost`
+pure-Ghost plugin/extension mechanism (e.g., a convention for a `.gs`
 file to register itself as reusable library-like code beyond ordinary
 `import`).
 
