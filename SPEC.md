@@ -128,10 +128,9 @@ the version's release notes"). Concretely, 1.0 means:
   §9.9) close most of the concrete gap this bar used to name, but have not
   had the same exhaustive audit `math`/`date` went through, so treat them as
   close rather than confirmed complete.
-- **No script can crash the host.** This is already true in the general case
-  (`ghost.Execute` recovers panics — see §8.11) but the RNG data race in §13.1
-  is a live counterexample under concurrent use, and closing it is a
-  precondition for the tag.
+- **No script can crash the host.** True in the general case
+  (`ghost.Execute` recovers panics — see §8.11); the one live counterexample
+  under concurrent use, the RNG data race, is closed (§13.1 — done).
 - **The CLI and its own documentation agree with each other and with the
   code.** They currently do not (§13.4, §13.10).
 - **The naming and design conventions in §7 are actually enforced**, not just
@@ -826,10 +825,9 @@ panic.** Runaway recursion is counted and reported as an ordinary value
 error before the Go stack actually overflows (§8.7); a bug in Ghost itself
 that *does* panic is recovered at the top of `Execute` and reported as an
 `Internal` fault asking the reader to file a bug, with the Go stack trace
-attached only when `GHOST_DEBUG` is set in the environment. The one
-documented exception to "nothing crashes the host" is the RNG data race
-described in §13.1, which is a real gap in that guarantee under concurrent
-use, and closing it is one of the preconditions for the tag (§3).
+attached only when `GHOST_DEBUG` is set in the environment. The RNG data
+race that used to be the one exception to "nothing crashes the host" under
+concurrent use is closed (§13.1 — done).
 
 ---
 
@@ -1085,8 +1083,7 @@ variation, distinct from `random`).
 `randomInt(low, high)` (arity 1–2, inclusive whole number; the one way to
 get a whole random number, since `random.random()` always answers a float),
 `randomSeed(n)` (arity 1, seeds the same generator `random.seed()` seeds —
-see §13.1, the most serious defect in this specification, for the
-concurrency gap in this shared state).
+this shared state is safe for concurrent use, see §13.1).
 
 **Statistics** (reductions — each accepts a flat argument list, a single
 list, or a list of lists, flattened before reducing; arity ≥1) — `sum`,
@@ -1259,9 +1256,10 @@ Import: `import "ghost:random"` or `import { random, seed } from "ghost:random"`
 | `currentSeed` *(property)* | — | The seed currently driving the generator. |
 
 `SeedRandom` is also exported at the Go level so an embedding host can fix
-reproducibility before a script ever runs. **This generator is shared with
-`math.randomInt`/`math.randomSeed`, and neither module synchronizes access
-to it** — see §13.1, the most serious correctness gap in this specification.
+reproducibility before a script ever runs. This generator is shared with
+`math.randomInt`/`math.randomSeed`; both modules read and write it through
+the same mutex-guarded accessors, so it is safe for concurrent use (§13.1 —
+done).
 
 ### 9.7 `os`
 
@@ -1626,27 +1624,22 @@ Ranked roughly by how much damage each can do, not by how easy it is to fix.
 Every finding below was confirmed by reading the relevant code paths
 directly (file/line references given); none are speculative.
 
-### 13.1 The shared random-number generator is not safe for concurrent use
+### 13.1 The shared random-number generator is not safe for concurrent use — done
 
-`library/modules/random.go` keeps the PRNG behind two unsynchronized package
-variables, `seed` and `randomizer` (`*rand.Rand`), read and written directly
-by `randomRandom`, `randomSeed`, the exported `SeedRandom`, and — from
-`math.go` — `mathRandomInt`/`mathRandomSeed`. None of these hold a lock.
-
-Go's `*rand.Rand` is explicitly **not** safe for concurrent use by multiple
-goroutines (only the package-level top-level functions, which use their own
-internal mutex, are). Ghost's own `http.handle` (§9.11) runs every request's
-callback on its own goroutine, and the codebase elsewhere (`evaluator/import.go`'s
-`moduleState sync.Mutex`, `object.Scope.Depth`'s doc comment) shows the team
-is already deliberately careful about exactly this class of bug — this one
-module appears to have been missed. Two concurrent requests both calling
-`random.random()` or `math.randomInt()` race on `randomizer`'s internal
-state: under `go test -race` this is a reported data race, and in
-production it can silently corrupt the sequence or, rarer, panic inside
-`math/rand`. This is the one place in the codebase that can violate
-§8.11's "nothing crashes the host" guarantee today. **Fix:** guard `seed`/
-`randomizer` with a mutex (mirroring `moduleState` in `import.go`), or swap
-to a `*rand.Rand` built over a locked source.
+`library/modules/random.go`'s `seed` and `randomizer` (`*rand.Rand`) are now
+behind a package-level `randomState sync.Mutex`, mirroring `moduleState` in
+`evaluator/import.go`. Every read or write — `randomRandom`'s and
+`mathRandomInt`'s draws (via the new `randomFloat64`/`randomInt63n`
+accessors), `randomCurrentSeed`'s read, and `SeedRandom`'s write (reached by
+both `randomSeed` and `mathRandomSeed`) — takes the lock for the whole
+operation, since Go's `*rand.Rand` is not safe for concurrent use on its own
+and a lock held only around reading the pointer would not protect the
+`Float64()`/`Int63n()` call's own internal state mutation. Tested in
+`library/modules/random_test.go`'s `TestRandomConcurrentAccessIsRaceFree`,
+which spins up 100 pairs of goroutines calling `random.random()` and
+`math.randomInt()` concurrently — confirmed to fail under `go test -race`
+against the unguarded code (a real data race inside `math/rand`, not a
+false positive) and to pass clean, repeatedly, against the fix.
 
 ### 13.2 `==`/`!=` cannot compare two maps, functions, or several other same-typed pairs — not even by identity
 

@@ -384,7 +384,7 @@ func mathRandomInt(scope *object.Scope, tok token.Token, args ...object.Object) 
 		return object.NewError(fault.Value, tok, "`math.randomInt()` expects the upper bound to be at least the lower bound")
 	}
 
-	return object.NewInt(low + randomizer.Int63n(high-low+1))
+	return object.NewInt(low + randomInt63n(high-low+1))
 }
 
 // mathRandomSeed seeds the generator so that a run can be reproduced, which is
