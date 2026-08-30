@@ -60,13 +60,3 @@ var listOperations = map[token.Type]func(node *ast.Infix, left *object.Number, r
 		return left.Mod(right)
 	},
 }
-
-// listsEqual compares two lists by their contents rather than by identity, to
-// any depth. It is what `==` between lists means, and mirrors the comparisons
-// the type-specific infix evaluators make for the values inside. The
-// comparison itself lives in object.ListsEqual, so a list counted equal here
-// is equal wherever else in the language the same comparison is made - List's
-// contains() and unique() among them.
-func listsEqual(left *object.List, right *object.List) bool {
-	return object.ListsEqual(left, right)
-}

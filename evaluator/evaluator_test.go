@@ -1560,6 +1560,55 @@ func TestEqualityComparisons(t *testing.T) {
 			input:    "class A { value = 5 }\nnew A().value == null",
 			expected: false,
 		},
+		// §13.2: maps, functions, and classes used to raise a type error for
+		// `==` even against themselves - the same identity `==` already gave
+		// Instance, or content comparison for the other collection type, Map's
+		// case gets instead.
+		{
+			name:     "maps compare by contents",
+			input:    "{x: 1, y: 2} == {x: 1, y: 2}",
+			expected: true,
+		},
+		{
+			name:     "maps with a differing value are not equal",
+			input:    "{x: 1} == {x: 2}",
+			expected: false,
+		},
+		{
+			name:     "maps with different keys are not equal",
+			input:    "{x: 1} == {y: 1}",
+			expected: false,
+		},
+		{
+			name:     "nested maps compare to any depth",
+			input:    "{x: [1, 2], y: {z: 3}} == {x: [1, 2], y: {z: 3}}",
+			expected: true,
+		},
+		{
+			name:     "a map does not equal null",
+			input:    "{x: 1} == null",
+			expected: false,
+		},
+		{
+			name:     "a function equals another name for itself",
+			input:    "f = function() { return 1 }\ng = f\nf == g",
+			expected: true,
+		},
+		{
+			name:     "distinct functions with identical bodies differ",
+			input:    "f = function() { return 1 }\ng = function() { return 1 }\nf == g",
+			expected: false,
+		},
+		{
+			name:     "a class equals itself",
+			input:    "class A {}\nA == A",
+			expected: true,
+		},
+		{
+			name:     "distinct classes differ",
+			input:    "class A {}\nclass B {}\nA != B",
+			expected: true,
+		},
 	}
 
 	for _, tt := range tests {
@@ -1582,7 +1631,18 @@ func TestEqualityComparisons(t *testing.T) {
 // TestEqualityTypeMismatch confirms that comparing two unrelated non-null types
 // is still an error rather than silently false.
 func TestEqualityTypeMismatch(t *testing.T) {
-	result := evaluate(`1 == "a"`)
+	tests := []struct {
+		input           string
+		expectedMessage string
+	}{
+		{`1 == "a"`, "test.gs:1:3: type error: cannot use `==` between number and string"},
+		{`[1, 2] == {x: 1}`, "test.gs:1:8: type error: cannot use `==` between list and map"},
+		{"function() {} == class A {}", "test.gs:1:15: type error: cannot use `==` between function and class"},
+	}
 
-	isErrorObject(t, result, "test.gs:1:3: type error: cannot use `==` between number and string")
+	for _, tt := range tests {
+		result := evaluate(tt.input)
+
+		isErrorObject(t, result, tt.expectedMessage)
+	}
 }
