@@ -148,14 +148,14 @@ func moduleBindingName(path string) string {
 // access and has its own methods (keys(), has(), ...), so a loaded module
 // reuses it rather than introducing a namespace type solely for this.
 func moduleValue(moduleScope *object.Scope) *object.Map {
-	pairs := make(map[object.MapKey]object.MapPair)
+	mapObject := object.NewOrderedMap()
 
 	for name, value := range moduleScope.Environment.All() {
 		key := &object.String{Value: name}
-		pairs[key.MapKey()] = object.MapPair{Key: key, Value: value}
+		mapObject.SetPair(key.MapKey(), object.MapPair{Key: key, Value: value})
 	}
 
-	return &object.Map{Pairs: pairs}
+	return mapObject
 }
 
 // evaluateSchemeImport handles the whole-value form of a `scheme:name`

@@ -904,7 +904,9 @@ func TestMapLiteralsWithStringKeys(t *testing.T) {
 		"three": 3,
 	}
 
-	for key, value := range mapLiteral.Pairs {
+	for _, pair := range mapLiteral.Pairs {
+		key, value := pair.Key, pair.Value
+
 		literal, ok := key.(*ast.String)
 
 		if !ok {
@@ -947,7 +949,9 @@ func TestMapLiteralsWithBooleanKeys(t *testing.T) {
 		false: 2,
 	}
 
-	for key, value := range mapLiteral.Pairs {
+	for _, pair := range mapLiteral.Pairs {
+		key, value := pair.Key, pair.Value
+
 		boolean, ok := key.(*ast.Boolean)
 
 		if !ok {
@@ -991,7 +995,9 @@ func TestMapLiteralsWithIntegerKeys(t *testing.T) {
 		3: 3,
 	}
 
-	for key, value := range mapLiteral.Pairs {
+	for _, pair := range mapLiteral.Pairs {
+		key, value := pair.Key, pair.Value
+
 		number, ok := key.(*ast.Number)
 
 		if !ok {
@@ -1035,7 +1041,9 @@ func TestMapLiteralsWithVariableKeys(t *testing.T) {
 		"baz": 3,
 	}
 
-	for key, value := range mapLiteral.Pairs {
+	for _, pair := range mapLiteral.Pairs {
+		key, value := pair.Key, pair.Value
+
 		identifier, ok := key.(*ast.Identifier)
 
 		if !ok {
@@ -1073,7 +1081,9 @@ func TestMapLiteralsWithShorthandKeys(t *testing.T) {
 		t.Fatalf("map.Pairs has wrong length. got=%d", len(mapLiteral.Pairs))
 	}
 
-	for key, value := range mapLiteral.Pairs {
+	for _, pair := range mapLiteral.Pairs {
+		key, value := pair.Key, pair.Value
+
 		keyIdentifier, ok := key.(*ast.Identifier)
 
 		if !ok {
@@ -1093,6 +1103,50 @@ func TestMapLiteralsWithShorthandKeys(t *testing.T) {
 
 		if valueIdentifier.Value != keyIdentifier.Value {
 			t.Errorf("shorthand value should reference %q, got=%q", keyIdentifier.Value, valueIdentifier.Value)
+		}
+	}
+}
+
+// TestMapLiteralPairsPreserveSourceOrder covers §13.5: Pairs is ordered the
+// way it was written, not keyed by the expression itself the way a Go map
+// would be - a bare map here would forget source order before evaluation
+// ever saw it, before object.Map even gets a chance to preserve it.
+func TestMapLiteralPairsPreserveSourceOrder(t *testing.T) {
+	input := `{z: 1, a: 2, m: 3, b: 4}`
+
+	scanner := scanner.New(input, "test.gs")
+	parser := New(scanner)
+	program := parser.Parse()
+
+	failIfParserHasErrors(t, parser)
+
+	statement, ok := program.Statements[0].(*ast.Expression)
+
+	if !ok {
+		t.Fatalf("program.Statements[0] is not ast.Expression. got=%T", program.Statements[0])
+	}
+
+	mapLiteral, ok := statement.Expression.(*ast.Map)
+
+	if !ok {
+		t.Fatalf("statement is not ast.Map. got=%T", statement.Expression)
+	}
+
+	expected := []string{"z", "a", "m", "b"}
+
+	if len(mapLiteral.Pairs) != len(expected) {
+		t.Fatalf("map.Pairs has wrong length. got=%d", len(mapLiteral.Pairs))
+	}
+
+	for index, name := range expected {
+		key, ok := mapLiteral.Pairs[index].Key.(*ast.Identifier)
+
+		if !ok {
+			t.Fatalf("pair %d key is not ast.Identifier. got=%T", index, mapLiteral.Pairs[index].Key)
+		}
+
+		if key.Value != name {
+			t.Errorf("pair %d: got=%q, expected=%q", index, key.Value, name)
 		}
 	}
 }

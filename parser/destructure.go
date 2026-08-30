@@ -86,8 +86,8 @@ func (parser *Parser) listPatternTargets(list *ast.List) ([]*ast.Identifier, boo
 func (parser *Parser) mapPatternPairs(mapLiteral *ast.Map) ([]ast.MapPatternPair, bool) {
 	pairs := make([]ast.MapPatternPair, 0, len(mapLiteral.Pairs))
 
-	for key, value := range mapLiteral.Pairs {
-		source, ok := key.(*ast.Identifier)
+	for _, entry := range mapLiteral.Pairs {
+		source, ok := entry.Key.(*ast.Identifier)
 
 		if !ok {
 			parser.report(mapLiteral.Token, "a map pattern can only bind from a plain name, not a computed key")
@@ -95,7 +95,7 @@ func (parser *Parser) mapPatternPairs(mapLiteral *ast.Map) ([]ast.MapPatternPair
 			return nil, false
 		}
 
-		target, ok := value.(*ast.Identifier)
+		target, ok := entry.Value.(*ast.Identifier)
 
 		if !ok {
 			parser.report(mapLiteral.Token, "a map pattern can only bind to a plain name, not a full expression")
