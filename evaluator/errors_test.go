@@ -114,7 +114,7 @@ func TestValueMethodsReportBadArguments(t *testing.T) {
 // A string is only a pattern when a method treats it as one, so a pattern that
 // will not compile is the caller's mistake rather than a crash.
 func TestBadPatternsAreReported(t *testing.T) {
-	raised := errorFrom(t, `"(".matches("x")`)
+	raised := errorFrom(t, `"x".matches("(")`)
 
 	if raised.Fault.Kind != fault.Value {
 		t.Errorf("got kind=%v, expected value", raised.Fault.Kind)

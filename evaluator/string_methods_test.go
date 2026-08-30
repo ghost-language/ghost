@@ -72,12 +72,46 @@ func TestStringMethodBooleans(t *testing.T) {
 		{`"hello world".contains("xyz")`, false},
 		{`"".isEmpty()`, true},
 		{`"a".isEmpty()`, false},
+
+		// matches() takes the pattern as its argument, the receiver is the
+		// subject being searched (§13.7).
+		{`"hello world".matches("wor.d")`, true},
+		{`"hello world".matches("xyz")`, false},
 	}
 
 	for _, tt := range tests {
 		result := evaluate(tt.input)
 
 		isBooleanObject(t, result, tt.expected)
+	}
+}
+
+// TestStringPatternMethods covers find()/findAll()/matches() after the
+// receiver/argument flip and the findAll() bug fix (§13.7, §14 decision 3):
+// the receiver is always the subject being searched, the argument is always
+// the pattern - subject.find(pattern), matching JS/PHP/Python - and
+// findAll() now answers every match, not just the first match's capture
+// groups.
+func TestStringPatternMethods(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected string
+	}{
+		{`"hello world".find("wor.d")`, "world"},
+		{`"hello world".find("xyz")`, ""},
+		{`"foo123bar456".find("[0-9]+")`, "123"},
+
+		// findAll() answers every match's full text, in order - not, as
+		// before the fix, only the first match's own capture groups.
+		{`"foo123bar456".findAll("[0-9]+").toString()`, "[123, 456]"},
+		{`"no digits here".findAll("[0-9]+").toString()`, "[]"},
+		{`"aaa".findAll("a").toString()`, "[a, a, a]"},
+	}
+
+	for _, tt := range tests {
+		result := evaluate(tt.input)
+
+		isStringObject(t, result, tt.expected)
 	}
 }
 
@@ -90,6 +124,7 @@ func TestStringMethodErrors(t *testing.T) {
 		{`"hello".slice(10)`, "test.gs:1:9: index error: `string.slice()` start index 10 is out of range for a string of length 5"},
 		{`"hello".slice(0, 10)`, "test.gs:1:9: index error: `string.slice()` end index 10 is out of range for a string of length 5"},
 		{`"a".contains()`, "test.gs:1:5: argument error: `string.contains()` expects 1 argument, got 0"},
+		{`"hello".find("(")`, "test.gs:1:9: value error: `string.find()` cannot use `(` as a pattern: missing closing )"},
 	}
 
 	for _, tt := range tests {

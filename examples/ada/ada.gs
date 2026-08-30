@@ -38,10 +38,16 @@ class Ada {
         foundMatch = false
 
         // Loop through the knowledge base
+        //
+        // NOTE: findAll() now answers every match's full text (§13.7), not a
+        // match's capture groups - the {1}-style placeholders below rely on
+        // capture groups Ghost's string API no longer exposes any way to
+        // read, so reflection substitution here is a known gap pending a
+        // capture-group-aware method.
         for (knowledge in this.knowledge) {
-            if (knowledge.pattern.matches(input.toLowerCase()) and foundMatch == false) {
+            if (input.toLowerCase().matches(knowledge.pattern) and foundMatch == false) {
                 foundMatch = true
-                matches = knowledge.pattern.findAll(input.toLowerCase())
+                matches = input.toLowerCase().findAll(knowledge.pattern)
                 response = knowledge.responses[random.range(knowledge.responses.length())]
 
                 for (index, match in matches) {
