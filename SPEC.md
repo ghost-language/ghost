@@ -369,9 +369,21 @@ the version's release notes.
   null or return super switch this trait true use while`.
   `print` is **not** a keyword — see §13.9.
 - **Statement separation:** a trailing `;` is optional and consumed when
-  present; otherwise a statement simply ends where its grammar says it ends
-  (there is no significant-newline rule and no automatic-semicolon-insertion
-  logic to reason about).
+  present, after *every* statement kind (§13.12, done) — not just an
+  assignment, which used to be the only one that reliably worked;
+  otherwise a statement simply ends where its grammar says it ends. There is
+  still no significant-newline rule and no automatic-semicolon-insertion
+  logic: two statements on separate lines with no `;` between them can still
+  parse as one when the second line opens with a token the first's
+  expression grammar can continue into (`[`, `(`, `.`, `++`/`--`, a binary
+  operator) — `x = 1` then `[10, 20, 30]` on the next line parses as
+  `x = 1[10, 20, 30]`, one statement, not two. This is deliberately left as
+  is (§13.12) rather than made newline-significant, which would be a much
+  larger grammar change with its own trade-offs (multi-line fluent method
+  chaining, `foo()\n  .bar()`, relies on a statement being able to continue
+  across a line break); ending a line with `;` whenever the next one could
+  be read as a continuation avoids it in practice, and now works reliably
+  everywhere it didn't before.
 
 ### 8.2 Values and Types
 
@@ -2006,13 +2018,13 @@ operands remain falsy" framing that this bug slipped through) and
 `!""` case, at the constant-folding layer specifically, so a regression in
 either the runtime or the compile-time path is caught independently).
 
-### 13.12 Two statements on separate lines can silently merge into one
+### 13.12 Two statements on separate lines can silently merge into one — done (partially, by design)
 
-§8.1's own "statement separation" bullet claims "there is no significant-
-newline rule and no automatic-semicolon-insertion logic to reason about" —
-false in two directions, both confirmed by running the CLI directly (not
-just the evaluator test helper, which never checks `parser.Errors()` and so
-does not catch either):
+§8.1's own "statement separation" bullet used to claim "there is no
+significant-newline rule and no automatic-semicolon-insertion logic to
+reason about" — false in two directions, both confirmed by running the CLI
+directly (not just the evaluator test helper, which never checks
+`parser.Errors()` and so does not catch either):
 
 1. **A statement can swallow the next line's opener.** `parseExpression`'s
    Pratt loop (`parser/expression.go`) only stops at a `;` or a token with no
@@ -2036,12 +2048,54 @@ does not catch either):
    ("`;` cannot start an expression"), even though every other call-heavy
    example in this document is written exactly that way.
 
-**Fix:** make statement termination actually newline-significant (or give
-every statement-producing path the same trailing-`;`-consumption
-`assign()` already has, symmetrically), and add a parser test that runs
-multi-statement, multi-line source through `parser.Errors()` directly
-(the evaluator test helper's blind spot) so this class of regression cannot
-hide again.
+The original writeup offered two alternative fixes: make statement
+termination actually newline-significant, or give every statement-producing
+path the same trailing-`;`-consumption `assign()` already has, symmetrically.
+These fix different bugs — newline-significance would resolve both; the
+symmetric-consumption path resolves only #2 outright, leaving #1's
+already-rare, `;`-avoidable case as an accepted, documented trade-off rather
+than a fixed bug. The narrower fix was chosen deliberately: full
+newline-significance is a materially larger grammar change whose own
+correct behavior is not obvious in every case — Ghost's class/method syntax
+already invites JS-style fluent chaining (`foo()\n  .bar()`), which
+newline-significant termination would need to special-case correctly rather
+than break, and nothing in this codebase today establishes whether that
+idiom is meant to be supported. Symmetric `;` consumption carries no such
+risk: it only ever makes a previously-rejected program (one correctly
+terminated with `;`) parse, never changes what an already-accepted program
+means.
+
+**Fix (bug #2):** `parser/statement.go`'s `expressionStatement()` — the path
+every bare expression statement, and every `if`/`while`/`for`/`function`/
+`class`/`trait`/`switch`/`import`/`use`/`break`/`continue` statement (each a
+prefix parser reached through `parseExpression`, per `parser.go`'s
+`registerPrefix` table), funnels through — now consumes an optional
+trailing `;` the same way `assign()`/`returnStatement()` already did. This
+alone did not cover a bare list/map-literal statement (`[1, 2, 3]`,
+`{"a": 1}`): `assign()` special-cases anything starting with `[`/`{` into
+`destructuringAssign()` before `expressionStatement()` is ever reached, to
+read it first as a possible destructuring pattern (§12); each of
+`destructuringAssign()`'s "this wasn't actually a pattern" fallback
+branches built its own `&ast.Expression{...}` node directly, bypassing
+`expressionStatement()` (and its now-fixed trailing-`;` consumption)
+entirely. Both functions' "wrap this expression as a statement" logic is
+now the single shared `expressionStatementFrom` (`parser/statement.go`),
+called from `expressionStatement()` and from all four of
+`destructuringAssign()`'s fallback returns, so there is exactly one place
+this is decided rather than two that happened to agree until one of them
+didn't.
+
+**Bug #1 stays as documented, existing behavior** — §8.1's "statement
+separation" bullet is reworded to describe it accurately instead of denying
+it exists.
+
+Tested in `parser/parser_test.go`'s `TestSemicolonTerminatesEveryStatementKind`,
+which runs each of the 14 statement kinds above (plus both destructuring
+forms, to confirm the fallback-path fix specifically) through
+`parser.Errors()` directly, exactly the multi-statement/multi-line-through-
+`Errors()` check this callout asked for — confirmed to fail on all but the
+already-working assignment/return cases against the pre-fix code, and pass
+clean against the fix.
 
 ---
 

@@ -15,7 +15,7 @@ func (parser *Parser) destructuringAssign() ast.StatementNode {
 	expression := parser.parseExpression(LOWEST)
 
 	if !parser.nextTokenIs(token.EQUAL) {
-		return &ast.Expression{Expression: expression}
+		return parser.expressionStatementFrom(expression)
 	}
 
 	var name ast.AssignmentNode
@@ -25,7 +25,7 @@ func (parser *Parser) destructuringAssign() ast.StatementNode {
 		targets, ok := parser.listPatternTargets(pattern)
 
 		if !ok {
-			return &ast.Expression{Expression: expression}
+			return parser.expressionStatementFrom(expression)
 		}
 
 		name = &ast.ListPattern{Token: pattern.Token, Targets: targets}
@@ -33,12 +33,12 @@ func (parser *Parser) destructuringAssign() ast.StatementNode {
 		pairs, ok := parser.mapPatternPairs(pattern)
 
 		if !ok {
-			return &ast.Expression{Expression: expression}
+			return parser.expressionStatementFrom(expression)
 		}
 
 		name = &ast.MapPattern{Token: pattern.Token, Pairs: pairs}
 	default:
-		return &ast.Expression{Expression: expression}
+		return parser.expressionStatementFrom(expression)
 	}
 
 	statement := &ast.Assign{Name: name}

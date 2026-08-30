@@ -1940,3 +1940,48 @@ func TestParsingAlwaysTerminates(t *testing.T) {
 		})
 	}
 }
+
+// TestSemicolonTerminatesEveryStatementKind covers §13.12's fix: a trailing
+// `;` used to be reliable only after a plain assignment (assign() consumed
+// it) - a bare expression statement, and every statement kind that funnels
+// through one (if/while/for/function/class/trait/switch/import/use/break/
+// continue), left it unconsumed, so the parser re-entered statement() with
+// `;` as the current token and failed with "`;` cannot start an expression"
+// on perfectly ordinary, semicolon-terminated multi-statement source. This
+// runs each program through parser.Errors() directly, the blind spot the
+// evaluator test helper (evaluate(), used everywhere else in this codebase)
+// does not cover, since it never checks parser.Errors() at all.
+func TestSemicolonTerminatesEveryStatementKind(t *testing.T) {
+	tests := []struct {
+		name   string
+		source string
+	}{
+		{"two calls", "console.log(1);\nconsole.log(2);"},
+		{"a bare list literal statement", "[1, 2, 3];\nconsole.log(1);"},
+		{"a bare map literal statement", `{"a": 1};` + "\nconsole.log(1);"},
+		{"if", "if (true) {\n    console.log(1);\n};\nconsole.log(2);"},
+		{"while", "while (false) {\n    console.log(1);\n};\nconsole.log(2);"},
+		{"for", "for (i = 0; i < 1; i++) {\n    console.log(i);\n};\nconsole.log(2);"},
+		{"function statement", "function greet() {\n    console.log(1);\n};\nconsole.log(2);"},
+		{"class statement", "class Point {\n};\nconsole.log(2);"},
+		{"trait statement", "trait Loud {\n};\nconsole.log(2);"},
+		{"switch", "switch (1) {\n    case 1 {\n        console.log(1);\n    }\n};\nconsole.log(2);"},
+		{"break inside a loop", "while (true) {\n    break;\n};\nconsole.log(2);"},
+		{"continue inside a loop", "for (i = 0; i < 1; i++) {\n    continue;\n};\nconsole.log(2);"},
+		{"list destructuring, still an assignment", "[a, b] = [1, 2];\nconsole.log(a);"},
+		{"map destructuring, still an assignment", `{a, b} = {"a": 1, "b": 2};` + "\nconsole.log(a);"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			parser := New(scanner.New(tt.source, "test.gs"))
+			program := parser.Parse()
+
+			failIfParserHasErrors(t, parser)
+
+			if len(program.Statements) != 2 {
+				t.Fatalf("expected 2 statements, got %d", len(program.Statements))
+			}
+		})
+	}
+}
