@@ -882,6 +882,20 @@ token constant, not about `print` the function.
 These are called directly on a value (`"hi".toUpperCase()`), independent of
 the module system.
 
+**Bounds-checking convention (§13.6).** A method that reads a *position* —
+`list[i]`/`map[k]`/`string[i]` indexing, `charAt()`, `list.get`-shaped
+lookups, `pop()`/`shift()`/`first()`/`last()`/`tail()` on an empty list — is
+lenient: an out-of-range position answers `null` (or `""` for a string),
+never an `Index` error, the same way a missing map key does. A method that
+reads a *range* — `slice()` on a list or a string, `fill()` — validates both
+ends and raises an `Index` error when either falls outside the receiver,
+matching `list.slice()`. The distinction is what the argument names, not the
+method's arity: a single position has nowhere else to fall but "absent",
+while a range's two ends can straddle the receiver in ways worth catching
+before they silently produce a shorter (or, without validation, a garbage)
+result. A new list/map/string method follows whichever of the two shapes its
+argument is before picking a convention on its own.
+
 **`boolean`** — `toString()`.
 
 **`null`** — `toString()` (→ `"null"`).
@@ -1807,18 +1821,53 @@ directly), `evaluator/map_methods_test.go`'s `TestMapPreservesInsertionOrder`
 /`TestMapForInPreservesInsertionOrder`, and `parser/parser_test.go`'s
 `TestMapLiteralPairsPreserveSourceOrder`.
 
-### 13.6 Bounds-checking is inconsistent across list/map/string operations
+### 13.6 Bounds-checking is inconsistent across list/map/string operations — done
 
 `list[i]`/`map[k]`/`string[i]` indexing all return `null` for an
 out-of-range index or missing key (`evaluator/index.go`), as do
 `list.pop()`/`shift()`/`first()`/`last()`/`tail()` on an empty list — but
 `list.slice()` raises an `Index` error for an out-of-range `start`/`end`
-(`object/list.go`). Neither behavior is wrong on its own, but the split is
-not documented as an intentional rule anywhere, which makes it easy for a
+(`object/list.go`). Neither behavior is wrong on its own, but the split was
+not documented as an intentional rule anywhere, which made it easy for a
 new list/string method to pick the "wrong" one of the two conventions by
-accident. **Fix:** state the rule explicitly (e.g., "a read that names a
-*position* is lenient; an operation that names a *range* validates it") in
-§7, and audit existing methods against it before 1.0.
+accident.
+
+**Fix:** the rule is now stated explicitly — "a read that names a *position*
+is lenient; an operation that names a *range* validates it" — in §9.2's
+intro, immediately above the per-type method tables it governs, rather than
+in §7: §7 is scoped to *naming*, by its own opening sentence, and this is a
+behavioral convention, so folding it in there would be off-topic for a
+reader looking either up. §9.2 is where every method affected by the rule is
+already documented, and several of its table rows (`charAt()`, `slice()`,
+`insertAt()`/`removeAt()`) already pointed back at "§13.6" for their
+reasoning before this fix existed anywhere to point to — they now point at
+the rule itself.
+
+The audit turned up one real bug, not just an undocumented split:
+`evaluator/index.go`'s `evaluateStringIndex` (the `string[i]` operator)
+checked `idx` against `len(str.Value) - 1` — a **byte** count — while
+`object/string.go`'s `charAt()`/`slice()`/`length()` all correctly use a
+rune count (`utf8.RuneCountInString`/`[]rune`), per §"Working through
+SPEC.md §11–14" in `CLAUDE.md`. For a receiver with any multi-byte rune,
+byte count exceeds rune count, so an index in between passed the (too
+generous) bounds check and then indexed past the end of the `[]rune`
+conversion that came after it — a genuine Go panic, not just a wrong answer,
+recovered by `ghost.Execute` into an unhelpful `internal error` instead of
+the `null` a position read out of range is supposed to give. Confirmed
+before the fix: `"héllo"[5]` (5 runes, 6 bytes) crashed; `"héllo"[4]`
+(the last valid rune) did not, since it stayed under both counts. Every
+other list/map/string bounds check audited against the rule already matched
+it correctly: list/map/string indexing and `list`'s empty-collection reads
+were already lenient; `list.slice()`/`string.slice()`/`list.fill()` were
+already validating; `list.insertAt()`'s clamp-to-nearest-end is a
+deliberately different leniency, justified in its own §9.2 row, for a
+write that has no "absent" position to fall back to the way a read does.
+
+Tested in `evaluator/index_test.go`'s `TestIndexingIsLenientOnPosition`
+(every position-reading indexing form, list/map/string, answers `null`
+rather than erroring — including the exact multi-byte case that used to
+panic) and `TestStringIndexUsesRunePositions` (confirms `string[i]` and
+`charAt()`/`length()` agree on rune positions for multi-byte input).
 
 ### 13.7 `string.find`/`findAll`/`matches` invert the usual receiver/argument relationship
 

@@ -70,11 +70,18 @@ func evaluateMapIndex(node *ast.Index, left, index object.Object) object.Object 
 func evaluateStringIndex(node *ast.Index, left, index object.Object) object.Object {
 	str := left.(*object.String)
 	idx := index.(*object.Number).Int64()
-	max := int64(len(str.Value) - 1)
+
+	// Bounds are checked against the rune count, not len(str.Value)'s byte
+	// count, so this agrees with string.length()/charAt() (§13.6) on what a
+	// "character" is - a receiver with any multi-byte rune has more bytes
+	// than runes, so a byte-length bound let an in-range-looking idx reach
+	// past the end of the []rune conversion below and panic.
+	runes := []rune(str.Value)
+	max := int64(len(runes) - 1)
 
 	if idx < 0 || idx > max {
 		return value.NULL
 	}
 
-	return &object.String{Value: string([]rune(str.Value)[idx])}
+	return &object.String{Value: string(runes[idx])}
 }
