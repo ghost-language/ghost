@@ -82,8 +82,11 @@ func init() {
 	RegisterMethod(DateMethods, "addYears", dateAddYears)
 	RegisterMethod(DateMethods, "subYears", dateSubYears)
 	RegisterMethod(DateMethods, "addHours", dateAddHours)
+	RegisterMethod(DateMethods, "subHours", dateSubHours)
 	RegisterMethod(DateMethods, "addMinutes", dateAddMinutes)
+	RegisterMethod(DateMethods, "subMinutes", dateSubMinutes)
 	RegisterMethod(DateMethods, "addSeconds", dateAddSeconds)
+	RegisterMethod(DateMethods, "subSeconds", dateSubSeconds)
 
 	// Predicates. Ordering and exact-instant equality are `<`, `>`, and `==` -
 	// see object.Date's doc comment - so only the comparisons an operator
@@ -108,8 +111,12 @@ func init() {
 	// Start and end of a period.
 	RegisterMethod(DateMethods, "startOfDay", dateStartOfDay)
 	RegisterMethod(DateMethods, "endOfDay", dateEndOfDay)
+	RegisterMethod(DateMethods, "startOfWeek", dateStartOfWeek)
+	RegisterMethod(DateMethods, "endOfWeek", dateEndOfWeek)
 	RegisterMethod(DateMethods, "startOfMonth", dateStartOfMonth)
 	RegisterMethod(DateMethods, "endOfMonth", dateEndOfMonth)
+	RegisterMethod(DateMethods, "startOfYear", dateStartOfYear)
+	RegisterMethod(DateMethods, "endOfYear", dateEndOfYear)
 
 	// Components.
 	RegisterMethod(DateMethods, "year", dateYear)
@@ -523,17 +530,29 @@ func dateAddHours(scope *object.Scope, tok token.Token, args ...object.Object) o
 	return dateShift("date.addHours", tok, args, func(t time.Time, n int64) time.Time { return t.Add(time.Duration(n) * time.Hour) })
 }
 
+func dateSubHours(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
+	return dateShift("date.subHours", tok, args, func(t time.Time, n int64) time.Time { return t.Add(-time.Duration(n) * time.Hour) })
+}
+
 func dateAddMinutes(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
 	return dateShift("date.addMinutes", tok, args, func(t time.Time, n int64) time.Time { return t.Add(time.Duration(n) * time.Minute) })
+}
+
+func dateSubMinutes(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
+	return dateShift("date.subMinutes", tok, args, func(t time.Time, n int64) time.Time { return t.Add(-time.Duration(n) * time.Minute) })
 }
 
 func dateAddSeconds(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
 	return dateShift("date.addSeconds", tok, args, func(t time.Time, n int64) time.Time { return t.Add(time.Duration(n) * time.Second) })
 }
 
+func dateSubSeconds(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
+	return dateShift("date.subSeconds", tok, args, func(t time.Time, n int64) time.Time { return t.Add(-time.Duration(n) * time.Second) })
+}
+
 // dateShift is what every add/sub function above is: read a date and a
 // count, shift the date by the count, answer a new one. Writing the shared
-// shape once keeps the eleven of them one line each.
+// shape once keeps every one of them one line each.
 func dateShift(name string, tok token.Token, args []object.Object, shift func(time.Time, int64) time.Time) object.Object {
 	if err := arity(name, tok, args, 2); err != nil {
 		return err
@@ -924,6 +943,56 @@ func dateEndOfMonth(scope *object.Scope, tok token.Token, args ...object.Object)
 	startOfNextMonth := time.Date(date.Time.Year(), date.Time.Month(), 1, 0, 0, 0, 0, date.Time.Location()).AddDate(0, 1, 0)
 
 	return newDate(startOfNextMonth.Add(-time.Nanosecond))
+}
+
+// dateStartOfWeek and dateEndOfWeek treat Sunday as the first day of the
+// week, matching weekday()'s 0 = Sunday reading (date-fns's getDay, and its
+// own default weekStartsOn) rather than the ISO 8601 Monday-first week.
+func dateStartOfWeek(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
+	date, err := dateForBoundary("date.startOfWeek", tok, args)
+
+	if err != nil {
+		return err
+	}
+
+	weekday := int(date.Time.Weekday())
+
+	return newDate(time.Date(date.Time.Year(), date.Time.Month(), date.Time.Day()-weekday, 0, 0, 0, 0, date.Time.Location()))
+}
+
+func dateEndOfWeek(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
+	date, err := dateForBoundary("date.endOfWeek", tok, args)
+
+	if err != nil {
+		return err
+	}
+
+	weekday := int(date.Time.Weekday())
+	startOfNextWeek := time.Date(date.Time.Year(), date.Time.Month(), date.Time.Day()-weekday+7, 0, 0, 0, 0, date.Time.Location())
+
+	return newDate(startOfNextWeek.Add(-time.Nanosecond))
+}
+
+func dateStartOfYear(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
+	date, err := dateForBoundary("date.startOfYear", tok, args)
+
+	if err != nil {
+		return err
+	}
+
+	return newDate(time.Date(date.Time.Year(), time.January, 1, 0, 0, 0, 0, date.Time.Location()))
+}
+
+func dateEndOfYear(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
+	date, err := dateForBoundary("date.endOfYear", tok, args)
+
+	if err != nil {
+		return err
+	}
+
+	startOfNextYear := time.Date(date.Time.Year()+1, time.January, 1, 0, 0, 0, 0, date.Time.Location())
+
+	return newDate(startOfNextYear.Add(-time.Nanosecond))
 }
 
 func dateForBoundary(name string, tok token.Token, args []object.Object) (*object.Date, *object.Error) {

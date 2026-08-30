@@ -1161,11 +1161,10 @@ name is a `Value` error naming it.
 rolling over — Jan 31 + 1 month = Feb 28/29, not Mar 2/3, and keeps the
 result's wall-clock reading in the date's own zone across a daylight-saving
 change, the way a calendar app's "same time next month" does),
-`addYears`/`subYears`, `addHours`, `addMinutes`, `addSeconds` (all arity 2:
-date, count; these shift by a fixed real duration regardless of zone, so
-"add 3 hours" always means 3 real hours, matching `date-fns`). *No
-`subHours`/`subMinutes`/`subSeconds`* — asymmetric with every other pair
-(§12).
+`addYears`/`subYears`, `addHours`/`subHours`, `addMinutes`/`subMinutes`,
+`addSeconds`/`subSeconds` (all arity 2: date, count; these shift by a fixed
+real duration regardless of zone, so "add 3 hours" always means 3 real
+hours, matching `date-fns`).
 
 **Predicates** — `isSameDay(a, b)`, `isWeekend(date)`, `isLeapYear(date)`
 (each reads the date's own attached zone — `isWeekend` on an instant that is
@@ -1203,11 +1202,13 @@ reconstruct `b` exactly. Reading a `Duration`'s own fields
 see §9.2's `duration` entry for why that's the one place this module departs
 from "everything beyond `toString()` is a free function."
 
-**Period boundaries** — `startOfDay`, `endOfDay`, `startOfMonth`,
-`endOfMonth` — computed in the date's own attached zone (midnight in Tokyo
-for a `Date` moved there, not midnight UTC). *No
-`startOfWeek`/`endOfWeek`/`startOfYear`/`endOfYear`* — gap relative to the
-`date-fns` surface this module is explicitly modeled on (§12).
+**Period boundaries** — `startOfDay`, `endOfDay`, `startOfWeek`, `endOfWeek`,
+`startOfMonth`, `endOfMonth`, `startOfYear`, `endOfYear` — computed in the
+date's own attached zone (midnight in Tokyo for a `Date` moved there, not
+midnight UTC). `startOfWeek`/`endOfWeek` treat Sunday as the first day of
+the week, matching `weekday()`'s own `0 = Sunday` reading below (and
+`date-fns`'s default `weekStartsOn`) rather than the ISO 8601 Monday-first
+week.
 
 **Components** — `year`, `month`, `day`, `hour`, `minute`, `second`,
 `weekday` (0 = Sunday, matching `date-fns`'s `getDay`) — each reads the
@@ -1563,8 +1564,12 @@ reference table. Full parity with `math` was picked over the minimal
 methods (`sqrt()`, `lerp()`, etc.) have no natural instance-method reading
 the way `abs`/`pow`/`clamp`/`isX` do — those stay `math`-only.
 
-**Date module:** `subHours`/`subMinutes`/`subSeconds` (asymmetric with
-every other add/sub pair), `startOfWeek`/`endOfWeek`/`startOfYear`/`endOfYear`.
+**Date module — done.** `subHours`/`subMinutes`/`subSeconds` and
+`startOfWeek`/`endOfWeek`/`startOfYear`/`endOfYear` are implemented
+(`library/modules/date.go`, tested in `library/modules/date_test.go`); see
+§9.5 for the finished reference (`startOfWeek`/`endOfWeek` treat Sunday as
+the first day, matching `weekday()`'s existing `0 = Sunday` convention and
+`date-fns`'s own default, rather than an ISO 8601 Monday-first week).
 
 **Language-level gaps:**
 - No destructuring assignment (`[a, b] = list`, `{x, y} = map`).
