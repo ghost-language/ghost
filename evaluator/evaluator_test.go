@@ -35,6 +35,126 @@ func TestErrorHandling(t *testing.T) {
 	}
 }
 
+// TestFunctionArity confirms user-defined functions and methods are strictly
+// arity-checked the same way every library call already is (§14 decision 1):
+// a call with the wrong number of arguments is an Argument fault, rather
+// than silently dropping extras or leaving a missing parameter undefined.
+func TestFunctionArity(t *testing.T) {
+	tests := []struct {
+		input           string
+		expectedMessage string
+	}{
+		{"function foo(a, b) { return a + b } foo(1)", "test.gs:1:37: argument error: `foo()` expects 2 arguments, got 1"},
+		{"function foo(a, b) { return a + b } foo(1, 2, 3)", "test.gs:1:37: argument error: `foo()` expects 2 arguments, got 3"},
+		{"function foo(a, b = 1) { return a + b } foo()", "test.gs:1:41: argument error: `foo()` expects between 1 and 2 arguments, got 0"},
+		{
+			"class Point { constructor(x, y) { this.x = x } add(other) { return this.x + other.x } } p = new Point(1, 2) p.add()",
+			"test.gs:1:111: argument error: `Point.add()` expects 1 argument, got 0",
+		},
+		{
+			"class Point { constructor(x, y) { this.x = x } } new Point(1)",
+			"test.gs:1:50: argument error: `Point()` expects 2 arguments, got 1",
+		},
+	}
+
+	for _, tt := range tests {
+		result := evaluate(tt.input)
+
+		isErrorObject(t, result, tt.expectedMessage)
+	}
+}
+
+// TestFunctionArityAllowsDefaultsAndVariety confirms a call within the
+// declared parameter's range still works, and that the check doesn't reject
+// a valid call - only too few or too many arguments do.
+func TestFunctionArityAllowsDefaultsAndVariety(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected int64
+	}{
+		{"function greet(name, greeting = 1) { return greeting } greet(\"a\")", 1},
+		{"function greet(name, greeting = 2) { return greeting } greet(\"a\", 5)", 5},
+		{"function noArgs() { return 3 } noArgs()", 3},
+	}
+
+	for _, tt := range tests {
+		result := evaluate(tt.input)
+
+		isNumberObject(t, result, tt.expected)
+	}
+}
+
+// TestRestParameters confirms a rest parameter (`...args`, §12) collects
+// every argument from its position onward into a list of its own, and that
+// it is optional - a call with nothing left over still binds an empty list
+// rather than failing arity checking.
+func TestRestParameters(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected int64
+	}{
+		{"function sum(...nums) { total = 0\nfor (n in nums) { total = total + n }\nreturn total }\nsum(1, 2, 3)", 6},
+		{"function sum(...nums) { total = 0\nfor (n in nums) { total = total + n }\nreturn total }\nsum()", 0},
+		{"function f(a, b = 10, ...rest) { return a + b + rest.length() }\nf(1, 2, 3, 4, 5)", 6},
+		{"function first(...args) { return args[0] }\nfirst(...[7, 8, 9])", 7},
+		{"class Calc { sum(...nums) { total = 0\nfor (n in nums) { total = total + n }\nreturn total } }\nnew Calc().sum(1, 2, 3, 4)", 10},
+	}
+
+	for _, tt := range tests {
+		result := evaluate(tt.input)
+
+		isNumberObject(t, result, tt.expected)
+	}
+
+	// Each call gets its own list - mutating one call's rest parameter must
+	// not leak into the next.
+	result := evaluate("function collect(...items) { items.push(99)\nreturn items }\ncollect(1, 2)\ncollect(3, 4)")
+	list, ok := result.(*object.List)
+
+	if !ok {
+		t.Fatalf("object is not List. got=%T (%+v)", result, result)
+	}
+
+	if len(list.Elements) != 3 {
+		t.Fatalf("rest parameter leaked across calls: got=%s", list.String())
+	}
+}
+
+// TestSpreadExpressions confirms `...expr` (§12) expands a list's elements
+// in place at a call site or inside a list literal.
+func TestSpreadExpressions(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected int64
+	}{
+		{"function add(a, b, c) { return a + b + c }\nadd(...[1, 2, 3])", 6},
+		{"function add(a, b, c) { return a + b + c }\nadd(1, ...[2, 3])", 6},
+		{"list = [...[1, 2], ...[3, 4], 5]\nlist.length()", 5},
+	}
+
+	for _, tt := range tests {
+		result := evaluate(tt.input)
+
+		isNumberObject(t, result, tt.expected)
+	}
+}
+
+func TestSpreadExpressionErrors(t *testing.T) {
+	tests := []struct {
+		input           string
+		expectedMessage string
+	}{
+		{"f = function(a) { return a }\nf(...5)", "test.gs:2:3: type error: cannot spread number, only a list"},
+		{"x = ...[1, 2]", "test.gs:1:5: syntax error: `...` can only be used in a call's arguments or a list literal"},
+	}
+
+	for _, tt := range tests {
+		result := evaluate(tt.input)
+
+		isErrorObject(t, result, tt.expectedMessage)
+	}
+}
+
 func TestAssign(t *testing.T) {
 	tests := []struct {
 		input    string
@@ -51,6 +171,65 @@ func TestAssign(t *testing.T) {
 		result := evaluate(tt.input)
 
 		isNumberObject(t, result, tt.expected)
+	}
+}
+
+func TestListPatternAssignment(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected int64
+	}{
+		{"[a, b] = [1, 2]; a", 1},
+		{"[a, b] = [1, 2]; b", 2},
+		{"a = 100; [a, b] = [1, 2]; a", 1},
+		{"[a, b] = [1, 2, 3]; a + b", 3},
+	}
+
+	for _, tt := range tests {
+		result := evaluate(tt.input)
+
+		isNumberObject(t, result, tt.expected)
+	}
+
+	// A pattern longer than the list binds the rest to null, matching
+	// list[i]'s own leniency for an out-of-range read (§13.6).
+	isBooleanObject(t, evaluate("[a, b, c] = [1, 2]; c == null"), true)
+}
+
+func TestMapPatternAssignment(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected int64
+	}{
+		{"{x, y} = {x: 100, y: 200}; x", 100},
+		{"{x, y} = {x: 100, y: 200}; y", 200},
+		{"{p: renamed} = {p: 5}; renamed", 5},
+	}
+
+	for _, tt := range tests {
+		result := evaluate(tt.input)
+
+		isNumberObject(t, result, tt.expected)
+	}
+
+	// A pattern naming a key the map doesn't have binds null, matching a
+	// map read's own leniency for a missing key.
+	isBooleanObject(t, evaluate("{x, y} = {x: 1}; y == null"), true)
+}
+
+func TestDestructuringAssignmentErrors(t *testing.T) {
+	tests := []struct {
+		input           string
+		expectedMessage string
+	}{
+		{"[a, b] = 5", "test.gs:1:1: type error: cannot destructure number as a list"},
+		{"{x, y} = 5", "test.gs:1:1: type error: cannot destructure number as a map"},
+	}
+
+	for _, tt := range tests {
+		result := evaluate(tt.input)
+
+		isErrorObject(t, result, tt.expectedMessage)
 	}
 }
 

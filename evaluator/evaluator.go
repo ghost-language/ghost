@@ -2,6 +2,7 @@ package evaluator
 
 import (
 	"ghostlang.org/x/ghost/ast"
+	"ghostlang.org/x/ghost/fault"
 	"ghostlang.org/x/ghost/object"
 	"ghostlang.org/x/ghost/value"
 )
@@ -70,6 +71,8 @@ func Evaluate(node ast.Node, scope *object.Scope) object.Object {
 		return evaluateProperty(node, scope)
 	case *ast.Return:
 		return evaluateReturn(node, scope)
+	case *ast.Spread:
+		return object.NewError(fault.Syntax, node.Token, "`...` can only be used in a call's arguments or a list literal")
 	case *ast.String:
 		return evaluateString(node, scope)
 	case *ast.Super:

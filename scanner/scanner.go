@@ -192,7 +192,11 @@ func (scanner *Scanner) ScanToken() token.Token {
 		scannedToken = scanner.newToken(token.COMMA, ",", 1)
 	case rune('.'):
 		if scanner.match('.') {
-			scannedToken = scanner.newToken(token.DOTDOT, "..", 2)
+			if scanner.match('.') {
+				scannedToken = scanner.newToken(token.DOTDOTDOT, "...", 3)
+			} else {
+				scannedToken = scanner.newToken(token.DOTDOT, "..", 2)
+			}
 		} else {
 			scannedToken = scanner.newToken(token.DOT, ".", 1)
 		}
