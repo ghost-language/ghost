@@ -113,6 +113,17 @@ func DateArgument(name string, tok token.Token, args []Object, index int) (*Date
 	return value.(*Date), nil
 }
 
+// DurationArgument reads an argument that has to be a duration.
+func DurationArgument(name string, tok token.Token, args []Object, index int) (*Duration, *Error) {
+	value, err := argument(name, tok, args, index, "a duration", DURATION)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return value.(*Duration), nil
+}
+
 // FunctionArgument reads an argument that has to be something callable.
 func FunctionArgument(name string, tok token.Token, args []Object, index int) (*Function, *Error) {
 	value, err := argument(name, tok, args, index, "a function", FUNCTION)

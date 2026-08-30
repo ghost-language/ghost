@@ -554,3 +554,193 @@ func mustString(t *testing.T, result object.Object) string {
 
 	return str.Value
 }
+
+func mustDuration(t *testing.T, result object.Object) *object.Duration {
+	t.Helper()
+
+	if object.IsError(result) {
+		t.Fatalf("unexpected error: %s", result.String())
+	}
+
+	duration, ok := result.(*object.Duration)
+
+	if !ok {
+		t.Fatalf("object is not Duration. got=%T (%+v)", result, result)
+	}
+
+	return duration
+}
+
+func TestDateDuration(t *testing.T) {
+	d := mustDuration(t, callDate(t, "duration", object.NewInt(1), object.NewInt(2), object.NewInt(3), object.NewInt(4), object.NewInt(5), object.NewInt(6)))
+
+	if d.Years != 1 || d.Months != 2 || d.Days != 3 || d.Hours != 4 || d.Minutes != 5 || d.Seconds != 6 {
+		t.Fatalf("wrong components: %+v", d)
+	}
+
+	if d.String() != "P1Y2M3DT4H5M6S" {
+		t.Errorf("wrong string form: got=%s", d.String())
+	}
+
+	// hours/minutes/seconds default to zero when omitted.
+	short := mustDuration(t, callDate(t, "duration", object.NewInt(0), object.NewInt(1), object.NewInt(0)))
+
+	if short.String() != "P1M" {
+		t.Errorf("duration with only year/month/day args: got=%s", short.String())
+	}
+
+	zero := mustDuration(t, callDate(t, "duration", object.NewInt(0), object.NewInt(0), object.NewInt(0)))
+
+	if zero.String() != "PT0S" {
+		t.Errorf("zero duration: got=%s", zero.String())
+	}
+
+	negative := mustDuration(t, callDate(t, "duration", object.NewInt(-1), object.NewInt(-2), object.NewInt(-3), object.NewInt(-4), object.NewInt(-5), object.NewInt(-6)))
+
+	if negative.String() != "P-1Y-2M-3DT-4H-5M-6S" {
+		t.Errorf("all-negative duration: got=%s", negative.String())
+	}
+}
+
+func TestDateDurationRejectsMixedSigns(t *testing.T) {
+	result := callDate(t, "duration", object.NewInt(1), object.NewInt(-1), object.NewInt(0))
+
+	if !object.IsError(result) {
+		t.Fatalf("expected an error for mixed-sign components, got=%v", result)
+	}
+}
+
+func TestDateDurationComponentAccessors(t *testing.T) {
+	d := object.Duration{Years: 1, Months: 2, Days: 3, Hours: 4, Minutes: 5, Seconds: 6}
+
+	tests := []struct {
+		method   string
+		expected int64
+	}{
+		{"years", 1},
+		{"months", 2},
+		{"days", 3},
+		{"hours", 4},
+		{"minutes", 5},
+		{"seconds", 6},
+	}
+
+	for _, tt := range tests {
+		result, ok := d.Method(tt.method, token.Token{}, nil)
+
+		if !ok {
+			t.Fatalf("duration.%s is not a method", tt.method)
+		}
+
+		number, ok := result.(*object.Number)
+
+		if !ok {
+			t.Fatalf("duration.%s: object is not Number. got=%T", tt.method, result)
+		}
+
+		if number.Int64() != tt.expected {
+			t.Errorf("duration.%s: got=%d, expected=%d", tt.method, number.Int64(), tt.expected)
+		}
+	}
+}
+
+// TestDateDurationBetween covers the calendar breakdown of two dates -
+// months as a whole unit (not folded into days), then days, then the
+// hours/minutes/seconds remainder - and durationBetween(a, b)'s sign
+// convention matching differenceInDays(a, b): positive when a is after b.
+func TestDateDurationBetween(t *testing.T) {
+	earlier := dateOfHelper(t, 2024, 1, 15, 9, 30, 0)
+	later := dateOfHelper(t, 2024, 7, 20, 14, 0, 15)
+
+	forward := mustDuration(t, callDate(t, "durationBetween", later, earlier))
+
+	if forward.Years != 0 || forward.Months != 6 || forward.Days != 5 || forward.Hours != 4 || forward.Minutes != 30 || forward.Seconds != 15 {
+		t.Fatalf("wrong forward duration: %+v", forward)
+	}
+
+	backward := mustDuration(t, callDate(t, "durationBetween", earlier, later))
+
+	if backward.Years != 0 || backward.Months != -6 || backward.Days != -5 || backward.Hours != -4 || backward.Minutes != -30 || backward.Seconds != -15 {
+		t.Fatalf("wrong backward duration: %+v", backward)
+	}
+}
+
+func TestDateDurationBetweenSameInstant(t *testing.T) {
+	d := dateOfHelper(t, 2024, 3, 1, 0, 0, 0)
+
+	result := mustDuration(t, callDate(t, "durationBetween", d, d))
+
+	if result.String() != "PT0S" {
+		t.Errorf("durationBetween of a date with itself: got=%s", result.String())
+	}
+}
+
+// TestDateAddSubDurationRoundTrip confirms addDuration(a, durationBetween(b,
+// a)) reconstructs b exactly, and subDuration reverses it - computeDuration
+// and applyDuration have to walk months/days/clock in the same combined
+// order for this to hold.
+func TestDateAddSubDurationRoundTrip(t *testing.T) {
+	earlier := dateOfHelper(t, 2024, 1, 15, 9, 30, 0)
+	later := dateOfHelper(t, 2024, 8, 3, 22, 15, 45)
+
+	span := mustDuration(t, callDate(t, "durationBetween", later, earlier))
+
+	reconstructed := mustDate(t, callDate(t, "addDuration", earlier, span))
+
+	if !reconstructed.Time.Equal(later.Time) {
+		t.Errorf("addDuration round trip: got=%s, expected=%s", reconstructed.String(), later.String())
+	}
+
+	back := mustDate(t, callDate(t, "subDuration", later, span))
+
+	if !back.Time.Equal(earlier.Time) {
+		t.Errorf("subDuration round trip: got=%s, expected=%s", back.String(), earlier.String())
+	}
+}
+
+// TestDateAddDurationMatchesAddMonthsClamp confirms addDuration's month
+// arithmetic clamps to the target month's last day exactly the way
+// addMonths already does - they share the addCalendarMonths helper, so this
+// mostly guards against that sharing being accidentally broken.
+func TestDateAddDurationMatchesAddMonthsClamp(t *testing.T) {
+	jan31 := dateOfHelper(t, 2024, 1, 31)
+
+	viaAddMonths := mustDate(t, callDate(t, "addMonths", jan31, object.NewInt(1)))
+	viaDuration := mustDate(t, callDate(t, "addDuration", jan31, &object.Duration{Months: 1}))
+
+	if !viaAddMonths.Time.Equal(viaDuration.Time) {
+		t.Errorf("addMonths and addDuration disagree: addMonths=%s addDuration=%s", viaAddMonths.String(), viaDuration.String())
+	}
+}
+
+// TestDateAddDurationAcrossZoneDST confirms a Duration applies in the Date's
+// own attached zone, correctly crossing a daylight-saving boundary.
+func TestDateAddDurationAcrossZoneDST(t *testing.T) {
+	winter := mustDate(t, callDate(t, "ofInZone", object.NewInt(2024), object.NewInt(1), object.NewInt(15), object.NewInt(9), object.NewInt(0), object.NewInt(0), &object.String{Value: "America/New_York"}))
+
+	spring := mustDate(t, callDate(t, "addDuration", winter, &object.Duration{Months: 3}))
+
+	if spring.String() != "2024-04-15T09:00:00-04:00" {
+		t.Errorf("addDuration across DST: got=%s", spring.String())
+	}
+}
+
+func TestDateDurationArgumentErrors(t *testing.T) {
+	tests := []struct {
+		name string
+		args []object.Object
+	}{
+		{"duration", []object.Object{object.NewInt(1), object.NewInt(1)}},
+		{"durationBetween", []object.Object{dateOfHelper(t, 2024, 1, 1)}},
+		{"addDuration", []object.Object{dateOfHelper(t, 2024, 1, 1), object.NewInt(1)}},
+		{"addDuration", []object.Object{&object.Duration{}, dateOfHelper(t, 2024, 1, 1)}},
+	}
+
+	for _, tt := range tests {
+		result := callDate(t, tt.name, tt.args...)
+
+		if !object.IsError(result) {
+			t.Errorf("date.%s: expected an error, got=%v", tt.name, result)
+		}
+	}
+}

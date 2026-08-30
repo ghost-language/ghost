@@ -91,6 +91,11 @@ func dateAt(name string, tok token.Token, args []object.Object, index int) (*obj
 	return object.DateArgument(signature(name), tok, args, index)
 }
 
+// durationAt reads a duration argument.
+func durationAt(name string, tok token.Token, args []object.Object, index int) (*object.Duration, *object.Error) {
+	return object.DurationArgument(signature(name), tok, args, index)
+}
+
 // systemFailure reports the world outside the program refusing to cooperate: a
 // file that will not open, a socket that will not bind. The Go error is quoted
 // as-is, because what it says — "no such file or directory", "permission

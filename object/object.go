@@ -19,6 +19,7 @@ const (
 	CLASS
 	CONTINUE
 	DATE
+	DURATION
 	ERROR
 	FUNCTION
 	INSTANCE
@@ -46,6 +47,7 @@ var typeNames = [...]string{
 	CLASS:            "class",
 	CONTINUE:         "continue",
 	DATE:             "date",
+	DURATION:         "duration",
 	ERROR:            "error",
 	FUNCTION:         "function",
 	INSTANCE:         "instance",
