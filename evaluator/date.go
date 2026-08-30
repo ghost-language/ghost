@@ -32,14 +32,3 @@ func evaluateDateInfix(node *ast.Infix, left object.Object, right object.Object)
 	return object.NewError(fault.Type, node.Token, "cannot use `%s` between two dates", node.Operator).
 		WithHelp("date arithmetic goes through the date module - addDays, differenceInDays, and the rest")
 }
-
-// durationsEqual compares two Durations field by field - see evaluateEquality
-// for why this is `==`'s job for Duration rather than identity.
-func durationsEqual(left *object.Duration, right *object.Duration) bool {
-	return left.Years == right.Years &&
-		left.Months == right.Months &&
-		left.Days == right.Days &&
-		left.Hours == right.Hours &&
-		left.Minutes == right.Minutes &&
-		left.Seconds == right.Seconds
-}

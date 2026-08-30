@@ -54,6 +54,10 @@ func TestListContains(t *testing.T) {
 		{"[1, 2, 3].contains(2)", true},
 		{"[1, 2, 3].contains(9)", false},
 		{"[[1, 2], [3, 4]].contains([1, 2])", true},
+		// §13.2: contains() and == share object.ValuesEqual, so a map counts
+		// as found by its contents here the same way it counts as equal there.
+		{"[{x: 1}, {x: 2}].contains({x: 1})", true},
+		{"[{x: 1}, {x: 2}].contains({x: 3})", false},
 	}
 
 	for _, tt := range tests {

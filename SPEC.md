@@ -434,7 +434,7 @@ respectively, or it is a type error. There is no chained assignment (`a = b
 |---|---|---|
 | Arithmetic | `+ - * / %` | On numbers: standard, with the int/float promotion rules above. On lists: elementwise with **NumPy-style broadcasting** — see below. On strings: only `+` (concatenation); `-`/`*`/`/`/`%` on strings are a type error. |
 | Comparison | `< <= > >=` | Numbers and strings only (strings compare lexicographically). **Not supported between two lists** — deliberately: neither an elementwise nor a lexicographic reading was judged obviously correct (`CLAUDE.md`). Dates support `< <= > >=` as instant ordering, independent of which time zone either `Date` is attached to (§9.5). |
-| Equality | `== !=` | See §8.5 — this is one of the language's most distinctive (and most incomplete — §13.2) behaviors. |
+| Equality | `== !=` | See §8.5 — this is one of the language's most distinctive behaviors. |
 | Logical | `and`, `or`, `!` | Word operators, not `&& \|\|` — there is no `&&`/`\|\|` token at all. `!` is the only prefix logical operator. Both operands of `and`/`or` are evaluated as ordinary booleans (no built-in short-circuit special-casing beyond ordinary infix evaluation order: left is evaluated, then right, then combined). |
 | Unary | `-`, `!` | `-` negates a number only. `!` follows Ghost's truthiness rules (§8.5), not "must be boolean." |
 | Range | `a..b` | Inclusive integer range, producing a `list`: `1..5` → `[1, 2, 3, 4, 5]`. Descending (`a > b`) produces an empty list rather than counting down. Not foldable at compile time (would require a shared mutable literal). |
@@ -477,11 +477,22 @@ depending on the pair of types involved:
 | Same primitive type (number, string, boolean) | Value equality, as expected. |
 | Either side `null` | `true` only if *both* sides are `null`; otherwise `false`. This is the one cross-type comparison that is allowed and does not error. |
 | Both `list` | **Deep structural equality**, to any depth (`object.ValuesEqual`/`ListsEqual`). |
+| Both `map` | **Deep structural equality**, to any depth, same keys each with an equal value (`object.ValuesEqual`/`MapsEqual` — §13.2, done). |
 | Both `instance` | **Identity** — two separate instances with identical fields are not `==`. |
 | Both `date` | Instant equality, independent of either operand's attached time zone (§9.5). |
 | Both `duration` | **Structural equality** — all six components equal (§9.2). Ordering (`< <= > >=`) stays unsupported, the same reasoning as `list`. |
-| Both any other same type (`map`, `function`, `class`, `trait`, ...) | **Type error** — see §13.2; this must be fixed before 1.0, not a design choice. |
+| Both any other same type (`function`, `class`, `trait`, `scope`, a library wrapper type, ...) | **Identity** — the same rule `instance` gets, now applied uniformly rather than erroring (§13.2, done). |
 | Different, non-null types (`5 == "5"`, `[1] == {}`) | **Type error**, not `false`. This is deliberate and covered by an explicit test (`evaluator_test.go`), consistent with `CLAUDE.md`'s "operators keep one meaning" principle. §14 confirms this stays for 1.0 — see that section for what it obligates the documentation to do. |
+
+`object.ValuesEqual` is the one place any of this is decided — the evaluator's
+`==`/`!=` operator (`evaluator/infix.go`'s `evaluateEquality`) and `list`'s
+`contains()`/`unique()` both call it (except for number/string/boolean/date,
+which keep their own dedicated infix evaluator for a reason specific to each:
+number promotes int/float the way `+` does, and date compares the instant
+rather than every field so two zones can still be equal — both compute
+answers `ValuesEqual` would also reach, just without a second trip through
+it). A value counted as equal inside a list is equal everywhere else `==` is
+asked, including a `map`'s values and a `list` nested inside either.
 
 ### 8.6 Control Flow
 
@@ -1641,26 +1652,43 @@ which spins up 100 pairs of goroutines calling `random.random()` and
 against the unguarded code (a real data race inside `math/rand`, not a
 false positive) and to pass clean, repeatedly, against the fix.
 
-### 13.2 `==`/`!=` cannot compare two maps, functions, or several other same-typed pairs — not even by identity
+### 13.2 `==`/`!=` cannot compare two maps, functions, or several other same-typed pairs — not even by identity — done
 
-`evaluator/infix.go`'s `evaluateEquality` special-cases only `NULL`,
-`INSTANCE` (identity), and `LIST` (deep). Everything else — same-typed
-`MAP`, `FUNCTION`, `CLASS`, `TRAIT`, `SUPER`, `SCOPE`, the `LIBRARY_*`
-wrapper types — falls through to `evaluateInfix`'s final `operatorError`,
-producing `` cannot use `==` between two maps `` even for `m == m` (the
-identical object compared to itself). This directly contradicts
-`object/equality.go`'s own doc comment on `ValuesEqual` — *"it is what `==`
-means between two Ghost values... a value counted as equal inside a list is
-equal everywhere else in the language too"* — which is false in practice:
-`object.ValuesEqual` (used by `list.contains()`/`list.unique()`) *does*
-fall back to identity comparison for maps and functions, but `evaluateInfix`
-never calls `object.ValuesEqual` at all — it has its own, narrower,
-hand-rolled `evaluateEquality`. The two equality implementations have
-silently diverged. **Fix:** either route `evaluateEquality`'s default case
-through `object.ValuesEqual` directly, or explicitly special-case `MAP`/
-`FUNCTION`/etc. the way `INSTANCE` already is. Given `map` is one of the two
-core collection types, this is the highest-value correctness fix required
-for 1.0.
+`evaluator/infix.go`'s `evaluateEquality` used to special-case only `NULL`,
+`INSTANCE` (identity), `LIST` (deep), and `DURATION` (deep); everything
+else — same-typed `MAP`, `FUNCTION`, `CLASS`, `TRAIT`, `SUPER`, `SCOPE`, the
+`LIBRARY_*` wrapper types — fell through to `evaluateInfix`'s final
+`operatorError`, producing `` cannot use `==` between two maps `` even for
+`m == m` (the identical object compared to itself). This directly
+contradicted `object/equality.go`'s own doc comment on `ValuesEqual` —
+*"it is what `==` means between two Ghost values... a value counted as
+equal inside a list is equal everywhere else in the language too"* — since
+`object.ValuesEqual` (used by `list.contains()`/`list.unique()`) had no
+`Map` case either and fell back to identity for it, while `evaluateInfix`
+never called `object.ValuesEqual` at all — it had its own, narrower,
+hand-rolled `evaluateEquality`, so the two had silently diverged in two
+directions at once.
+
+**Fix:** `evaluateEquality` now routes every comparison except a same-typed
+pair of `Boolean`/`Number`/`String`/`Date` (each of which keeps reading its
+own dedicated infix evaluator, for a reason specific to that type — see
+§8.5) through `object.ValuesEqual` directly, which is now genuinely the one
+place equality is decided. `ValuesEqual` itself gained the missing `Map`
+case (`MapsEqual`, content equality mirroring `ListsEqual`) and a `Date`
+case (instant equality, matching `evaluateDateInfix`'s existing `==` — this
+also fixes the same divergence for `list.contains()`/`unique()` on a list
+of dates, which previously used identity despite `==` between two dates
+using the instant); `Duration`'s existing field-by-field comparison moved
+from the evaluator into `object.DurationsEqual` alongside it. Everything
+still unhandled by a specific case (`Function`, `Class`, `Trait`, `Super`,
+`Scope`, the library wrapper types, and any type an embedding host defines
+of its own) now falls back to identity — a real answer instead of a type
+error — the same rule `Instance` already had. Tested in
+`object/equality_test.go` (`ValuesEqual` directly, including the identity
+fallback via a minimal stub type) and `evaluator/evaluator_test.go`'s
+`TestEqualityComparisons`/`TestEqualityTypeMismatch` (confirming a
+same-type comparison now answers rather than errors, and a genuinely
+different-typed, non-null pair still errors exactly as before).
 
 ### 13.3 `switch` silently swallows an error in its subject or case expressions
 

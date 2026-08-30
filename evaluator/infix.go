@@ -48,41 +48,39 @@ func evaluateInfix(node *ast.Infix, scope *object.Scope) object.Object {
 	return operatorError(node.Token, node.Operator, left, right)
 }
 
-// evaluateEquality handles the comparisons that are not type-specific: a
-// comparison against null, which is how code tests whether a value is set, and
-// identity between two instances. Operands are otherwise required to share a
-// type, so both of these would fall through to a type mismatch error.
+// evaluateEquality handles every `==`/`!=` comparison except the four types
+// that read their own operator instead: Boolean, Number, String, and Date
+// each have a reason of their own to keep their dedicated infix evaluator
+// (evaluateNumberInfix promotes int/float the way `+` does; evaluateDateInfix
+// compares the instant rather than every field, so a Date attached to two
+// different time zones can still be equal) - a same-typed pair of those
+// reports false here and falls through to that evaluator instead.
 //
-// It reports false when the operands are not its business, leaving the
-// type-specific comparisons below to run.
+// Everything else goes through object.ValuesEqual: a comparison against
+// null, which is how code tests whether a value is set, and a same-type
+// comparison for every other type - list/map/duration by content, everything
+// else (instances, functions, classes, ...) by identity, matching the
+// identity comparison this function used to give Instance alone (§13.2). A
+// comparison between two different, non-null types is still nobody's
+// business here - it reports false too, so `evaluateInfix`'s type-mismatch
+// error fires instead of silently answering false, the same as it always has
+// for `1 == "a"`.
 func evaluateEquality(node *ast.Infix, left object.Object, right object.Object) (object.Object, bool) {
-	var equal bool
+	sameType := left.Type() == right.Type()
+	involvesNull := left.Type() == object.NULL || right.Type() == object.NULL
 
-	switch {
-	case left.Type() == object.NULL || right.Type() == object.NULL:
-		equal = left.Type() == object.NULL && right.Type() == object.NULL
-	case left.Type() == object.INSTANCE && right.Type() == object.INSTANCE:
-		// Instances compare by identity: two instances of the same class with
-		// equal fields are still two different objects.
-		equal = left == right
-	case left.Type() == object.LIST && right.Type() == object.LIST:
-		// Lists compare by contents, to any depth. Two lists written out the
-		// same way are equal, which is the only reading that makes `==` useful
-		// on a value built rather than passed around.
-		equal = listsEqual(left.(*object.List), right.(*object.List))
-	case left.Type() == object.DURATION && right.Type() == object.DURATION:
-		// Durations compare by contents, the same reasoning as List: a
-		// Duration is a small immutable record, not an identity, so two built
-		// separately with the same components should compare equal.
-		// Ordering (`< > <= >=`) stays unsupported - unlike two instants,
-		// "which of these two spans is longer" has no single answer without a
-		// reference date (a month is a different number of days depending on
-		// which month), the same reason Temporal requires one for calendar
-		// unit comparisons.
-		equal = durationsEqual(left.(*object.Duration), right.(*object.Duration))
-	default:
+	if !sameType && !involvesNull {
 		return nil, false
 	}
+
+	if sameType {
+		switch left.Type() {
+		case object.BOOLEAN, object.NUMBER, object.STRING, object.DATE:
+			return nil, false
+		}
+	}
+
+	equal := object.ValuesEqual(left, right)
 
 	if node.Operator == token.BANGEQUAL {
 		return toBooleanValue(!equal), true
