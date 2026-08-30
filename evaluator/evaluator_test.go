@@ -35,25 +35,24 @@ func TestErrorHandling(t *testing.T) {
 	}
 }
 
-// TestFunctionArity confirms user-defined functions and methods are strictly
-// arity-checked the same way every library call already is (§14 decision 1):
-// a call with the wrong number of arguments is an Argument fault, rather
-// than silently dropping extras or leaving a missing parameter undefined.
+// TestFunctionArity confirms user-defined functions and methods are checked
+// for missing arguments the same way every library call already is (§14
+// decision 1, revised): a call that leaves a required parameter unbound is
+// an Argument fault, rather than leaving that parameter undefined.
 func TestFunctionArity(t *testing.T) {
 	tests := []struct {
 		input           string
 		expectedMessage string
 	}{
-		{"function foo(a, b) { return a + b } foo(1)", "test.gs:1:37: argument error: `foo()` expects 2 arguments, got 1"},
-		{"function foo(a, b) { return a + b } foo(1, 2, 3)", "test.gs:1:37: argument error: `foo()` expects 2 arguments, got 3"},
-		{"function foo(a, b = 1) { return a + b } foo()", "test.gs:1:41: argument error: `foo()` expects between 1 and 2 arguments, got 0"},
+		{"function foo(a, b) { return a + b } foo(1)", "test.gs:1:37: argument error: `foo()` expects at least 2 arguments, got 1"},
+		{"function foo(a, b = 1) { return a + b } foo()", "test.gs:1:41: argument error: `foo()` expects at least 1 argument, got 0"},
 		{
 			"class Point { constructor(x, y) { this.x = x } add(other) { return this.x + other.x } } p = new Point(1, 2) p.add()",
-			"test.gs:1:111: argument error: `Point.add()` expects 1 argument, got 0",
+			"test.gs:1:111: argument error: `Point.add()` expects at least 1 argument, got 0",
 		},
 		{
 			"class Point { constructor(x, y) { this.x = x } } new Point(1)",
-			"test.gs:1:50: argument error: `Point()` expects 2 arguments, got 1",
+			"test.gs:1:50: argument error: `Point()` expects at least 2 arguments, got 1",
 		},
 	}
 
@@ -64,9 +63,12 @@ func TestFunctionArity(t *testing.T) {
 	}
 }
 
-// TestFunctionArityAllowsDefaultsAndVariety confirms a call within the
-// declared parameter's range still works, and that the check doesn't reject
-// a valid call - only too few or too many arguments do.
+// TestFunctionArityAllowsDefaultsAndVariety confirms a call that supplies at
+// least the required arguments still works, whether it lands within the
+// declared parameters (using defaults where they're omitted) or passes more
+// arguments than the function declared parameters for - the extras are
+// dropped rather than rejected, so a function only has to name the
+// parameters its body actually uses.
 func TestFunctionArityAllowsDefaultsAndVariety(t *testing.T) {
 	tests := []struct {
 		input    string
@@ -75,6 +77,8 @@ func TestFunctionArityAllowsDefaultsAndVariety(t *testing.T) {
 		{"function greet(name, greeting = 1) { return greeting } greet(\"a\")", 1},
 		{"function greet(name, greeting = 2) { return greeting } greet(\"a\", 5)", 5},
 		{"function noArgs() { return 3 } noArgs()", 3},
+		{"function foo(a, b) { return a + b } foo(1, 2, 3)", 3},
+		{"function first(a) { return a } first(1, 2, 3)", 1},
 	}
 
 	for _, tt := range tests {
