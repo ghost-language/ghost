@@ -28,8 +28,9 @@ func evaluateFunction(node *ast.Function, scope *object.Scope) object.Object {
 }
 
 // createFunctionEnvironment binds arguments to a user-defined function's
-// parameters. name and tok name and locate the call for an arity error - see
-// checkArity - the same way every library call already reports one.
+// parameters, dropping any beyond the last declared one - see checkArity.
+// name and tok name and locate the call for an arity error the same way
+// every library call already reports one.
 func createFunctionEnvironment(function *object.Function, arguments []object.Object, name string, tok token.Token) (*object.Environment, *object.Error) {
 	if err := checkArity(function, arguments, name, tok); err != nil {
 		return nil, err
@@ -69,14 +70,21 @@ func createFunctionEnvironment(function *object.Function, arguments []object.Obj
 	return env, nil
 }
 
-// checkArity gives a user-defined function or method the same strict arity
-// checking every library call already has (§14 decision 1): a call with the
-// wrong number of arguments is an Argument fault naming the call, rather
-// than silently dropping extras or leaving a missing parameter undefined. A
+// checkArity gives a user-defined function or method the same missing-
+// argument checking every library call already has (§14 decision 1,
+// revised): a call that leaves a required parameter unbound is an Argument
+// fault naming the call, rather than leaving that parameter undefined. A
 // parameter with a default is optional, whichever position it is declared
-// in, so the minimum is however many fixed parameters have none; a rest
-// parameter (§12) never counts toward the minimum and removes the maximum
-// entirely, the same as a library method's own `arityAtLeast`.
+// in, so the minimum is however many fixed parameters have none.
+//
+// There is deliberately no maximum: a caller may pass more arguments than a
+// function declares parameters for, and the extras are dropped rather than
+// rejected, the same as `object.Function.Evaluate` (used for callbacks
+// passed to `list.map`/`filter`/`reduce`/`each`/`sort`) has always allowed.
+// This lets a function declare only the parameters its body actually uses -
+// a map callback can be `(item) => ...` without also naming the index and
+// list every call site provides - instead of forcing every unused trailing
+// parameter to be spelled out.
 func checkArity(function *object.Function, arguments []object.Object, name string, tok token.Token) *object.Error {
 	fixed := len(function.Parameters)
 
@@ -86,13 +94,5 @@ func checkArity(function *object.Function, arguments []object.Object, name strin
 
 	min := fixed - len(function.Defaults)
 
-	if function.Rest {
-		return object.ArityAtLeast(name, tok, arguments, min)
-	}
-
-	if min == fixed {
-		return object.Arity(name, tok, arguments, min)
-	}
-
-	return object.ArityRange(name, tok, arguments, min, fixed)
+	return object.ArityAtLeast(name, tok, arguments, min)
 }

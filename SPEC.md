@@ -583,13 +583,18 @@ sum(...[1, 2, 3])                       // spread at a call site
   list; spreading anything else is a type error. Written anywhere else
   (`x = ...list`), `...` is a syntax error rather than a value — it is only
   meaningful as an argument or a list-literal element.
-- User-defined functions and methods get the same strict **arity checking**
-  every library function already has (§14 decision 1): a call with the
-  wrong number of arguments is an `Argument` fault naming the call
-  (`` `foo()` expects 2 arguments, got 1 ``), the same as a library call —
-  no frame is added, since the call never got the chance to start running.
-  A parameter with a default is optional; a rest parameter has no upper
-  bound and doesn't count toward the minimum.
+- User-defined functions and methods get the same **missing-argument
+  checking** every library function already has (§14 decision 1, revised): a
+  call that leaves a required parameter unbound is an `Argument` fault
+  naming the call (`` `foo()` expects at least 2 arguments, got 1 ``), the
+  same as a library call — no frame is added, since the call never got the
+  chance to start running. A parameter with a default is optional; a rest
+  parameter has no upper bound and doesn't count toward the minimum. There
+  is no maximum for any function: a call may pass more arguments than a
+  function declares parameters for, and the extras are silently dropped, so
+  a function only has to name the parameters its body actually uses (a
+  `list.map` callback can be `(item) => ...` without also declaring the
+  index and list every call passes).
 - Recursion is bounded at **4096** call frames (`evaluator/call.go`,
   `maxCallDepth`), reported as an ordinary value error rather than a Go
   stack overflow, and tracked per-`Scope` (not a shared global counter) so
@@ -1564,7 +1569,7 @@ already meets — except where flagged.
 - [x] `if`/`else if`/`else`, `while`, C-style `for`, `for ... in`
 - [x] `switch`/`case`/`default` as a match-expression (no fallthrough)
 - [x] `break`/`continue`/`return`
-- [x] First-class functions, closures, default parameters, rest parameters, spread (call sites and list literals), strict arity checking (§14 decision 1)
+- [x] First-class functions, closures, default parameters, rest parameters, spread (call sites and list literals), missing-argument checking (§14 decision 1)
 - [x] Destructuring assignment (`[a, b] = list`, `{x, y} = map`, `{x: a} = map`)
 - [x] Classes, single inheritance, traits/mixins, `this`/`super`
 - [x] Per-instance field initialization (no shared-mutable-default bug)
@@ -2107,15 +2112,30 @@ made here so 1.0 ships with an answer rather than an asterisk. Revisit any of
 them only if real usage argues otherwise; until then, this is what 1.0
 targets.
 
-1. **User-defined function arity — done.** Functions and methods defined in
-   Ghost get the same strict arity checking every library function already
-   has (§8.7, §12). A call with the wrong number of arguments becomes an
-   `Argument` fault naming the call, exactly as it already does for a
-   library method — closing the largest remaining behavioral gap between
-   user code and library code, and the one most in tension with the "no
-   silent gaps" goal in §3. Implemented in `evaluator/function.go`
-   (`checkArity`, `createFunctionEnvironment`), tested in
-   `evaluator/evaluator_test.go`'s `TestFunctionArity`.
+1. **User-defined function arity — done, revised.** Functions and methods
+   defined in Ghost get the same missing-argument checking every library
+   function already has (§8.7, §12): a call that leaves a required
+   parameter unbound becomes an `Argument` fault naming the call, exactly as
+   it already does for a library method — closing the largest remaining
+   behavioral gap between user code and library code, and the one most in
+   tension with the "no silent gaps" goal in §3.
+
+   The original version of this decision also rejected calls with *too
+   many* arguments. That half was reverted: it put user-defined functions
+   and `object.Function.Evaluate` (the path `list.map`/`filter`/`reduce`/
+   `each`/`sort` call a callback through) at odds with each other -
+   `Evaluate` never enforced an upper bound, so a callback like
+   `(item) => item * 2` already worked as `list.map`'s argument even though
+   `map` also passes an index, only because that path skipped arity
+   checking entirely. Requiring every trailing parameter a callback doesn't
+   use to be declared anyway (`(item, index, list) => item * 2`) fought that
+   existing convention rather than matching it, for no benefit worth the
+   friction. The maximum is gone for every user-defined function now, not
+   only callbacks: extra arguments are dropped, the same way `Evaluate`
+   already dropped them. The minimum is unchanged and still enforced.
+   Implemented in `evaluator/function.go` (`checkArity`,
+   `createFunctionEnvironment`), tested in `evaluator/evaluator_test.go`'s
+   `TestFunctionArity` and `TestFunctionArityAllowsDefaultsAndVariety`.
 2. **`Map` iteration order — done.** `Map` guarantees insertion order for
    `keys()`, `values()`, `entries()`, `for ... in`, and `String()` (§13.5),
    matching the predictability JS objects and PHP associative arrays already
