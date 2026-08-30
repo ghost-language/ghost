@@ -72,25 +72,21 @@ homebrew_casks:
   - name: ghost
     repository:
       owner: ghost-language
-      name: homebrew-ghost
+      # The org-wide tap, shared with Lumen and anything else that ships a
+      # binary, rather than a tap per project: `brew tap ghost-language/tap`
+      # once covers all of them.
+      name: homebrew-tap
       # The tap is a separate repository, so the workflow's automatic
       # GITHUB_TOKEN cannot push to it. This needs a personal access token
-      # with contents:write on ghost-language/homebrew-ghost, stored as the
+      # with contents:write on ghost-language/homebrew-tap, stored as the
       # HOMEBREW_TAP_TOKEN secret.
       token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
-    # Without the token the cask cannot be pushed. Skipping that one step is
-    # better than failing a release whose binaries are already published.
-    skip_upload: '{{ if .Env.HOMEBREW_TAP_TOKEN }}false{{ else }}true{{ end }}'
     commit_author:
       name: github-actions[bot]
       email: 41898282+github-actions[bot]@users.noreply.github.com
     homepage: "https://github.com/ghost-language/ghost"
     description: "Ghost, a dynamically typed scripting language."
     license: "MIT"
-    # No conflict is declared against the formula this cask replaces, even
-    # though both install the same binary: a cask can only conflict with
-    # another cask. Formula/ghost.rb has to be deleted from the tap by hand
-    # once the first cask release has landed.
     hooks:
       post:
         # The binaries are not signed or notarised, so macOS quarantines them
