@@ -31,7 +31,7 @@ func evaluateProperty(node *ast.Property, scope *object.Scope) object.Object {
 		return evaluateInstanceProperty(left.Instance, left.Class, property)
 	case *object.LibraryModule:
 		if function, ok := left.Properties[property.Value]; ok {
-			return unwrapCall(property.Token, function, nil, scope)
+			return unwrapCall(property.Token, function, nil, scope, left.Name+"."+property.Value)
 		}
 
 		// A class is a module member like any other — reading it off the

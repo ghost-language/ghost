@@ -86,7 +86,7 @@ func instantiate(class *object.Class, arguments []object.Object, tok token.Token
 		return object.NewError(fault.Type, tok, "the constructor of class `%s` is a %s, not a function", class.Name.Value, object.TypeName(constructor))
 	}
 
-	result := invokeMethod(method, instance, declaringClass, arguments, caller, tok)
+	result := invokeMethod(method, instance, declaringClass, arguments, caller, tok, class.Name.Value+"()")
 
 	if isError(result) {
 		return result
@@ -138,19 +138,34 @@ func initializeField(instance *object.Instance, class *object.Class, field objec
 	return nil
 }
 
-// invokeMethod runs a resolved method with the instance bound as `this` and the
-// declaring class recorded so `super` resolves from the declaration site.
-func invokeMethod(method *object.Function, instance *object.Instance, declaringClass *object.Class, arguments []object.Object, caller *object.Scope, at token.Token) object.Object {
+// invokeMethod runs a resolved method with the instance bound as `this` and
+// the declaring class recorded so `super` resolves from the declaration
+// site. name identifies the call for an arity error and for the stack frame
+// recorded around a failure from running the body - never around a call that
+// failed before the body ever ran (too deep, wrong arity), since a frame
+// there would just repeat the position the error already reports.
+func invokeMethod(method *object.Function, instance *object.Instance, declaringClass *object.Class, arguments []object.Object, caller *object.Scope, at token.Token, name string) object.Object {
 	depth := depthOf(caller)
 
 	if depth >= maxCallDepth {
 		return tooDeep(at)
 	}
 
-	environment := createFunctionEnvironment(method, arguments)
+	environment, err := createFunctionEnvironment(method, arguments, name, at)
+
+	if err != nil {
+		return err
+	}
+
 	scope := &object.Scope{Self: instance, Class: declaringClass, Environment: environment, Depth: depth + 1}
 
-	return Evaluate(method.Body, scope)
+	result := Evaluate(method.Body, scope)
+
+	if failed, ok := result.(*object.Error); ok {
+		return failed.WithFrame(name, at)
+	}
+
+	return result
 }
 
 // depthOf reads how deep a caller already is. A method reached from Go rather

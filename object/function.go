@@ -13,6 +13,10 @@ type Function struct {
 	Body       *ast.Block
 	Defaults   map[string]ast.ExpressionNode
 	Scope      *Scope
+
+	// Rest marks the last entry of Parameters as a rest parameter - see
+	// ast.Function.Rest.
+	Rest bool
 }
 
 // String represents the function object's value as a string.

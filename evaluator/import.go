@@ -237,7 +237,7 @@ func bindSchemeMembers(module *object.LibraryModule, identifiers map[string]*ast
 		}
 
 		for propertyName, property := range module.Properties {
-			value := unwrapCall(tok, property, nil, importScope)
+			value := unwrapCall(tok, property, nil, importScope, name+"."+propertyName)
 
 			if isError(value) {
 				return value
@@ -261,7 +261,7 @@ func bindSchemeMembers(module *object.LibraryModule, identifiers map[string]*ast
 		}
 
 		if property, ok := module.Properties[identifier.Value]; ok {
-			value := unwrapCall(tok, property, nil, importScope)
+			value := unwrapCall(tok, property, nil, importScope, name+"."+identifier.Value)
 
 			if isError(value) {
 				return value

@@ -61,6 +61,7 @@ const (
 	BANGEQUAL
 	DOT
 	DOTDOT
+	DOTDOTDOT
 	EQUAL
 	EQUALEQUAL
 	GREATER
@@ -137,6 +138,7 @@ var typeNames = [...]string{
 	BANGEQUAL:    "!=",
 	DOT:          ".",
 	DOTDOT:       "..",
+	DOTDOTDOT:    "...",
 	EQUAL:        "=",
 	EQUALEQUAL:   "==",
 	GREATER:      ">",

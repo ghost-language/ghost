@@ -36,6 +36,10 @@ func evaluateAssign(node *ast.Assign, scope *object.Scope) object.Object {
 		return evaluateIndexAssignment(assignment, value, scope)
 	case *ast.Property:
 		return evaluatePropertyAssignment(assignment, value, scope)
+	case *ast.ListPattern:
+		return evaluateListPatternAssignment(assignment, value, scope)
+	case *ast.MapPattern:
+		return evaluateMapPatternAssignment(assignment, value, scope)
 	}
 
 	return object.NewError(fault.Syntax, node.Token, "cannot assign to this expression").
@@ -52,6 +56,52 @@ func constructorFieldError(node *ast.Assign) object.Object {
 
 func evaluateIdentifierAssignment(node *ast.Identifier, value object.Object, scope *object.Scope) object.Object {
 	scope.Environment.Set(node.Value, value)
+
+	return nil
+}
+
+// evaluateListPatternAssignment binds each target to the value at its
+// position, or to null past the end of a shorter list - the same leniency
+// `list[i]` itself already has for an out-of-range read (§13.6).
+func evaluateListPatternAssignment(node *ast.ListPattern, assignmentValue object.Object, scope *object.Scope) object.Object {
+	list, ok := assignmentValue.(*object.List)
+
+	if !ok {
+		return object.NewError(fault.Type, node.Token, "cannot destructure %s as a list", object.TypeName(assignmentValue)).
+			WithHelp("a list pattern needs a list on the right of `=`")
+	}
+
+	for index, target := range node.Targets {
+		if index < len(list.Elements) {
+			scope.Environment.Set(target.Value, list.Elements[index])
+		} else {
+			scope.Environment.Set(target.Value, value.NULL)
+		}
+	}
+
+	return nil
+}
+
+// evaluateMapPatternAssignment binds each target to the map's value under
+// its source key, or to null for a missing key - the same leniency a map
+// read (`map.key`, `map["key"]`) already has.
+func evaluateMapPatternAssignment(node *ast.MapPattern, assignmentValue object.Object, scope *object.Scope) object.Object {
+	mapValue, ok := assignmentValue.(*object.Map)
+
+	if !ok {
+		return object.NewError(fault.Type, node.Token, "cannot destructure %s as a map", object.TypeName(assignmentValue)).
+			WithHelp("a map pattern needs a map on the right of `=`")
+	}
+
+	for _, pair := range node.Pairs {
+		key := &object.String{Value: pair.Source.Value}
+
+		if entry, ok := mapValue.Pairs[key.MapKey()]; ok {
+			scope.Environment.Set(pair.Target.Value, entry.Value)
+		} else {
+			scope.Environment.Set(pair.Target.Value, value.NULL)
+		}
+	}
 
 	return nil
 }

@@ -153,6 +153,11 @@ func optimize(node ast.Node) ast.Node {
 
 		return node
 
+	case *ast.Spread:
+		node.Value = optimize(node.Value)
+
+		return node
+
 	case *ast.Map:
 		// Map keys are the map's own keys, so a folded key would need the entry
 		// reinserted. Values are rewritten in place, which is enough in

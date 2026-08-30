@@ -417,9 +417,17 @@ exist before) to whatever they were bound to outside it once the loop ends —
 so a loop variable does not leak a stray binding into surrounding code, but
 *does* transparently shadow-and-restore an existing variable of the same name.
 
-There is no destructuring assignment (`[a, b] = list` or `{a, b} = map` are
-not supported — see §12) and no chained assignment (`a = b = 5` does not
-parse as one assignment to both).
+**Destructuring assignment** (§12) binds several names from one value in a
+single statement: `[a, b] = list` binds positionally (`b` is `null` if
+`list` has fewer than two elements, the same leniency `list[i]` itself has
+out of range); `{x, y} = map` binds each name from the identically-named map
+key (shorthand, matching map literal shorthand keys), and `{x: a} = map`
+binds map key `x` to the local name `a` instead. Both are statement-level
+only (not usable as an expression, e.g. as a call argument), only bind plain
+names (no nesting, and no index/property target — `[a, obj.x] = list` is not
+supported), and the right-hand side has to already be a list or a map
+respectively, or it is a type error. There is no chained assignment (`a = b
+= 5` does not parse as one assignment to both).
 
 ### 8.4 Operators
 
@@ -512,6 +520,15 @@ function greet(name, greeting = "Hello") {
 }
 
 add = function(a, b) { return a + b }   // anonymous, assignable
+
+function sum(...numbers) {              // rest parameter
+    total = 0
+    for (n in numbers) { total = total + n }
+    return total
+}
+
+sum(...[1, 2, 3])                       // spread at a call site
+[0, ...[1, 2], 3]                       // spread in a list literal
 ```
 
 - Functions are first-class values, close over their defining scope, and may
@@ -521,15 +538,25 @@ add = function(a, b) { return a + b }   // anonymous, assignable
   per-call in the function's own scope (so a default can reference an
   earlier parameter or an enclosing binding). Defaults are *not* required to
   trail all non-default parameters — the parser does not enforce an
-  ordering — worth deciding whether that should be a parse-time error for
-  1.0.
-- **No rest/variadic parameters** (`...args`) and **no spread** in a call or
-  a list literal (`f(...args)`, `[...list]` are not supported). A caller who
-  passes too many arguments simply has the extras ignored; too few leaves
-  the missing parameters unbound (reading them raises the ordinary
-  "not defined" name error, not a dedicated arity error) — §14 decides that
-  user-defined functions get the same strict arity checking every library
-  function already has, closing that gap (§12).
+  ordering.
+- The **last** parameter may be a **rest parameter** (`...numbers`, §12): it
+  collects every argument from its position onward into a list, always a
+  list even when nothing was left to collect (an empty one, never absent). A
+  rest parameter cannot have a default — it is always optional on its own —
+  and a `...` earlier than the last parameter is a syntax error.
+- **Spread** (`...expr`, §12) expands a list's elements in place at a call
+  site (`f(...args)`, alongside ordinary arguments: `f(1, ...rest, 2)`) or
+  inside a list literal (`[...a, ...b, 1]`). `expr` has to evaluate to a
+  list; spreading anything else is a type error. Written anywhere else
+  (`x = ...list`), `...` is a syntax error rather than a value — it is only
+  meaningful as an argument or a list-literal element.
+- User-defined functions and methods get the same strict **arity checking**
+  every library function already has (§14 decision 1): a call with the
+  wrong number of arguments is an `Argument` fault naming the call
+  (`` `foo()` expects 2 arguments, got 1 ``), the same as a library call —
+  no frame is added, since the call never got the chance to start running.
+  A parameter with a default is optional; a rest parameter has no upper
+  bound and doesn't count toward the minimum.
 - Recursion is bounded at **4096** call frames (`evaluator/call.go`,
   `maxCallDepth`), reported as an ordinary value error rather than a Go
   stack overflow, and tracked per-`Scope` (not a shared global counter) so
@@ -1491,7 +1518,8 @@ already meets — except where flagged.
 - [x] `if`/`else if`/`else`, `while`, C-style `for`, `for ... in`
 - [x] `switch`/`case`/`default` as a match-expression (no fallthrough)
 - [x] `break`/`continue`/`return`
-- [x] First-class functions, closures, default parameters
+- [x] First-class functions, closures, default parameters, rest parameters, spread (call sites and list literals), strict arity checking (§14 decision 1)
+- [x] Destructuring assignment (`[a, b] = list`, `{x, y} = map`, `{x: a} = map`)
 - [x] Classes, single inheritance, traits/mixins, `this`/`super`
 - [x] Per-instance field initialization (no shared-mutable-default bug)
 - [x] Module system (`import`, named imports, `import *`, circular-import detection, `scheme:`-prefixed imports)
@@ -1571,14 +1599,24 @@ the way `abs`/`pow`/`clamp`/`isX` do — those stay `math`-only.
 the first day, matching `weekday()`'s existing `0 = Sunday` convention and
 `date-fns`'s own default, rather than an ISO 8601 Monday-first week).
 
-**Language-level gaps:**
-- No destructuring assignment (`[a, b] = list`, `{x, y} = map`).
-- No rest/variadic parameters or spread syntax, in either direction (call
-  site or list literal).
-- No arity checking for **user-defined** functions/methods — every library
-  call is strictly arity-checked, but a Ghost-defined function silently
-  drops extra arguments and leaves missing parameters as undefined names.
-  §14 decides this closes before 1.0.
+**Language-level gaps — done.**
+- **Destructuring assignment** (`[a, b] = list`, `{x, y} = map`, and `{x: a}
+  = map` to bind under a different name) is implemented (`ast/destructure.go`,
+  `parser/destructure.go`, `evaluator/assign.go`; tested in
+  `parser/parser_test.go`'s `TestListPatternAssignment`/`TestMapPatternAssignment`
+  and `evaluator/evaluator_test.go`'s `TestListPatternAssignment`/
+  `TestMapPatternAssignment`); see §8.3 for the finished reference and its
+  restrictions (statement-level only, plain names only, no nesting).
+- **Rest parameters and spread syntax**, both directions, are implemented:
+  a function's last parameter may be `...name` (collects the rest as a
+  list), and `...expr` expands a list's elements in place at a call site or
+  in a list literal (`ast/spread.go`, `parser/spread.go`,
+  `evaluator/expressions.go`, `evaluator/function.go`; tested in
+  `evaluator/evaluator_test.go`'s `TestRestParameters`/`TestSpreadExpressions`
+  and `parser/parser_test.go`'s `TestFunctionRestParameter`/
+  `TestSpreadExpression`); see §8.7 for the finished reference.
+- **Arity checking for user-defined functions/methods** — see §14 decision 1
+  (done).
 
 ---
 
@@ -1754,6 +1792,43 @@ copy is exported as `IsTrue`/`IsFalse`). Not a bug — both copies agree
 today — but two independent definitions of a rule this central (§8.5) is a
 maintenance hazard the moment one of them is edited and the other is not.
 
+### 13.12 Two statements on separate lines can silently merge into one
+
+§8.1's own "statement separation" bullet claims "there is no significant-
+newline rule and no automatic-semicolon-insertion logic to reason about" —
+false in two directions, both confirmed by running the CLI directly (not
+just the evaluator test helper, which never checks `parser.Errors()` and so
+does not catch either):
+
+1. **A statement can swallow the next line's opener.** `parseExpression`'s
+   Pratt loop (`parser/expression.go`) only stops at a `;` or a token with no
+   infix meaning; a newline is not significant, so a completed statement
+   followed on the next line by `[`, `(`, `.`, `++`/`--`, or a binary
+   operator continues parsing as if the two were one expression. `x = 1\n[10,
+   20, 30]` parses as `x = 1[10, 20, 30]` (an index expression), not two
+   statements — confirmed to fail with `type error: cannot index number` for
+   a single-element list and a comma-related syntax error for more than one.
+   Ending the first line with an explicit `;` avoids it (`assign()` stops the
+   value expression at the `;`), which is presumably why this has not been
+   noticed: idiomatic Ghost code chains same-line statements with `;` and
+   rarely starts a line with `[`/`(` right after an unrelated one.
+2. **A `;` after anything but an assignment breaks the next statement.**
+   `assign()` explicitly consumes a trailing `;` (`parser/assign.go`), but
+   `expressionStatement()` (`parser/statement.go`) does not — so a bare
+   expression statement (a call, `console.log(1)`, included) followed by
+   `;` leaves the block/program loop re-entering `statement()` with the `;`
+   itself as the current token, and there is no prefix parser for
+   `SEMICOLON`. `console.log(1);\nconsole.log(2);` fails to parse at all
+   ("`;` cannot start an expression"), even though every other call-heavy
+   example in this document is written exactly that way.
+
+**Fix:** make statement termination actually newline-significant (or give
+every statement-producing path the same trailing-`;`-consumption
+`assign()` already has, symmetrically), and add a parser test that runs
+multi-statement, multi-line source through `parser.Errors()` directly
+(the evaluator test helper's blind spot) so this class of regression cannot
+hide again.
+
 ---
 
 ## 14. Decisions for 1.0
@@ -1764,13 +1839,15 @@ made here so 1.0 ships with an answer rather than an asterisk. Revisit any of
 them only if real usage argues otherwise; until then, this is what 1.0
 targets.
 
-1. **User-defined function arity.** Functions and methods defined in Ghost
-   get the same strict arity checking every library function already has
-   (§8.7, §12). A call with the wrong number of arguments becomes an
+1. **User-defined function arity — done.** Functions and methods defined in
+   Ghost get the same strict arity checking every library function already
+   has (§8.7, §12). A call with the wrong number of arguments becomes an
    `Argument` fault naming the call, exactly as it already does for a
    library method — closing the largest remaining behavioral gap between
    user code and library code, and the one most in tension with the "no
-   silent gaps" goal in §3.
+   silent gaps" goal in §3. Implemented in `evaluator/function.go`
+   (`checkArity`, `createFunctionEnvironment`), tested in
+   `evaluator/evaluator_test.go`'s `TestFunctionArity`.
 2. **`Map` iteration order.** `Map` guarantees insertion order for
    `keys()`, `values()`, `for ... in`, and `String()` (§13.5), matching the
    predictability JS objects and PHP associative arrays already give their

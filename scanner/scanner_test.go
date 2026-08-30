@@ -96,6 +96,34 @@ func TestScanTokens(t *testing.T) {
 // know exactly where it starts and how wide it is puts the caret in the wrong
 // place. These cover the shapes that used to be measured backwards from the
 // scanner's cursor.
+// TestScanEllipsis confirms `.`, `..`, and `...` are told apart, and that
+// `...` doesn't need a trailing space to end (`...a` is DOTDOTDOT then
+// IDENTIFIER, not a four-character token).
+func TestScanEllipsis(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected []token.Type
+	}{
+		{".", []token.Type{token.DOT, token.EOF}},
+		{"..", []token.Type{token.DOTDOT, token.EOF}},
+		{"...", []token.Type{token.DOTDOTDOT, token.EOF}},
+		{"...a", []token.Type{token.DOTDOTDOT, token.IDENTIFIER, token.EOF}},
+		{"1..3", []token.Type{token.NUMBER, token.DOTDOT, token.NUMBER, token.EOF}},
+	}
+
+	for _, tt := range tests {
+		scanner := New(tt.input, "test.gs")
+
+		for _, expected := range tt.expected {
+			tok := scanner.ScanToken()
+
+			if tok.Type != expected {
+				t.Fatalf("%q: got=%s, expected=%s", tt.input, tok.Type, expected)
+			}
+		}
+	}
+}
+
 func TestTokenPositions(t *testing.T) {
 	tests := []struct {
 		name     string

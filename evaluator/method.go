@@ -43,7 +43,7 @@ func evaluateMethod(node *ast.Method, scope *object.Scope) object.Object {
 		property := &object.String{Value: name.Value}
 
 		if function, ok := receiver.Pairs[property.MapKey()]; ok {
-			return unwrapCall(at, function.Value, arguments, scope)
+			return unwrapCall(at, function.Value, arguments, scope, name.Value+"()")
 		}
 
 		if handled {
@@ -63,7 +63,7 @@ func evaluateMethod(node *ast.Method, scope *object.Scope) object.Object {
 			WithHelp("methods are called on instances: `new %s().%s()`", receiver.Name, name.Value)
 	case *object.LibraryModule:
 		if function, ok := receiver.Methods[name.Value]; ok {
-			return unwrapCall(at, function, arguments, scope)
+			return unwrapCall(at, function, arguments, scope, receiver.Name+"."+name.Value+"()")
 		}
 
 		return object.NewError(fault.Property, at, "module `%s` has no method `%s`", receiver.Name, name.Value).
@@ -99,11 +99,5 @@ func callInstanceMethod(node *ast.Method, receiver *object.Instance, start *obje
 		return object.NewError(fault.Type, at, "`%s.%s` is a %s, which cannot be called", receiver.Class.Name.Value, name, object.TypeName(member))
 	}
 
-	result := invokeMethod(method, receiver, declaringClass, arguments, scope, at)
-
-	if failed, ok := result.(*object.Error); ok {
-		return failed.WithFrame(receiver.Class.Name.Value+"."+name+"()", at)
-	}
-
-	return result
+	return invokeMethod(method, receiver, declaringClass, arguments, scope, at, receiver.Class.Name.Value+"."+name+"()")
 }

@@ -34,20 +34,7 @@ func evaluateCall(node *ast.Call, scope *object.Scope) object.Object {
 	// that follows it, which is where a reader looks when told a call went wrong.
 	at := calleeToken(node.Callee, node.Token)
 
-	result := unwrapCall(at, callee, arguments, scope)
-
-	// The frame is recorded as the error passes back through the call, so a
-	// failure deep inside a helper is reported with the path that reached it.
-	// Only calls into Ghost code get one: a library function reports its own
-	// failures at the call itself, and a frame there would just repeat the
-	// position already printed above it.
-	if failed, ok := result.(*object.Error); ok {
-		if _, written := callee.(*object.Function); written {
-			return failed.WithFrame(callName(node.Callee), at)
-		}
-	}
-
-	return result
+	return unwrapCall(at, callee, arguments, scope, calleeName(node.Callee))
 }
 
 // calleeToken finds the token that names what is being called, falling back to
@@ -65,10 +52,12 @@ func calleeToken(callee ast.ExpressionNode, fallback token.Token) token.Token {
 	return fallback
 }
 
-// callName reads the name a call was written with, for the stack trace. An
-// expression that is not simply a name — a function pulled out of a list, say —
-// has no name to give, and the frame says so rather than guessing.
-func callName(callee ast.ExpressionNode) string {
+// calleeName reads the name a call was written with, for arity errors and the
+// stack trace alike. An expression that is not simply a name — a function
+// pulled out of a list, say — has no name to give, so it falls back to a
+// generic one rather than leaving either message with a blank where a name
+// belongs.
+func calleeName(callee ast.ExpressionNode) string {
 	switch callee := callee.(type) {
 	case *ast.Identifier:
 		return callee.Value + "()"
@@ -78,10 +67,16 @@ func callName(callee ast.ExpressionNode) string {
 		}
 	}
 
-	return ""
+	return "function()"
 }
 
-func unwrapCall(tok token.Token, callee object.Object, arguments []object.Object, scope *object.Scope) object.Object {
+// unwrapCall runs a resolved callee against already-evaluated arguments.
+// name identifies the call for an arity error and, for Ghost-source
+// functions, the stack frame recorded around a failure from running the
+// body - never around a call that failed before the body ever ran (too deep,
+// wrong arity), since a frame there would just repeat the position the error
+// already reports, the same reason a library call never gets one either.
+func unwrapCall(tok token.Token, callee object.Object, arguments []object.Object, scope *object.Scope, name string) object.Object {
 	if callee == nil {
 		return object.NewError(fault.Type, tok, "cannot call a null value")
 	}
@@ -104,7 +99,12 @@ func unwrapCall(tok token.Token, callee object.Object, arguments []object.Object
 			return tooDeep(tok)
 		}
 
-		functionEnvironment := createFunctionEnvironment(callee, arguments)
+		functionEnvironment, err := createFunctionEnvironment(callee, arguments, name, tok)
+
+		if err != nil {
+			return err
+		}
+
 		functionScope := &object.Scope{Self: callee, Environment: functionEnvironment, Depth: scope.Depth + 1}
 
 		// A function declared inside a method keeps that method's receiver, so
@@ -117,8 +117,13 @@ func unwrapCall(tok token.Token, callee object.Object, arguments []object.Object
 		}
 
 		evaluated := Evaluate(callee.Body, functionScope)
+		result := unwrapReturn(evaluated)
 
-		return unwrapReturn(evaluated)
+		if failed, ok := result.(*object.Error); ok {
+			return failed.WithFrame(name, tok)
+		}
+
+		return result
 	default:
 		return object.NewError(fault.Type, tok, "cannot call %s, which is not a function", object.TypeName(callee))
 	}

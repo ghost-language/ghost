@@ -6,6 +6,10 @@ import (
 )
 
 func (parser *Parser) assign() ast.StatementNode {
+	if parser.currentTokenIs(token.LEFTBRACKET) || parser.currentTokenIs(token.LEFTBRACE) {
+		return parser.destructuringAssign()
+	}
+
 	statement := &ast.Assign{Token: parser.currentToken}
 
 	if parser.currentTokenIs(token.IDENTIFIER) {

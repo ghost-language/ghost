@@ -64,7 +64,7 @@ func (parser *Parser) methodDeclaration() ast.ExpressionNode {
 
 	parser.readToken() // step onto the opening parenthesis
 
-	method.Defaults, method.Parameters = parser.functionParameters()
+	method.Defaults, method.Parameters, method.Rest = parser.functionParameters()
 
 	if !parser.expectNextTokenIs(token.LEFTBRACE) {
 		return nil

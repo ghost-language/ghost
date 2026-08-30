@@ -45,6 +45,205 @@ func TestAssignStatement(t *testing.T) {
 	}
 }
 
+func TestFunctionRestParameter(t *testing.T) {
+	input := `function sum(a, ...rest) { return a }`
+
+	scanner := scanner.New(input, "test.gs")
+	parser := New(scanner)
+	program := parser.Parse()
+
+	failIfParserHasErrors(t, parser)
+
+	statement, ok := program.Statements[0].(*ast.Expression)
+
+	if !ok {
+		t.Fatalf("program.Statements[0] is not ast.Expression. got=%T", program.Statements[0])
+	}
+
+	function, ok := statement.Expression.(*ast.Function)
+
+	if !ok {
+		t.Fatalf("statement is not ast.Function. got=%T", statement.Expression)
+	}
+
+	if !function.Rest {
+		t.Fatal("function.Rest is false, expected true")
+	}
+
+	if len(function.Parameters) != 2 {
+		t.Fatalf("function.Parameters has wrong length. got=%d", len(function.Parameters))
+	}
+
+	if function.Parameters[0].Value != "a" || function.Parameters[1].Value != "rest" {
+		t.Fatalf("wrong parameter names. got=%v", function.Parameters)
+	}
+}
+
+func TestSpreadExpression(t *testing.T) {
+	tests := []struct {
+		input string
+	}{
+		{`f(...a)`},
+		{`f(1, ...a, 2)`},
+		{`[...a, 1]`},
+	}
+
+	for _, tt := range tests {
+		scanner := scanner.New(tt.input, "test.gs")
+		parser := New(scanner)
+		program := parser.Parse()
+
+		failIfParserHasErrors(t, parser)
+
+		statement, ok := program.Statements[0].(*ast.Expression)
+
+		if !ok {
+			t.Fatalf("%q: program.Statements[0] is not ast.Expression. got=%T", tt.input, program.Statements[0])
+		}
+
+		var spread *ast.Spread
+
+		switch expression := statement.Expression.(type) {
+		case *ast.Call:
+			for _, argument := range expression.Arguments {
+				if candidate, ok := argument.(*ast.Spread); ok {
+					spread = candidate
+				}
+			}
+		case *ast.List:
+			for _, element := range expression.Elements {
+				if candidate, ok := element.(*ast.Spread); ok {
+					spread = candidate
+				}
+			}
+		default:
+			t.Fatalf("%q: unexpected expression type %T", tt.input, statement.Expression)
+		}
+
+		if spread == nil {
+			t.Fatalf("%q: no ast.Spread found", tt.input)
+		}
+
+		if !isIdentifier(t, spread.Value, "a") {
+			return
+		}
+	}
+}
+
+func TestListPatternAssignment(t *testing.T) {
+	input := `[a, b] = list`
+
+	scanner := scanner.New(input, "test.gs")
+	parser := New(scanner)
+	program := parser.Parse()
+
+	failIfParserHasErrors(t, parser)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("program.Statements does not contain 1 statement. got=%d", len(program.Statements))
+	}
+
+	assign, ok := program.Statements[0].(*ast.Assign)
+
+	if !ok {
+		t.Fatalf("program.Statements[0] is not ast.Assign. got=%T", program.Statements[0])
+	}
+
+	pattern, ok := assign.Name.(*ast.ListPattern)
+
+	if !ok {
+		t.Fatalf("assign.Name is not ast.ListPattern. got=%T", assign.Name)
+	}
+
+	if len(pattern.Targets) != 2 {
+		t.Fatalf("pattern.Targets has wrong length. got=%d", len(pattern.Targets))
+	}
+
+	if pattern.Targets[0].Value != "a" || pattern.Targets[1].Value != "b" {
+		t.Fatalf("wrong pattern targets. got=%v", pattern.Targets)
+	}
+
+	if !isIdentifier(t, assign.Value, "list") {
+		return
+	}
+}
+
+func TestMapPatternAssignment(t *testing.T) {
+	input := `{x, y: a} = source`
+
+	scanner := scanner.New(input, "test.gs")
+	parser := New(scanner)
+	program := parser.Parse()
+
+	failIfParserHasErrors(t, parser)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("program.Statements does not contain 1 statement. got=%d", len(program.Statements))
+	}
+
+	assign, ok := program.Statements[0].(*ast.Assign)
+
+	if !ok {
+		t.Fatalf("program.Statements[0] is not ast.Assign. got=%T", program.Statements[0])
+	}
+
+	pattern, ok := assign.Name.(*ast.MapPattern)
+
+	if !ok {
+		t.Fatalf("assign.Name is not ast.MapPattern. got=%T", assign.Name)
+	}
+
+	if len(pattern.Pairs) != 2 {
+		t.Fatalf("pattern.Pairs has wrong length. got=%d", len(pattern.Pairs))
+	}
+
+	byName := map[string]ast.MapPatternPair{}
+
+	for _, pair := range pattern.Pairs {
+		byName[pair.Source.Value] = pair
+	}
+
+	shorthand, ok := byName["x"]
+
+	if !ok || shorthand.Target.Value != "x" {
+		t.Fatalf("shorthand pair for %q not bound correctly. got=%v", "x", byName)
+	}
+
+	renamed, ok := byName["y"]
+
+	if !ok || renamed.Target.Value != "a" {
+		t.Fatalf("renamed pair for %q not bound correctly. got=%v", "y", byName)
+	}
+
+	if !isIdentifier(t, assign.Value, "source") {
+		return
+	}
+}
+
+// A list/map literal that isn't followed by `=` is still an ordinary
+// expression statement - the pattern grammar and the literal grammar only
+// diverge in meaning, not in what parses.
+func TestListAndMapLiteralsAreNotMistakenForPatterns(t *testing.T) {
+	tests := []struct {
+		input string
+	}{
+		{`[1, 2, 3]`},
+		{`{foo: 1, bar: 2}`},
+	}
+
+	for _, tt := range tests {
+		scanner := scanner.New(tt.input, "test.gs")
+		parser := New(scanner)
+		program := parser.Parse()
+
+		failIfParserHasErrors(t, parser)
+
+		if _, ok := program.Statements[0].(*ast.Expression); !ok {
+			t.Fatalf("%q: program.Statements[0] is not ast.Expression. got=%T", tt.input, program.Statements[0])
+		}
+	}
+}
+
 func TestBooleanLiteral(t *testing.T) {
 	tests := []struct {
 		input    string
@@ -1328,6 +1527,10 @@ func TestSyntaxErrors(t *testing.T) {
 	}{
 		{`Person.new()`, "test.gs:1:8: syntax error: `new` is not a method"},
 		{`x = ,`, "test.gs:1:5: syntax error: `,` cannot start an expression"},
+		{`[a, b+1] = list`, "test.gs:1:1: syntax error: a list pattern can only bind plain names, not a full expression"},
+		{`{x: 1+1} = source`, "test.gs:1:1: syntax error: a map pattern can only bind to a plain name, not a full expression"},
+		{`function f(...rest, a) { return a }`, "test.gs:1:21: syntax error: a rest parameter has to be the last one"},
+		{`function f(...rest = 1) { return rest }`, "test.gs:1:20: syntax error: a rest parameter cannot have a default value"},
 	}
 
 	for _, tt := range tests {
