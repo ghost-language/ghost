@@ -17,9 +17,10 @@ import (
 )
 
 var (
-	flagHelp    bool
-	flagVersion bool
-	flagTime    bool
+	flagHelp        bool
+	flagVersion     bool
+	flagTime        bool
+	flagInteractive bool
 )
 
 func init() {
@@ -32,6 +33,7 @@ func init() {
 	flag.BoolVar(&flagHelp, "h", false, "display help information")
 	flag.BoolVar(&flagVersion, "v", false, "display version information")
 	flag.BoolVar(&flagTime, "t", false, "display how long the program ran for")
+	flag.BoolVar(&flagInteractive, "i", false, "enter interactive mode after executing file")
 }
 
 func main() {
@@ -79,6 +81,15 @@ func main() {
 
 	if flagTime {
 		log.Info("(executed in: %s)", time.Since(start))
+	}
+
+	// -i hands the same instance straight to the REPL, so every binding the
+	// script made - even one made before a failure partway through - is
+	// still there to inspect. The interactive session decides its own exit,
+	// so the failed-script exit status below does not apply once we get here.
+	if flagInteractive {
+		repl.StartWithInstance(os.Stdin, os.Stdout, instance)
+		return
 	}
 
 	// A script that failed has already had its error written out in full. What

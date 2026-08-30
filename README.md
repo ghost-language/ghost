@@ -78,8 +78,8 @@ $  ghost
 To execute a Ghost source file (`.gs`), pass either the relative or absolute path of the file to `ghost`. The source file will be executed and then exit back to the terminal.
 
 ```
-$  ghost examples/fibtc.gs
-   9227465
+$  ghost examples/fib.gs
+   34
 $
 ```
 
@@ -88,10 +88,10 @@ $
 Interactive mode allows you to execute a Ghost source file, and then immediately jump into a REPL session with the state of the source file still intact. To enter interactive mode, pass the `-i` flag to `ghost`.
 
 ```
-$  ghost -i examples/fibtc.gs
-   (executed in: 350.374µs)
->> x
-   9227465
+$  ghost -i examples/fib.gs
+   34
+>> fibThree(9)
+   34
 >>
 ```
 

@@ -10,6 +10,41 @@ import (
 	"ghostlang.org/x/ghost/token"
 )
 
+// TestExecuteReusesScopeAcrossCalls confirms the mechanism `-i` (§13.4,
+// cmd/ghost.go) relies on: a second Execute() on the same instance sees
+// everything the first one bound, rather than starting from a fresh scope.
+// This is what lets the CLI hand an already-run script's instance straight
+// to the REPL and have its variables still be there to inspect.
+func TestExecuteReusesScopeAcrossCalls(t *testing.T) {
+	instance := New()
+	instance.SetQuiet(true)
+	instance.SetFile("test.gs")
+
+	instance.SetSource("x = 41")
+
+	if result := instance.Execute(); object.IsError(result) {
+		t.Fatalf("unexpected error on first Execute: %s", result.String())
+	}
+
+	instance.SetSource("x + 1")
+
+	result := instance.Execute()
+
+	if object.IsError(result) {
+		t.Fatalf("unexpected error on second Execute: %s", result.String())
+	}
+
+	number, ok := result.(*object.Number)
+
+	if !ok {
+		t.Fatalf("result is not Number. got=%T (%+v)", result, result)
+	}
+
+	if number.Int64() != 42 {
+		t.Errorf("x + 1: got=%d, expected=42", number.Int64())
+	}
+}
+
 func TestExecuteReportsSyntaxErrorsInFull(t *testing.T) {
 	report := &bytes.Buffer{}
 

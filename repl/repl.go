@@ -17,6 +17,22 @@ var (
 )
 
 func Start(in io.Reader, out io.Writer) {
+	instance := ghost.New()
+
+	directory, _ := os.Getwd()
+
+	instance.SetDirectory(directory)
+	instance.SetFile("repl.gs")
+
+	StartWithInstance(in, out, instance)
+}
+
+// StartWithInstance runs the REPL loop against an already-configured Ghost
+// instance, rather than building a fresh one - the one door `-i` (§10.1's
+// CLI, `cmd/ghost.go`) goes through to continue a session with the file it
+// just ran, so every binding that script made is still there to inspect,
+// same directory and filename included.
+func StartWithInstance(in io.Reader, out io.Writer, instance *ghost.Ghost) {
 	line := liner.NewLiner()
 	defer line.Close()
 
@@ -24,13 +40,6 @@ func Start(in io.Reader, out io.Writer) {
 	line.SetTabCompletionStyle(liner.TabPrints)
 
 	loadHistory(line)
-
-	instance := ghost.New()
-
-	directory, _ := os.Getwd()
-
-	instance.SetDirectory(directory)
-	instance.SetFile("repl.gs")
 
 	for {
 		source, err := line.Prompt(prompt)
