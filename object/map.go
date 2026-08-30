@@ -10,8 +10,21 @@ import (
 )
 
 // Map objects consist of a map value.
+//
+// Pairs gives O(1) lookup by key, exactly like a bare Go map would; order
+// tracks the sequence keys were first inserted in, separately, so a lookup
+// (`get`, `has`, `[]`, `.`) can keep reading Pairs directly while every
+// operation that answers more than one pair at once - keys(), values(),
+// entries(), String(), `for ... in` - reads OrderedPairs() instead and
+// agrees with the rest on what order that is (§13.5, §14 decision 2: Map
+// guarantees insertion order, the same guarantee a JS object or a PHP
+// associative array already gives their users). order is unexported so it
+// can only drift out of sync with Pairs by a bug in this file - every
+// mutation in the language (a literal, set(), index/property assignment,
+// merge()) goes through SetPair/RemovePair, never Pairs directly.
 type Map struct {
 	Pairs map[MapKey]MapPair
+	order []MapKey
 }
 
 type MapPair struct {
@@ -19,18 +32,70 @@ type MapPair struct {
 	Value Object
 }
 
+// NewOrderedMap builds an empty Map ready for SetPair calls. It is the one
+// way to build a Map from scratch in this codebase - a bare &Map{Pairs: ...}
+// literal would leave order empty even when Pairs is not, which reads as an
+// empty map to everything that iterates in order.
+func NewOrderedMap() *Map {
+	return &Map{Pairs: map[MapKey]MapPair{}}
+}
+
+// SetPair stores pair under hashed, preserving insertion order: an existing
+// key keeps its original position and only its value changes; a new key is
+// appended. This is the one door every Map mutation in the language goes
+// through - see the Map doc comment.
+func (mapObject *Map) SetPair(hashed MapKey, pair MapPair) {
+	if _, exists := mapObject.Pairs[hashed]; !exists {
+		mapObject.order = append(mapObject.order, hashed)
+	}
+
+	mapObject.Pairs[hashed] = pair
+}
+
+// RemovePair deletes hashed, answering the pair that was there and whether
+// it was, and keeps order consistent for whatever remains.
+func (mapObject *Map) RemovePair(hashed MapKey) (MapPair, bool) {
+	pair, ok := mapObject.Pairs[hashed]
+
+	if !ok {
+		return MapPair{}, false
+	}
+
+	delete(mapObject.Pairs, hashed)
+
+	for index, key := range mapObject.order {
+		if key == hashed {
+			mapObject.order = append(mapObject.order[:index], mapObject.order[index+1:]...)
+
+			break
+		}
+	}
+
+	return pair, true
+}
+
+// OrderedPairs answers every pair in the map in insertion order - the one
+// place that order is read back, so keys()/values()/entries()/String() and
+// `for ... in` all agree with each other and with SetPair on what it is.
+func (mapObject *Map) OrderedPairs() []MapPair {
+	pairs := make([]MapPair, len(mapObject.order))
+
+	for index, key := range mapObject.order {
+		pairs[index] = mapObject.Pairs[key]
+	}
+
+	return pairs
+}
+
 // String represents the map object's value as a string.
 func (mapObject *Map) String() string {
 	var out bytes.Buffer
 
-	length := len(mapObject.Pairs)
-	pairs := make([]string, length)
+	ordered := mapObject.OrderedPairs()
+	pairs := make([]string, len(ordered))
 
-	var index int
-
-	for _, pair := range mapObject.Pairs {
+	for index, pair := range ordered {
 		pairs[index] = fmt.Sprintf("%s: %s", pair.Key.String(), pair.Value.String())
-		index++
 	}
 
 	out.WriteString("{")
@@ -125,10 +190,11 @@ func (mapObject *Map) entries(tok token.Token, args []Object) (Object, bool) {
 		return err, true
 	}
 
-	elements := make([]Object, 0, len(mapObject.Pairs))
+	ordered := mapObject.OrderedPairs()
+	elements := make([]Object, len(ordered))
 
-	for _, pair := range mapObject.Pairs {
-		elements = append(elements, &List{Elements: []Object{pair.Key, pair.Value}})
+	for index, pair := range ordered {
+		elements[index] = &List{Elements: []Object{pair.Key, pair.Value}}
 	}
 
 	return &List{Elements: elements}, true
@@ -139,10 +205,11 @@ func (mapObject *Map) keys(tok token.Token, args []Object) (Object, bool) {
 		return err, true
 	}
 
-	elements := make([]Object, 0, len(mapObject.Pairs))
+	ordered := mapObject.OrderedPairs()
+	elements := make([]Object, len(ordered))
 
-	for _, pair := range mapObject.Pairs {
-		elements = append(elements, pair.Key)
+	for index, pair := range ordered {
+		elements[index] = pair.Key
 	}
 
 	return &List{Elements: elements}, true
@@ -170,17 +237,20 @@ func (mapObject *Map) merge(tok token.Token, args []Object) (Object, bool) {
 		return err, true
 	}
 
-	pairs := make(map[MapKey]MapPair, len(mapObject.Pairs)+len(other.Pairs))
+	// This map's pairs are set first, so a key shared with other keeps this
+	// map's position for it (SetPair's own rule) - the same result a plain
+	// object spread (`{...this, ...other}`) gives in JS.
+	merged := NewOrderedMap()
 
-	for key, pair := range mapObject.Pairs {
-		pairs[key] = pair
+	for _, hashed := range mapObject.order {
+		merged.SetPair(hashed, mapObject.Pairs[hashed])
 	}
 
-	for key, pair := range other.Pairs {
-		pairs[key] = pair
+	for _, hashed := range other.order {
+		merged.SetPair(hashed, other.Pairs[hashed])
 	}
 
-	return &Map{Pairs: pairs}, true
+	return merged, true
 }
 
 // remove deletes a key from the map, mutating in place, and answers the
@@ -197,13 +267,11 @@ func (mapObject *Map) remove(tok token.Token, args []Object) (Object, bool) {
 		return err, true
 	}
 
-	pair, ok := mapObject.Pairs[hashed]
+	pair, ok := mapObject.RemovePair(hashed)
 
 	if !ok {
 		return &Null{}, true
 	}
-
-	delete(mapObject.Pairs, hashed)
 
 	return pair.Value, true
 }
@@ -227,7 +295,7 @@ func (mapObject *Map) set(tok token.Token, args []Object) (Object, bool) {
 		return valueErr, true
 	}
 
-	mapObject.Pairs[hashed] = MapPair{Key: key, Value: value}
+	mapObject.SetPair(hashed, MapPair{Key: key, Value: value})
 
 	return mapObject, true
 }
@@ -237,10 +305,11 @@ func (mapObject *Map) values(tok token.Token, args []Object) (Object, bool) {
 		return err, true
 	}
 
-	elements := make([]Object, 0, len(mapObject.Pairs))
+	ordered := mapObject.OrderedPairs()
+	elements := make([]Object, len(ordered))
 
-	for _, pair := range mapObject.Pairs {
-		elements = append(elements, pair.Value)
+	for index, pair := range ordered {
+		elements[index] = pair.Value
 	}
 
 	return &List{Elements: elements}, true
@@ -267,13 +336,18 @@ func mapKey(name string, tok token.Token, args []Object, index int) (Object, Map
 	return value, mappable.MapKey(), nil
 }
 
+// NewMap builds a Map from a plain Go map - an embedder's convenience
+// constructor. Go maps carry no order of their own, so the order the result
+// settles into is whatever Go's randomized map iteration gives this one
+// call; it is still frozen and consistent for every read after that
+// (§13.5), just not meaningfully "insertion order" the way a map literal or
+// a run of set() calls is.
 func NewMap(values map[string]interface{}) *Map {
-	pairs := make(map[MapKey]MapPair)
+	mapObject := NewOrderedMap()
 
 	for key, value := range values {
 		pairKey := &String{Value: key}
 		var pairValue Object
-		hashed := pairKey.MapKey()
 
 		switch val := value.(type) {
 		case int:
@@ -284,8 +358,8 @@ func NewMap(values map[string]interface{}) *Map {
 			pairValue = &String{Value: val}
 		}
 
-		pairs[hashed] = MapPair{Key: pairKey, Value: pairValue}
+		mapObject.SetPair(pairKey.MapKey(), MapPair{Key: pairKey, Value: pairValue})
 	}
 
-	return &Map{Pairs: pairs}
+	return mapObject
 }

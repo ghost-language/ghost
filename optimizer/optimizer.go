@@ -159,11 +159,12 @@ func optimize(node ast.Node) ast.Node {
 		return node
 
 	case *ast.Map:
-		// Map keys are the map's own keys, so a folded key would need the entry
-		// reinserted. Values are rewritten in place, which is enough in
-		// practice and keeps the pass simple.
-		for key := range node.Pairs {
-			node.Pairs[key] = optimize(node.Pairs[key])
+		// Pairs is a slice (§13.5), so unlike a Go map keyed by the key
+		// expression itself, rewriting an entry in place doesn't require
+		// removing and reinserting it - both the key and the value fold.
+		for index := range node.Pairs {
+			node.Pairs[index].Key = optimize(node.Pairs[index].Key)
+			node.Pairs[index].Value = optimize(node.Pairs[index].Value)
 		}
 
 		return node

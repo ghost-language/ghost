@@ -7,9 +7,11 @@ import (
 )
 
 func evaluateMap(node *ast.Map, scope *object.Scope) object.Object {
-	pairs := make(map[object.MapKey]object.MapPair)
+	mapObject := object.NewOrderedMap()
 
-	for keyNode, valueNode := range node.Pairs {
+	for _, entry := range node.Pairs {
+		keyNode := entry.Key
+
 		// if keyNode is an identifier, convert it to a string
 		identifier, ok := keyNode.(*ast.Identifier)
 
@@ -33,16 +35,14 @@ func evaluateMap(node *ast.Map, scope *object.Scope) object.Object {
 				WithHelp("a map key has to be a string, a number, or a boolean")
 		}
 
-		value := Evaluate(valueNode, scope)
+		value := Evaluate(entry.Value, scope)
 
 		if isError(value) {
 			return value
 		}
 
-		hashed := mapKey.MapKey()
-
-		pairs[hashed] = object.MapPair{Key: key, Value: value}
+		mapObject.SetPair(mapKey.MapKey(), object.MapPair{Key: key, Value: value})
 	}
 
-	return &object.Map{Pairs: pairs}
+	return mapObject
 }

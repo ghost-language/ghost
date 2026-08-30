@@ -142,19 +142,15 @@ func AnyValueToObject(val any) Object {
 
 		return &List{Elements: elements}
 	case map[string]any:
-		pairs := make(map[MapKey]MapPair)
+		mapObject := NewOrderedMap()
 
 		for key, val := range v {
 			pairKey := &String{Value: key}
-			var pairValue Object
-			hashed := pairKey.MapKey()
 
-			pairValue = AnyValueToObject(val)
-
-			pairs[hashed] = MapPair{Key: pairKey, Value: pairValue}
+			mapObject.SetPair(pairKey.MapKey(), MapPair{Key: pairKey, Value: AnyValueToObject(val)})
 		}
 
-		return &Map{Pairs: pairs}
+		return mapObject
 	}
 
 	return nil

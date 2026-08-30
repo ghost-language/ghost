@@ -507,9 +507,8 @@ asked, including a `map`'s values and a `list` nested inside either.
   the same as anywhere else an expression is allowed.
 - **`for (key, value in iterable) { }`** and **`for (value in iterable) { }`**
   — iterates a `list` (key = integer index) or a `map` (key = the map key, in
-  insertion order once §13.5 is fixed — today it is Go's randomized map
-  order). Iterating anything else is a type error with the help text
-  *"`for ... in` walks a list or a map."*
+  insertion order — §13.5, done). Iterating anything else is a type error
+  with the help text *"`for ... in` walks a list or a map."*
 - **`switch (value) { case a { } case b, c { } default { } }`** — this is a
   **match-expression**, not a C-style switch: there is no fallthrough, no
   `break` is needed or accepted between cases, and a `case` may list several
@@ -988,11 +987,11 @@ style rather than one call that both removes and inserts.
 | `get(key[, default])` | 1–2 | `default` if given and the key is absent, else `null`. |
 | `has(key)` | 1 | True if the key is present, regardless of its value (distinguishes "absent" from "present and `null`"). |
 | `set(key, value)` | 2 | Mutates in place; returns the map itself (chainable). |
-| `keys()` / `values()` | 0 | Returns a `list`, in insertion order once §13.5 is fixed (today, Go's randomized map-iteration order). |
-| `merge(other)` | 1 | New map; on a key collision, `other`'s value wins (same rule a later assignment to the same key would follow). |
+| `keys()` / `values()` | 0 | Returns a `list`, in insertion order (§13.5, done). |
+| `merge(other)` | 1 | New map, holding this map's pairs in their own order followed by `other`'s; on a key collision, `other`'s value wins but the key keeps this map's position for it (same rule a later assignment to the same key would follow, and the same result a plain object spread gives in JS). |
 | `length()` | 0 | |
-| `remove(key)` | 1 | Mutates in place; answers the value that was stored under `key`, or `null` if the key was not present — the same leniency `pop()`/`shift()` give an empty list. Named to match `list.removeAt()` rather than adding `delete` as a second spelling (§12). |
-| `entries()` | 0 | New `list` of `[key, value]` two-element lists, one per entry — for symmetry with `keys()`/`values()`. |
+| `remove(key)` | 1 | Mutates in place; answers the value that was stored under `key`, or `null` if the key was not present — the same leniency `pop()`/`shift()` give an empty list. Named to match `list.removeAt()` rather than adding `delete` as a second spelling (§12). Removing a key drops it from insertion order entirely, leaving no gap. |
+| `entries()` | 0 | New `list` of `[key, value]` two-element lists, one per entry, in insertion order — for symmetry with `keys()`/`values()`. |
 
 No `forEach` (use `for ... in`).
 
@@ -1526,7 +1525,7 @@ already meets — except where flagged.
 - [x] Dynamic typing, 12 runtime value types plus 3 library-wrapper types
 - [x] Integer/float number duality with automatic promotion
 - [x] Strings, template literals with nested interpolation
-- [x] Lists and maps, with broadcasting arithmetic on lists
+- [x] Lists and maps, with broadcasting arithmetic on lists; `Map` guarantees insertion order (§13.5, §14 decision 2)
 - [x] `if`/`else if`/`else`, `while`, C-style `for`, `for ... in`
 - [x] `switch`/`case`/`default` as a match-expression (no fallthrough)
 - [x] `break`/`continue`/`return`
@@ -1753,22 +1752,60 @@ files today, and this doesn't change that) and confirmed directly against
 the built binary (piped stdin) for every row `-i` interacts with: no file,
 `-t` composed with `-i`, and a script that fails partway through.
 
-### 13.5 Map/list `for ... in` and `keys()`/`values()` iterate in random order
+### 13.5 Map/list `for ... in` and `keys()`/`values()` iterate in random order — done
 
 `evaluator/for_in.go`'s map branch and `object.Map`'s `keys()`/`values()`/
-`String()` all range directly over the underlying Go `map[MapKey]MapPair`,
-whose iteration order Go deliberately randomizes per-run. Two runs of the
-identical script over the identical map can print keys/values/`String()` in
-different orders. This is inconsistent with the rest of the language's
-posture toward predictability (`list.sort()` is explicit and stable; the
-"did you mean" suggestions are tie-broken deterministically) and is a
-common source of "flaky" script output and non-reproducible test
-assertions for users. §14 decides Ghost guarantees insertion order for 1.0.
-**Fix (larger effort):** back `Map` with an insertion-ordered structure (as
-JS objects and PHP associative arrays both behave — squarely in Ghost's
-stated inspirations, §2) — or, at minimum, sort `keys()`/`values()`/
-`String()`'s output deterministically even if internal storage stays a Go
-map.
+`String()` used to range directly over the underlying Go `map[MapKey]MapPair`,
+whose iteration order Go deliberately randomizes — not just between two
+runs of the identical script, but between two calls in the very same run,
+on the very same `Map`. This was inconsistent with the rest of the
+language's posture toward predictability (`list.sort()` is explicit and
+stable; the "did you mean" suggestions are tie-broken deterministically)
+and was a common source of "flaky" script output and non-reproducible test
+assertions for users.
+
+**Fix:** `object.Map` (`object/map.go`) now carries its Go map (`Pairs`,
+still exported and untouched for O(1) lookup by `get`/`has`/`[]`/`.`) beside
+an unexported `order []MapKey` slice that only its own `SetPair`/
+`RemovePair` methods touch — a new key is appended, an existing key keeps
+its original position and only its value changes, and a removed key leaves
+no gap. `OrderedPairs()` is the one place that order is read back, so
+`keys()`, `values()`, `entries()`, `String()`, and `for ... in` all agree
+with each other and with `SetPair` on what it is. Every mutation in the
+language — a map literal, `set()`, index/property assignment, `merge()`
+(this map's pairs first in their own order, then the other's remaining
+pairs in its order, so a shared key keeps this map's position for it and
+takes the other's value — the same result a plain object spread
+(`{...left, ...right}`) gives in JS) — goes through `SetPair`/`RemovePair`,
+never `Pairs` directly, so `order` can't drift out of sync with it.
+
+One piece this doesn't reach: `json.encode()`'s own `encoding/json.Marshal`
+call always alphabetizes a Go map's keys regardless of the order fed into it,
+so there was never an order for `json.encode()` to preserve or lose in the
+first place; `json.decode()` similarly can't recover a source JSON text's
+key order from `encoding/json.Unmarshal`'s own generic-map decoding. Both
+still settle into *a* fixed, repeatable order once decoded/loaded (per this
+fix), just not one that means "the order written in the JSON text" the way
+a Ghost map literal's does mean "the order written in the source." A
+`Map` built by an embedding host from a plain Go map (`object.NewMap`,
+`AnyValueToObject`'s map case) has the same limitation, for the same
+reason: a Go map carries no order of its own to preserve.
+
+The AST needed the same fix first: `ast.Map.Pairs` was itself a Go map
+(`map[ExpressionNode]ExpressionNode`) keyed by the key expression, which
+lost a map literal's source order before evaluation ever got the chance
+to preserve it. It is now `[]MapEntry` (`ast/map.go`), ordered the way it
+was written; `parser/map.go` appends to it instead of indexing into it,
+and `evaluator/map.go`, `parser/destructure.go`, and `optimizer/optimizer.go`
+read it as a slice. A repeated key in a literal (`{x: 1, x: 2}`) now
+deterministically keeps the position of its first appearance with the
+last value written to it, the same rule `set()` follows, rather than it
+being arbitrary which of the two occurrences won.
+
+Tested in `object/map_test.go` (`SetPair`/`RemovePair`/`OrderedPairs`
+directly), `evaluator/map_methods_test.go`'s `TestMapPreservesInsertionOrder`
+/`TestMapForInPreservesInsertionOrder`, and `parser/parser_test.go`'s
+`TestMapLiteralPairsPreserveSourceOrder`.
 
 ### 13.6 Bounds-checking is inconsistent across list/map/string operations
 
@@ -1899,12 +1936,15 @@ targets.
    silent gaps" goal in §3. Implemented in `evaluator/function.go`
    (`checkArity`, `createFunctionEnvironment`), tested in
    `evaluator/evaluator_test.go`'s `TestFunctionArity`.
-2. **`Map` iteration order.** `Map` guarantees insertion order for
-   `keys()`, `values()`, `for ... in`, and `String()` (§13.5), matching the
-   predictability JS objects and PHP associative arrays already give their
-   users (§2). This likely requires backing `Map` with an insertion-ordered
-   structure rather than a bare Go map — a larger implementation change, but
-   the goal is fixed regardless of how large the fix turns out to be.
+2. **`Map` iteration order — done.** `Map` guarantees insertion order for
+   `keys()`, `values()`, `entries()`, `for ... in`, and `String()` (§13.5),
+   matching the predictability JS objects and PHP associative arrays already
+   give their users (§2). Implemented by backing `Map` with an
+   insertion-ordered structure (`object/map.go`'s `order` field and
+   `SetPair`/`RemovePair`/`OrderedPairs`) rather than a bare Go map, and
+   fixing `ast.Map.Pairs` to preserve source order too, since a map
+   literal's order needs to survive parsing before evaluation can preserve
+   it.
 3. **`string.find`/`findAll`/`matches`.** These flip to the conventional
    `subject.find(pattern)` shape before 1.0 locks the API (§13.7), matching
    JS, PHP, and Python, and the "expressive, familiar syntax" goal in §1.

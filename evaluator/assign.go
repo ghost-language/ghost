@@ -154,8 +154,7 @@ func evaluateIndexAssignment(node *ast.Index, assignmentValue object.Object, sco
 		}
 
 		hashed := key.MapKey()
-		pair := object.MapPair{Key: index, Value: assignmentValue}
-		obj.Pairs[hashed] = pair
+		obj.SetPair(hashed, object.MapPair{Key: index, Value: assignmentValue})
 	default:
 		return object.NewError(fault.Type, node.Token, "cannot assign into %s", object.TypeName(left)).
 			WithHelp("only lists and maps can be assigned into by index")
@@ -188,9 +187,7 @@ func evaluatePropertyAssignment(node *ast.Property, assignmentValue object.Objec
 		return nil
 	case *object.Map:
 		key := &object.String{Value: property.Value}
-		hashed := key.MapKey()
-		pair := object.MapPair{Key: key, Value: assignmentValue}
-		obj.Pairs[hashed] = pair
+		obj.SetPair(key.MapKey(), object.MapPair{Key: key, Value: assignmentValue})
 
 		return nil
 	}

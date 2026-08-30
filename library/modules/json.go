@@ -45,15 +45,20 @@ func jsonDecode(scope *object.Scope, tok token.Token, args ...object.Object) obj
 
 		return &object.List{Elements: elements}
 	case map[string]interface{}:
-		pairs := make(map[object.MapKey]object.MapPair, len(data))
+		// Go's json.Unmarshal decodes an object into a bare map, which does
+		// not preserve the source text's key order, so neither can this -
+		// the result is still frozen and consistent for every read after
+		// this (§13.5), just not meaningfully "the order they appeared in
+		// the JSON text".
+		mapObject := object.NewOrderedMap()
 
 		for key, value := range data {
 			pairKey := &object.String{Value: key}
 
-			pairs[pairKey.MapKey()] = object.MapPair{Key: pairKey, Value: object.AnyValueToObject(value)}
+			mapObject.SetPair(pairKey.MapKey(), object.MapPair{Key: pairKey, Value: object.AnyValueToObject(value)})
 		}
 
-		return &object.Map{Pairs: pairs}
+		return mapObject
 	}
 
 	// Valid JSON that is a bare number, string, boolean, or null. Decoding one
@@ -79,6 +84,11 @@ func jsonEncode(scope *object.Scope, tok token.Token, args ...object.Object) obj
 
 		return encodeJson(tok, elements)
 	case *object.Map:
+		// Reads value.Pairs directly rather than its insertion-ordered
+		// OrderedPairs() (§13.5) - encodeJson's own json.Marshal call
+		// always sorts a map's keys alphabetically regardless of the order
+		// they were added to pairs here, so there is no order for this
+		// loop to preserve or lose either way.
 		pairs := make(map[string]interface{}, len(value.Pairs))
 
 		for _, pair := range value.Pairs {

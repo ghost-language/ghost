@@ -54,7 +54,7 @@ func evaluateForIn(node *ast.ForIn, scope *object.Scope) object.Object {
 
 		return nil
 	case *object.Map:
-		for _, pair := range obj.Pairs {
+		for _, pair := range obj.OrderedPairs() {
 			scope.Environment.Set(node.Key.Value, pair.Key)
 			scope.Environment.Set(node.Value.Value, pair.Value)
 

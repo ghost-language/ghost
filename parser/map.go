@@ -7,7 +7,7 @@ import (
 
 func (parser *Parser) mapLiteral() ast.ExpressionNode {
 	mapLiteral := &ast.Map{Token: parser.currentToken}
-	mapLiteral.Pairs = make(map[ast.ExpressionNode]ast.ExpressionNode)
+	mapLiteral.Pairs = []ast.MapEntry{}
 
 	for !parser.nextTokenIs(token.RIGHTBRACE) {
 		parser.readToken()
@@ -17,7 +17,10 @@ func (parser *Parser) mapLiteral() ast.ExpressionNode {
 		identifier, isIdentifier := key.(*ast.Identifier)
 
 		if isIdentifier && (parser.nextTokenIs(token.COMMA) || parser.nextTokenIs(token.RIGHTBRACE)) {
-			mapLiteral.Pairs[key] = &ast.Identifier{Token: identifier.Token, Value: identifier.Value}
+			mapLiteral.Pairs = append(mapLiteral.Pairs, ast.MapEntry{
+				Key:   key,
+				Value: &ast.Identifier{Token: identifier.Token, Value: identifier.Value},
+			})
 
 			if !parser.nextTokenIs(token.RIGHTBRACE) && !parser.expectNextTokenIs(token.COMMA) {
 				return nil
@@ -34,7 +37,7 @@ func (parser *Parser) mapLiteral() ast.ExpressionNode {
 
 		value := parser.parseExpression(LOWEST)
 
-		mapLiteral.Pairs[key] = value
+		mapLiteral.Pairs = append(mapLiteral.Pairs, ast.MapEntry{Key: key, Value: value})
 
 		if !parser.nextTokenIs(token.RIGHTBRACE) && !parser.expectNextTokenIs(token.COMMA) {
 			return nil
