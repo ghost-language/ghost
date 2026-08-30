@@ -132,7 +132,7 @@ the version's release notes"). Concretely, 1.0 means:
   (`ghost.Execute` recovers panics — see §8.11); the one live counterexample
   under concurrent use, the RNG data race, is closed (§13.1 — done).
 - **The CLI and its own documentation agree with each other and with the
-  code.** They currently do not (§13.4, §13.10).
+  code.** `-i` now does (§13.4, done); `-t` still doesn't (§13.10).
 - **The naming and design conventions in §7 are actually enforced**, not just
   written down — the property-vs-method inconsistencies §7 now resolves are
   exactly the kind of drift a stated convention exists to prevent.
@@ -1404,7 +1404,7 @@ ghost [flags] [file]
 | `-h` | Prints usage and exits. | Works. |
 | `-v` | Prints the binary name and version. | Works. |
 | `-t` | Prints how long execution took. | Works, but **undocumented** in `helpCommand()`'s own printed help (§13.10). |
-| `-i` | *(documented)* Runs a file, then drops into a REPL with the script's environment intact. | **Not implemented** — not registered as a flag at all in `cmd/ghost.go`. Documented in both `README.md` and the CLI's own `-h` output. See §13.4. |
+| `-i` | Runs a file, then drops into a REPL with the script's environment intact — same `Scope`, so every binding the script made is there to inspect, even one made before a mid-script failure. Composes with `-t` (timing prints before the prompt starts); with no file argument it is a no-op, same as plain `ghost` alone. | Works (§13.4, done). |
 
 ### 10.2 REPL
 
@@ -1560,8 +1560,7 @@ already meets — except where flagged.
 **Tooling**
 - [x] REPL with history and line editing
 - [x] File execution with exit-status propagation
-- [x] `-h`/`-v`/`-t` CLI flags
-- [ ] `-i` CLI flag — documented, not implemented (§13.4)
+- [x] `-h`/`-v`/`-t`/`-i` CLI flags
 
 ---
 
@@ -1722,20 +1721,37 @@ else, matching `==` exactly. Tested in `evaluator/switch_test.go`
 (`TestSwitchPropagatesErrors`, and `TestSwitchComparesByValueNotString`,
 which reproduces the function/class false-match directly).
 
-### 13.4 `-i` is documented in two places and implemented in none
+### 13.4 `-i` is documented in two places and implemented in none — done
 
 Both `README.md` ("Interactive mode... pass the `-i` flag") and
 `cmd/help.go`'s own `-h` output ("`-i` enter interactive mode after
-executing file") describe a flag that `cmd/ghost.go` never registers
-(`flag.BoolVar` is called for `flagHelp`, `flagVersion`, `flagTime` only)
-and there is no code path anywhere that runs a file and then starts a REPL
-with its environment intact. A user following either piece of Ghost's own
-documentation for this feature will find it silently does nothing (the flag
-is simply unrecognized... actually, with Go's `flag` package, an
-unregistered `-i` will make `flag.Parse()` itself error and exit — worth
-verifying that failure mode is acceptable, since it is not the same as "the
-flag is ignored"). **Fix:** implement `-i` before 1.0 ships, since it is
-already committed to in the documentation users will read first.
+executing file") described a flag that `cmd/ghost.go` never registered
+(`flag.BoolVar` was called for `flagHelp`, `flagVersion`, `flagTime` only),
+and there was no code path anywhere that ran a file and then started a REPL
+with its environment intact. Confirmed before the fix: an unregistered `-i`
+does not silently no-op — Go's `flag` package rejects it and `flag.Parse()`
+exits the process with its own "flag provided but not defined" error, which
+is a worse failure mode than the ignored-flag one the original writeup
+guessed at.
+
+**Fix:** `-i` is now registered in `cmd/ghost.go` and, when a file argument
+is also given, runs the file exactly as before and then hands the same
+`*ghost.Ghost` instance — same `Scope`, so every binding the script made is
+still there, even one made before a mid-script failure the script's own
+error report already printed — to a new `repl.StartWithInstance` (the
+existing `repl.Start` now just builds a fresh instance and calls it),
+rather than the REPL's usual brand-new one. The failed-script exit status
+(`os.Exit(1)`) is skipped once `-i` hands off to the REPL; the interactive
+session decides its own exit the way a bare `ghost` invocation already
+does. `-i` with no file argument is a no-op — falls through to the same
+"start a plain REPL" branch as no arguments at all — since there is no file
+to execute first. Tested in `ghost/ghost_test.go`'s
+`TestExecuteReusesScopeAcrossCalls` (the scope-continuity mechanism itself;
+the REPL and CLI layers around it need a terminal to drive and are outside
+this codebase's existing test boundary — `repl/` and `cmd/` have no test
+files today, and this doesn't change that) and confirmed directly against
+the built binary (piped stdin) for every row `-i` interacts with: no file,
+`-t` composed with `-i`, and a script that fails partway through.
 
 ### 13.5 Map/list `for ... in` and `keys()`/`values()` iterate in random order
 
