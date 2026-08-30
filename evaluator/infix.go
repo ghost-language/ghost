@@ -70,6 +70,16 @@ func evaluateEquality(node *ast.Infix, left object.Object, right object.Object) 
 		// same way are equal, which is the only reading that makes `==` useful
 		// on a value built rather than passed around.
 		equal = listsEqual(left.(*object.List), right.(*object.List))
+	case left.Type() == object.DURATION && right.Type() == object.DURATION:
+		// Durations compare by contents, the same reasoning as List: a
+		// Duration is a small immutable record, not an identity, so two built
+		// separately with the same components should compare equal.
+		// Ordering (`< > <= >=`) stays unsupported - unlike two instants,
+		// "which of these two spans is longer" has no single answer without a
+		// reference date (a month is a different number of days depending on
+		// which month), the same reason Temporal requires one for calendar
+		// unit comparisons.
+		equal = durationsEqual(left.(*object.Duration), right.(*object.Duration))
 	default:
 		return nil, false
 	}

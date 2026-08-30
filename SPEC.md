@@ -391,6 +391,7 @@ the version's release notes.
 | `instance` | `object.Instance` | `new Name(...)` |
 | `trait` | `object.Trait` | `trait Name {...}` |
 | `date` | `object.Date` | only ever produced by the `date` module |
+| `duration` | `object.Duration` | only ever produced by `date.duration()`/`date.durationBetween()` |
 | `error` | `object.Error` | any failed operation; also the value a Ghost script cannot construct directly (see §9.12) |
 | `super` | `object.Super` | the value of a bare `super` expression |
 | `scope` | `object.Scope` | not user-constructible; exists as a `Type()` for internal completeness |
@@ -470,7 +471,8 @@ depending on the pair of types involved:
 | Either side `null` | `true` only if *both* sides are `null`; otherwise `false`. This is the one cross-type comparison that is allowed and does not error. |
 | Both `list` | **Deep structural equality**, to any depth (`object.ValuesEqual`/`ListsEqual`). |
 | Both `instance` | **Identity** — two separate instances with identical fields are not `==`. |
-| Both `date` | Instant equality. |
+| Both `date` | Instant equality, independent of either operand's attached time zone (§9.5). |
+| Both `duration` | **Structural equality** — all six components equal (§9.2). Ordering (`< <= > >=`) stays unsupported, the same reasoning as `list`. |
 | Both any other same type (`map`, `function`, `class`, `trait`, ...) | **Type error** — see §13.2; this must be fixed before 1.0, not a design choice. |
 | Different, non-null types (`5 == "5"`, `[1] == {}`) | **Type error**, not `false`. This is deliberate and covered by an explicit test (`evaluator_test.go`), consistent with `CLAUDE.md`'s "operators keep one meaning" principle. §14 confirms this stays for 1.0 — see that section for what it obligates the documentation to do. |
 
@@ -965,6 +967,28 @@ built-in `Date` class — see the doc comment on `object.Date`. Dates support
 either operand's attached zone) but no arithmetic operators (`date1 + date2`
 is a type error, with help text pointing at the `date` module).
 
+**`duration`** — `years()`, `months()`, `days()`, `hours()`, `minutes()`,
+`seconds()` (each arity 0, reading one component back out), and
+`toString()` (an ISO 8601 duration — `P1Y2M3DT4H5M6S`, `PT0S` for a zero
+duration — the same standard-format instinct `date`'s own `toString()`
+follows). Unlike `date`, a `duration` reading its own fields is a method
+rather than a module function — see `object.Duration`'s doc comment for
+why: a `duration` is a small immutable record, not an opaque instant that
+needs a whole module standing between it and its data, so exposing its
+fields directly reads more like `map`'s or `list`'s methods than `date`'s
+"everything is a free function" stance. Building one, computing one from
+two `date`s, and applying one back to a `date` are still module functions
+(`date.duration()`/`date.durationBetween()`/`date.addDuration()`/
+`date.subDuration()`, §9.5) — those are the operations that construct or
+consume a value, not read one already in hand. `==`/`!=` compare a
+`duration`'s six components directly (structural equality, like `list` -
+§8.5), but ordering (`< <= > >=`) is deliberately unsupported: unlike two
+instants, "which of these two spans is longer" has no single answer without
+a reference date (a month is a different number of days depending on which
+month it started from) — the same reason Temporal requires one for calendar
+unit comparisons. No arithmetic operators either (`duration1 + duration2` is
+a type error).
+
 ### 9.3 `console`
 
 Global — no import needed (§9.1).
@@ -1153,6 +1177,31 @@ truncated toward zero (so `differenceInDays(a, b) == -differenceInDays(b,
 a)` always, never off-by-one from truncation direction); these compare
 instants, so which zone either `Date` is attached to makes no difference to
 the result.
+
+**Duration** (§9.2, `object.Duration`, inspired by Temporal's `Duration` and
+date-fns's `intervalToDuration` — a calendar-and-clock span kept as separate
+components, since "1 month" has no fixed length in days) —
+`duration(years, months, days[, hours, minutes, seconds])` builds one
+directly (arity 3–6, mirroring `of`'s own shape); every given component has
+to point the same direction, all positive or all negative (zero components
+don't count toward that), or it's a `Value` error. `durationBetween(a, b)`
+computes the calendar breakdown of `a - b` — same sign convention as
+`differenceInDays` — as whole months (not split further into years and
+months separately, so a month-length ambiguity is never resolved two
+different ways), then whole days, then an hours/minutes/seconds remainder;
+computed in whichever of `a`/`b` is chronologically earlier's attached zone
+— the same zone `addDuration` walks in when reconstructing the later one, so
+the two stay exact inverses of each other. This sits alongside, not instead
+of, the single-unit `differenceInX` family above — "how many whole days
+apart" and "the full calendar breakdown" are different questions, not two
+spellings of the same one. `addDuration(date, duration)`/
+`subDuration(date, duration)` are the one way to apply a `Duration` back to
+a `Date`, walking months, then days, then the clock remainder in that same
+order — the order that makes `addDuration(a, durationBetween(b, a))`
+reconstruct `b` exactly. Reading a `Duration`'s own fields
+(`years()`/`months()`/.../`toString()`) is a method, not a module function —
+see §9.2's `duration` entry for why that's the one place this module departs
+from "everything beyond `toString()` is a free function."
 
 **Period boundaries** — `startOfDay`, `endOfDay`, `startOfMonth`,
 `endOfMonth` — computed in the date's own attached zone (midnight in Tokyo

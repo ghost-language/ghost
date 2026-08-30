@@ -36,6 +36,17 @@ import (
 // is one token (`yyyy`, `MM`, `dd`), and anything else in the pattern is
 // copied through literally - rather than Go's reference-date layout strings,
 // which read like a date rather than describing one.
+//
+// Duration (object.Duration) is a calendar-and-clock span - years, months,
+// days, hours, minutes, seconds - rather than a single reduced number, the
+// way Temporal.Duration and date-fns's intervalToDuration both are: "1
+// month" has no fixed length, so collapsing a difference into one unit loses
+// information a calendar-aware caller wants back. durationBetween() computes
+// one from two Dates; duration() builds one directly; addDuration/
+// subDuration are the one way to apply one back to a Date. This sits
+// alongside, not instead of, the single-unit differenceInDays/Hours/Minutes/
+// Seconds above - "how many whole days apart" and "the full calendar
+// breakdown" are different questions, not two spellings of the same one.
 
 var DateMethods = map[string]*object.LibraryFunction{}
 var DateProperties = map[string]*object.LibraryProperty{}
@@ -86,6 +97,13 @@ func init() {
 	RegisterMethod(DateMethods, "differenceInHours", dateDifferenceInHours)
 	RegisterMethod(DateMethods, "differenceInMinutes", dateDifferenceInMinutes)
 	RegisterMethod(DateMethods, "differenceInSeconds", dateDifferenceInSeconds)
+
+	// Duration: a calendar-and-clock breakdown, as its own reusable value,
+	// rather than a single reduced number - see the package doc comment.
+	RegisterMethod(DateMethods, "duration", dateDuration)
+	RegisterMethod(DateMethods, "durationBetween", dateDurationBetween)
+	RegisterMethod(DateMethods, "addDuration", dateAddDuration)
+	RegisterMethod(DateMethods, "subDuration", dateSubDuration)
 
 	// Start and end of a period.
 	RegisterMethod(DateMethods, "startOfDay", dateStartOfDay)
@@ -639,6 +657,228 @@ func dateDifference(name string, tok token.Token, args []object.Object, unit tim
 	elapsed := left.Time.Sub(right.Time)
 
 	return object.NewInt(int64(elapsed / unit))
+}
+
+// =============================================================================
+// Duration
+
+// dateDuration builds a Duration directly from its components - years,
+// months, days required, hours/minutes/seconds optional, mirroring date.of's
+// own arity shape. Every given component has to point the same direction, so
+// a Duration always names one direction, never a mix of "2 months forward, 3
+// days back" (object.Duration's doc comment).
+func dateDuration(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
+	if err := arityRange("date.duration", tok, args, 3, 6); err != nil {
+		return err
+	}
+
+	years, err := integerAt("date.duration", tok, args, 0)
+
+	if err != nil {
+		return err
+	}
+
+	months, err := integerAt("date.duration", tok, args, 1)
+
+	if err != nil {
+		return err
+	}
+
+	days, err := integerAt("date.duration", tok, args, 2)
+
+	if err != nil {
+		return err
+	}
+
+	var hours, minutes, seconds int64
+
+	if len(args) >= 4 {
+		hours, err = integerAt("date.duration", tok, args, 3)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	if len(args) >= 5 {
+		minutes, err = integerAt("date.duration", tok, args, 4)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	if len(args) == 6 {
+		seconds, err = integerAt("date.duration", tok, args, 5)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	if signErr := durationSameSign(tok, years, months, days, hours, minutes, seconds); signErr != nil {
+		return signErr
+	}
+
+	return &object.Duration{Years: years, Months: months, Days: days, Hours: hours, Minutes: minutes, Seconds: seconds}
+}
+
+func durationSameSign(tok token.Token, values ...int64) *object.Error {
+	sign := 0
+
+	for _, value := range values {
+		switch {
+		case value > 0:
+			if sign < 0 {
+				return durationSignError(tok)
+			}
+
+			sign = 1
+		case value < 0:
+			if sign > 0 {
+				return durationSignError(tok)
+			}
+
+			sign = -1
+		}
+	}
+
+	return nil
+}
+
+func durationSignError(tok token.Token) *object.Error {
+	return object.NewError(fault.Value, tok, "`date.duration()` expects every component to point the same direction - all positive, all negative, or zero")
+}
+
+// dateDurationBetween computes the calendar-and-clock Duration of `from -
+// to`, the same sign convention differenceInDays and the rest use: positive
+// when from is after to.
+func dateDurationBetween(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
+	if err := arity("date.durationBetween", tok, args, 2); err != nil {
+		return err
+	}
+
+	from, err := dateAt("date.durationBetween", tok, args, 0)
+
+	if err != nil {
+		return err
+	}
+
+	to, toErr := dateAt("date.durationBetween", tok, args, 1)
+
+	if toErr != nil {
+		return toErr
+	}
+
+	return computeDuration(from.Time, to.Time)
+}
+
+// computeDuration decomposes the span between two instants into a calendar
+// Duration: whole months as one combined step (monthsBetween, which uses the
+// same target-month-length clamping addMonths/addYears already commit to),
+// then whole days, then the hours/minutes/seconds remainder. Walking months
+// as a single combined step - rather than years and months separately - is
+// what keeps this the exact inverse of applyDuration, which adds a
+// Duration's years and months back in one combined step too.
+func computeDuration(from time.Time, to time.Time) *object.Duration {
+	negative := from.Before(to)
+	later, earlier := from, to
+
+	if negative {
+		later, earlier = to, from
+	}
+
+	totalMonths := monthsBetween(earlier, later)
+	cursor := addCalendarMonths(earlier, int(totalMonths))
+
+	days := int64(0)
+
+	for !cursor.AddDate(0, 0, int(days+1)).After(later) {
+		days++
+	}
+
+	cursor = cursor.AddDate(0, 0, int(days))
+
+	remaining := later.Sub(cursor)
+	hours := int64(remaining / time.Hour)
+	remaining -= time.Duration(hours) * time.Hour
+	minutes := int64(remaining / time.Minute)
+	remaining -= time.Duration(minutes) * time.Minute
+	seconds := int64(remaining / time.Second)
+
+	years := totalMonths / 12
+	months := totalMonths % 12
+
+	if negative {
+		years, months, days, hours, minutes, seconds = -years, -months, -days, -hours, -minutes, -seconds
+	}
+
+	return &object.Duration{Years: years, Months: months, Days: days, Hours: hours, Minutes: minutes, Seconds: seconds}
+}
+
+// monthsBetween answers the largest whole number of months that fit between
+// earlier and later (earlier assumed <= later), using addCalendarMonths -
+// the same day-of-month clamping addMonths/addYears already commit to - as
+// the source of truth rather than assuming the raw calendar-field
+// subtraction is exact: a plain (year, month) difference can be off by one
+// when the day of month clamps, so the estimate below is corrected against
+// addCalendarMonths directly rather than trusted as-is.
+func monthsBetween(earlier time.Time, later time.Time) int64 {
+	estimate := int64(later.Year()-earlier.Year())*12 + int64(later.Month()-earlier.Month())
+
+	for estimate > 0 && addCalendarMonths(earlier, int(estimate)).After(later) {
+		estimate--
+	}
+
+	for !addCalendarMonths(earlier, int(estimate+1)).After(later) {
+		estimate++
+	}
+
+	return estimate
+}
+
+// dateAddDuration and dateSubDuration apply a Duration's components back to
+// a Date, in the same combined-months-then-days-then-clock order
+// computeDuration decomposes one in, so addDuration(a, durationBetween(b,
+// a)) reconstructs b exactly.
+func dateAddDuration(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
+	return dateApplyDuration("date.addDuration", tok, args, 1)
+}
+
+func dateSubDuration(scope *object.Scope, tok token.Token, args ...object.Object) object.Object {
+	return dateApplyDuration("date.subDuration", tok, args, -1)
+}
+
+func dateApplyDuration(name string, tok token.Token, args []object.Object, sign int64) object.Object {
+	if err := arity(name, tok, args, 2); err != nil {
+		return err
+	}
+
+	date, err := dateAt(name, tok, args, 0)
+
+	if err != nil {
+		return err
+	}
+
+	duration, durationErr := durationAt(name, tok, args, 1)
+
+	if durationErr != nil {
+		return durationErr
+	}
+
+	return newDate(applyDuration(date.Time, duration, sign))
+}
+
+// applyDuration is dateAddDuration/dateSubDuration's shared body - see their
+// doc comment for why the order matters.
+func applyDuration(t time.Time, d *object.Duration, sign int64) time.Time {
+	t = addCalendarMonths(t, int(sign*(d.Years*12+d.Months)))
+	t = t.AddDate(0, 0, int(sign*d.Days))
+	t = t.Add(time.Duration(sign*d.Hours) * time.Hour)
+	t = t.Add(time.Duration(sign*d.Minutes) * time.Minute)
+	t = t.Add(time.Duration(sign*d.Seconds) * time.Second)
+
+	return t
 }
 
 // =============================================================================
