@@ -13,7 +13,7 @@ func evaluateWhile(node *ast.While, scope *object.Scope) object.Object {
 			return condition
 		}
 
-		if isTruthy(condition) {
+		if object.IsTrue(condition) {
 			evaluated := Evaluate(node.Consequence, scope)
 
 			if isTerminator(evaluated) {

@@ -13,7 +13,7 @@ func evaluateIf(node *ast.If, scope *object.Scope) object.Object {
 		return condition
 	}
 
-	if isTruthy(condition) {
+	if object.IsTrue(condition) {
 		return Evaluate(node.Consequence, scope)
 	} else if node.Alternative != nil {
 		return Evaluate(node.Alternative, scope)

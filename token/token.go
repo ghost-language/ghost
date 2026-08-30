@@ -102,7 +102,6 @@ const (
 	NEW
 	NULL
 	OR
-	PRINT
 	RETURN
 	SUPER
 	SWITCH
@@ -177,7 +176,6 @@ var typeNames = [...]string{
 	NEW:      "new",
 	NULL:     "null",
 	OR:       "or",
-	PRINT:    "print",
 	RETURN:   "return",
 	SUPER:    "super",
 	SWITCH:   "switch",
