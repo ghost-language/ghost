@@ -514,8 +514,11 @@ asked, including a `map`'s values and a `list` nested inside either.
   **match-expression**, not a C-style switch: there is no fallthrough, no
   `break` is needed or accepted between cases, and a `case` may list several
   comma-separated values that all run the same block. At most one `default`
-  is allowed (a second is a parse error). See §13.3 for a correctness gap in
-  how case values are compared.
+  is allowed (a second is a parse error). The subject and every case value
+  are compared with `object.ValuesEqual` (§13.2's content-or-identity rule,
+  the same one `==` uses) and propagate an error the way every other
+  expression does, rather than being compared by string representation and
+  silently swallowing a failure (§13.3, done).
 - **`break`** and **`continue`** — valid inside `while`, `for`, and
   `for ... in`; propagate through nested blocks via the same
   error/return/break/continue "terminator" mechanism used for early return.
@@ -1690,23 +1693,34 @@ fallback via a minimal stub type) and `evaluator/evaluator_test.go`'s
 same-type comparison now answers rather than errors, and a genuinely
 different-typed, non-null pair still errors exactly as before).
 
-### 13.3 `switch` silently swallows an error in its subject or case expressions
+### 13.3 `switch` silently swallows an error in its subject or case expressions — done
 
-`evaluator/switch.go`'s `evaluateSwitch` calls `Evaluate(node.Value, scope)`
-and, for each case, `Evaluate(val, scope)`, **without ever checking
-`isError()`** on either result. If the switch's subject (or a case value)
-fails to evaluate, the resulting `*object.Error` is compared via `.Type()`/
+`evaluator/switch.go`'s `evaluateSwitch` used to call `Evaluate(node.Value,
+scope)` and, for each case, `Evaluate(val, scope)`, without ever checking
+`isError()` on either result: if the switch's subject (or a case value)
+failed to evaluate, the resulting `*object.Error` was compared via `.Type()`/
 `.String()` against the other branches instead of being propagated — in the
-best case this falls through to `default` (or returns `nil` if there is
+best case falling through to `default` (or returning `nil` if there was
 none), silently discarding a real error instead of surfacing it the way
-every other construct in the language does. Separately, case-value
-comparison uses `obj.Type() == out.Type() && obj.String() == out.String()`
-rather than `object.ValuesEqual` — a comparison by *string representation*
-rather than by value, which is both weaker than the rest of the language's
-equality rules (§8.5) and unable to correctly match composite values.
-**Fix:** check `isError()` immediately after evaluating the subject and
-each case value and propagate; route the comparison through
-`object.ValuesEqual`.
+every other construct in the language does.
+
+Separately, case-value comparison used `obj.Type() == out.Type() &&
+obj.String() == out.String()` rather than `object.ValuesEqual` — a
+comparison by *string representation*, which was not just weaker than the
+rest of the language's equality rules (§8.5) but actively wrong for two
+whole types: `Function.String()` answers the literal `"function"` for
+*every* function, and `Class.String()` answers `"class"` for every class —
+neither type has a more specific string form — so `switch (f) {
+case g { ... } }` matched on **any** two functions regardless of which ones
+they actually were, and the same for two classes.
+
+**Fix:** `evaluateSwitch` now checks `isError()` immediately after
+evaluating the subject and each case value and propagates it, and compares
+every case through `object.ValuesEqual` (§13.2) instead of `String()` —
+content equality for a list/map/duration/date, identity for everything
+else, matching `==` exactly. Tested in `evaluator/switch_test.go`
+(`TestSwitchPropagatesErrors`, and `TestSwitchComparesByValueNotString`,
+which reproduces the function/class false-match directly).
 
 ### 13.4 `-i` is documented in two places and implemented in none
 
