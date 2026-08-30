@@ -203,8 +203,11 @@ func TestDateArithmetic(t *testing.T) {
 		{"subMonths", 1, "2023-12-15T10:00:00Z"},
 		{"subYears", 1, "2023-01-15T10:00:00Z"},
 		{"addHours", 5, "2024-01-15T15:00:00Z"},
+		{"subHours", 5, "2024-01-15T05:00:00Z"},
 		{"addMinutes", 90, "2024-01-15T11:30:00Z"},
+		{"subMinutes", 90, "2024-01-15T08:30:00Z"},
 		{"addSeconds", 3661, "2024-01-15T11:01:01Z"},
+		{"subSeconds", 3661, "2024-01-15T08:58:59Z"},
 	}
 
 	for _, tt := range tests {
@@ -318,6 +321,35 @@ func TestDateStartAndEndOf(t *testing.T) {
 	if endOfNonLeapMonth.Time.Day() != 28 {
 		t.Errorf("endOfMonth in a non-leap February: got=%s", endOfNonLeapMonth.String())
 	}
+
+	// mid (2024-02-15) is a Thursday, so its week runs Sunday Feb 11 through
+	// Saturday Feb 17 - startOfWeek/endOfWeek treat Sunday as day one,
+	// matching weekday()'s 0 = Sunday reading.
+	startOfWeek := mustDate(t, callDate(t, "startOfWeek", mid))
+	if startOfWeek.String() != "2024-02-11T00:00:00Z" {
+		t.Errorf("startOfWeek: got=%s", startOfWeek.String())
+	}
+
+	endOfWeek := mustDate(t, callDate(t, "endOfWeek", mid))
+	if endOfWeek.Time.Day() != 17 || endOfWeek.Time.Hour() != 23 || endOfWeek.Time.Minute() != 59 || endOfWeek.Time.Second() != 59 {
+		t.Errorf("endOfWeek: got=%s", endOfWeek.String())
+	}
+
+	sunday := dateOfHelper(t, 2024, 2, 11, 6, 0, 0)
+	startOfWeekOnSunday := mustDate(t, callDate(t, "startOfWeek", sunday))
+	if startOfWeekOnSunday.String() != "2024-02-11T00:00:00Z" {
+		t.Errorf("startOfWeek on a Sunday should not roll back a week: got=%s", startOfWeekOnSunday.String())
+	}
+
+	startOfYear := mustDate(t, callDate(t, "startOfYear", mid))
+	if startOfYear.String() != "2024-01-01T00:00:00Z" {
+		t.Errorf("startOfYear: got=%s", startOfYear.String())
+	}
+
+	endOfYear := mustDate(t, callDate(t, "endOfYear", mid))
+	if endOfYear.Time.Month() != time.December || endOfYear.Time.Day() != 31 || endOfYear.Time.Hour() != 23 || endOfYear.Time.Minute() != 59 || endOfYear.Time.Second() != 59 {
+		t.Errorf("endOfYear: got=%s", endOfYear.String())
+	}
 }
 
 func TestDateComponents(t *testing.T) {
@@ -387,6 +419,8 @@ func TestDateArgumentErrors(t *testing.T) {
 		args []object.Object
 	}{
 		{"addDays", []object.Object{&object.String{Value: "not a date"}, object.NewInt(1)}},
+		{"subHours", []object.Object{&object.String{Value: "not a date"}, object.NewInt(1)}},
+		{"startOfWeek", []object.Object{&object.String{Value: "not a date"}}},
 		{"toUnix", []object.Object{object.NewInt(1)}},
 		{"format", []object.Object{dateOfHelper(t, 2024, 1, 1), object.NewInt(1)}},
 	}
@@ -523,6 +557,16 @@ func TestDateStartAndEndOfRespectsZone(t *testing.T) {
 	endOfDay := mustDate(t, callDate(t, "endOfDay", zoned))
 	if endOfDay.Time.Hour() != 23 || endOfDay.String()[len(endOfDay.String())-6:] != "-05:00" {
 		t.Errorf("endOfDay in a named zone: got=%s", endOfDay.String())
+	}
+
+	startOfWeek := mustDate(t, callDate(t, "startOfWeek", zoned))
+	if startOfWeek.String() != "2024-02-11T00:00:00-05:00" {
+		t.Errorf("startOfWeek in a named zone: got=%s", startOfWeek.String())
+	}
+
+	startOfYear := mustDate(t, callDate(t, "startOfYear", zoned))
+	if startOfYear.String() != "2024-01-01T00:00:00-05:00" {
+		t.Errorf("startOfYear in a named zone: got=%s", startOfYear.String())
 	}
 }
 
