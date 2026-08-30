@@ -927,9 +927,9 @@ only through `math`.
 
 | Method | Arity | Behavior |
 |---|---|---|
-| `find(subject)` | 1 | **The string itself is compiled as a regular expression**; `subject` is the text searched. Returns the first match, or `""` if none. See §13.7 — this shape is scheduled to flip before 1.0. |
-| `findAll(subject)` | 1 | As `find`, but returns a `list` of the submatches of the *first* match (despite the name, this does not find every match in the subject — a genuine bug, not a naming choice; it calls `FindStringSubmatch`, not `FindAllString`). |
-| `matches(subject)` | 1 | As `find`, returning a `boolean`. |
+| `find(pattern)` | 1 | The receiver is the subject searched; `pattern` (the argument) is compiled as a regular expression — `subject.find(pattern)`, matching JS/PHP/Python (§13.7, done). Returns the first match's full text, or `""` if none. |
+| `findAll(pattern)` | 1 | As `find`, but returns a `list` of every match's full text, in order — not, as before §13.7's fix, only the first match's own capture groups. |
+| `matches(pattern)` | 1 | As `find`, returning a `boolean`. |
 | `format(...args)` | any | `fmt.Sprintf`-style formatting using the receiver as the format string and each argument's `String()`. |
 | `endsWith(suffix)` | 1 | |
 | `startsWith(prefix)` | 1 | |
@@ -1869,28 +1869,62 @@ rather than erroring — including the exact multi-byte case that used to
 panic) and `TestStringIndexUsesRunePositions` (confirms `string[i]` and
 `charAt()`/`length()` agree on rune positions for multi-byte input).
 
-### 13.7 `string.find`/`findAll`/`matches` invert the usual receiver/argument relationship
+### 13.7 `string.find`/`findAll`/`matches` invert the usual receiver/argument relationship — done
 
-`(pattern string).find(subject string)` compiles the **receiver** as the
-regular expression and matches it against the **argument**. Every widely
+`(pattern string).find(subject string)` used to compile the **receiver** as
+the regular expression and match it against the **argument**. Every widely
 used language Ghost is modeling itself on does the opposite —
 JS's `subject.match(pattern)`, PHP's `preg_match(pattern, subject)` (subject
 still second, but the *call* reads pattern-first, not method-chained on the
 subject), Python's `re.search(pattern, subject)`. A Ghost user writing
-`text.find(pattern)` out of that muscle memory gets a working call that
-does something different from what they meant, with no error to catch the
-mistake (both operands are strings). This is called out and clearly
+`text.find(pattern)` out of that muscle memory got a working call that did
+something different from what they meant, with no error to catch the
+mistake (both operands are strings). This was called out and clearly
 intentional in the code's own comment ("the string a pattern method is
-called on is the pattern itself"), but §14 decides it flips to
-`subject.find(pattern)` before 1.0 locks the API, while it is still a
-breaking change nobody has shipped against yet.
+called on is the pattern itself"), but §14 decision 3 called for it to flip
+to `subject.find(pattern)` before 1.0 locked the API, while it was still a
+breaking change nobody had shipped against yet.
 
-Separately: `findAll` is misleadingly named — it calls
+Separately, `findAll` was misleadingly named — it called
 `FindStringSubmatch` (the *first* match's capture groups), not
 `FindAllString`/`FindAllStringSubmatch`. A user reaching for "all the
-matches in this text" via `findAll` will get only the first match's
-submatches. This is a genuine bug, fixed at the same time as the
-receiver/argument flip above.
+matches in this text" via `findAll` got only the first match's submatches.
+This was a genuine bug, fixed at the same time as the receiver/argument flip.
+
+**Fix:** `object/string.go`'s `find`/`findAll`/`matches` now all read their
+pattern from the *argument*, compiling it fresh on every call
+(`compilePattern`, a free function — it no longer has anything receiver-
+specific about it, unlike the `(str *String) pattern(...)` method it
+replaces), and match it against the receiver. `find` now calls
+`Regexp.FindString` directly (equivalent to the old code's `found[0]`, just
+without a detour through submatches it never used); `findAll` now calls
+`Regexp.FindAllString(receiver, -1)`, answering every match's full text, in
+order, rather than one match's capture groups. `matches` is unchanged in
+shape beyond the same argument/receiver swap. The bad-pattern error message's
+help text was reworded to match ("the argument to a pattern method is the
+pattern; call it on the string you want to search").
+
+This is a breaking change to the two call sites shipped in-repo:
+`examples/ada.gs` and `examples/ada/ada.gs` (an ELIZA-style chatbot demo)
+both called `knowledge.pattern.matches(text)`/`.findAll(text)` in the old
+shape and now call `text.matches(knowledge.pattern)`/`.findAll(knowledge.pattern)`.
+Flipping the call shape alone was not enough to keep that demo's behavior
+intact, though: its response templates (`examples/ada/modules/therapist.gs`)
+substitute `{1}`-style placeholders with a match's *capture group*, which
+depended on `findAll`'s bug (the accidental capture-group access) as its only
+way to reach one — Ghost's string API has never had a documented way to read
+a capture group, and adding one is a separate feature, not part of this
+defect's scope. Both example files now carry a comment noting the gap rather
+than silently shipping a demo whose reflection substitution quietly stopped
+working. Neither example is exercised by the test suite (`examples/` has no
+Go test referencing it), so this doesn't show up as a regression there.
+
+Tested in `evaluator/string_methods_test.go`'s `TestStringPatternMethods`
+(the flipped shape for `find`/`findAll`, `findAll` returning every match
+rather than one match's submatches) and the `matches` cases added to
+`TestStringMethodBooleans`; `TestBadPatternsAreReported`
+(`evaluator/errors_test.go`) was updated to raise its bad pattern through the
+argument instead of the receiver, matching the new shape.
 
 ### 13.8 `ghost.extend()` is unavailable on Windows
 
@@ -1994,11 +2028,10 @@ targets.
    fixing `ast.Map.Pairs` to preserve source order too, since a map
    literal's order needs to survive parsing before evaluation can preserve
    it.
-3. **`string.find`/`findAll`/`matches`.** These flip to the conventional
-   `subject.find(pattern)` shape before 1.0 locks the API (§13.7), matching
-   JS, PHP, and Python, and the "expressive, familiar syntax" goal in §1.
-   `findAll` is fixed at the same time to return every match, not just the
-   first.
+3. **`string.find`/`findAll`/`matches` — done.** These now take the
+   conventional `subject.find(pattern)` shape (§13.7), matching JS, PHP, and
+   Python, and the "expressive, familiar syntax" goal in §1. `findAll` was
+   fixed at the same time to return every match, not just the first.
 4. **`http`'s scope.** `http` stays intentionally minimal for 1.0 — a
    single handler/listen pair, good enough to demonstrate embedding a
    server, not a web framework. Response objects, headers, status codes,

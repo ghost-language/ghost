@@ -104,15 +104,17 @@ func (str *String) Method(method string, tok token.Token, args []Object) (Object
 // =============================================================================
 // Object methods
 
-// pattern compiles the string as a regular expression. A string is only a
-// pattern when a method treats it as one, so a bad pattern is reported at the
-// call that made that assumption rather than crashing the interpreter.
-func (str *String) pattern(name string, tok token.Token) (*regexp.Regexp, *Error) {
-	compiled, err := regexp.Compile(str.Value)
+// compilePattern compiles a string as a regular expression. It is always the
+// *argument* to a pattern method (find/findAll/matches), never the receiver
+// - subject.find(pattern), matching JS/PHP/Python (§13.7, §14 decision 3) -
+// so a bad pattern is reported at the call that made that assumption rather
+// than crashing the interpreter.
+func compilePattern(name string, tok token.Token, patternString string) (*regexp.Regexp, *Error) {
+	compiled, err := regexp.Compile(patternString)
 
 	if err != nil {
-		return nil, NewError(fault.Value, tok, "`%s` cannot use `%s` as a pattern: %s", name, str.Value, patternReason(err)).
-			WithHelp("the string a pattern method is called on is the pattern itself")
+		return nil, NewError(fault.Value, tok, "`%s` cannot use `%s` as a pattern: %s", name, patternString, patternReason(err)).
+			WithHelp("the argument to a pattern method is the pattern; call it on the string you want to search")
 	}
 
 	return compiled, nil
@@ -180,44 +182,49 @@ func (str *String) contains(tok token.Token, args []Object) (Object, bool) {
 	return &Boolean{Value: strings.Contains(str.Value, substr.Value)}, true
 }
 
+// find answers the first match of a pattern against the receiver, or "" if
+// none - the receiver is the subject being searched, pattern is the
+// argument (§13.7, §14 decision 3), the shape JS's subject.match(pattern),
+// PHP's preg_match(pattern, subject), and Python's re.search(pattern,
+// subject) all agree on.
 func (str *String) find(tok token.Token, args []Object) (Object, bool) {
 	if err := Arity("string.find()", tok, args, 1); err != nil {
 		return err, true
 	}
 
-	subject, err := StringArgument("string.find()", tok, args, 0)
+	pattern, err := StringArgument("string.find()", tok, args, 0)
 
 	if err != nil {
 		return err, true
 	}
 
-	expression, err := str.pattern("string.find()", tok)
+	expression, err := compilePattern("string.find()", tok, pattern.Value)
 
 	if err != nil {
 		return err, true
 	}
 
-	found := expression.FindStringSubmatch(subject.Value)
-
-	if len(found) > 0 {
-		return &String{Value: found[0]}, true
-	}
-
-	return &String{}, true
+	return &String{Value: expression.FindString(str.Value)}, true
 }
 
+// findAll answers every match of a pattern against the receiver, in order -
+// unlike find(), which only ever answers the first. The previous
+// implementation was misleadingly named: it called FindStringSubmatch (the
+// first match's own capture groups) rather than FindAllString (every match),
+// a genuine bug fixed at the same time as the receiver/argument flip above
+// (§13.7).
 func (str *String) findAll(tok token.Token, args []Object) (Object, bool) {
 	if err := Arity("string.findAll()", tok, args, 1); err != nil {
 		return err, true
 	}
 
-	subject, err := StringArgument("string.findAll()", tok, args, 0)
+	pattern, err := StringArgument("string.findAll()", tok, args, 0)
 
 	if err != nil {
 		return err, true
 	}
 
-	expression, err := str.pattern("string.findAll()", tok)
+	expression, err := compilePattern("string.findAll()", tok, pattern.Value)
 
 	if err != nil {
 		return err, true
@@ -225,7 +232,7 @@ func (str *String) findAll(tok token.Token, args []Object) (Object, bool) {
 
 	list := &List{}
 
-	for _, match := range expression.FindStringSubmatch(subject.Value) {
+	for _, match := range expression.FindAllString(str.Value, -1) {
 		list.Elements = append(list.Elements, &String{Value: match})
 	}
 
@@ -317,24 +324,27 @@ func (str *String) lastIndexOf(tok token.Token, args []Object) (Object, bool) {
 	return NewInt(int64(utf8.RuneCountInString(str.Value[:byteIndex]))), true
 }
 
+// matches reports whether a pattern matches anywhere in the receiver - the
+// receiver is the subject, pattern is the argument, the same flip find()
+// and findAll() take (§13.7).
 func (str *String) matches(tok token.Token, args []Object) (Object, bool) {
 	if err := Arity("string.matches()", tok, args, 1); err != nil {
 		return err, true
 	}
 
-	subject, err := StringArgument("string.matches()", tok, args, 0)
+	pattern, err := StringArgument("string.matches()", tok, args, 0)
 
 	if err != nil {
 		return err, true
 	}
 
-	expression, err := str.pattern("string.matches()", tok)
+	expression, err := compilePattern("string.matches()", tok, pattern.Value)
 
 	if err != nil {
 		return err, true
 	}
 
-	return &Boolean{Value: expression.MatchString(subject.Value)}, true
+	return &Boolean{Value: expression.MatchString(str.Value)}, true
 }
 
 // pad grows a string to a target rune length by adding copies of a pad
