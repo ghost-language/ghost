@@ -119,6 +119,15 @@ func TestFoldsComparisonsAndBooleans(t *testing.T) {
 		{"!false", true},
 		{"!null", true},
 		{"!(1 == 2)", true},
+		{"!5", false},
+
+		// A string literal's folded truthiness depends on whether it's
+		// empty (§8.5, §13.11) - this used to hard-code every string to
+		// fold to false, regardless of content, silently diverging from
+		// the evaluator's own isTruthy rule for the one case (an empty
+		// string literal) where it mattered.
+		{`!"abc"`, false},
+		{`!""`, true},
 	}
 
 	for _, tt := range tests {

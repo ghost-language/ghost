@@ -11,6 +11,7 @@ func helpCommand() {
 	fmt.Println()
 	fmt.Println("    -h  show help")
 	fmt.Println("    -i  enter interactive mode after executing file")
+	fmt.Println("    -t  display how long the program ran for")
 	fmt.Println("    -v  show version")
 	fmt.Println()
 	fmt.Println("Examples:")

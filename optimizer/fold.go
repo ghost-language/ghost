@@ -202,10 +202,16 @@ func foldPrefix(node *ast.Prefix) ast.ExpressionNode {
 			return booleanNode(node, !right.Value)
 		case *ast.Null:
 			return booleanNode(node, true)
-		case *ast.Number, *ast.String:
-			// Matches the evaluator, where bang over a non-boolean,
-			// non-null operand is false.
+		case *ast.Number:
+			// A number is always truthy (object.IsTrue/§8.5), so bang over
+			// one is always false.
 			return booleanNode(node, false)
+		case *ast.String:
+			// A string's truthiness depends on whether it's empty
+			// (object.IsTrue/§8.5, §13.11) - this used to hard-code false
+			// for every string here, which had silently drifted from the
+			// evaluator's own rule and answered false for !"" too.
+			return booleanNode(node, right.Value == "")
 		}
 	}
 

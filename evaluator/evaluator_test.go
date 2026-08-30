@@ -749,9 +749,18 @@ func TestBangOperator(t *testing.T) {
 		{`!("abc".startsWith("x"))`, true},
 		{`!("abc".startsWith("a"))`, false},
 
-		// Non-boolean, non-null operands remain falsy under bang.
+		// A number is always truthy, so bang over one is always false.
 		{"!5", false},
+		{"!0", false},
+
+		// A string's truthiness depends on whether it's empty (§8.5), not
+		// merely on being a non-boolean, non-null operand - object.IsFalse
+		// is the one place this is decided (§13.11); a hand-rolled copy of
+		// this switch used to live in evaluator/prefix.go and had already
+		// drifted from it, folding every string to false regardless of
+		// content, so !"" answered false instead of true.
 		{`!"abc"`, false},
+		{`!""`, true},
 	}
 
 	for _, tt := range tests {

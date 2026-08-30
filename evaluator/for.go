@@ -32,7 +32,7 @@ func evaluateFor(node *ast.For, scope *object.Scope) object.Object {
 			return condition
 		}
 
-		if isTruthy(condition) {
+		if object.IsTrue(condition) {
 			err := Evaluate(node.Block, scope)
 
 			if isTerminator(err) {

@@ -126,17 +126,3 @@ func isTerminator(obj object.Object) bool {
 
 	return false
 }
-
-// isTruthy determines if the referenced value is of a truthy value.
-func isTruthy(value object.Object) bool {
-	switch value := value.(type) {
-	case *object.Null:
-		return false
-	case *object.Boolean:
-		return value.Value
-	case *object.String:
-		return len(value.Value) > 0
-	default:
-		return true
-	}
-}

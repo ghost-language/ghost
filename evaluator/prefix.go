@@ -5,7 +5,6 @@ import (
 	"ghostlang.org/x/ghost/fault"
 	"ghostlang.org/x/ghost/object"
 	"ghostlang.org/x/ghost/token"
-	"ghostlang.org/x/ghost/value"
 )
 
 func evaluatePrefix(node *ast.Prefix, scope *object.Scope) object.Object {
@@ -17,20 +16,14 @@ func evaluatePrefix(node *ast.Prefix, scope *object.Scope) object.Object {
 
 	switch node.Operator {
 	case token.BANG:
-		// Compare by value rather than by pointer identity. Not every boolean
-		// reaching this point is one of the value.TRUE/value.FALSE singletons:
-		// string comparisons and library functions such as string.startsWith()
-		// and math.isNegative() build fresh boolean objects, and an identity
-		// check silently fell through to the default branch for those, making
-		// !(expression) yield false regardless of the operand.
-		switch right := right.(type) {
-		case *object.Boolean:
-			return toBooleanValue(!right.Value)
-		case *object.Null:
-			return value.TRUE
-		default:
-			return value.FALSE
-		}
+		// Routes through object.IsFalse rather than hand-rolling truthiness
+		// here (§13.11) - a hand-rolled version of this exact switch used to
+		// live here, and had already drifted from object/boolean.go's
+		// isTruthy: its default branch answered false for every type but
+		// Boolean/Null, silently skipping the case String has in the real
+		// rule (empty string is falsy), so !"" answered false instead of
+		// true.
+		return toBooleanValue(object.IsFalse(right))
 	case token.MINUS:
 		// Only works with number objects
 		if right.Type() != object.NUMBER {

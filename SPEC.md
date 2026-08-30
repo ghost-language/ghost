@@ -469,6 +469,15 @@ differs from JS (where `0` and `""` are both falsy) and from Python
 should be called out plainly wherever Ghost is introduced to someone arriving
 from either background.
 
+`object.IsTrue`/`IsFalse` (`object/boolean.go`) are the one place this rule
+is decided — `if`/`while`/`for`/the ternary all call `IsTrue` directly, and
+`!` (`evaluator/prefix.go`) answers `toBooleanValue(IsFalse(right))`, rather
+than any of them re-deriving the rule locally (§13.11, done). Before that
+fix, three independent copies of this same switch existed, and one had
+already silently drifted — `!` on an empty string answered `false` instead
+of `true` since `evaluator/prefix.go` was first written, caught only by the
+audit §13.11 called for, not by any test.
+
 **Equality (`==`/`!=`) is comparison, not coercion**, and behaves differently
 depending on the pair of types involved:
 
@@ -873,9 +882,9 @@ standing invitation to add a third.
 | `type` | function | `type(value)` | Returns the value's type name as a `string` — the exact same name used in every error message (§8.2). Arity: exactly 1. |
 
 There is no bare `print` in 1.0: `console.log(...)` is the one way to write a
-line to output. `token.PRINT` (§13.9) was already dead code before this
-removal and stays exactly as dead after it — that defect is about an unused
-token constant, not about `print` the function.
+line to output. The scanner never produced a `print` keyword token to begin
+with — `token.PRINT` was dead code, unreachable from any keyword the scanner
+actually recognized, and has been deleted (§13.9, done).
 
 ### 9.2 Built-in Methods on Core Types
 
@@ -1416,7 +1425,7 @@ ghost [flags] [file]
 | `file` | Executes the file, then exits with status 1 if it failed. | Works. |
 | `-h` | Prints usage and exits. | Works. |
 | `-v` | Prints the binary name and version. | Works. |
-| `-t` | Prints how long execution took. | Works, but **undocumented** in `helpCommand()`'s own printed help (§13.10). |
+| `-t` | Prints how long execution took. | Works, and documented in `helpCommand()`'s own printed help (§13.10, done). |
 | `-i` | Runs a file, then drops into a REPL with the script's environment intact — same `Scope`, so every binding the script made is there to inspect, even one made before a mid-script failure. Composes with `-t` (timing prints before the prompt starts); with no file argument it is a no-op, same as plain `ghost` alone. | Works (§13.4, done). |
 
 ### 10.2 REPL
@@ -1937,31 +1946,65 @@ on a third of Ghost's own supported platforms, with no fallback and no
 documented caveat. At minimum, this needs a documented caveat before 1.0;
 a real fallback is a larger question outside this specification's scope.
 
-### 13.9 Dead token: `token.PRINT`
+### 13.9 Dead token: `token.PRINT` — done
 
-`token/token.go` defines `PRINT` as a token type, but the scanner's
-`keywords` map (`scanner/scanner.go`) never maps the string `"print"` to it
-— so this token can never actually be produced by the scanner, and nothing
-in the parser or evaluator references it either. Ghost has no `print` at all
-in 1.0 (§9.1) — `console.log(...)` replaced it — so there is no live
-identifier this token could even be mistaken for. `PRINT` is pure dead code,
-presumably left over from an earlier design. **Fix:** delete it (and its
-`typeNames` entry).
+`token/token.go` defined `PRINT` as a token type, but the scanner's
+`keywords` map (`scanner/scanner.go`) never mapped the string `"print"` to
+it — so this token could never actually be produced by the scanner, and
+nothing in the parser or evaluator referenced it either. Ghost has no
+`print` at all in 1.0 (§9.1) — `console.log(...)` replaced it — so there was
+no live identifier this token could even be mistaken for. `PRINT` was pure
+dead code, presumably left over from an earlier design. **Fix:** deleted,
+along with its `typeNames` entry (`token/token.go`).
 
-### 13.10 `-t` is implemented but undocumented
+### 13.10 `-t` is implemented but undocumented — done
 
 The reverse of §13.4: `cmd/ghost.go` registers and honors `-t` ("display
 how long the program ran for"), but `cmd/help.go`'s `helpCommand()` never
-mentions it in its printed usage/flags list. **Fix:** add it to the printed
-help before 1.0.
+mentioned it in its printed usage/flags list. **Fix:** added to the printed
+help, matching the wording of its own `flag.BoolVar` description
+(`cmd/help.go`).
 
-### 13.11 Minor: duplicated `isTruthy` logic
+### 13.11 Minor: duplicated `isTruthy` logic — done
 
-`evaluator/evaluator.go` and `object/boolean.go` each define their own
+`evaluator/evaluator.go` and `object/boolean.go` each defined their own
 private `isTruthy(Object) bool` with identical logic (`object/boolean.go`'s
-copy is exported as `IsTrue`/`IsFalse`). Not a bug — both copies agree
-today — but two independent definitions of a rule this central (§8.5) is a
-maintenance hazard the moment one of them is edited and the other is not.
+copy is exported as `IsTrue`/`IsFalse`). Framed in §13's original writeup as
+"not a bug — both copies agree today" — but the audit this triggered found a
+**third**, independent copy, and it had already drifted: `evaluator/prefix.go`'s
+`BANG` (`!`) case hand-rolled its own truthiness switch rather than calling
+either existing one, and its `default` branch answered `false` for every
+type but `Boolean`/`Null` — silently skipping the case `String` has in the
+real rule (an empty string is falsy, §8.5). `!""` answered `false` instead
+of `true`. A **fourth** copy, in the constant-folding optimizer
+(`optimizer/fold.go`'s `foldPrefix`), had the identical bug for the same
+reason — it explicitly commented that it was "matching the evaluator," and
+did, including the bug, folding every string literal's `!` to `false`
+regardless of content. Confirmed before the fix: `!""` (and `!("a".slice(0,
+0))`, to rule out the optimizer folding a literal masking a runtime-path
+bug) both answered `false` against the built binary.
+
+**Fix:** `evaluator/evaluator.go`'s private `isTruthy` is deleted; its four
+call sites (`evaluator/if.go`, `ternary.go`, `while.go`, `for.go`) now call
+`object.IsTrue` directly, so `object/boolean.go`'s `isTruthy` (reached only
+through the exported `IsTrue`/`IsFalse`) is genuinely the one place this
+rule is decided, the same principle §"Error handling" already applies to
+`object.ValuesEqual` (§13.2). `evaluator/prefix.go`'s `BANG` case is
+replaced with `toBooleanValue(object.IsFalse(right))` — no more hand-rolled
+switch. `optimizer/fold.go`'s `foldPrefix` keeps its own switch (folding
+happens over `ast` nodes, before any `object.Object` exists to call
+`IsFalse` on), but its `String` case now checks `right.Value == ""` instead
+of unconditionally folding to `false`; its `Number` case is unchanged and
+correctly unconditional, since a number is always truthy regardless of
+value (§8.5) — `!0` really is `false`.
+
+Tested in `evaluator/evaluator_test.go`'s `TestBangOperator` (new `!""` /
+`!0` cases, and reworded comments explaining *why* each answer is what it
+is rather than restating the old, incomplete "non-boolean, non-null
+operands remain falsy" framing that this bug slipped through) and
+`optimizer/optimizer_test.go`'s `TestFoldsComparisonsAndBooleans` (the same
+`!""` case, at the constant-folding layer specifically, so a regression in
+either the runtime or the compile-time path is caught independently).
 
 ### 13.12 Two statements on separate lines can silently merge into one
 

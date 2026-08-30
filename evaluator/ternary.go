@@ -12,7 +12,7 @@ func evaluateTernary(node *ast.Ternary, scope *object.Scope) object.Object {
 		return condition
 	}
 
-	if isTruthy(condition) {
+	if object.IsTrue(condition) {
 		return Evaluate(node.IfTrue, scope)
 	}
 
