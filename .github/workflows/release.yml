@@ -60,6 +60,23 @@ jobs:
         fi
         echo "$TAG matches version/version.go"
 
+    # The cask is pushed at the end of the release, once the binaries are
+    # already published. A token discovered missing at that point leaves a
+    # green release pointing at a stale tap - which is what v1.0.0-beta.3 did
+    # - so it is checked here, before anything is built.
+    - name: Check the Homebrew tap token is present
+      if: github.event_name == 'release'
+      env:
+        HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+      run: |
+        if [ -z "$HOMEBREW_TAP_TOKEN" ]; then
+          echo "::error::HOMEBREW_TAP_TOKEN is not set on this repository."
+          echo "The cask in ghost-language/homebrew-tap cannot be updated without it."
+          echo "Add a token with contents:write on ghost-language/homebrew-tap, then re-run."
+          exit 1
+        fi
+        echo "HOMEBREW_TAP_TOKEN is present"
+
     # fmt, vet, test and bench - the same gate a pull request has to pass.
     - name: Check
       run: make check
@@ -98,8 +115,9 @@ jobs:
           ${{ github.event_name == 'workflow_dispatch' && '--snapshot --skip=publish,announce' || '' }}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        # Optional. Absent, GoReleaser skips the Homebrew formula rather than
-        # failing the release - see skip_upload in .goreleaser.yml.
+        # Required for a real release: GoReleaser pushes the cask to
+        # ghost-language/homebrew-tap with it. Verify has already checked it
+        # is present, so a failure here is a real failure.
         HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
 
     - name: Upload the dry run's archives
