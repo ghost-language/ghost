@@ -57,6 +57,22 @@ type Environment struct {
 	outer     *Environment
 	writer    io.Writer
 	directory string
+
+	// captured records that a value outliving this environment holds a
+	// reference to it — a closure, a class, or a trait created while it was in
+	// scope. Such an environment can never be reused, because whatever
+	// captured it will read from it later. Capture marks the whole enclosing
+	// chain, since a closure reads through `outer` as well.
+	captured bool
+
+	// freeChild holds at most one finished block scope, so a loop body or an
+	// `if` inside a hot loop reuses a single scope and environment rather than
+	// allocating a pair per execution. A block's scope is only ever reached
+	// from the one goroutine executing that block: every concurrent entry into
+	// Ghost code (an `http.handle` callback, an embedder's Call) runs in a
+	// function frame of its own, and a block's environment is a child of that
+	// frame rather than of anything shared.
+	freeChild *Scope
 }
 
 func NewEnvironment() *Environment {
@@ -69,6 +85,36 @@ func NewEnclosedEnvironment(outer *Environment) *Environment {
 	environment.writer = outer.writer
 
 	return environment
+}
+
+// Capture marks this environment, and every environment enclosing it, as held
+// by a value that outlives the block it belongs to. Creating a closure, a
+// class, or a trait captures the scope it was created in, and reading a name
+// through that value later walks the whole chain — so none of it may be
+// reused.
+func (environment *Environment) Capture() {
+	for current := environment; current != nil; current = current.outer {
+		if current.captured {
+			return
+		}
+
+		current.captured = true
+	}
+}
+
+// clear empties an environment so it can be handed to another block, keeping
+// only what makes it that block's environment rather than any other: where it
+// is chained, and where it writes.
+func (environment *Environment) clear() {
+	for index := 0; index < environment.count; index++ {
+		environment.names[index] = ""
+		environment.values[index] = nil
+	}
+
+	environment.count = 0
+	environment.extra = nil
+	environment.overflow = nil
+	environment.captured = false
 }
 
 // local looks a name up in this environment only, ignoring the outer chain.
@@ -148,14 +194,16 @@ func (environment *Environment) GetLocal(name string) (Object, bool) {
 	return environment.local(name)
 }
 
-// Set binds a name in this environment, replacing any existing binding here.
-// It never walks the outer chain.
-func (environment *Environment) Set(name string, value Object) Object {
+// rebind replaces the value under a name already bound in this environment,
+// reporting whether there was one. It never creates a binding, which is what
+// separates it from Set and what lets Assign walk outward without declaring a
+// name in every scope it passes through.
+func (environment *Environment) rebind(name string, value Object) bool {
 	for index := 0; index < environment.count; index++ {
 		if environment.names[index] == name {
 			environment.values[index] = value
 
-			return value
+			return true
 		}
 	}
 
@@ -163,8 +211,41 @@ func (environment *Environment) Set(name string, value Object) Object {
 		if environment.extra[index].name == name {
 			environment.extra[index].value = value
 
-			return value
+			return true
 		}
+	}
+
+	if environment.overflow != nil {
+		if _, ok := environment.overflow[name]; ok {
+			environment.overflow[name] = value
+
+			return true
+		}
+	}
+
+	return false
+}
+
+// Assign rebinds a name wherever it is already bound, walking outward through
+// the enclosing chain the same way Get does, and reports whether it found one.
+// A name bound nowhere is left alone for the caller to declare, so assignment
+// reaches an existing outer variable (§13.13) without silently creating outer
+// bindings for names that are genuinely new here.
+func (environment *Environment) Assign(name string, value Object) bool {
+	for current := environment; current != nil; current = current.outer {
+		if current.rebind(name, value) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// Set binds a name in this environment, replacing any existing binding here.
+// It never walks the outer chain — Assign is the one that does.
+func (environment *Environment) Set(name string, value Object) Object {
+	if environment.rebind(name, value) {
+		return value
 	}
 
 	if environment.overflow != nil {

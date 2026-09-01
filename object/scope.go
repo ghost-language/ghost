@@ -22,6 +22,49 @@ type Scope struct {
 	Class *Class
 }
 
+// Enclose returns a scope for a block to run in: a fresh environment chained
+// to this one, and everything else about the scope — the receiver, the
+// declaring class, the call depth — carried over unchanged.
+//
+// The scope released here last is reused when nothing captured it, so a block
+// inside a hot loop costs no allocation per execution. What makes that safe is
+// Environment.Capture: a closure, class, or trait created inside the block
+// marks the environment, and a marked one is dropped rather than reused.
+func (scope *Scope) Enclose() *Scope {
+	child := scope.Environment.freeChild
+
+	if child == nil {
+		return &Scope{
+			Environment: NewEnclosedEnvironment(scope.Environment),
+			Self:        scope.Self,
+			Depth:       scope.Depth,
+			Class:       scope.Class,
+		}
+	}
+
+	scope.Environment.freeChild = nil
+
+	child.Environment.clear()
+	child.Self = scope.Self
+	child.Depth = scope.Depth
+	child.Class = scope.Class
+
+	return child
+}
+
+// Release offers a finished block scope back for the next block to reuse. A
+// scope whose environment something captured is dropped instead, so the value
+// that captured it keeps reading the bindings it closed over.
+//
+// Not calling it is only ever a missed reuse, never a correctness problem.
+func (scope *Scope) Release(child *Scope) {
+	if child.Environment.captured {
+		return
+	}
+
+	scope.Environment.freeChild = child
+}
+
 // String represents the scope object's value as a string.
 func (scope *Scope) String() string {
 	return "scope"

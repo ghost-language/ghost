@@ -32,7 +32,7 @@ func evaluateSwitch(node *ast.Switch, scope *object.Scope) object.Object {
 			// the literal "function" and every Class to "class" - regardless
 			// of which one either side actually was.
 			if object.ValuesEqual(obj, out) {
-				return evaluateBlock(option.Body, scope)
+				return evaluateCase(option.Body, scope)
 			}
 		}
 	}
@@ -40,9 +40,19 @@ func evaluateSwitch(node *ast.Switch, scope *object.Scope) object.Object {
 	// Handle default case
 	for _, option := range node.Cases {
 		if option.Default {
-			return evaluateBlock(option.Body, scope)
+			return evaluateCase(option.Body, scope)
 		}
 	}
 
 	return nil
+}
+
+// evaluateCase runs a matched case's body in a scope of its own.
+func evaluateCase(body *ast.Block, scope *object.Scope) object.Object {
+	block := enclose(scope)
+	result := evaluateBlock(body, block)
+
+	release(scope, block)
+
+	return result
 }

@@ -7,6 +7,10 @@ import (
 )
 
 func evaluateFunction(node *ast.Function, scope *object.Scope) object.Object {
+	// The function closes over this scope, so neither it nor anything
+	// enclosing it may be reused once this block ends.
+	scope.Environment.Capture()
+
 	function := &object.Function{
 		Parameters: node.Parameters,
 		Defaults:   node.Defaults,

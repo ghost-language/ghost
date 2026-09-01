@@ -419,18 +419,35 @@ Small integers (`-128..1024`) are interned singletons.
 
 ### 8.3 Variables and Scoping
 
-There is no declaration keyword — `x = 5` both declares and assigns. Scoping
-is lexical: closures capture their defining environment, and blocks
-(`if`/`while`/`for`/function bodies) each introduce a new enclosed
-`Environment` chained to its parent. **This paragraph does not describe the
-interpreter as built:** only function bodies introduce a scope, assignment
-never reaches an enclosing one, and a closure made in a loop cannot capture
-the loop variable — see §13.13, §13.14 and §13.15, and §14 decision 9, which
-settles all three and determines how this paragraph is rewritten. A `for`/`for ... in` loop's control
-variable(s) are scoped to the loop and restored (or removed, if they did not
-exist before) to whatever they were bound to outside it once the loop ends —
-so a loop variable does not leak a stray binding into surrounding code, but
-*does* transparently shadow-and-restore an existing variable of the same name.
+There is no declaration keyword — `x = 5` both declares and assigns, and
+which of the two it does depends on whether the name is already in scope.
+**Assignment walks the enclosing chain**: it rebinds the nearest existing
+binding of the name, wherever that binding lives, and creates a new one — in
+the current scope — only when the name is bound nowhere. A function can
+therefore update a variable declared outside it, and a block can update one
+declared before it, while a genuinely new name stays local to where it first
+appears (§14 decision 9, §13.13). Every spelling of assignment follows this
+one rule: plain `=`, both destructuring forms, the compound operators, and
+`++`/`--`.
+
+Scoping is lexical: closures capture their defining environment, and blocks
+(the body of an `if` or `else`, a `while`, a `for`, a `for ... in`, a matched
+`switch` case, or a function) each introduce a new enclosed `Environment`
+chained to its parent. A name first assigned inside a block does not outlive
+it (§13.15) — to keep a value computed in a branch, assign the name before
+the branch:
+
+```ghost
+result = null
+if (ready) { result = compute() } else { result = fallback() }
+```
+
+A `for`/`for ... in` loop binds its control variable(s) **once per
+iteration**, in that iteration's own scope. Two things follow. The control
+variable neither leaks a stray binding into surrounding code nor disturbs an
+existing variable of the same name outside the loop. And a closure created in
+the loop body captures the value its own iteration ran with, rather than
+sharing one binding with every other iteration (§13.14).
 
 **Destructuring assignment** (§12) binds several names from one value in a
 single statement: `[a, b] = list` binds positionally (`b` is `null` if
@@ -2144,90 +2161,148 @@ They are appended rather than interleaved into the damage ranking above:
 §13.1–§13.12 are closed, and renumbering them would invalidate every
 cross-reference in this document and in the commit history citing them.
 Within this block the ranking convention still holds. §13.13, §13.14 and
-§13.15 are one design question wearing three faces and must be decided
-together — see §14 decision 9, which is a prerequisite for fixing any of
-them.
+§13.15 were one design question wearing three faces; §14 decision 9 settled
+it and all three were fixed together, since fixing any one in isolation would
+have changed what the other two meant.
 
-### 13.13 A function cannot assign to a variable outside itself
+### 13.13 A function cannot assign to a variable outside itself — done
 
 ```ghost
 scale = 1
 function set(n) { scale = n }
 set(4)
-console.log(scale)   // 1 — the assignment went nowhere
+console.log(scale)   // was 1; now 4
 ```
 
-`evaluator/assign.go`'s `evaluateIdentifierAssignment` writes through
-`object.Environment.Set`, which by its own doc comment "binds a name in this
-environment, replacing any existing binding here. It never walks the outer
-chain" (`object/environment.go`). Reads are not symmetric with writes: `Get`
-and `Has` recurse through `outer`, `Set` does not. A function can therefore
-*see* an outer name, and can mutate an object held under it, but can never
-rebind it — the assignment silently creates a frame-local binding that dies
-with the call. Nothing warns at the write, and the stale read afterwards
-raises nothing either, because the outer binding is still perfectly valid.
+`evaluator/assign.go`'s `evaluateIdentifierAssignment` wrote through
+`object.Environment.Set`, which by its own doc comment never walked the outer
+chain. Reads were not symmetric with writes: `Get` and `Has` recursed through
+`outer`, `Set` did not. A function could therefore *see* an outer name, and
+mutate an object held under it, but never rebind it — the assignment silently
+created a frame-local binding that died with the call, with nothing to warn at
+the write and nothing to raise at the stale read afterwards.
 
-The workaround is to keep all mutable state on an instance, since property
-assignment (`this.x = ...`, `evaluatePropertyAssignment`) does reach the
-object it names. That is a serviceable convention and a bad undocumented
-trap: it makes a module-level counter, cache, memo table, or configuration
-flag impossible to write in the obvious way, and the failure mode is a wrong
-answer rather than an error.
+**Fix:** `object.Environment` gains `Assign`, which walks the enclosing chain
+exactly as `Get` does and rebinds the name wherever it is already bound,
+reporting whether it found one. It is built on a new `rebind` helper that
+updates an existing binding without ever creating one, which `Set` now uses
+too, so the "update in place" logic exists once rather than twice. The
+evaluator's `bind` (`evaluator/assign.go`) is the single point every
+name-assignment goes through — `Assign` first, falling back to `Set` to
+declare locally when the name is bound nowhere. Plain assignment, both
+destructuring forms (`evaluateListPatternAssignment`,
+`evaluateMapPatternAssignment`), compound assignment (`evaluator/compound.go`)
+and `++`/`--` (`evaluator/postfix.go`) all route through it, so every spelling
+of assignment reaches an outer variable the same way. §8.3 now documents the
+rule.
 
-**Severity: high, and silent.** Blocked on §14 decision 9.
+The cost §14 decision 9 weighed is real and now live: a local whose name
+matches a sibling method rebinds that method, since a method body's scope is
+the class environment. Block scoping (§13.15) is what contains it — a name
+first assigned inside a block stays there — and
+`TestMethodScopingIsUnchanged` pins the three cases that must not blur (a
+method's local does not escape into the instance, a method does rebind a
+module-level variable, and a field assignment still reaches the instance).
 
-### 13.14 Closures created in a loop cannot capture the loop variable
+Tested in `evaluator/scoping_test.go`'s
+`TestAssignmentReachesAnEnclosingScope`, which covers the direct case, a
+nested function reaching two levels out, a parameter correctly shadowing
+rather than rebinding, a genuinely new name staying local, and each of the
+compound/postfix/destructuring spellings.
+
+### 13.14 Closures created in a loop cannot capture the loop variable — done
 
 ```ghost
 handlers = []
 for (name in ["a", "b"]) {
     handlers.push(function () { return name })
 }
-handlers[0]()   // name error: `name` is not defined
+handlers[0]()   // was: name error: `name` is not defined; now "a"
 ```
 
-`evaluator/for_in.go` binds the loop's control variables with
-`scope.Environment.Set` into the *enclosing* environment, and its deferred
-restore `Delete`s them once the loop ends (`evaluator/for.go` does the same
-for a C-style loop's identifier). §8.3 documents exactly this
-save-and-restore, and for straight-line code it behaves as advertised. A
-closure created inside the body, though, captures that enclosing environment
-by reference rather than the value the variable held on its iteration — so
-every closure sees the same binding, and once the loop's restore has run it
-sees no binding at all. The error surfaces at call time, arbitrarily far
-from the loop that caused it, and reports the innocent name.
+`evaluator/for_in.go` bound the loop's control variables with
+`scope.Environment.Set` into the *enclosing* environment and `Delete`d them in
+a deferred restore once the loop ended (`evaluator/for.go` did the same for a
+C-style loop's identifier). A closure created in the body captured that
+enclosing environment by reference rather than the value the variable held on
+its iteration, so every closure shared one binding — and once the restore had
+run, no binding at all. The error surfaced at call time, arbitrarily far from
+the loop, and named the innocent variable.
 
-Every list-driven widget therefore needs a factory-function wrapper to
-manufacture a fresh frame per iteration. This is the single most common
-shape in UI code — a button per tool, a swatch per colour, a row per layer —
-so a toolkit hits it within the first hour.
+**Fix:** both loops now bind their control variables in an environment created
+for that iteration alone, and the save-and-restore is gone entirely — the
+variables were never written to the enclosing scope, so there is nothing to
+put back. `evaluateForInBody` (`evaluator/for_in.go`) runs one iteration in
+`enclose(scope)` with the key and value set there. `evaluateFor`
+(`evaluator/for.go`) carries the control variable between iterations in a Go
+local and re-declares it in each iteration's scope, which also let the loop
+drop to one environment level rather than two.
 
-**Severity: high, and silent until called.** Blocked on §14 decision 9.
+One ordering detail is load-bearing: the increment runs at the *top* of each
+iteration after the first, against that iteration's own scope, rather than at
+the foot of the previous one. Incrementing in the iteration a closure just
+captured would move the value out from under it, which is the same bug in a
+new place.
 
-### 13.15 Blocks do not introduce a scope — §8.3 says they do
+Tested in `evaluator/scoping_test.go`'s `TestClosuresCaptureTheirIteration`
+(both loop forms, a `while` body's local, a closure made inside a nested block
+inside a loop, and a closure that keeps mutating its own captured binding
+across calls) and `TestLoopVariablesDoNotDisturbTheEnclosingScope` (the loop
+variable does not overwrite a same-named variable outside it, and accumulators
+declared outside the loop still accumulate).
+
+### 13.15 Blocks do not introduce a scope — done
 
 ```ghost
 x = 1
 if (true) { x = 2; y = 99 }
-console.log(x, y)   // 2 99 — y escaped the block
+console.log(x)   // 2 — assignment still reaches the outer x
+console.log(y)   // was 99; now: name error: `y` is not defined
 ```
 
-§8.3 states that "blocks (`if`/`while`/`for`/function bodies) each introduce
-a new enclosed `Environment` chained to its parent." Only function bodies
-actually do. `evaluator/block.go`'s `evaluateBlock` threads the *caller's*
-`*object.Scope` straight through to each statement and never constructs a
-`NewEnclosedEnvironment`, so an assignment inside an `if`, `switch`, `while`
-or `for` body writes to the enclosing function scope.
+§8.3 stated that blocks each introduce a new enclosed `Environment`, and only
+function bodies did. `evaluator/block.go`'s `evaluateBlock` threaded the
+caller's scope straight through, so an assignment inside an `if`, `switch`,
+`while` or `for` body wrote to the enclosing function scope.
 
-This is load-bearing in real code — Chisel's `Dock.arrange()` depends on a
-value assigned inside a branch being readable after it, and that code is
-written the way the interpreter behaves, not the way §8.3 reads. It is
-equally how a stray temporary leaks across a hundred-line method. The
-defect here is the disagreement rather than either behavior on its own:
-whichever way §14 decision 9 goes, one of the two has to change so that
-this document and the interpreter describe the same language.
+**Fix:** the scope is introduced by the statements that *own* a block —
+`evaluateBranch` (`evaluator/if.go`), `evaluateWhile`, `evaluateCase`
+(`evaluator/switch.go`), and both loops — rather than by `evaluateBlock`
+itself. That distinction matters: two of `evaluateBlock`'s callers must not
+get a scope, since a class or trait body is evaluated directly in the
+environment that collects its members, and a function or method body already
+runs in the frame `createFunctionEnvironment` built for it.
 
-**Severity: high, documentation drift.** Blocked on §14 decision 9.
+**This is a breaking change**, and the only one in this block of callouts. A
+name first assigned inside a branch no longer outlives it, so
+`if (c) { result = 1 } else { result = 2 }` followed by a read of `result` is
+now a `Name` fault where it used to work. Assigning `result` before the branch
+fixes it, and that is the form §8.3 now shows. Every one of the 41 programs in
+`examples/` produces byte-identical output before and after, so the pattern is
+rarer in practice than it looks.
+
+**Performance.** A scope per block execution is an allocation per loop
+iteration, which cost up to 8.5× the allocated bytes and 1.8× the wall time on
+`evaluator/benchmark_test.go`'s loop-heavy cases. Two changes bring it back:
+`object.Scope.Enclose`/`Release` keep one finished block scope per environment
+(`Environment.freeChild`) and hand it to the next block rather than allocating,
+and `Environment.Capture` marks an environment — and the whole chain enclosing
+it — whenever a closure, class, or trait is created inside it, so a captured
+scope is dropped instead of reused and the value that captured it keeps
+reading what it closed over. Reuse is safe across goroutines by construction:
+every concurrent entry into Ghost code (an `http.handle` callback, an
+embedder's `Call`) runs in a function frame of its own, so a block's
+environment is a child of that frame rather than of anything shared, and
+`go test -race` passes. Allocation is now at parity with the pre-change
+interpreter on every benchmark; wall time is 1.03×–1.21×, which is the
+intrinsic cost of the extra link every name lookup crosses.
+
+Tested in `evaluator/scoping_test.go`'s `TestBlocksIntroduceAScope` (a name
+first assigned in an `if`, `else`, `while`, `for` or `switch` case body does
+not outlive it, and neither loop's control variable outlives its loop), with
+the reuse machinery's correctness covered by
+`TestClosuresCaptureTheirIteration` — every case there would fail if a
+captured environment were handed to the next iteration.
 
 ### 13.16 Every top-level name in a module is exported, including its own imports
 
@@ -2483,46 +2558,44 @@ targets.
    same name resolves the same way on every platform Ghost ships for. A
    script that never calls `inTimeZone`/`ofInZone` behaves exactly as it did
    under the old design.
-9. **The scoping model — open, and blocking §13.13–§13.15.** Those three
-   findings are one question asked three ways: *when a name is assigned, and
-   the name already exists further out, what happens?* Today the answer is
-   "a new binding is made here and the outer one is untouched" (§13.13),
-   which combines with blocks not having scopes of their own (§13.15) and
-   with a loop variable that is restored out from under any closure that
-   captured it (§13.14) to produce three separate silent failures. Fixing
-   any one in isolation changes what the other two mean, so this decision
-   has to be made once, for all three, before implementation starts. Two
-   coherent answers, and they are not compatible:
+9. **The scoping model — decided, and done.** §13.13, §13.14 and §13.15 were
+   one question asked three ways: *when a name is assigned, and the name
+   already exists further out, what happens?* The answer, chosen over adding a
+   declaration keyword, is:
 
-   **(a) Assignment walks the scope chain.** `x = 5` rebinds the nearest
-   existing `x` in the enclosing chain and only declares a new one when the
-   name is nowhere in scope. This keeps §8.3's "there is no declaration
-   keyword" stance exactly as written, fixes §13.13 with no new syntax, and
-   is what a reader coming from the mutable-by-default scripting languages
-   expects. Its cost is the mirror-image hazard: with no way to say "this
-   one is mine," every function-local temporary becomes a potential write to
-   an outer name that happens to match. Inside a method the chain reaches
-   the class environment, so a local named `scale` would clobber a *sibling
-   method* named `scale`. That risk is best mitigated by pairing this with
-   real block scoping (§13.15, which §8.3 already promises), so that a name
-   first assigned inside a block stays inside it.
+   **Assignment walks the scope chain, and blocks have scopes of their own.**
+   `x = 5` rebinds the nearest existing `x` in the enclosing chain and
+   declares a new one only when the name is bound nowhere; each block —
+   `if`/`else`, `while`, `for`, `for ... in`, a matched `switch` case —
+   introduces an environment, and a loop binds its control variable once per
+   iteration. §8.3 documents the result.
 
-   **(b) A declaration keyword.** Assignment stays local, and an explicit
-   form (`let`, or `var`) makes shadowing deliberate and outer mutation
-   possible. This is the safer semantics and the one every reader of modern
-   JS already has loaded; it costs a reversal of §8.3's most prominently
+   The two halves are one decision because each pays for the other. Walking
+   assignment alone fixes §13.13 but has a mirror-image hazard: with no way to
+   say "this one is mine," every function-local temporary becomes a potential
+   write to an outer name that happens to match, and inside a method the chain
+   reaches the class environment, so a local named `scale` would rebind a
+   *sibling method* named `scale`. Block scoping is what contains that — a
+   name first assigned inside a block stays inside it — and it is what §8.3
+   promised all along. Block scoping alone, meanwhile, would have made
+   §13.13's silent failure worse rather than better, since more scopes means
+   more places an assignment can fail to reach.
+
+   The rejected alternative was a declaration keyword (`let`, or `var`):
+   assignment stays local, and an explicit form makes shadowing deliberate.
+   Safer semantics, and the one every reader of modern JS already has loaded.
+   It was not chosen because it costs a reversal of §8.3's most prominently
    documented stance, a new keyword in a language that has kept its surface
-   deliberately small (§4), and a migration story for every line of existing
-   Ghost, including this document's own examples.
+   deliberately small (§4), and a migration for every line of existing Ghost
+   including this document's own examples — to buy protection against a
+   shadowing bug that block scoping already contains.
 
-   Weighing them: (a) is smaller, keeps 1.0's documented character, and its
-   worst case is a shadowing bug that block scoping largely contains; (b)
-   trades the language's minimalism for a class of bug it cannot have. This
-   specification does not pick one here — unlike the decisions above it, this
-   one changes what existing correct-looking programs mean, and it is the
-   one call on this list that wants a human answer rather than a
-   consistency argument. Whichever is chosen, §8.3 has to be rewritten to
-   match, since it currently describes neither.
+   What this decision cost, recorded honestly: one breaking change (§13.15 —
+   a name first assigned in a branch no longer outlives it, though all 41
+   programs in `examples/` are byte-identical before and after), the sibling-
+   method rebinding hazard above, and 1.03×–1.21× wall time from the extra
+   environment link every name lookup crosses. Allocation is at parity, which
+   took the scope reuse described in §13.15.
 
 10. **Module export surface — open (§13.16).** Related to decision 9 in
     spirit but separable in practice: whether Ghost gains an explicit

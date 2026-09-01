@@ -33,7 +33,7 @@ func evaluatePostfix(node *ast.Postfix, scope *object.Scope) object.Object {
 
 	switch target := node.Left.(type) {
 	case *ast.Identifier:
-		scope.Environment.Set(target.Value, updated)
+		bind(scope, target.Value, updated)
 	case *ast.Index:
 		if result := evaluateIndexAssignment(target, updated, scope); isError(result) {
 			return result

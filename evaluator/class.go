@@ -7,6 +7,10 @@ import (
 )
 
 func evaluateClass(node *ast.Class, scope *object.Scope) object.Object {
+	// The class keeps this scope, and its methods read through it, so it
+	// outlives the block it was declared in.
+	scope.Environment.Capture()
+
 	class := &object.Class{
 		Name:  node.Name,
 		Scope: scope,

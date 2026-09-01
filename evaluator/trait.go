@@ -6,6 +6,10 @@ import (
 )
 
 func evaluateTrait(node *ast.Trait, scope *object.Scope) object.Object {
+	// As with a class: the trait keeps this scope for its methods to read
+	// through.
+	scope.Environment.Capture()
+
 	trait := &object.Trait{
 		Name:        node.Name,
 		Scope:       scope,
