@@ -419,14 +419,35 @@ Small integers (`-128..1024`) are interned singletons.
 
 ### 8.3 Variables and Scoping
 
-There is no declaration keyword — `x = 5` both declares and assigns. Scoping
-is lexical: closures capture their defining environment, and blocks
-(`if`/`while`/`for`/function bodies) each introduce a new enclosed
-`Environment` chained to its parent. A `for`/`for ... in` loop's control
-variable(s) are scoped to the loop and restored (or removed, if they did not
-exist before) to whatever they were bound to outside it once the loop ends —
-so a loop variable does not leak a stray binding into surrounding code, but
-*does* transparently shadow-and-restore an existing variable of the same name.
+There is no declaration keyword — `x = 5` both declares and assigns, and
+which of the two it does depends on whether the name is already in scope.
+**Assignment walks the enclosing chain**: it rebinds the nearest existing
+binding of the name, wherever that binding lives, and creates a new one — in
+the current scope — only when the name is bound nowhere. A function can
+therefore update a variable declared outside it, and a block can update one
+declared before it, while a genuinely new name stays local to where it first
+appears (§14 decision 9, §13.13). Every spelling of assignment follows this
+one rule: plain `=`, both destructuring forms, the compound operators, and
+`++`/`--`.
+
+Scoping is lexical: closures capture their defining environment, and blocks
+(the body of an `if` or `else`, a `while`, a `for`, a `for ... in`, a matched
+`switch` case, or a function) each introduce a new enclosed `Environment`
+chained to its parent. A name first assigned inside a block does not outlive
+it (§13.15) — to keep a value computed in a branch, assign the name before
+the branch:
+
+```ghost
+result = null
+if (ready) { result = compute() } else { result = fallback() }
+```
+
+A `for`/`for ... in` loop binds its control variable(s) **once per
+iteration**, in that iteration's own scope. Two things follow. The control
+variable neither leaks a stray binding into surrounding code nor disturbs an
+existing variable of the same name outside the loop. And a closure created in
+the loop body captures the value its own iteration ran with, rather than
+sharing one binding with every other iteration (§13.14).
 
 **Destructuring assignment** (§12) binds several names from one value in a
 single statement: `[a, b] = list` binds positionally (`b` is `null` if
@@ -654,7 +675,9 @@ new Dog("Fido").shout()
   keeps a `super` call inside an inherited method from resolving back to
   itself. `super`/`this` outside a class context are name errors.
 - A method body's scope is the class environment, so **sibling methods call
-  each other by bare name** with no `this.` required (though `this.method()`
+  each other by bare name** with no `this.` required — but the bare call
+  currently loses the receiver, so it fails as soon as the callee touches
+  `this` (§13.17); write `this.method()` until that is fixed (though `this.method()`
   also works).
 - **No static members, no access modifiers (`public`/`private`/`protected`),
   no `interface`, no `abstract`, no getters/setters syntax.** Every member is
@@ -1668,6 +1691,25 @@ the first day, matching `weekday()`'s existing `0 = Sunday` convention and
 - **Arity checking for user-defined functions/methods** — see §14 decision 1
   (done).
 
+**Arithmetic gaps found building a library on Ghost.** Two small, concrete
+additions, from the same Chisel/Studio work that produced §13.13–§13.20:
+
+- **Floor division.** Ghost has true division only: `7 / 2` is `3.5`, and
+  `6 / 3` is `2` (a `number`, equal to `2` — there is no spurious float
+  promotion, and the int/float rules in §8.4 are working as documented).
+  What is missing is a way to *ask* for the integer quotient. Pixel layout
+  is the motivating case: every grid, cell, scroll offset and zoom step
+  wants `floor(a / b)`, and writing that composition on every line is a real
+  tax — Chisel's `Rect` exists partly to pay it once and hand back whole
+  numbers. Add `math.floorDiv(a, b)`, matching the existing `math`
+  vocabulary. Note the obvious operator spelling is unavailable: `//`
+  is a comment.
+- **`%=`.** `+=`, `-=`, `*=` and `/=` all work; `%=` alone is a syntax error
+  ("`=` cannot start an expression"), even though `%` is a first-class
+  arithmetic operator in §8.4 and `compound.go` handles the other four. This
+  is an omission in the compound-operator set rather than a design stance,
+  and closing it is a table entry, not a feature.
+
 ---
 
 ## 13. Required for 1.0: Defects to Fix
@@ -2102,6 +2144,318 @@ forms, to confirm the fallback-path fix specifically) through
 already-working assignment/return cases against the pre-fix code, and pass
 clean against the fix.
 
+### Findings 13.13–13.20: from building a library on Ghost
+
+The callouts below came out of writing Chisel (a retained-mode widget
+toolkit) and Studio (a sprite and tilemap editor shell built on it) against
+Ghost 1.0 — the first substantial body of Ghost code that is a *library*
+rather than a script, which is why they cluster around scoping, module
+boundaries, and class shape rather than around the standard-library surface
+§12 covers. Every behavior below was executed against a build of the
+interpreter rather than read off this document; where the two disagree, the
+disagreement is itself the callout, and §13.15 and §13.17 are both cases
+where this specification already describes the behavior we want and the
+interpreter does not implement it.
+
+They are appended rather than interleaved into the damage ranking above:
+§13.1–§13.12 are closed, and renumbering them would invalidate every
+cross-reference in this document and in the commit history citing them.
+Within this block the ranking convention still holds. §13.13, §13.14 and
+§13.15 were one design question wearing three faces; §14 decision 9 settled
+it and all three were fixed together, since fixing any one in isolation would
+have changed what the other two meant.
+
+### 13.13 A function cannot assign to a variable outside itself — done
+
+```ghost
+scale = 1
+function set(n) { scale = n }
+set(4)
+console.log(scale)   // was 1; now 4
+```
+
+`evaluator/assign.go`'s `evaluateIdentifierAssignment` wrote through
+`object.Environment.Set`, which by its own doc comment never walked the outer
+chain. Reads were not symmetric with writes: `Get` and `Has` recursed through
+`outer`, `Set` did not. A function could therefore *see* an outer name, and
+mutate an object held under it, but never rebind it — the assignment silently
+created a frame-local binding that died with the call, with nothing to warn at
+the write and nothing to raise at the stale read afterwards.
+
+**Fix:** `object.Environment` gains `Assign`, which walks the enclosing chain
+exactly as `Get` does and rebinds the name wherever it is already bound,
+reporting whether it found one. It is built on a new `rebind` helper that
+updates an existing binding without ever creating one, which `Set` now uses
+too, so the "update in place" logic exists once rather than twice. The
+evaluator's `bind` (`evaluator/assign.go`) is the single point every
+name-assignment goes through — `Assign` first, falling back to `Set` to
+declare locally when the name is bound nowhere. Plain assignment, both
+destructuring forms (`evaluateListPatternAssignment`,
+`evaluateMapPatternAssignment`), compound assignment (`evaluator/compound.go`)
+and `++`/`--` (`evaluator/postfix.go`) all route through it, so every spelling
+of assignment reaches an outer variable the same way. §8.3 now documents the
+rule.
+
+The cost §14 decision 9 weighed is real and now live: a local whose name
+matches a sibling method rebinds that method, since a method body's scope is
+the class environment. Block scoping (§13.15) is what contains it — a name
+first assigned inside a block stays there — and
+`TestMethodScopingIsUnchanged` pins the three cases that must not blur (a
+method's local does not escape into the instance, a method does rebind a
+module-level variable, and a field assignment still reaches the instance).
+
+Tested in `evaluator/scoping_test.go`'s
+`TestAssignmentReachesAnEnclosingScope`, which covers the direct case, a
+nested function reaching two levels out, a parameter correctly shadowing
+rather than rebinding, a genuinely new name staying local, and each of the
+compound/postfix/destructuring spellings.
+
+### 13.14 Closures created in a loop cannot capture the loop variable — done
+
+```ghost
+handlers = []
+for (name in ["a", "b"]) {
+    handlers.push(function () { return name })
+}
+handlers[0]()   // was: name error: `name` is not defined; now "a"
+```
+
+`evaluator/for_in.go` bound the loop's control variables with
+`scope.Environment.Set` into the *enclosing* environment and `Delete`d them in
+a deferred restore once the loop ended (`evaluator/for.go` did the same for a
+C-style loop's identifier). A closure created in the body captured that
+enclosing environment by reference rather than the value the variable held on
+its iteration, so every closure shared one binding — and once the restore had
+run, no binding at all. The error surfaced at call time, arbitrarily far from
+the loop, and named the innocent variable.
+
+**Fix:** both loops now bind their control variables in an environment created
+for that iteration alone, and the save-and-restore is gone entirely — the
+variables were never written to the enclosing scope, so there is nothing to
+put back. `evaluateForInBody` (`evaluator/for_in.go`) runs one iteration in
+`enclose(scope)` with the key and value set there. `evaluateFor`
+(`evaluator/for.go`) carries the control variable between iterations in a Go
+local and re-declares it in each iteration's scope, which also let the loop
+drop to one environment level rather than two.
+
+One ordering detail is load-bearing: the increment runs at the *top* of each
+iteration after the first, against that iteration's own scope, rather than at
+the foot of the previous one. Incrementing in the iteration a closure just
+captured would move the value out from under it, which is the same bug in a
+new place.
+
+Tested in `evaluator/scoping_test.go`'s `TestClosuresCaptureTheirIteration`
+(both loop forms, a `while` body's local, a closure made inside a nested block
+inside a loop, and a closure that keeps mutating its own captured binding
+across calls) and `TestLoopVariablesDoNotDisturbTheEnclosingScope` (the loop
+variable does not overwrite a same-named variable outside it, and accumulators
+declared outside the loop still accumulate).
+
+### 13.15 Blocks do not introduce a scope — done
+
+```ghost
+x = 1
+if (true) { x = 2; y = 99 }
+console.log(x)   // 2 — assignment still reaches the outer x
+console.log(y)   // was 99; now: name error: `y` is not defined
+```
+
+§8.3 stated that blocks each introduce a new enclosed `Environment`, and only
+function bodies did. `evaluator/block.go`'s `evaluateBlock` threaded the
+caller's scope straight through, so an assignment inside an `if`, `switch`,
+`while` or `for` body wrote to the enclosing function scope.
+
+**Fix:** the scope is introduced by the statements that *own* a block —
+`evaluateBranch` (`evaluator/if.go`), `evaluateWhile`, `evaluateCase`
+(`evaluator/switch.go`), and both loops — rather than by `evaluateBlock`
+itself. That distinction matters: two of `evaluateBlock`'s callers must not
+get a scope, since a class or trait body is evaluated directly in the
+environment that collects its members, and a function or method body already
+runs in the frame `createFunctionEnvironment` built for it.
+
+**This is a breaking change**, and the only one in this block of callouts. A
+name first assigned inside a branch no longer outlives it, so
+`if (c) { result = 1 } else { result = 2 }` followed by a read of `result` is
+now a `Name` fault where it used to work. Assigning `result` before the branch
+fixes it, and that is the form §8.3 now shows. Every one of the 41 programs in
+`examples/` produces byte-identical output before and after, so the pattern is
+rarer in practice than it looks.
+
+**Performance.** A scope per block execution is an allocation per loop
+iteration, which cost up to 8.5× the allocated bytes and 1.8× the wall time on
+`evaluator/benchmark_test.go`'s loop-heavy cases. Two changes bring it back:
+`object.Scope.Enclose`/`Release` keep one finished block scope per environment
+(`Environment.freeChild`) and hand it to the next block rather than allocating,
+and `Environment.Capture` marks an environment — and the whole chain enclosing
+it — whenever a closure, class, or trait is created inside it, so a captured
+scope is dropped instead of reused and the value that captured it keeps
+reading what it closed over. Reuse is safe across goroutines by construction:
+every concurrent entry into Ghost code (an `http.handle` callback, an
+embedder's `Call`) runs in a function frame of its own, so a block's
+environment is a child of that frame rather than of anything shared, and
+`go test -race` passes. Allocation is now at parity with the pre-change
+interpreter on every benchmark; wall time is 1.03×–1.21×, which is the
+intrinsic cost of the extra link every name lookup crosses.
+
+Tested in `evaluator/scoping_test.go`'s `TestBlocksIntroduceAScope` (a name
+first assigned in an `if`, `else`, `while`, `for` or `switch` case body does
+not outlive it, and neither loop's control variable outlives its loop), with
+the reuse machinery's correctness covered by
+`TestClosuresCaptureTheirIteration` — every case there would fail if a
+captured environment were handed to the next iteration.
+
+### 13.16 Every top-level name in a module is exported, including its own imports
+
+```ghost
+// mod/lib.gs
+import "ghost:math" as math
+helper = "PRIVATE"
+class Public { }
+```
+```ghost
+import "mod/lib" as lib
+lib.helper   // "PRIVATE"
+lib.math     // library_module — lib's own import, re-exported
+```
+
+A module's scope *is* its export surface: `evaluateImport` binds the loaded
+module's scope and every name in it is reachable through the alias. A file
+therefore cannot keep a private helper beside the public class it supports,
+and — the sharper half — importing a module pulls that module's own imports
+along with it, so `lib.math` resolves even though `lib` never offered it.
+That makes a module's public surface a function of its implementation
+details: adding an import to a file silently adds a name to its API, and
+renaming a private helper is a breaking change to consumers who were never
+supposed to see it.
+
+One-class-per-file makes this survivable rather than solving it, and it is
+why Chisel's layout has thirty small files rather than six coherent ones —
+the file layout is working around the language, which is the wrong reason
+for a file layout.
+
+**Severity: high, design.** Suggested fix: an explicit `export` marker, with
+the current export-everything behavior retained as the fallback for a file
+that declares no exports at all, so existing code keeps working unchanged
+and only a file that opts in gets a curated surface.
+
+### 13.17 Calling a sibling method by bare name loses the receiver — §8.8 says it works
+
+```ghost
+class Widget {
+    constructor(n) { this.n = n }
+    describe() { return this.n }
+    show() { return describe() }     // name error: `this` can only be used inside a class
+}
+```
+
+§8.8 states that "a method body's scope is the class environment, so sibling
+methods call each other by bare name with no `this.` required." The bare
+call resolves — the sibling is found in the class environment — but it is
+invoked with the wrong receiver, so it fails the moment its body touches
+`this`.
+
+The cause is in `evaluator/call.go`'s `unwrapCall`. A resolved
+`*object.Function` gets `functionScope.Self = callee` (the function itself),
+and the receiver is only carried forward by the branch that re-binds `Self`
+when `callee.Scope.Self` is an `*object.Instance`. For a method, the scope
+captured at declaration is the *class body's* scope, whose `Self` is the
+`*object.Class` — never an `*object.Instance` — so that branch does not
+fire, and the method runs with no instance bound. A method reached the
+documented way, through `evaluateMethod` → `callInstanceMethod` →
+`invokeMethod`, is given `Self: instance` explicitly, which is why
+`this.describe()` works and `describe()` does not.
+
+Two follow-on notes: a sibling method that happens *not* to touch `this`
+works fine, so the failure depends on the callee's body rather than on the
+call — which is how it survived to 1.0. And the error is reported at the
+callee's `this`, not at the bare call that supplied the wrong receiver, so
+it points at correct code and hides the actual mistake.
+
+**Severity: mid, documentation drift.** Independent of §14 decision 9 and
+fixable on its own: either carry the receiver through the bare-call path, or
+retract §8.8's claim and require `this.`.
+
+### 13.18 A field and a method may share one name, with no diagnostic
+
+```ghost
+class Thing {
+    thing = 7
+    thing() { return "method" }
+}
+t = new Thing()
+t.thing     // 7
+t.thing()   // "method"
+```
+
+Fields are initialized into `instance.Environment` (`initializeField`);
+methods live in `class.Environment`. A property *read* goes through
+`evaluateInstanceProperty`, which consults `instance.Environment.GetLocal`
+first and so answers with the field; a *call* goes through
+`evaluateMethod` → `callInstanceMethod`, which resolves against the class
+chain and so finds the method. Neither path knows the other exists, so the
+two never collide and nothing is ever reported.
+
+One name meaning two different things depending on whether it is followed by
+parentheses is not a behavior any reader will predict, and the declaration
+that creates it is silent at the point where it could most cheaply be
+caught. Note that this is the *opposite* of what a reasonable person
+assumes on reading the class — the assumption that the field makes the
+method unreachable is itself enough to misdesign around, which is how this
+was found.
+
+**Severity: mid.** Suggested fix: reject the duplicate declaration at class
+construction with a `Syntax` fault naming both, rather than changing either
+lookup path.
+
+### 13.19 Module resolution is a global, first-match-wins search path
+
+`evaluator/import.go`'s `resolveModule` calls `addSearchPath` with the
+importing file's directory and then `findFile`, which scans the
+package-level `searchPaths` slice in order. That slice is process-wide and
+purely additive: every directory any module has been loaded from stays in it
+for the life of the process. Resolution is therefore "first match across
+every directory seen so far," and it depends on import *order* — two files
+sharing a basename in different folders resolve to whichever directory was
+visited first, which can change when an unrelated import is added
+elsewhere. The fault's own help text ("modules are looked for next to the
+file importing them") describes the intent, not the implementation.
+
+Compounding it, the two import forms are near-homographs for different
+operations: `import "path" as name` binds the whole module, while
+`import name from "path"` binds one named export out of it. The safe rule,
+used throughout Chisel and Studio, is to always import by full path from the
+project root — which works, but is a convention papering over resolution
+that should be deterministic on its own.
+
+**Severity: mid.** Suggested fix: resolve relative to the importing file
+only, and treat the accumulated global path as the compatibility fallback if
+one is needed at all.
+
+### 13.20 Smaller surprises, individually minor
+
+Grouped because each is a one-line note rather than a callout of its own,
+and because several are working as intended and want documenting rather than
+fixing:
+
+- **`continue` is a keyword**, so it cannot name a method — a tool with
+  start/continue/finish verbs has to rename the middle one. Working as
+  intended; worth a mention wherever the keyword list is user-facing.
+- **Circular imports are a hard fault.** Genuinely useful (§8.9 reports the
+  cycle rather than half-loading a module), but it does dictate the file
+  graph of anything large, and that consequence is not written down.
+- **`++`/`--` are postfix only.** `++x` is a syntax error. Deliberate, per
+  §8.4; undocumented as a restriction.
+- **A line beginning with `[` or `(` continues the previous statement.**
+  Already recorded as §13.12 bug #1 and accepted there as documented
+  behavior; relisted here only because it was rediscovered independently,
+  which is evidence the §8.1 wording is not doing its job.
+- **`%=` is missing** while `+=`, `-=`, `*=` and `/=` all work — see §12,
+  where it is filed as a gap to close rather than a defect.
+- **`list.length` without parentheses** now raises a proper `property error`
+  rather than silently handing back the method, so the hazard reported from
+  the Chisel work no longer exists — noted here because that report is
+  otherwise cited as a whole and this one item of it is stale.
+
 ---
 
 ## 14. Decisions for 1.0
@@ -2159,6 +2513,19 @@ targets.
    deliberately small — every member public, one level of inheritance,
    traits for the rest — as a permanent design stance for the 1.x line, not
    a placeholder.
+
+   Reaffirmed, with the cost now measured rather than assumed. The Chisel
+   and Studio work (§13.13–§13.20) reports the absence of statics as the
+   single thing that most distorts the shape of a library built on Ghost:
+   with no named constructors, `Rect.fromBounds(...)` becomes a free
+   function in a helper file, and with no class constants, `Button.HEIGHT`
+   becomes a key on a theme object. Both workarounds are real and both were
+   used throughout. Neither is unworkable, and neither argues that Ghost's
+   class model is wrong — they argue that a library's factories and
+   constants have to live somewhere less obvious than the class they belong
+   to. That is a genuine cost, recorded here so the stance is upheld with
+   its price written down rather than by not having looked. Revisit for 1.x
+   only if a second independent library reports the same distortion.
 6. **Cross-type `==`.** Cross-type `==`/`!=` keeps raising a type error
    rather than returning `false` (§8.5). It is consistent with "operators
    keep one meaning" and already covered by a test; what this decision
@@ -2191,3 +2558,47 @@ targets.
    same name resolves the same way on every platform Ghost ships for. A
    script that never calls `inTimeZone`/`ofInZone` behaves exactly as it did
    under the old design.
+9. **The scoping model — decided, and done.** §13.13, §13.14 and §13.15 were
+   one question asked three ways: *when a name is assigned, and the name
+   already exists further out, what happens?* The answer, chosen over adding a
+   declaration keyword, is:
+
+   **Assignment walks the scope chain, and blocks have scopes of their own.**
+   `x = 5` rebinds the nearest existing `x` in the enclosing chain and
+   declares a new one only when the name is bound nowhere; each block —
+   `if`/`else`, `while`, `for`, `for ... in`, a matched `switch` case —
+   introduces an environment, and a loop binds its control variable once per
+   iteration. §8.3 documents the result.
+
+   The two halves are one decision because each pays for the other. Walking
+   assignment alone fixes §13.13 but has a mirror-image hazard: with no way to
+   say "this one is mine," every function-local temporary becomes a potential
+   write to an outer name that happens to match, and inside a method the chain
+   reaches the class environment, so a local named `scale` would rebind a
+   *sibling method* named `scale`. Block scoping is what contains that — a
+   name first assigned inside a block stays inside it — and it is what §8.3
+   promised all along. Block scoping alone, meanwhile, would have made
+   §13.13's silent failure worse rather than better, since more scopes means
+   more places an assignment can fail to reach.
+
+   The rejected alternative was a declaration keyword (`let`, or `var`):
+   assignment stays local, and an explicit form makes shadowing deliberate.
+   Safer semantics, and the one every reader of modern JS already has loaded.
+   It was not chosen because it costs a reversal of §8.3's most prominently
+   documented stance, a new keyword in a language that has kept its surface
+   deliberately small (§4), and a migration for every line of existing Ghost
+   including this document's own examples — to buy protection against a
+   shadowing bug that block scoping already contains.
+
+   What this decision cost, recorded honestly: one breaking change (§13.15 —
+   a name first assigned in a branch no longer outlives it, though all 41
+   programs in `examples/` are byte-identical before and after), the sibling-
+   method rebinding hazard above, and 1.03×–1.21× wall time from the extra
+   environment link every name lookup crosses. Allocation is at parity, which
+   took the scope reuse described in §13.15.
+
+10. **Module export surface — open (§13.16).** Related to decision 9 in
+    spirit but separable in practice: whether Ghost gains an explicit
+    `export`, or a naming convention, or keeps exporting everything. The
+    fallback that keeps every existing file working is to treat a module
+    that marks nothing as exporting everything, exactly as today.

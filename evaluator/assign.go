@@ -55,9 +55,23 @@ func constructorFieldError(node *ast.Assign) object.Object {
 }
 
 func evaluateIdentifierAssignment(node *ast.Identifier, value object.Object, scope *object.Scope) object.Object {
-	scope.Environment.Set(node.Value, value)
+	bind(scope, node.Value, value)
 
 	return nil
+}
+
+// bind performs an assignment to a plain name: it rebinds the variable
+// wherever it already exists, walking outward, and only declares a new one
+// here when the name is bound nowhere in scope (§13.13, §14 decision 9).
+//
+// Every path that assigns to a name goes through this — plain assignment,
+// both destructuring forms, compound assignment, and `++`/`--` — so a
+// variable outside the current scope is reachable the same way whichever
+// spelling reaches it.
+func bind(scope *object.Scope, name string, value object.Object) {
+	if !scope.Environment.Assign(name, value) {
+		scope.Environment.Set(name, value)
+	}
 }
 
 // evaluateListPatternAssignment binds each target to the value at its
@@ -73,9 +87,9 @@ func evaluateListPatternAssignment(node *ast.ListPattern, assignmentValue object
 
 	for index, target := range node.Targets {
 		if index < len(list.Elements) {
-			scope.Environment.Set(target.Value, list.Elements[index])
+			bind(scope, target.Value, list.Elements[index])
 		} else {
-			scope.Environment.Set(target.Value, value.NULL)
+			bind(scope, target.Value, value.NULL)
 		}
 	}
 
@@ -97,9 +111,9 @@ func evaluateMapPatternAssignment(node *ast.MapPattern, assignmentValue object.O
 		key := &object.String{Value: pair.Source.Value}
 
 		if entry, ok := mapValue.Pairs[key.MapKey()]; ok {
-			scope.Environment.Set(pair.Target.Value, entry.Value)
+			bind(scope, pair.Target.Value, entry.Value)
 		} else {
-			scope.Environment.Set(pair.Target.Value, value.NULL)
+			bind(scope, pair.Target.Value, value.NULL)
 		}
 	}
 

@@ -38,7 +38,7 @@ func evaluateCompound(node *ast.Compound, scope *object.Scope) object.Object {
 
 	switch target := node.Left.(type) {
 	case *ast.Identifier:
-		scope.Environment.Set(target.Value, value)
+		bind(scope, target.Value, value)
 	case *ast.Index:
 		return evaluateIndexAssignment(target, value, scope)
 	case *ast.Property:
