@@ -12,7 +12,9 @@ catalogs). Where the implementation does not yet meet the goal specified
 here, that gap is named explicitly — in §12 for functionality still to add,
 §13 for defects still to fix — rather than folded quietly into the reference
 sections as though it already worked. §14 makes the remaining
-product-direction calls needed to close both gaps.
+product-direction calls needed to close both gaps, and §15 ranks what is
+left, so a session picking this up has one place to look for what to do
+next.
 
 Once the code and this document agree everywhere, cut the tag. Until then, a
 disagreement between the two is a bug in one of them, not a reason to guess:
@@ -2438,8 +2440,10 @@ and because several are working as intended and want documenting rather than
 fixing:
 
 - **`continue` is a keyword**, so it cannot name a method — a tool with
-  start/continue/finish verbs has to rename the middle one. Working as
-  intended; worth a mention wherever the keyword list is user-facing.
+  start/continue/finish verbs has to rename the middle one. Recorded here as
+  working-as-intended, which was half right: §13.24 promotes it, because the
+  same parser rule also blocks the keyword at every *call site*, on objects
+  that have nothing to do with the keyword's meaning.
 - **Circular imports are a hard fault.** Genuinely useful (§8.9 reports the
   cycle rather than half-loading a module), but it does dictate the file
   graph of anything large, and that consequence is not written down.
@@ -2456,6 +2460,163 @@ fixing:
   the Chisel work no longer exists — noted here because that report is
   otherwise cited as a whole and this one item of it is stale.
 
+### 13.21 `and`/`or` do not short-circuit, and the guard idiom every neighbouring language teaches therefore crashes
+
+```ghost
+target = null
+
+if (target == null or target.hint == '') {   // property error: cannot read
+    return null                              // property `hint` of null
+}
+```
+
+§8.4 states this outright — "no built-in short-circuit special-casing beyond
+ordinary infix evaluation order: left is evaluated, then right, then
+combined" — and `evaluator/infix.go`'s `evaluateInfix` matches it: both sides
+are evaluated, and only then does the switch reach `evaluateBooleanInfix`.
+So unlike §13.15 and §13.17 this is not drift; the implementation does what
+this document asked for. **The callout is against the stance, not the code.**
+
+The stance is wrong for one reason that no amount of documenting fixes.
+Ghost takes `and`/`or` from Python and Ruby, and the rest of a reader's Ghost
+looks like JavaScript or PHP. All four of those languages short-circuit
+`&&`/`||`, so the null guard every one of them teaches —
+`x == null or x.field`, `x != null and x.method()` — reads as correct Ghost,
+passes review, and then raises the exact fault it was written to prevent, at
+the moment the guarded value is actually null. A bare truthy guard fails
+identically: `if (x and x.foo)` dereferences `x.foo` whether or not `x` is
+falsy.
+
+This is the only finding in this block that reached a real run twice. Chisel
+shipped it in `Ui.paintTooltip()`, and then — the dangerous one — in
+`Keymap.dispatch()` as `route == null or !this.passes(route.middleware,
+studio)`, which crashed on every keypress that had no binding, meaning very
+nearly every keypress. An audit of every `and`/`or` in that codebase, run
+once the shape was known, found six more live instances (`Ui.focus`,
+`Keymap.bind`, `Keymap.passes`, two command-availability guards,
+`Signals.forget`) — none yet triggered, all real. Eight defects in one
+medium-sized library, from one operator behaving unlike its spelling.
+
+Two things make the fix cheaper here than the same change would be in Python
+or JavaScript:
+
+- **There is no value-returning question to settle.** `and`/`or` in Ghost
+  are strictly boolean-to-boolean — `1 and 2` is a type error today, not `2`
+  — so short-circuiting means returning `false` from a false left operand
+  and `true` from a true left one. Ghost never has to decide whether `a or b`
+  yields `b`, which is the part of this semantics that makes JS's `||`
+  and Python's `or` subtle.
+- **The evaluator already evaluates lazily elsewhere.** `cond ? a : b`
+  evaluates one arm, verified against the interpreter, so laziness is not a
+  new concept in this tree-walker — it is one `case` that has not been
+  written.
+
+**Fix sketch.** Intercept `token.AND`/`token.OR` in `evaluateInfix` before
+the right operand is evaluated: evaluate left, require it to be a `Boolean`
+(the same `Type` fault the switch already raises, at the same token), and
+return it unchanged when it decides the answer. `optimizer/fold.go`'s
+`foldBooleanInfix` needs only its comment updated — it folds two literal
+operands, where there is no side effect to skip either way.
+
+**One behavior loosens**, and it should be written down rather than
+discovered: an unreached operand is no longer type-checked, so
+`false and 1` becomes `false` where it is a type error today. That is the
+same trade every short-circuiting language makes, and it is the point — the
+unreached side is unreached.
+
+**Severity: high, shipped a crash twice.** This is the highest-priority item
+in §15.
+
+### 13.22 A method's name shadows a same-named import, in every method of its class
+
+```ghost
+import "ghost:math" as math
+
+class Theme {
+    load() { return math.floor(3.7) }   // property error: function has no
+                                        // method `floor`
+    math(role) { return role }
+}
+```
+
+A method body's scope is the class environment (§8.8), and resolution
+reaches that environment before it reaches the file's top-level scope where
+imports are bound — the same mechanism that lets one method call a sibling
+by bare name. A method named `math` therefore shadows `import "ghost:math"`
+for *every* method in the class, not only the one that declares it, and the
+name resolves to the method object rather than the module.
+
+The report is the worst part. It is a `property error` naming the member
+that was called (`function has no method \`floor\``), pointing at the call
+site, with nothing at the import and nothing at the method declaration to
+connect the two. The reader is looking at a correct call to a module they
+correctly imported.
+
+This shipped in Chisel's `chisel/theme.gs`, where `Theme.font(role)`
+shadowed `import "lumen:font"` inside `Theme.loadFonts()`, and it survived
+that repository's test suite because the collision needs an engine module to
+reproduce and `ghost test.gs` has no engine. It surfaced on the first real
+run. The workaround is an alias chosen not to collide
+(`import "lumen:font" as fontModule`), which requires knowing the hazard
+exists.
+
+**Severity: high, shipped a crash.** Suggested fix: a diagnostic, not a
+change to resolution order — the resolution order is what makes bare sibling
+calls work and should stay. Reporting the collision where it is created, as
+§13.18 proposes for a field and a method sharing a name, catches both of
+these class-shadowing hazards with one check at class construction.
+
+### 13.23 A function held in a field cannot be called through the field
+
+```ghost
+class Command {
+    constructor() { this.guard = function () { return true } }
+    run() { return this.guard() }   // property error: class `Command` has
+}                                   // no method `guard`
+```
+
+`x.field(...)` parses as a method call, and method lookup consults the class
+chain, which never sees instance fields — the mirror image of §13.18, where
+a property *read* consults the instance and so never sees the method. The
+workaround is to bind the field to a local first (`test = this.guard;
+test(studio)`), which works and reads like an apology.
+
+Callbacks held as fields are an ordinary shape — a command's guard, a
+validator, a comparator, a widget's `on('click')` handler — and this makes
+every one of them awkward at its call site. Caught by Chisel's own tests
+failing on `Command.isEnabled()`, so it is loud rather than silent, which is
+the only reason it ranks below §13.22.
+
+**Severity: mid, loud.** Suggested fix: when method lookup fails, consult the
+instance's fields for a callable before raising, so `this.guard()` falls back
+to calling the field. §13.18's diagnostic keeps that unambiguous by rejecting
+the case where both exist.
+
+### 13.24 A reserved word is unusable as a method name *and* at any call site
+
+§13.20 records that `continue` cannot name a method. The sharper half was
+missed there: because the parser rejects the keyword after a `.` as well, a
+reserved word cannot be *called* on an unrelated object either.
+
+```ghost
+cursors.use('arrow')   // syntax error: expected a name, found `(`
+```
+
+`use` is only meaningful inside a class body, where it pulls in a trait, yet
+it blocks the name everywhere — including on an object that has nothing to
+do with traits and that a third-party library may already have shipped.
+Chisel's tools have a `drag` verb rather than a `continue` one for exactly
+this reason.
+
+The error compounds it: `expected a name, found \`(\`` points at the
+parenthesis, one token past the word that actually caused the failure, so it
+reads as a malformed call rather than a reserved name.
+
+**Severity: mid.** Suggested fix: accept a keyword as the member name after a
+`.` — it is unambiguous in that position — which removes the call-site half
+entirely. Whether a keyword may *declare* a method is a separate and smaller
+question. Failing that, the fault should at least point at the keyword and
+say which one it is.
 ---
 
 ## 14. Decisions for 1.0
@@ -2602,3 +2763,111 @@ targets.
     `export`, or a naming convention, or keeps exporting everything. The
     fallback that keeps every existing file working is to treat a module
     that marks nothing as exporting everything, exactly as today.
+
+11. **`and`/`or` short-circuit — reversing §8.4 (§13.21).** §8.4's
+    non-short-circuiting rule was a decision this document made and the
+    interpreter honoured; §13.21 is the evidence against it, and the
+    evidence is strong enough to reverse it for 1.0. Eight real defects in
+    the first library written against Ghost, two of which shipped, all with
+    the same shape: a null guard written the way Python, Ruby, JavaScript
+    and PHP all teach it, dereferencing the value it just tested.
+
+    The argument for the current rule is "operators keep one meaning" — the
+    same principle that keeps `+` from concatenating a number onto a string
+    (§"Error handling") and keeps `<` from ordering two lists (§8.4). It
+    does not apply here. Short-circuiting does not give `and` a second
+    meaning; it gives it the *same* meaning, computed without evaluating an
+    operand whose value cannot change the answer. `false and x` is `false`
+    for every `x`, which is exactly why the right operand can be skipped.
+
+    Because Ghost's `and`/`or` are boolean-only, the reversal is narrow:
+    they keep answering a `boolean`, they keep raising a `Type` fault on a
+    non-boolean operand *that is reached*, and the only observable loosening
+    is that an unreached operand is no longer type-checked. Ghost does not
+    inherit the value-returning semantics that make this operator subtle
+    elsewhere, and should not add them.
+
+    The rejected alternative was to keep the behavior and document it
+    harder. §13.21 is what that costs: the behavior was already documented,
+    in this section, in the sentence §13.21 quotes — and it still shipped
+    twice, because the failing code reads correctly to anyone who knows any
+    of the four languages Ghost is presented as resembling. A rule that
+    survives its own documentation is a design defect, not a teaching
+    problem.
+
+---
+
+## 15. Fix Priority for the Chisel/Studio Findings
+
+§13.13–§13.24 arrived as one report — `docs/papercuts.md` in the Studio
+repository — rather than as separate findings, so they have never been
+ranked against each other. This section does that, and is the entry point
+for a session picking up this work: take the highest open item.
+
+The ranking is by expected damage — how badly it fails, times how likely
+ordinary code is to hit it — with cost used only to break ties. It is not
+the order they were discovered in, and it deliberately promotes §13.21
+above findings that have been open longer.
+
+### Closed since the report was written
+
+Four items in `papercuts.md` no longer reproduce against this interpreter,
+verified by running each one at `c31c79d`:
+
+| Finding | Papercut severity | State |
+|---|---|---|
+| §13.13 assignment does not reach an enclosing scope | high, silent | Fixed — §14 decision 9 |
+| §13.14 closures cannot capture a loop variable | high, silent | Fixed — §14 decision 9 |
+| §13.15 blocks do not introduce a scope | high, spec drift | Fixed — §14 decision 9 |
+| `list.length` hands back the method | low | Fixed — §13.20 |
+
+That report is cited elsewhere as a whole; these four are stale, and the
+architecture notes justifying workarounds for them (state on instances,
+`make…` closure factories) now describe a constraint that is gone — though
+the workarounds themselves stay correct, so nothing built on them has to
+change.
+
+§13.15's breaking change was also checked against the codebase that reported
+it rather than only against `examples/`: Studio's engine-independent suite,
+132 cases, passes unchanged at `c31c79d`. `Dock.arrange()` — the one place
+that report names as depending on block-free scoping — is directly covered
+and unaffected, because it binds `area` and `taken` before the `switch`, so
+the destructuring assignment inside each case rebinds them through the
+walking assignment §14 decision 9 introduced alongside block scoping. The two
+halves of that decision paying for each other is not theoretical.
+
+### Open, in priority order
+
+| # | Finding | Severity | Cost | Why here |
+|---|---|---|---|---|
+| 1 | §13.21 `and`/`or` do not short-circuit | high | small | Shipped twice; eight instances in one library; unchanged code keeps failing until the operator changes. Fix is one `case` in `evaluateInfix` (§14 decision 11). |
+| 2 | §13.22 a method's name shadows a same-named import | high | small | Shipped; silent until the call runs; the fault points at correct code. A diagnostic at class construction is the whole fix, and §13.18 wants the same check. |
+| 3 | §13.17 a bare sibling call loses the receiver | mid | small | §8.8 actively teaches the broken form, so the document is generating the bug. Contained in `unwrapCall`. |
+| 4 | §13.18 a field and a method may share one name | mid | small | Silent, and the behavior is the opposite of what a reader assumes. Shares its fix site with #2 — do them together. |
+| 5 | §13.16 every top-level name is exported | high | large | Highest damage left, but it is a language design decision (§14 decision 10 is still open) rather than a defect with a known patch. Blocks nothing today; distorts every file layout built on Ghost. |
+| 6 | §13.23 a field-held function cannot be called through the field | mid | small | Loud, and the workaround is one line, which is the only reason it sits below the silent findings. |
+| 7 | §13.24 a reserved word is unusable at a call site | mid | mid | Parser change; unblocks names a third-party library may already use. The fault pointing one token late is worth fixing even if the rest is not. |
+| 8 | §12 `math.floorDiv(a, b)` | mid | trivial | A table entry. Every line of pixel layout wants it. |
+| 9 | §12 `%=` | low | trivial | A table entry; the only compound operator missing. |
+| 10 | §13.19 module resolution is global and first-match-wins | mid | mid | Order-dependent and able to change under an unrelated import, but a full-path convention avoids it completely, and no reported bug has come from it yet. |
+
+#1–#4 are four small, independent patches against known code paths, and
+together they close every finding whose failure does not point at its own
+cause — #1 reports at the dereference, #2 at the call site, #3 at the
+callee, and #4 reports nothing at all. That is the sensible first session's
+worth of work; #2 and #4 should land as one change, since a single check at
+class construction catches both.
+
+### Already answered, no work outstanding
+
+- **No statics** — §14 decision 5, upheld with its cost recorded. The
+  Chisel report is the first of the two independent reports that decision
+  names as its condition for revisiting; it is not a defect.
+- **Division promotes to float** — not reproducible as stated. `6 / 3` is
+  `2`, and §8.4's int/float rules work as documented; what is missing is a
+  way to *ask* for the integer quotient, filed as #8 above.
+- **Circular imports are a hard fault**, **`++` is postfix only**, **no
+  `const`**, **a line opening with `[` or `(` continues the previous
+  statement** — all working as intended (§13.20, §13.12). They want a
+  user-facing mention in the getting-started documentation, which §14
+  decision 6 already owes for cross-type `==`, rather than a code change.

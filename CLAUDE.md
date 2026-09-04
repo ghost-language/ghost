@@ -169,11 +169,11 @@ points at the callee's name, a bad method at the method's name.
 
 Update `version/version.go` when releasing. GoReleaser handles binary distribution.
 
-## Working through SPEC.md §11–14 (the 1.0 gap list)
+## Working through SPEC.md §11–15 (the 1.0 gap list)
 
 `SPEC.md` §12 (functionality to add) and §13 (defects to fix) are the punch
 list for a stable 1.0; §14 records product-direction decisions the list
-raises. Sessions pick this work up incrementally, one item at a time, so the
+raises, and §15 ranks the open §13.13–§13.24 findings against each other. Sessions pick this work up incrementally, one item at a time, so the
 following are standing rules rather than one-off notes:
 
 - **One callout per session, start to finish.** Implement it, test it, and
@@ -225,4 +225,7 @@ following are standing rules rather than one-off notes:
   the next unclaimed item in §12/§13, in the order those sections already
   list them (§12: roughly descending likelihood of being hit by an ordinary
   user; §13: roughly descending damage) unless the user asks for a specific
-  item instead.
+  item instead. For §13.13–§13.24 — the findings from building Chisel and
+  Studio on Ghost — take the highest open row of §15's priority table
+  instead; those callouts are numbered in the order they were reported, not
+  the order they should be fixed in.
