@@ -188,6 +188,18 @@ func (environment *Environment) HasLocal(name string) bool {
 	return ok
 }
 
+// GetEnclosing reads a name from the enclosing chain only, skipping this
+// environment's own bindings. It answers "what did this name mean out there,
+// before anything in here was declared" - which is how a class body asks
+// whether one of its methods is about to shadow an import (§13.22).
+func (environment *Environment) GetEnclosing(name string) (Object, bool) {
+	if environment.outer == nil {
+		return nil, false
+	}
+
+	return environment.outer.Get(name)
+}
+
 // GetLocal reads a name bound in this environment itself, ignoring the
 // enclosing chain.
 func (environment *Environment) GetLocal(name string) (Object, bool) {

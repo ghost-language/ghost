@@ -670,6 +670,22 @@ new Dog("Fido").shout()
 - **`constructor(...)`** is the one specially-named method Ghost recognizes;
   declaring a *field* named `constructor` (`constructor = 5`) is a dedicated
   parse-time error rather than a silently-broken class.
+- **A name is a field or a method, not both.** Declaring both in one class or
+  trait body is a `Syntax` fault at the second declaration, in either order
+  (§13.18) — without it the two coexist silently, `x.thing` answering with the
+  field and `x.thing()` with the method. Overriding an *inherited* field or
+  method is untouched by this: the rule is about one body, where a repeated
+  name is a mistake rather than an override.
+- **A method may not shadow an imported module.** Because a method body
+  resolves through the class environment before it reaches the file's
+  imports, a method named `font` would hide `import "lumen:font"` from every
+  method in the class, so declaring one is a `Syntax` fault naming the
+  collision (§13.22). Import the module under another name (`import
+  "lumen:font" as fontModule`) or rename the method. This applies to imported
+  modules only — a method may freely share a name with an ordinary outer
+  function, variable or map, which is ordinary lexical shadowing, and with a
+  global module such as `console`, which resolves through the library registry
+  rather than the environment chain and so is not shadowed at all.
 - **`this`** refers to the instance (or, inside a class body outside a
   method, the class itself) currently executing. **`super`** resolves
   members starting at the superclass of the class that *declared* the
@@ -2377,16 +2393,13 @@ it points at correct code and hides the actual mistake.
 fixable on its own: either carry the receiver through the bare-call path, or
 retract §8.8's claim and require `this.`.
 
-### 13.18 A field and a method may share one name, with no diagnostic
+### 13.18 A field and a method may share one name, with no diagnostic — done
 
 ```ghost
 class Thing {
     thing = 7
-    thing() { return "method" }
-}
-t = new Thing()
-t.thing     // 7
-t.thing()   // "method"
+    thing() { return "method" }   // now: syntax error, `thing` is already
+}                                 // declared as a field in this body
 ```
 
 Fields are initialized into `instance.Environment` (`initializeField`);
@@ -2405,9 +2418,30 @@ assumes on reading the class — the assumption that the field makes the
 method unreachable is itself enough to misdesign around, which is how this
 was found.
 
-**Severity: mid.** Suggested fix: reject the duplicate declaration at class
-construction with a `Syntax` fault naming both, rather than changing either
-lookup path.
+**Fix.** The duplicate declaration is rejected where it is written, and
+neither lookup path changed — as suggested, and for the reason given: the two
+paths are each correct on their own, and it is the pair of declarations that
+is the mistake. Because either declaration can come first, the check is made
+on both sides: `checkMethodDeclaration` (`evaluator/function.go`) asks the
+class or trait whether it already declares a field of that name, and
+`evaluateAssign` (`evaluator/assign.go`) asks whether the body's own
+environment already holds a method — methods being the only members that live
+there. Both raise `memberCollisionError` (`evaluator/errors.go`) at the second
+declaration's own name token, naming what the first one was. `HasField` and
+`DeclaredName` join `object.FieldDeclarer` (`object/class.go`,
+`object/trait.go`) so the check reads the same on a class and on a trait.
+
+**What stays legal**, and is pinned by tests: a subclass overriding an
+inherited method or field, a field and a method that merely sit beside each
+other, and the same name used as a field in one class and a method in
+another. The check is deliberately confined to one body — the collision §13.18
+describes — rather than extended across the class chain or into used traits,
+where a name appearing twice is overriding rather than colliding.
+
+**Severity: mid.** Tested in `evaluator/class_members_test.go`
+(`TestMemberCollisionIsRejected` for both declaration orders and for a trait
+body, `TestMemberCollisionAllowsWhatIsNotOne` for the four shapes that must
+not be rejected).
 
 ### 13.19 Module resolution is a global, first-match-wins search path
 
@@ -2551,16 +2585,16 @@ output before and after — `mud.gs` differs only in how many frames its
 non-terminating interactive loop renders inside the timeout, with its output
 byte-identical up to that point.
 
-### 13.22 A method's name shadows a same-named import, in every method of its class
+### 13.22 A method's name shadows a same-named import, in every method of its class — done
 
 ```ghost
 import "ghost:math" as math
 
 class Theme {
-    load() { return math.floor(3.7) }   // property error: function has no
-                                        // method `floor`
-    math(role) { return role }
-}
+    load() { return math.floor(3.7) }   // was: property error at this line,
+                                        // function has no method `floor`
+    math(role) { return role }          // now: syntax error here, method
+}                                       // `math` shadows an imported module
 ```
 
 A method body's scope is the class environment (§8.8), and resolution
@@ -2584,11 +2618,38 @@ run. The workaround is an alias chosen not to collide
 (`import "lumen:font" as fontModule`), which requires knowing the hazard
 exists.
 
-**Severity: high, shipped a crash.** Suggested fix: a diagnostic, not a
-change to resolution order — the resolution order is what makes bare sibling
-calls work and should stay. Reporting the collision where it is created, as
-§13.18 proposes for a field and a method sharing a name, catches both of
-these class-shadowing hazards with one check at class construction.
+**Fix.** A diagnostic, exactly as suggested: resolution order is untouched,
+and the collision is reported where it is created. `checkMethodDeclaration`
+(`evaluator/function.go`) — the same function that closes §13.18, on the same
+declaration path — looks the method's name up in the *enclosing* chain via a
+new `Environment.GetEnclosing` (`object/environment.go`), which skips the
+class's own members and answers what the name meant outside. If that is an
+imported module, `shadowedModuleError` (`evaluator/errors.go`) raises a
+`Syntax` fault at the method's name, with help naming the class and pointing
+at the `as` alias that resolves it — the fix Chisel had already found by hand.
+
+**What counts as a module** is a question the check has to answer honestly
+rather than by sniffing types, since a `scheme:name` import binds an
+`object.LibraryModule` but a Ghost source module binds a plain `object.Map`,
+which is also what a map literal is. `object.Map` therefore gained a `Module`
+flag, set only by `moduleValue` (`evaluator/import.go`), and
+`isImportedModule` reads it. Shadowing an imported module is rejected;
+shadowing a map, a function, a variable, or anything else an outer scope
+happens to bind is ordinary lexical shadowing and is left alone.
+
+**Global modules are not affected, and that is not an oversight.** A method
+named `console` does *not* hide the global `console` from its siblings —
+globals resolve through the library registry rather than the environment
+chain, so a bare `console` inside a method still answers with the module.
+There is nothing to warn about, and `TestGlobalModulesAreNotShadowedByMethods`
+pins the asymmetry so the check is not later "fixed" to cover it.
+
+**Severity: high, shipped a crash.** Tested in
+`evaluator/class_members_test.go`
+(`TestMethodShadowingAnImportedModuleIsRejected` for a scheme import, a trait
+body, and a Ghost source module written to a temporary directory;
+`TestMethodShadowingAllowsWhatIsNotAModule` for the outer bindings that must
+not be rejected, including the aliased-import form the fix recommends).
 
 ### 13.23 A function held in a field cannot be called through the field
 
@@ -2847,9 +2908,9 @@ above findings that have been open longer.
 
 ### Closed since the report was written
 
-Five items in `papercuts.md` no longer reproduce against this interpreter.
-The first four were verified by running each one at `c31c79d`; §13.21 was
-closed here, by this section's own ranking:
+Seven items in `papercuts.md` no longer reproduce against this interpreter.
+The first four were verified by running each one at `c31c79d`; §13.21,
+§13.22 and §13.18 were closed here, in the order this section ranked them:
 
 | Finding | Papercut severity | State |
 |---|---|---|
@@ -2858,12 +2919,16 @@ closed here, by this section's own ranking:
 | §13.15 blocks do not introduce a scope | high, spec drift | Fixed — §14 decision 9 |
 | `list.length` hands back the method | low | Fixed — §13.20 |
 | §13.21 `and`/`or` do not short-circuit | high, shipped twice | Fixed — §14 decision 11 |
+| §13.22 a method's name shadows a same-named import | high, shipped | Fixed — one check with §13.18 |
+| §13.18 a field and a method may share one name | mid, silent | Fixed — one check with §13.22 |
 
-That report is cited elsewhere as a whole; these four are stale, and the
-architecture notes justifying workarounds for them (state on instances,
-`make…` closure factories) now describe a constraint that is gone — though
-the workarounds themselves stay correct, so nothing built on them has to
-change.
+That report is cited elsewhere as a whole; these are stale in it, and the
+architecture notes justifying workarounds for the scoping three (state on
+instances, `make…` closure factories) now describe a constraint that is gone
+— though the workarounds themselves stay correct, so nothing built on them
+has to change. §13.22 is the exception to that: its workaround, importing
+under an alias, is now what the diagnostic tells you to do rather than
+folklore.
 
 §13.15's breaking change was also checked against the codebase that reported
 it rather than only against `examples/`: Studio's engine-independent suite,
@@ -2879,9 +2944,9 @@ halves of that decision paying for each other is not theoretical.
 | # | Finding | Severity | Cost | Why here |
 |---|---|---|---|---|
 | ~~1~~ | ~~§13.21 `and`/`or` do not short-circuit~~ | high | small | **Done** — §14 decision 11. |
-| 2 | §13.22 a method's name shadows a same-named import | high | small | Shipped; silent until the call runs; the fault points at correct code. A diagnostic at class construction is the whole fix, and §13.18 wants the same check. |
+| ~~2~~ | ~~§13.22 a method's name shadows a same-named import~~ | high | small | **Done** — one diagnostic with §13.18. |
 | 3 | §13.17 a bare sibling call loses the receiver | mid | small | §8.8 actively teaches the broken form, so the document is generating the bug. Contained in `unwrapCall`. |
-| 4 | §13.18 a field and a method may share one name | mid | small | Silent, and the behavior is the opposite of what a reader assumes. Shares its fix site with #2 — do them together. |
+| ~~4~~ | ~~§13.18 a field and a method may share one name~~ | mid | small | **Done** — one diagnostic with §13.22. |
 | 5 | §13.16 every top-level name is exported | high | large | Highest damage left, but it is a language design decision (§14 decision 10 is still open) rather than a defect with a known patch. Blocks nothing today; distorts every file layout built on Ghost. |
 | 6 | §13.23 a field-held function cannot be called through the field | mid | small | Loud, and the workaround is one line, which is the only reason it sits below the silent findings. |
 | 7 | §13.24 a reserved word is unusable at a call site | mid | mid | Parser change; unblocks names a third-party library may already use. The fault pointing one token late is worth fixing even if the rest is not. |
@@ -2889,12 +2954,13 @@ halves of that decision paying for each other is not theoretical.
 | 9 | §12 `%=` | low | trivial | A table entry; the only compound operator missing. |
 | 10 | §13.19 module resolution is global and first-match-wins | mid | mid | Order-dependent and able to change under an unrelated import, but a full-path convention avoids it completely, and no reported bug has come from it yet. |
 
-**The next item is #2.** #1–#4 were four small, independent patches against
-known code paths that together close every finding whose failure does not
+**The next item is #3.** #1–#4 were four small, independent patches against
+known code paths that together closed every finding whose failure did not
 point at its own cause — #1 reported at the dereference, #2 at the call site,
-#3 at the callee, and #4 reports nothing at all. #1 is now done; #2 and #4
-should still land as one change, since a single check at class construction
-catches both.
+#3 at the callee, and #4 reported nothing at all. Three of them are done; #2
+and #4 landed together as one check on the member-declaration path, as
+predicted. #3 (§13.17) is what is left of that group, and after it the list
+turns to §13.16, the one open design decision (§14 decision 10).
 
 ### Already answered, no work outstanding
 

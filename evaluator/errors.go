@@ -201,6 +201,42 @@ func logicalOperandError(tok token.Token, operator token.Type, operand object.Ob
 	return raised
 }
 
+// memberCollisionError rejects one name declared as both a field and a method
+// in the same class or trait body (§13.18). Both declarations are legal on
+// their own and neither lookup path knows the other exists - a property read
+// answers with the field, a call answers with the method - so the only place
+// the collision can be reported is where the second declaration creates it.
+func memberCollisionError(tok token.Token, name string, existing string) *object.Error {
+	return object.NewError(fault.Syntax, tok, "`%s` is already declared as a %s in this body", name, existing).
+		WithHelp("rename one of them; otherwise `%s` reads the field and `%s()` calls the method, which is not a difference a reader will predict", name, name)
+}
+
+// shadowedModuleError rejects a method whose name hides a module imported
+// further out (§13.22). A method body resolves through its class environment
+// before it reaches the file's imports, so the collision silences the module
+// for *every* method in the class, and the failure it eventually produces is a
+// property error at some unrelated call site with nothing to connect it back
+// here.
+func shadowedModuleError(tok token.Token, name string, declarer string) *object.Error {
+	return object.NewError(fault.Syntax, tok, "method `%s` shadows an imported module of the same name", name).
+		WithHelp("every method in `%s` would resolve `%s` to this method rather than the module; rename the method, or import the module under another name with `as`", declarer, name)
+}
+
+// isImportedModule reports whether a binding is something an import brought
+// in: a library module for a `scheme:name` import, or a module's export map
+// for a Ghost source file. A plain map literal is deliberately not one of
+// them.
+func isImportedModule(binding object.Object) bool {
+	switch module := binding.(type) {
+	case *object.LibraryModule:
+		return true
+	case *object.Map:
+		return module.Module
+	}
+
+	return false
+}
+
 // plural writes a type name as it reads when there is more than one of them.
 func plural(name string) string {
 	if strings.HasSuffix(name, "s") || strings.HasSuffix(name, "x") || strings.HasSuffix(name, "ch") {

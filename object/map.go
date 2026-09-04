@@ -25,6 +25,13 @@ import (
 type Map struct {
 	Pairs map[MapKey]MapPair
 	order []MapKey
+
+	// Module marks a Map that is a Ghost module's export surface rather than
+	// data, set only by the import evaluator. A module and a map literal are
+	// the same type, so this is the only way to tell one from the other -
+	// which the class-member shadowing check (§13.22) needs, since shadowing
+	// an imported module is a mistake and shadowing a map is not.
+	Module bool
 }
 
 type MapPair struct {
