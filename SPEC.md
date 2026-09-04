@@ -470,7 +470,7 @@ respectively, or it is a type error. There is no chained assignment (`a = b
 | Arithmetic | `+ - * / %` | On numbers: standard, with the int/float promotion rules above. On lists: elementwise with **NumPy-style broadcasting** — see below. On strings: only `+` (concatenation); `-`/`*`/`/`/`%` on strings are a type error. |
 | Comparison | `< <= > >=` | Numbers and strings only (strings compare lexicographically). **Not supported between two lists** — deliberately: neither an elementwise nor a lexicographic reading was judged obviously correct (`CLAUDE.md`). Dates support `< <= > >=` as instant ordering, independent of which time zone either `Date` is attached to (§9.5). |
 | Equality | `== !=` | See §8.5 — this is one of the language's most distinctive behaviors. |
-| Logical | `and`, `or`, `!` | Word operators, not `&& \|\|` — there is no `&&`/`\|\|` token at all. `!` is the only prefix logical operator. Both operands of `and`/`or` are evaluated as ordinary booleans (no built-in short-circuit special-casing beyond ordinary infix evaluation order: left is evaluated, then right, then combined). |
+| Logical | `and`, `or`, `!` | Word operators, not `&& \|\|` — there is no `&&`/`\|\|` token at all. `!` is the only prefix logical operator. **`and` and `or` short-circuit**: the right operand is evaluated only when the left one leaves the answer open, so `false and x` is `false` and `true or x` is `true` without ever reaching `x` (§13.21, §14 decision 11). Both operands are still booleans — an operand that *is* reached and is not one raises a `Type` fault naming the side at fault — but an operand that is never reached is never type-checked. |
 | Unary | `-`, `!` | `-` negates a number only. `!` follows Ghost's truthiness rules (§8.5), not "must be boolean." |
 | Range | `a..b` | Inclusive integer range, producing a `list`: `1..5` → `[1, 2, 3, 4, 5]`. Descending (`a > b`) produces an empty list rather than counting down. Not foldable at compile time (would require a shared mutable literal). |
 | Ternary | `cond ? a : b` | Standard. |
@@ -2460,22 +2460,23 @@ fixing:
   the Chisel work no longer exists — noted here because that report is
   otherwise cited as a whole and this one item of it is stale.
 
-### 13.21 `and`/`or` do not short-circuit, and the guard idiom every neighbouring language teaches therefore crashes
+### 13.21 `and`/`or` do not short-circuit, and the guard idiom every neighbouring language teaches therefore crashes — done
 
 ```ghost
 target = null
 
-if (target == null or target.hint == '') {   // property error: cannot read
-    return null                              // property `hint` of null
-}
+if (target == null or target.hint == '') {   // was: property error, cannot read
+    return null                              // property `hint` of null.
+}                                            // now: returns null, as written
 ```
 
-§8.4 states this outright — "no built-in short-circuit special-casing beyond
-ordinary infix evaluation order: left is evaluated, then right, then
-combined" — and `evaluator/infix.go`'s `evaluateInfix` matches it: both sides
-are evaluated, and only then does the switch reach `evaluateBooleanInfix`.
-So unlike §13.15 and §13.17 this is not drift; the implementation does what
-this document asked for. **The callout is against the stance, not the code.**
+§8.4 used to state this outright — "no built-in short-circuit special-casing
+beyond ordinary infix evaluation order: left is evaluated, then right, then
+combined" — and `evaluator/infix.go`'s `evaluateInfix` matched it: both sides
+were evaluated, and only then did the switch reach `evaluateBooleanInfix`.
+So unlike §13.15 and §13.17 this was never drift; the implementation did what
+this document asked for. **The callout was against the stance, not the code**,
+which is why closing it took a §14 decision (11) and not just a patch.
 
 The stance is wrong for one reason that no amount of documenting fixes.
 Ghost takes `and`/`or` from Python and Ruby, and the rest of a reader's Ghost
@@ -2511,21 +2512,44 @@ or JavaScript:
   new concept in this tree-walker — it is one `case` that has not been
   written.
 
-**Fix sketch.** Intercept `token.AND`/`token.OR` in `evaluateInfix` before
-the right operand is evaluated: evaluate left, require it to be a `Boolean`
-(the same `Type` fault the switch already raises, at the same token), and
-return it unchanged when it decides the answer. `optimizer/fold.go`'s
-`foldBooleanInfix` needs only its comment updated — it folds two literal
-operands, where there is no side effect to skip either way.
+**Fix.** `evaluateInfix` (`evaluator/infix.go`) now routes `token.AND` and
+`token.OR` to `evaluateLogicalInfix` (`evaluator/boolean.go`) as soon as the
+left operand is evaluated, before the right one is touched. That function
+requires the left operand to be a `Boolean`, returns immediately when it
+settles the answer (`false and x`, `true or x`), and otherwise evaluates the
+right operand and answers with it — because once the left operand has not
+decided, the result *is* the right one: `true and x` is `x`, `false or x` is
+`x`. `and`/`or` are gone from `evaluateBooleanInfix`, which is handed both
+operands already evaluated and so cannot make this decision; the cases there
+would be dead code. `optimizer/fold.go`'s `foldBooleanInfix` keeps folding
+two literal booleans — with no evaluation to skip either way — and only its
+comment changed.
 
-**One behavior loosens**, and it should be written down rather than
-discovered: an unreached operand is no longer type-checked, so
-`false and 1` becomes `false` where it is a type error today. That is the
-same trade every short-circuiting language makes, and it is the point — the
-unreached side is unreached.
+**Errors name the side at fault.** A non-boolean operand cannot be reported
+as `cannot use `and` between null and boolean` any more, because when the
+left operand is wrong the right one has deliberately not been evaluated and
+naming a type it might have had would be inventing one. `logicalOperandError`
+(`evaluator/errors.go`) reports `cannot use `and` with null on the left`
+instead, on either side, and adds `help: compare it first, as in `x != null``
+when the offending operand is null — which is nearly always the truthy-guard
+mistake this whole callout is about. The gain is not only wording: a bare
+`if (x and x.foo)` now fails at the `and` with a `Type` fault, where it
+previously died with a `property error` on the very dereference the guard
+existed to prevent.
 
-**Severity: high, shipped a crash twice.** This is the highest-priority item
-in §15.
+**One behavior loosens**, as §14 decision 11 said it would: an unreached
+operand is no longer type-checked, so `false and 1` is now `false` where it
+was a type error. That is the same trade every short-circuiting language
+makes, and it is the point — the unreached side is unreached.
+
+**Severity: high, shipped a crash twice.** Tested in
+`evaluator/logical_test.go`: the truth table (unchanged), short-circuiting
+proved by a right operand that raises and by one whose side effect is counted
+and must not happen, the reached/unreached type-error wording with positions,
+and the null help line. All 41 programs in `examples/` produce identical
+output before and after — `mud.gs` differs only in how many frames its
+non-terminating interactive loop renders inside the timeout, with its output
+byte-identical up to that point.
 
 ### 13.22 A method's name shadows a same-named import, in every method of its class
 
@@ -2764,7 +2788,7 @@ targets.
     fallback that keeps every existing file working is to treat a module
     that marks nothing as exporting everything, exactly as today.
 
-11. **`and`/`or` short-circuit — reversing §8.4 (§13.21).** §8.4's
+11. **`and`/`or` short-circuit — reversing §8.4 (§13.21) — done.** §8.4's
     non-short-circuiting rule was a decision this document made and the
     interpreter honoured; §13.21 is the evidence against it, and the
     evidence is strong enough to reverse it for 1.0. Eight real defects in
@@ -2795,6 +2819,18 @@ targets.
     survives its own documentation is a design defect, not a teaching
     problem.
 
+    Implemented in `evaluator/boolean.go`'s `evaluateLogicalInfix`, reached
+    from `evaluator/infix.go`; §8.4 now documents short-circuiting as the
+    rule and §13.21 records what changed. The narrow reversal held: the truth
+    table is untouched, both operands are still booleans, and the single
+    observable loosening is the unreached operand going unchecked. One thing
+    the decision did not anticipate is that the error *wording* had to move
+    too — a wrong left operand can no longer be reported against a right
+    operand that was deliberately never evaluated, so `and`/`or` now name the
+    side at fault (`cannot use `and` with null on the left`). That reads
+    better than what it replaced: the truthy-guard mistake now fails at the
+    operator instead of at the null dereference downstream of it.
+
 ---
 
 ## 15. Fix Priority for the Chisel/Studio Findings
@@ -2811,8 +2847,9 @@ above findings that have been open longer.
 
 ### Closed since the report was written
 
-Four items in `papercuts.md` no longer reproduce against this interpreter,
-verified by running each one at `c31c79d`:
+Five items in `papercuts.md` no longer reproduce against this interpreter.
+The first four were verified by running each one at `c31c79d`; §13.21 was
+closed here, by this section's own ranking:
 
 | Finding | Papercut severity | State |
 |---|---|---|
@@ -2820,6 +2857,7 @@ verified by running each one at `c31c79d`:
 | §13.14 closures cannot capture a loop variable | high, silent | Fixed — §14 decision 9 |
 | §13.15 blocks do not introduce a scope | high, spec drift | Fixed — §14 decision 9 |
 | `list.length` hands back the method | low | Fixed — §13.20 |
+| §13.21 `and`/`or` do not short-circuit | high, shipped twice | Fixed — §14 decision 11 |
 
 That report is cited elsewhere as a whole; these four are stale, and the
 architecture notes justifying workarounds for them (state on instances,
@@ -2840,7 +2878,7 @@ halves of that decision paying for each other is not theoretical.
 
 | # | Finding | Severity | Cost | Why here |
 |---|---|---|---|---|
-| 1 | §13.21 `and`/`or` do not short-circuit | high | small | Shipped twice; eight instances in one library; unchanged code keeps failing until the operator changes. Fix is one `case` in `evaluateInfix` (§14 decision 11). |
+| ~~1~~ | ~~§13.21 `and`/`or` do not short-circuit~~ | high | small | **Done** — §14 decision 11. |
 | 2 | §13.22 a method's name shadows a same-named import | high | small | Shipped; silent until the call runs; the fault points at correct code. A diagnostic at class construction is the whole fix, and §13.18 wants the same check. |
 | 3 | §13.17 a bare sibling call loses the receiver | mid | small | §8.8 actively teaches the broken form, so the document is generating the bug. Contained in `unwrapCall`. |
 | 4 | §13.18 a field and a method may share one name | mid | small | Silent, and the behavior is the opposite of what a reader assumes. Shares its fix site with #2 — do them together. |
@@ -2851,12 +2889,12 @@ halves of that decision paying for each other is not theoretical.
 | 9 | §12 `%=` | low | trivial | A table entry; the only compound operator missing. |
 | 10 | §13.19 module resolution is global and first-match-wins | mid | mid | Order-dependent and able to change under an unrelated import, but a full-path convention avoids it completely, and no reported bug has come from it yet. |
 
-#1–#4 are four small, independent patches against known code paths, and
-together they close every finding whose failure does not point at its own
-cause — #1 reports at the dereference, #2 at the call site, #3 at the
-callee, and #4 reports nothing at all. That is the sensible first session's
-worth of work; #2 and #4 should land as one change, since a single check at
-class construction catches both.
+**The next item is #2.** #1–#4 were four small, independent patches against
+known code paths that together close every finding whose failure does not
+point at its own cause — #1 reported at the dereference, #2 at the call site,
+#3 at the callee, and #4 reports nothing at all. #1 is now done; #2 and #4
+should still land as one change, since a single check at class construction
+catches both.
 
 ### Already answered, no work outstanding
 

@@ -14,6 +14,13 @@ func evaluateInfix(node *ast.Infix, scope *object.Scope) object.Object {
 		return left
 	}
 
+	// `and` and `or` are the one infix pair that does not evaluate both sides
+	// up front: they short-circuit (§13.21, §14 decision 11), so the right
+	// operand is reached only when the left one leaves the answer open.
+	if node.Operator == token.AND || node.Operator == token.OR {
+		return evaluateLogicalInfix(node, left, scope)
+	}
+
 	right := Evaluate(node.Right, scope)
 
 	if isError(right) {
