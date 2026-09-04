@@ -162,8 +162,10 @@ func foldStringInfix(node *ast.Infix, left, right *ast.String) ast.ExpressionNod
 }
 
 func foldBooleanInfix(node *ast.Infix, left, right *ast.Boolean) ast.ExpressionNode {
-	// Ghost evaluates both sides of and/or before dispatching, so folding two
-	// literal operands cannot skip a side effect.
+	// `and`/`or` short-circuit at runtime (§13.21), so folding them here has
+	// to be able to skip the right operand's side effects - which it trivially
+	// is, because both operands are literal booleans by the time this is
+	// reached. There is no evaluation to skip either way.
 	switch node.Operator {
 	case token.AND:
 		return booleanNode(node, left.Value && right.Value)

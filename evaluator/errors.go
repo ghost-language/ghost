@@ -182,6 +182,25 @@ func operatorError(tok token.Token, operator token.Type, left object.Object, rig
 	return object.NewError(fault.Type, tok, "cannot use `%s` between %s and %s", operator, object.TypeName(left), object.TypeName(right))
 }
 
+// logicalOperandError reports a non-boolean operand of `and`/`or`. It names
+// the side at fault rather than both types, because short-circuiting means
+// there is not always another side to name: when the left operand is wrong
+// the right one has deliberately not been evaluated, and reporting a type it
+// might have had would be inventing one.
+//
+// The null case gets the help line because it is the mistake this wording
+// exists for - a guard written as `x and x.field`, in the idiom of a language
+// where `and` is truthy rather than boolean.
+func logicalOperandError(tok token.Token, operator token.Type, operand object.Object, side string) *object.Error {
+	raised := object.NewError(fault.Type, tok, "cannot use `%s` with %s on the %s", operator, object.TypeName(operand), side)
+
+	if object.TypeName(operand) == "null" {
+		raised.WithHelp("compare it first, as in `x != null`")
+	}
+
+	return raised
+}
+
 // plural writes a type name as it reads when there is more than one of them.
 func plural(name string) string {
 	if strings.HasSuffix(name, "s") || strings.HasSuffix(name, "x") || strings.HasSuffix(name, "ch") {
