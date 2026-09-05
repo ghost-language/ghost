@@ -38,7 +38,8 @@ func (trait *Trait) HasField(name string) bool {
 	return hasField(trait.Fields, name)
 }
 
-// DeclaredName names this trait for a diagnostic about its own body.
-func (trait *Trait) DeclaredName() string {
-	return trait.Name.Value
+// DeclarationScope is the scope the trait was declared in, which its methods
+// close over for the same reason a class's do.
+func (trait *Trait) DeclarationScope() *Scope {
+	return trait.Scope
 }

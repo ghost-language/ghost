@@ -1,11 +1,23 @@
 package evaluator
 
-import "testing"
+import (
+	"testing"
 
-// The tests in this file cover §13.18 and §13.22 — the two ways a class or
-// trait member can collide with a name that already means something, both
-// reported where the collision is created rather than left to surface as a
-// confusing failure elsewhere.
+	"ghostlang.org/x/ghost/object"
+)
+
+// The tests in this file cover §13.18, §13.22 and §13.17 — what happens when a
+// class or trait member shares a name with something else.
+//
+// §13.18, a field and a method sharing one name, is a genuine collision and is
+// rejected where it is written: the two used to coexist in silence, a property
+// read answering with the field and a call answering with the method.
+//
+// §13.22 and §13.17 are the same question answered once by §14 decision 12: a
+// method is a member reached through `this`, not a lexical binding. So a method
+// never enters the scope chain, cannot shadow an import (§13.22), and a bare
+// sibling call is a plain name error rather than a call with the wrong
+// receiver (§13.17).
 //
 // §13.18 is a field and a method sharing one name, which used to coexist in
 // silence: `x.thing` answered with the field and `x.thing()` with the method,
@@ -82,35 +94,138 @@ func TestMemberCollisionAllowsWhatIsNotOne(t *testing.T) {
 	}
 }
 
-func TestMethodShadowingAnImportedModuleIsRejected(t *testing.T) {
-	t.Run("a scheme import shadowed by a method of the same name", func(t *testing.T) {
-		input := "import \"ghost:math\" as math\nclass Theme {\n\tmath(role) { return role }\n}"
+// TestAMethodDoesNotShadowAnImport is §13.22, resolved by scoping rather than
+// by a diagnostic (§14 decision 12). A method is a member, so it never enters
+// the lexical chain and cannot hide a name from its siblings: inside the class
+// `math` is the import and `this.math()` is the method, and both work.
+func TestAMethodDoesNotShadowAnImport(t *testing.T) {
+	t.Run("a method may share a name with a scheme import", func(t *testing.T) {
+		input := `
+			import "ghost:math" as math
+			class Theme {
+				load() { return math.floor(3.7) }
+				math(role) { return role }
+			}
+			new Theme().load()
+		`
 
-		isErrorObject(t, evaluate(input), "test.gs:3:2: syntax error: method `math` shadows an imported module of the same name")
+		isNumberObject(t, evaluate(input), 3)
 	})
 
-	t.Run("the same shadowing inside a trait", func(t *testing.T) {
-		input := "import \"ghost:math\" as math\ntrait Sums {\n\tmath() { return 1 }\n}"
+	t.Run("and the method of that name is still reachable", func(t *testing.T) {
+		input := `
+			import "ghost:math" as math
+			class Theme {
+				load() { return math.floor(3.7) }
+				math(role) { return role }
+			}
+			new Theme().math("accent")
+		`
 
-		isErrorObject(t, evaluate(input), "test.gs:3:2: syntax error: method `math` shadows an imported module of the same name")
+		isStringObject(t, evaluate(input), "accent")
 	})
 
-	t.Run("a Ghost module bound as a map is shadowed just the same", func(t *testing.T) {
+	t.Run("the same holds in a trait", func(t *testing.T) {
+		input := `
+			import "ghost:math" as math
+			trait Sums {
+				math() { return 1 }
+				total() { return math.floor(2.5) }
+			}
+			class Adder { use Sums }
+			new Adder().total()
+		`
+
+		isNumberObject(t, evaluate(input), 2)
+	})
+
+	t.Run("a field initializer resolves the same way a method body does", func(t *testing.T) {
+		// This path is separate from the method one and would otherwise keep
+		// the old behavior: the initializer is evaluated per instance, and
+		// used to run in the class's member table.
+		input := `
+			import "ghost:math" as math
+			class A {
+				size = math.floor(2.7)
+				math() { return 1 }
+			}
+			new A().size
+		`
+
+		isNumberObject(t, evaluate(input), 2)
+	})
+
+	t.Run("a Ghost source module is not shadowed either", func(t *testing.T) {
 		dir := t.TempDir()
-		writeModule(t, dir, "geometry.gs", `origin = 0`)
+		writeModule(t, dir, "geometry.gs", `origin = 7`)
 
-		result := evaluateInDirectory(dir, "import \"geometry\" as geometry\nclass A {\n\tgeometry() { return 1 }\n}")
+		result := evaluateInDirectory(dir, `
+			import "geometry" as geometry
+			class A {
+				geometry() { return 1 }
+				read() { return geometry.origin }
+			}
+			new A().read()
+		`)
 
-		isErrorObject(t, result, "main.gs:3:2: syntax error: method `geometry` shadows an imported module of the same name")
+		isNumberObject(t, result, 7)
 	})
 }
 
-// TestMethodShadowingAllowsWhatIsNotAModule is the other half of §13.22's
-// check: it fires on imported modules and nothing else. A method is allowed to
-// carry the same name as any ordinary outer binding, which is ordinary lexical
-// shadowing and not the hazard — and the aliasing workaround Chisel adopted
-// has to keep working, since it is what the fix tells people to do.
-func TestMethodShadowingAllowsWhatIsNotAModule(t *testing.T) {
+// TestBareSiblingCallsAreNotDefined covers §13.17. §8.8 used to promise that a
+// sibling method could be called by bare name; it resolved but ran with the
+// wrong receiver, failing only if the callee touched `this` — so the failure
+// depended on the callee's body and was reported at the callee rather than at
+// the call. Methods now stay out of the lexical chain entirely, which makes
+// the bare form an honest name error at the call site, with the receiver it is
+// missing named in the help.
+func TestBareSiblingCallsAreNotDefined(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{
+			name:     "a sibling method that touches this",
+			input:    "class W {\n\tconstructor(n) { this.n = n }\n\tdescribe() { return this.n }\n\tshow() { return describe() }\n}\nnew W(5).show()",
+			expected: "test.gs:4:18: name error: `describe` is not defined",
+		},
+		{
+			// This one used to "work", which is exactly why the old behavior
+			// was so hard to reason about: whether a bare call succeeded
+			// depended on whether the callee happened to use `this`.
+			name:     "a sibling method that does not touch this",
+			input:    "class W {\n\thelper() { return 42 }\n\tshow() { return helper() }\n}\nnew W().show()",
+			expected: "test.gs:3:18: name error: `helper` is not defined",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			isErrorObject(t, evaluate(test.input), test.expected)
+		})
+	}
+}
+
+// TestBareSiblingCallHelpNamesTheReceiver checks the help line, which is what
+// turns this from a puzzle into a one-word fix.
+func TestBareSiblingCallHelpNamesTheReceiver(t *testing.T) {
+	result := evaluate("class W {\n\tdescribe() { return 1 }\n\tshow() { return describe() }\n}\nnew W().show()")
+
+	err, ok := result.(*object.Error)
+
+	if !ok {
+		t.Fatalf("object is not Error. got=%T (%+v)", result, result)
+	}
+
+	if err.Fault.Help != "`describe` is a member of `W`; reach it through `this.describe`" {
+		t.Errorf("help has wrong text. got=%q", err.Fault.Help)
+	}
+}
+
+// TestMethodsMayShareANameWithAnyOuterBinding is what is left of the old
+// shadowing table: none of these were ever rejected, and none are now.
+func TestMethodsMayShareANameWithAnyOuterBinding(t *testing.T) {
 	tests := []struct {
 		name     string
 		input    string
@@ -127,14 +242,14 @@ func TestMethodShadowingAllowsWhatIsNotAModule(t *testing.T) {
 			expected: 2,
 		},
 		{
-			name:     "a method named like a plain map, which is not a module",
+			name:     "a method named like a plain map",
 			input:    "config = {a: 1}\nclass A { config() { return 2 } }\nnew A().config()",
 			expected: 2,
 		},
 		{
-			name:     "importing under a different name keeps both reachable",
-			input:    "import \"ghost:math\" as mathModule\nclass A {\n\tmath() { return 1 }\n\tfloor() { return mathModule.floor(2.7) }\n}\nnew A().floor()",
-			expected: 2,
+			name:     "an outer variable stays readable from a method of the same name",
+			input:    "label = 9\nclass A {\n\tlabel() { return 2 }\n\tread() { return label }\n}\nnew A().read()",
+			expected: 9,
 		},
 	}
 
@@ -145,10 +260,25 @@ func TestMethodShadowingAllowsWhatIsNotAModule(t *testing.T) {
 	}
 }
 
-// TestGlobalModulesAreNotShadowedByMethods pins the asymmetry that makes the
-// §13.22 check correct to scope to imports. A global module is resolved
-// through the library registry rather than the environment chain, so a method
-// of the same name does not hide it and there is nothing to report.
+// TestAMethodLocalCannotClobberASiblingMethod pins a hazard §14 decision 9
+// recorded as a live cost of walking assignment: a method's local temporary
+// named like a sibling method used to rebind that method, since assignment
+// walked into the class environment. Members are no longer in that chain
+// (§14 decision 12), so the local stays a local.
+func TestAMethodLocalCannotClobberASiblingMethod(t *testing.T) {
+	input := `
+		class A {
+			scale() { return 1 }
+			run() { scale = 5 return this.scale() }
+		}
+		new A().run()
+	`
+
+	isNumberObject(t, evaluate(input), 1)
+}
+
+// TestGlobalModulesAreNotShadowedByMethods keeps the global case pinned: a
+// method named `console` never hid the global, and still does not.
 func TestGlobalModulesAreNotShadowedByMethods(t *testing.T) {
 	input := "class A {\n\tconsole() { return 1 }\n\tprobe() { return console.log }\n}\nnew A().console()"
 

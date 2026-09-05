@@ -33,6 +33,19 @@ func undefined(tok token.Token, name string, scope *object.Scope) *object.Error 
 		return raised
 	}
 
+	// A name that is a member of the class this code is running in is not a
+	// missing variable, it is a missing receiver. Methods are reached through
+	// `this` (§8.8, §14 decision 12) and deliberately do not sit in the
+	// lexical chain, so a bare sibling call lands here - and this is the one
+	// place that can say why (§13.17).
+	if scope != nil && scope.Class != nil {
+		if _, _, ok := object.LookupMember(scope.Class, name); ok {
+			raised.WithHelp("`%s` is a member of `%s`; reach it through `this.%s`", name, scope.Class.Name.Value, name)
+
+			return raised
+		}
+	}
+
 	if suggestion, ok := nearestName(name, visibleNames(scope)); ok {
 		raised.WithHelp("did you mean `%s`?", suggestion)
 
@@ -209,32 +222,6 @@ func logicalOperandError(tok token.Token, operator token.Type, operand object.Ob
 func memberCollisionError(tok token.Token, name string, existing string) *object.Error {
 	return object.NewError(fault.Syntax, tok, "`%s` is already declared as a %s in this body", name, existing).
 		WithHelp("rename one of them; otherwise `%s` reads the field and `%s()` calls the method, which is not a difference a reader will predict", name, name)
-}
-
-// shadowedModuleError rejects a method whose name hides a module imported
-// further out (§13.22). A method body resolves through its class environment
-// before it reaches the file's imports, so the collision silences the module
-// for *every* method in the class, and the failure it eventually produces is a
-// property error at some unrelated call site with nothing to connect it back
-// here.
-func shadowedModuleError(tok token.Token, name string, declarer string) *object.Error {
-	return object.NewError(fault.Syntax, tok, "method `%s` shadows an imported module of the same name", name).
-		WithHelp("every method in `%s` would resolve `%s` to this method rather than the module; rename the method, or import the module under another name with `as`", declarer, name)
-}
-
-// isImportedModule reports whether a binding is something an import brought
-// in: a library module for a `scheme:name` import, or a module's export map
-// for a Ghost source file. A plain map literal is deliberately not one of
-// them.
-func isImportedModule(binding object.Object) bool {
-	switch module := binding.(type) {
-	case *object.LibraryModule:
-		return true
-	case *object.Map:
-		return module.Module
-	}
-
-	return false
 }
 
 // plural writes a type name as it reads when there is more than one of them.

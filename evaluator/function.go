@@ -7,28 +7,39 @@ import (
 )
 
 func evaluateFunction(node *ast.Function, scope *object.Scope) object.Object {
+	// A named function declared in a class or trait body is a method, and a
+	// method is a member rather than a lexical binding: it is reached through
+	// `this.name()` (§8.8, §14 decision 12). So it closes over the scope the
+	// class was *declared* in, not the class's own member table - which is
+	// what keeps a method named `math` from hiding an imported `math` from
+	// every method in the class (§13.22), and what makes a bare sibling call
+	// an honest "not defined" rather than a call with the wrong receiver
+	// (§13.17).
+	closure := scope
+
+	if node.Name != nil {
+		if declaration, ok := scope.Self.(object.FieldDeclarer); ok {
+			if result := checkMethodDeclaration(node, declaration); result != nil {
+				return result
+			}
+
+			closure = declaration.DeclarationScope()
+		}
+	}
+
 	// The function closes over this scope, so neither it nor anything
 	// enclosing it may be reused once this block ends.
-	scope.Environment.Capture()
+	closure.Environment.Capture()
 
 	function := &object.Function{
 		Parameters: node.Parameters,
 		Defaults:   node.Defaults,
 		Body:       node.Body,
-		Scope:      scope,
+		Scope:      closure,
 		Rest:       node.Rest,
 	}
 
 	if node.Name != nil {
-		// A named function declared in a class or trait body is a method, and
-		// a method is the one kind of member that lands in the class
-		// environment - which is what makes both collisions below possible.
-		if declaration, ok := scope.Self.(object.FieldDeclarer); ok {
-			if result := checkMethodDeclaration(node, declaration, scope); result != nil {
-				return result
-			}
-		}
-
 		switch this := scope.Self.(type) {
 		case *object.Class:
 			this.Environment.Set(node.Name.Value, function)
@@ -40,28 +51,17 @@ func evaluateFunction(node *ast.Function, scope *object.Scope) object.Object {
 	return function
 }
 
-// checkMethodDeclaration reports the two ways a method name can collide at the
-// point the method is declared, rather than leaving either to surface as a
-// confusing failure somewhere else later.
+// checkMethodDeclaration reports a method colliding with a field of the same
+// name in the same body (§13.18). The two would otherwise coexist silently,
+// a property read answering with the field and a call answering with the
+// method, because neither lookup path knows the other exists.
 //
-// §13.18: a field of the same name already declared in this body. The two
-// would coexist silently, a property read answering with the field and a call
-// answering with the method.
-//
-// §13.22: an imported module of the same name in an enclosing scope. The
-// method wins for every method body in the class, and the module becomes
-// unreachable from all of them.
-func checkMethodDeclaration(node *ast.Function, declaration object.FieldDeclarer, scope *object.Scope) object.Object {
-	name := node.Name.Value
-
-	if declaration.HasField(name) {
-		return memberCollisionError(node.Name.Token, name, "field")
-	}
-
-	// Look outward only: the class environment itself holds the sibling
-	// methods, and a method is not shadowing anything by sitting beside them.
-	if binding, ok := scope.Environment.GetEnclosing(name); ok && isImportedModule(binding) {
-		return shadowedModuleError(node.Name.Token, name, declaration.DeclaredName())
+// A method shadowing an imported module is deliberately *not* checked here:
+// since a method closes over the class's declaring scope rather than its
+// member table, there is no shadowing left to report (§13.22).
+func checkMethodDeclaration(node *ast.Function, declaration object.FieldDeclarer) object.Object {
+	if declaration.HasField(node.Name.Value) {
+		return memberCollisionError(node.Name.Token, node.Name.Value, "field")
 	}
 
 	return nil

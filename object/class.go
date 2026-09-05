@@ -19,7 +19,7 @@ type Field struct {
 type FieldDeclarer interface {
 	SetField(name string, value ast.ExpressionNode)
 	HasField(name string) bool
-	DeclaredName() string
+	DeclarationScope() *Scope
 }
 
 // Class objects consist of a body and an environment.
@@ -60,9 +60,12 @@ func (class *Class) HasField(name string) bool {
 	return hasField(class.Fields, name)
 }
 
-// DeclaredName names this class for a diagnostic about its own body.
-func (class *Class) DeclaredName() string {
-	return class.Name.Value
+// DeclarationScope is the scope the class was declared in, which is what its
+// methods close over. A method is a member reached through `this`, not a
+// lexical binding, so its body resolves past the class's own member table -
+// see §14 decision 12.
+func (class *Class) DeclarationScope() *Scope {
+	return class.Scope
 }
 
 // Ancestors returns the class chain from the root superclass down to this

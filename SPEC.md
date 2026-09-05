@@ -676,27 +676,25 @@ new Dog("Fido").shout()
   field and `x.thing()` with the method. Overriding an *inherited* field or
   method is untouched by this: the rule is about one body, where a repeated
   name is a mistake rather than an override.
-- **A method may not shadow an imported module.** Because a method body
-  resolves through the class environment before it reaches the file's
-  imports, a method named `font` would hide `import "lumen:font"` from every
-  method in the class, so declaring one is a `Syntax` fault naming the
-  collision (§13.22). Import the module under another name (`import
-  "lumen:font" as fontModule`) or rename the method. This applies to imported
-  modules only — a method may freely share a name with an ordinary outer
-  function, variable or map, which is ordinary lexical shadowing, and with a
-  global module such as `console`, which resolves through the library registry
-  rather than the environment chain and so is not shadowed at all.
+- **A member name never shadows anything.** Because members live outside the
+  lexical chain, a method may share a name with an import, an outer function,
+  a variable, or a global module without hiding it from its own class: with
+  `import "ghost:math" as math` in scope, a class may declare `math(role)` and
+  its other methods still read `math` as the module, reaching the method as
+  `this.math()` (§13.22).
 - **`this`** refers to the instance (or, inside a class body outside a
   method, the class itself) currently executing. **`super`** resolves
   members starting at the superclass of the class that *declared* the
   currently-running method — not the receiver's own class — which is what
   keeps a `super` call inside an inherited method from resolving back to
   itself. `super`/`this` outside a class context are name errors.
-- A method body's scope is the class environment, so **sibling methods call
-  each other by bare name** with no `this.` required — but the bare call
-  currently loses the receiver, so it fails as soon as the callee touches
-  `this` (§13.17); write `this.method()` until that is fixed (though `this.method()`
-  also works).
+- **A method is a member, not a name in scope.** A method body resolves
+  through the scope the class was *declared* in, so **a sibling method is
+  reached as `this.method()`** — a bare `method()` is a `Name` fault, with a
+  help line naming the receiver it is missing (§13.17, §14 decision 12). Field
+  initializers resolve the same way. This is the JavaScript rule, matching the
+  rest of Ghost's class syntax; earlier drafts of this section promised bare
+  sibling calls, which never worked for a callee that touched `this`.
 - **No static members, no access modifiers (`public`/`private`/`protected`),
   no `interface`, no `abstract`, no getters/setters syntax.** Every member is
   a plain, public, instance-level field or method — a permanent stance for
@@ -2214,9 +2212,12 @@ and `++`/`--` (`evaluator/postfix.go`) all route through it, so every spelling
 of assignment reaches an outer variable the same way. §8.3 now documents the
 rule.
 
-The cost §14 decision 9 weighed is real and now live: a local whose name
-matches a sibling method rebinds that method, since a method body's scope is
-the class environment. Block scoping (§13.15) is what contains it — a name
+The cost §14 decision 9 weighed was real, and one half of it has since been
+retired: a local whose name matched a sibling method used to rebind that
+method, because a method body's scope was the class environment. §14 decision
+12 moved members out of the lexical chain, so that particular collision is
+gone; what is left is the ordinary hazard of rebinding an outer variable of
+the same name. Block scoping (§13.15) is what contains it — a name
 first assigned inside a block stays there — and
 `TestMethodScopingIsUnchanged` pins the three cases that must not blur (a
 method's local does not escape into the instance, a method does rebind a
@@ -2356,15 +2357,15 @@ the current export-everything behavior retained as the fallback for a file
 that declares no exports at all, so existing code keeps working unchanged
 and only a file that opts in gets a curated surface.
 
-### 13.17 Calling a sibling method by bare name loses the receiver — §8.8 says it works
+### 13.17 Calling a sibling method by bare name loses the receiver — §8.8 says it works — done
 
 ```ghost
 class Widget {
     constructor(n) { this.n = n }
     describe() { return this.n }
-    show() { return describe() }     // name error: `this` can only be used inside a class
-}
-```
+    show() { return describe() }     // was: name error at describe()'s `this`.
+}                                    // now: name error here, at `describe`,
+```                                  // with help: reach it through `this.describe`
 
 §8.8 states that "a method body's scope is the class environment, so sibling
 methods call each other by bare name with no `this.` required." The bare
@@ -2389,9 +2390,38 @@ call — which is how it survived to 1.0. And the error is reported at the
 callee's `this`, not at the bare call that supplied the wrong receiver, so
 it points at correct code and hides the actual mistake.
 
-**Severity: mid, documentation drift.** Independent of §14 decision 9 and
-fixable on its own: either carry the receiver through the bare-call path, or
-retract §8.8's claim and require `this.`.
+**Fix.** Of the two options — carry the receiver through the bare-call path,
+or retract §8.8's claim and require `this.` — the second was chosen, as §14
+decision 12 records, because the same choice also dissolves §13.22 rather than
+needing a diagnostic to guard it. A method is a member, so it has no business
+in the lexical chain at all.
+
+`evaluateFunction` (`evaluator/function.go`) now gives a method the scope its
+class was *declared* in (`FieldDeclarer.DeclarationScope`) rather than the
+class body's scope, and `initializeField` (`evaluator/new.go`) does the same
+for field initializers, which are the other path into a class body and would
+otherwise have kept the old behavior. Methods still live in
+`class.Environment`, which `LookupMember` reads for `this.x()` and `super.x()`
+— that table is no longer a lexical scope, only a member table.
+
+So a bare `describe()` is now a plain `Name` fault at the call itself rather
+than a receiver error inside the callee, and `undefined` (`evaluator/errors.go`)
+recognises a name that is a member of the running class and answers
+``help: `describe` is a member of `W`; reach it through `this.describe` ``.
+That help is the whole value of the change: the old report pointed at correct
+code in a different method.
+
+**This is a breaking change**, and the only one in this callout. A bare
+sibling call to a method that never touched `this` used to work — the
+narrowest possible version of the feature, and the reason the bug survived to
+1.0 — and now raises. One test pinned it (`TestClassMemberResolution`, updated
+to `this.`); all 41 programs in `examples/` and all 132 cases of Studio's
+suite are unchanged, since neither codebase used the bare form.
+
+**Severity: mid, documentation drift.** Tested in
+`evaluator/class_members_test.go`'s `TestBareSiblingCallsAreNotDefined` (both
+a callee that touches `this` and one that does not, since only the first used
+to fail) and `TestBareSiblingCallHelpNamesTheReceiver`.
 
 ### 13.18 A field and a method may share one name, with no diagnostic — done
 
@@ -2427,9 +2457,9 @@ class or trait whether it already declares a field of that name, and
 `evaluateAssign` (`evaluator/assign.go`) asks whether the body's own
 environment already holds a method — methods being the only members that live
 there. Both raise `memberCollisionError` (`evaluator/errors.go`) at the second
-declaration's own name token, naming what the first one was. `HasField` and
-`DeclaredName` join `object.FieldDeclarer` (`object/class.go`,
-`object/trait.go`) so the check reads the same on a class and on a trait.
+declaration's own name token, naming what the first one was. `HasField` joins
+`object.FieldDeclarer` (`object/class.go`, `object/trait.go`) so the check
+reads the same on a class and on a trait.
 
 **What stays legal**, and is pinned by tests: a subclass overriding an
 inherited method or field, a field and a method that merely sit beside each
@@ -2597,12 +2627,12 @@ class Theme {
 }                                       // `math` shadows an imported module
 ```
 
-A method body's scope is the class environment (§8.8), and resolution
-reaches that environment before it reaches the file's top-level scope where
-imports are bound — the same mechanism that lets one method call a sibling
-by bare name. A method named `math` therefore shadows `import "ghost:math"`
-for *every* method in the class, not only the one that declares it, and the
-name resolves to the method object rather than the module.
+A method body's scope *was* the class environment, and resolution reached
+that environment before it reached the file's top-level scope where imports
+are bound — the same mechanism that then let one method call a sibling by
+bare name. A method named `math` therefore shadowed `import "ghost:math"`
+for *every* method in the class, not only the one that declared it, and the
+name resolved to the method object rather than the module.
 
 The report is the worst part. It is a `property error` naming the member
 that was called (`function has no method \`floor\``), pointing at the call
@@ -2618,38 +2648,57 @@ run. The workaround is an alias chosen not to collide
 (`import "lumen:font" as fontModule`), which requires knowing the hazard
 exists.
 
-**Fix.** A diagnostic, exactly as suggested: resolution order is untouched,
-and the collision is reported where it is created. `checkMethodDeclaration`
-(`evaluator/function.go`) — the same function that closes §13.18, on the same
-declaration path — looks the method's name up in the *enclosing* chain via a
-new `Environment.GetEnclosing` (`object/environment.go`), which skips the
-class's own members and answers what the name meant outside. If that is an
-imported module, `shadowedModuleError` (`evaluator/errors.go`) raises a
-`Syntax` fault at the method's name, with help naming the class and pointing
-at the `as` alias that resolves it — the fix Chisel had already found by hand.
+**Fix — and a correction to the suggestion above.** This callout proposed a
+diagnostic: report the collision where it is created, keeping resolution order
+as it was. That was implemented, and then reversed before it shipped, because
+the premise was wrong. A diagnostic treats the collision as real and asks the
+author to work around it; but there is no collision to report. A method is a
+*member*, reached as `this.math()`. It has no business occupying the name
+`math` in the lexical chain, and the fact that it did is the bug — not the
+fact that an author noticed.
 
-**What counts as a module** is a question the check has to answer honestly
-rather than by sniffing types, since a `scheme:name` import binds an
-`object.LibraryModule` but a Ghost source module binds a plain `object.Map`,
-which is also what a map literal is. `object.Map` therefore gained a `Module`
-flag, set only by `moduleValue` (`evaluator/import.go`), and
-`isImportedModule` reads it. Shadowing an imported module is rejected;
-shadowing a map, a function, a variable, or anything else an outer scope
-happens to bind is ordinary lexical shadowing and is left alone.
+So resolution order changed after all, in the one way §13.17 was already
+forcing: a method closes over the scope its class was *declared* in rather
+than the class body's scope (§14 decision 12). Members leave the lexical
+chain, and with them the shadowing goes. Inside the class, `math` is the
+import and `this.math()` is the method, and both work:
 
-**Global modules are not affected, and that is not an oversight.** A method
-named `console` does *not* hide the global `console` from its siblings —
-globals resolve through the library registry rather than the environment
-chain, so a bare `console` inside a method still answers with the module.
-There is nothing to warn about, and `TestGlobalModulesAreNotShadowedByMethods`
-pins the asymmetry so the check is not later "fixed" to cover it.
+```ghost
+import "ghost:math" as math
+
+class Theme {
+    load() { return math.floor(3.7) }   // 3 - the module
+    math(role) { return role }          // reached as this.math()
+}
+```
+
+`checkMethodDeclaration` (`evaluator/function.go`) keeps only §13.18's
+field/method check; `shadowedModuleError`, `isImportedModule`,
+`Environment.GetEnclosing` and the `object.Map.Module` flag the diagnostic
+needed are all gone, along with the question they existed to answer — whether
+a given binding was "really" an imported module, which had no honest answer
+for a Ghost source module bound as a plain `Map`. A rule that needs to
+classify what it is shadowing is a rule doing the wrong job.
+
+**Field initializers needed the same treatment.** They are the other path into
+a class body, evaluated per instance by `initializeField` (`evaluator/new.go`),
+and ran in the member table too — so `size = math.floor(2.7)` beside a method
+named `math` reproduced this bug exactly, diagnostic or not. That path now
+resolves through the declaring scope as well, and a test pins it.
+
+**Global modules were never affected**, which is the asymmetry that made the
+abandoned diagnostic awkward to scope in the first place: a method named
+`console` never hid the global `console`, because globals resolve through the
+library registry rather than the environment chain.
+`TestGlobalModulesAreNotShadowedByMethods` still pins that.
 
 **Severity: high, shipped a crash.** Tested in
-`evaluator/class_members_test.go`
-(`TestMethodShadowingAnImportedModuleIsRejected` for a scheme import, a trait
-body, and a Ghost source module written to a temporary directory;
-`TestMethodShadowingAllowsWhatIsNotAModule` for the outer bindings that must
-not be rejected, including the aliased-import form the fix recommends).
+`evaluator/class_members_test.go`'s `TestAMethodDoesNotShadowAnImport` (a
+scheme import, the method of that name still reachable, a trait, a field
+initializer, and a Ghost source module written to a temporary directory) and
+`TestMethodsMayShareANameWithAnyOuterBinding`. The workaround this callout
+recorded — importing under an alias, as Chisel did in `chisel/theme.gs` — is
+no longer needed, though it of course still works.
 
 ### 13.23 A function held in a field cannot be called through the field
 
@@ -2820,8 +2869,11 @@ targets.
    assignment alone fixes §13.13 but has a mirror-image hazard: with no way to
    say "this one is mine," every function-local temporary becomes a potential
    write to an outer name that happens to match, and inside a method the chain
-   reaches the class environment, so a local named `scale` would rebind a
-   *sibling method* named `scale`. Block scoping is what contains that — a
+   then reached the class environment, so a local named `scale` would rebind a
+   *sibling method* named `scale`. (That half is now moot: §14 decision 12
+   took members out of the lexical chain, so a method's local cannot reach a
+   sibling method at all. The hazard that remains is the ordinary one, an
+   outer *variable* of the same name.) Block scoping is what contains that — a
    name first assigned inside a block stays inside it — and it is what §8.3
    promised all along. Block scoping alone, meanwhile, would have made
    §13.13's silent failure worse rather than better, since more scopes means
@@ -2892,6 +2944,39 @@ targets.
     better than what it replaced: the truthy-guard mistake now fails at the
     operator instead of at the null dereference downstream of it.
 
+12. **A method is a member, not a name in scope — decided, and done.**
+    §13.17 and §13.22 were one question asked twice: *should a class's members
+    take part in bare-name resolution?* §13.17 asked it as "a bare sibling call
+    runs with the wrong receiver"; §13.22 asked it as "a method named `math`
+    hides the imported `math` from every method in the class". The answer is
+    **no**: a method is reached through `this.method()`, and a method body —
+    and a field initializer — resolves through the scope the class was
+    *declared* in, not the class's own member table.
+
+    This settles §13.17's explicit fork (carry the receiver through the
+    bare-call path, or retract §8.8's claim) in favour of retracting, and it
+    is chosen because it answers §13.22 at the same time. The alternative
+    would have kept members in the lexical chain and guarded the consequence
+    with a diagnostic rejecting a method that shadows an import — which was
+    written, and then reversed: it made an author work around a collision that
+    should not exist, and it forced the interpreter to classify which outer
+    bindings were "really" imported modules, a question with no honest answer
+    for a Ghost source module bound as a plain `Map`.
+
+    It also settles the class model on the convention the rest of the syntax
+    already follows. Ghost's classes are presented as JavaScript/TypeScript
+    shaped — `new`, `extends`, `constructor`, methods declared without a
+    keyword — and JavaScript has no bare sibling calls either. The bare form
+    was a Ruby-ism sitting inside a JS-shaped class, and it never worked for a
+    callee that touched `this`.
+
+    **Cost, recorded honestly:** one breaking change. A bare sibling call to a
+    method that never touches `this` used to work and now raises — the
+    narrowest possible version of the feature, which is why the defect
+    survived to 1.0. One test pinned it; all 41 programs in `examples/` and all
+    132 cases of Studio's suite are unchanged. The new fault names the missing
+    receiver, so the fix is mechanical wherever it does appear.
+
 ---
 
 ## 15. Fix Priority for the Chisel/Studio Findings
@@ -2908,9 +2993,10 @@ above findings that have been open longer.
 
 ### Closed since the report was written
 
-Seven items in `papercuts.md` no longer reproduce against this interpreter.
+Eight items in `papercuts.md` no longer reproduce against this interpreter.
 The first four were verified by running each one at `c31c79d`; §13.21,
-§13.22 and §13.18 were closed here, in the order this section ranked them:
+§13.18, §13.22 and §13.17 were closed here, in the order this section ranked
+them — though the last two turned out to be one question, not two:
 
 | Finding | Papercut severity | State |
 |---|---|---|
@@ -2919,8 +3005,9 @@ The first four were verified by running each one at `c31c79d`; §13.21,
 | §13.15 blocks do not introduce a scope | high, spec drift | Fixed — §14 decision 9 |
 | `list.length` hands back the method | low | Fixed — §13.20 |
 | §13.21 `and`/`or` do not short-circuit | high, shipped twice | Fixed — §14 decision 11 |
-| §13.22 a method's name shadows a same-named import | high, shipped | Fixed — one check with §13.18 |
-| §13.18 a field and a method may share one name | mid, silent | Fixed — one check with §13.22 |
+| §13.18 a field and a method may share one name | mid, silent | Fixed — a diagnostic at the second declaration |
+| §13.22 a method's name shadows a same-named import | high, shipped | Fixed — §14 decision 12 |
+| §13.17 a bare sibling call loses the receiver | mid, spec drift | Fixed — §14 decision 12 |
 
 That report is cited elsewhere as a whole; these are stale in it, and the
 architecture notes justifying workarounds for the scoping three (state on
@@ -2944,9 +3031,9 @@ halves of that decision paying for each other is not theoretical.
 | # | Finding | Severity | Cost | Why here |
 |---|---|---|---|---|
 | ~~1~~ | ~~§13.21 `and`/`or` do not short-circuit~~ | high | small | **Done** — §14 decision 11. |
-| ~~2~~ | ~~§13.22 a method's name shadows a same-named import~~ | high | small | **Done** — one diagnostic with §13.18. |
-| 3 | §13.17 a bare sibling call loses the receiver | mid | small | §8.8 actively teaches the broken form, so the document is generating the bug. Contained in `unwrapCall`. |
-| ~~4~~ | ~~§13.18 a field and a method may share one name~~ | mid | small | **Done** — one diagnostic with §13.22. |
+| ~~2~~ | ~~§13.22 a method's name shadows a same-named import~~ | high | small | **Done** — §14 decision 12, together with #3. |
+| ~~3~~ | ~~§13.17 a bare sibling call loses the receiver~~ | mid | small | **Done** — §14 decision 12, together with #2. |
+| ~~4~~ | ~~§13.18 a field and a method may share one name~~ | mid | small | **Done** — a diagnostic at the second declaration. |
 | 5 | §13.16 every top-level name is exported | high | large | Highest damage left, but it is a language design decision (§14 decision 10 is still open) rather than a defect with a known patch. Blocks nothing today; distorts every file layout built on Ghost. |
 | 6 | §13.23 a field-held function cannot be called through the field | mid | small | Loud, and the workaround is one line, which is the only reason it sits below the silent findings. |
 | 7 | §13.24 a reserved word is unusable at a call site | mid | mid | Parser change; unblocks names a third-party library may already use. The fault pointing one token late is worth fixing even if the rest is not. |
@@ -2954,13 +3041,19 @@ halves of that decision paying for each other is not theoretical.
 | 9 | §12 `%=` | low | trivial | A table entry; the only compound operator missing. |
 | 10 | §13.19 module resolution is global and first-match-wins | mid | mid | Order-dependent and able to change under an unrelated import, but a full-path convention avoids it completely, and no reported bug has come from it yet. |
 
-**The next item is #3.** #1–#4 were four small, independent patches against
-known code paths that together closed every finding whose failure did not
-point at its own cause — #1 reported at the dereference, #2 at the call site,
-#3 at the callee, and #4 reported nothing at all. Three of them are done; #2
-and #4 landed together as one check on the member-declaration path, as
-predicted. #3 (§13.17) is what is left of that group, and after it the list
-turns to §13.16, the one open design decision (§14 decision 10).
+**The next item is #5.** #1–#4 are done: they were the findings whose failure
+did not point at its own cause — #1 reported at the dereference, #2 at the
+call site, #3 at the callee, and #4 reported nothing at all.
+
+The grouping this section predicted was half right. #2 and #4 did want one
+change, but not the one expected: #4 (§13.18) is a diagnostic on the
+declaration path, while #2 (§13.22) turned out to be the *same question* as #3
+(§13.17) — whether members take part in bare-name resolution — and both fell
+to §14 decision 12. Ranking them apart was the error; they were one design
+question wearing two faces, which is the same shape §13.13–§13.15 had.
+
+What remains is §13.16 (#5), the one open design decision (§14 decision 10),
+and then the smaller items #6–#10.
 
 ### Already answered, no work outstanding
 

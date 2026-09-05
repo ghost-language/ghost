@@ -149,7 +149,6 @@ func moduleBindingName(path string) string {
 // reuses it rather than introducing a namespace type solely for this.
 func moduleValue(moduleScope *object.Scope) *object.Map {
 	mapObject := object.NewOrderedMap()
-	mapObject.Module = true
 
 	for name, value := range moduleScope.Environment.All() {
 		key := &object.String{Value: name}
