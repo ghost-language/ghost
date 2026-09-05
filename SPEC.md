@@ -2464,9 +2464,18 @@ reads the same on a class and on a trait.
 **What stays legal**, and is pinned by tests: a subclass overriding an
 inherited method or field, a field and a method that merely sit beside each
 other, and the same name used as a field in one class and a method in
-another. The check is deliberately confined to one body — the collision §13.18
-describes — rather than extended across the class chain or into used traits,
-where a name appearing twice is overriding rather than colliding.
+another.
+
+**What is not yet covered**, and is a residual rather than a design line: the
+check sees one body, so a *field* colliding with a method inherited from a
+superclass or brought in by a used trait still produces the silent duality
+this callout is about — `class C extends P { label = 7 }` against `P.label()`
+answers 7 for `c.label` and "method" for `c.label()`. A name appearing twice
+across bodies is usually overriding, which is why the check starts here, but
+overriding is field-over-field and method-over-method; field-over-method is
+the §13.18 collision wherever it happens. Closing it means comparing a
+declared field against `LookupMember` on the ancestors and traits at class
+construction.
 
 **Severity: mid.** Tested in `evaluator/class_members_test.go`
 (`TestMemberCollisionIsRejected` for both declaration orders and for a trait
