@@ -9,7 +9,11 @@ import (
 // unevaluated so that every instance gets its own value rather than sharing one
 // object stored on the class.
 type Field struct {
-	Name  string
+	Name string
+	// Token is the field name as written, so a collision found after the body
+	// has been evaluated can still be reported at the declaration rather than
+	// at the class (§13.18).
+	Token token.Token
 	Value ast.ExpressionNode
 }
 
@@ -17,7 +21,7 @@ type Field struct {
 // evaluator can record a field without caring whether it is on a class or a
 // trait.
 type FieldDeclarer interface {
-	SetField(name string, value ast.ExpressionNode)
+	SetField(name string, tok token.Token, value ast.ExpressionNode)
 	HasField(name string) bool
 	DeclarationScope() *Scope
 }
@@ -49,8 +53,8 @@ func (class *Class) Method(method string, tok token.Token, args []Object) (Objec
 
 // SetField records a field declaration, replacing any earlier declaration of
 // the same name so a redeclaration in the same body wins.
-func (class *Class) SetField(name string, value ast.ExpressionNode) {
-	class.Fields = setField(class.Fields, name, value)
+func (class *Class) SetField(name string, tok token.Token, value ast.ExpressionNode) {
+	class.Fields = setField(class.Fields, name, tok, value)
 }
 
 // HasField reports whether this class declares a field of its own by that
@@ -90,14 +94,15 @@ func hasField(fields []Field, name string) bool {
 	return false
 }
 
-func setField(fields []Field, name string, value ast.ExpressionNode) []Field {
+func setField(fields []Field, name string, tok token.Token, value ast.ExpressionNode) []Field {
 	for index, field := range fields {
 		if field.Name == name {
+			fields[index].Token = tok
 			fields[index].Value = value
 
 			return fields
 		}
 	}
 
-	return append(fields, Field{Name: name, Value: value})
+	return append(fields, Field{Name: name, Token: tok, Value: value})
 }

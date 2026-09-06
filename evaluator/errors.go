@@ -221,7 +221,19 @@ func logicalOperandError(tok token.Token, operator token.Type, operand object.Ob
 // the collision can be reported is where the second declaration creates it.
 func memberCollisionError(tok token.Token, name string, existing string) *object.Error {
 	return object.NewError(fault.Syntax, tok, "`%s` is already declared as a %s in this body", name, existing).
-		WithHelp("rename one of them; otherwise `%s` reads the field and `%s()` calls the method, which is not a difference a reader will predict", name, name)
+		WithHelp(memberCollisionHelp, name, name)
+}
+
+// memberCollisionHelp is shared by both member collisions, in-body and
+// inherited, so one mistake reads one way wherever it is caught.
+const memberCollisionHelp = "rename one of them; otherwise `%s` reads the field and `%s()` calls the method, which is not a difference a reader will predict"
+
+// inheritedCollisionError reports §13.18's collision where the two
+// declarations sit in different bodies. It names where the other one came
+// from, since that is the half the reader cannot see from here.
+func inheritedCollisionError(tok token.Token, name string, kind string, otherKind string, owner string) *object.Error {
+	return object.NewError(fault.Syntax, tok, "`%s` is declared as a %s here and as a %s on `%s`", name, kind, otherKind, owner).
+		WithHelp(memberCollisionHelp, name, name)
 }
 
 // plural writes a type name as it reads when there is more than one of them.

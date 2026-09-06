@@ -937,6 +937,12 @@ standing invitation to add a third.
 | `console` | module | — | Interactive/diagnostic I/O — see §9.3. |
 | `type` | function | `type(value)` | Returns the value's type name as a `string` — the exact same name used in every error message (§8.2). Arity: exactly 1. |
 
+Both are **ordinary names in the ordinary namespace**: a binding of the same
+name shadows them wherever it is in scope, exactly as a local shadows a
+builtin in Python (§13.25). A parameter, loop variable, `import ... as` alias
+or plain assignment called `type` means that binding inside its scope, and the
+global is what the name means everywhere nothing is bound over it.
+
 There is no bare `print` in 1.0: `console.log(...)` is the one way to write a
 line to output. The scanner never produced a `print` keyword token to begin
 with — `token.PRINT` was dead code, unreachable from any keyword the scanner
@@ -2466,20 +2472,25 @@ inherited method or field, a field and a method that merely sit beside each
 other, and the same name used as a field in one class and a method in
 another.
 
-**What is not yet covered**, and is a residual rather than a design line: the
-check sees one body, so a *field* colliding with a method inherited from a
-superclass or brought in by a used trait still produces the silent duality
-this callout is about — `class C extends P { label = 7 }` against `P.label()`
-answers 7 for `c.label` and "method" for `c.label()`. A name appearing twice
-across bodies is usually overriding, which is why the check starts here, but
-overriding is field-over-field and method-over-method; field-over-method is
-the §13.18 collision wherever it happens. Closing it means comparing a
-declared field against `LookupMember` on the ancestors and traits at class
-construction.
+**The cross-body case is covered too**, and was closed after the note above
+recorded it as a residual. A field here against a method that arrived from a
+superclass or a used trait — and the reverse — is the same collision, since
+overriding is field-over-field and method-over-method while field-over-method
+is this callout wherever it happens. `checkInheritedCollisions`
+(`evaluator/class.go`) runs once the body is complete, which is the earliest
+either declaration path could see the other: `use` may sit anywhere in the
+body, so at the moment a member is declared the other body may not have been
+consulted yet. The fault is reported at the declaration in *this* body and
+names where the other one came from — the half the reader cannot see from
+here — for which `object.Field` gained the token it was declared at, and
+`declaredMethods` reads the method names and tokens back off the class body.
 
 **Severity: mid.** Tested in `evaluator/class_members_test.go`
-(`TestMemberCollisionIsRejected` for both declaration orders and for a trait
-body, `TestMemberCollisionAllowsWhatIsNotOne` for the four shapes that must
+(`TestInheritedMemberCollisionIsRejected` for a field or a method here against
+the other kind on a superclass, a grandparent or a used trait, and
+`TestInheritedOverridingIsStillAllowed` for the five shapes that must keep
+working; `TestMemberCollisionIsRejected` for both declaration orders and for a
+trait body, `TestMemberCollisionAllowsWhatIsNotOne` for the four shapes that must
 not be rejected).
 
 ### 13.19 Module resolution is a global, first-match-wins search path
@@ -2760,6 +2771,66 @@ reads as a malformed call rather than a reserved name.
 entirely. Whether a keyword may *declare* a method is a separate and smaller
 question. Failing that, the fault should at least point at the keyword and
 say which one it is.
+
+### 13.25 A library global could not be shadowed by anything — done
+
+```ghost
+function render(type) { return type }
+
+render("warning")   // was: library function {type}; now: "warning"
+```
+
+`evaluateIdentifier` consulted the library registries *before*
+`scope.Environment`, so the two global names of §9.1 — `console` and `type` —
+beat every binding in the language, including the most local ones there are: a
+parameter, a loop variable, a name bound in a block, an `import ... as`. The
+binding was made, and then never readable.
+
+Nothing raised. The name simply answered with the library value, which is what
+makes this worse than the shadowing §13.22 described: there the failure was at
+least a fault at some later call. Here a `string` parameter silently *is* a
+function object, and it is stored as one —
+
+```ghost
+class Cmd { constructor(type) { this.type = type } }
+
+new Cmd("edit").type   // was: library function {type}
+```
+
+— which is a wrong value written into an instance and carried onward, the
+"silent wrong answer" §3 sets out to make impossible.
+
+`type` is what makes it likely rather than theoretical: a command type, an
+event type, a token type, a node type. It is an ordinary word for an ordinary
+parameter, and §9.1 grants it global standing "the same standing
+print/type-checking primitives have in other scripting languages" — where a
+local binding shadows them in the ordinary way. Python's `type` is a builtin
+that any local named `type` shadows without ceremony. The behavior contradicted
+the rationale offered for it.
+
+**Fix.** The two lookups are swapped: `evaluateIdentifier` reads the
+environment first and falls back to the registries only when nothing is bound.
+Shadowing is then the ordinary rule — innermost wins — and a global is what a
+name means where nothing else claims it. The optimizer's `LibraryBinding`
+marking is unchanged and still correct; it now saves an undefined name two map
+lookups before it reports, rather than saving every ordinary variable two,
+which the environment-first order already does.
+
+**Cost:** none measurable. Allocation is identical on
+`evaluator/benchmark_test.go`, and wall time is within run-to-run noise — a
+global now walks the scope chain before reaching the registry, which is the
+walk every other name already pays.
+
+**Severity: high, silent.** This one was not in the Chisel/Studio report; it
+was found by sweeping the scoping surface after §14 decision 12, looking for
+what else could shadow what. It is the mirror image of §13.22 — there a member
+hid an outer name, here an outer name hid everything, parameters included.
+Tested in `evaluator/globals_test.go`
+(`TestABindingShadowsALibraryGlobal` across seven binding forms,
+`TestAnImportShadowsALibraryGlobal`, `TestLibraryGlobalsStillResolveUnshadowed`
+for the half that must keep working, and
+`TestAShadowedGlobalIsRestoredAfterItsScopeEnds`).
+
 ---
 
 ## 14. Decisions for 1.0
@@ -3002,7 +3073,8 @@ above findings that have been open longer.
 
 ### Closed since the report was written
 
-Eight items in `papercuts.md` no longer reproduce against this interpreter.
+Eight items in `papercuts.md` no longer reproduce against this interpreter,
+and §13.25 — which that report never found — was closed alongside them.
 The first four were verified by running each one at `c31c79d`; §13.21,
 §13.18, §13.22 and §13.17 were closed here, in the order this section ranked
 them — though the last two turned out to be one question, not two:
@@ -3017,6 +3089,7 @@ them — though the last two turned out to be one question, not two:
 | §13.18 a field and a method may share one name | mid, silent | Fixed — a diagnostic at the second declaration |
 | §13.22 a method's name shadows a same-named import | high, shipped | Fixed — §14 decision 12 |
 | §13.17 a bare sibling call loses the receiver | mid, spec drift | Fixed — §14 decision 12 |
+| §13.25 a library global could not be shadowed | high, silent | Fixed — not from that report; found by sweeping after decision 12 |
 
 That report is cited elsewhere as a whole; these are stale in it, and the
 architecture notes justifying workarounds for the scoping three (state on
@@ -3050,7 +3123,8 @@ halves of that decision paying for each other is not theoretical.
 | 9 | §12 `%=` | low | trivial | A table entry; the only compound operator missing. |
 | 10 | §13.19 module resolution is global and first-match-wins | mid | mid | Order-dependent and able to change under an unrelated import, but a full-path convention avoids it completely, and no reported bug has come from it yet. |
 
-**The next item is #5.** #1–#4 are done: they were the findings whose failure
+**The next item is #5**, and it is now the only ranked item left that is not
+small. #1–#4 are done: they were the findings whose failure
 did not point at its own cause — #1 reported at the dereference, #2 at the
 call site, #3 at the callee, and #4 reported nothing at all.
 
@@ -3063,6 +3137,14 @@ question wearing two faces, which is the same shape §13.13–§13.15 had.
 
 What remains is §13.16 (#5), the one open design decision (§14 decision 10),
 and then the smaller items #6–#10.
+
+**One item on this list came from outside it.** §13.25 was found by sweeping
+the scoping surface after §14 decision 12 rather than by the Chisel/Studio
+report, and it outranked most of what was still open: a global that no binding
+could shadow, silently answering a library value where a parameter was
+expected. Ranking a report is worth doing, and it is not the same as knowing
+what is wrong — the sweep that a fix invites is worth as much as the list it
+came from.
 
 ### Already answered, no work outstanding
 

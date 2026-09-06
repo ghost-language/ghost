@@ -25,7 +25,7 @@ func evaluateAssign(node *ast.Assign, scope *object.Scope) object.Object {
 				return memberCollisionError(identifier.Token, identifier.Value, "method")
 			}
 
-			declaration.SetField(identifier.Value, node.Value)
+			declaration.SetField(identifier.Value, identifier.Token, node.Value)
 
 			return nil
 		}

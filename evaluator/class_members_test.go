@@ -94,6 +94,94 @@ func TestMemberCollisionAllowsWhatIsNotOne(t *testing.T) {
 	}
 }
 
+// TestInheritedMemberCollisionIsRejected is §13.18 reaching across two bodies:
+// a field here against a method that arrived from a superclass or a used
+// trait, and the reverse. Neither declaration is wrong on its own, and neither
+// declaration path can see the other body, so this one runs once the class is
+// fully composed.
+func TestInheritedMemberCollisionIsRejected(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{
+			name:     "a field here against a superclass method",
+			input:    "class P {\n\tlabel() { return 1 }\n}\nclass C extends P {\n\tlabel = 7\n}",
+			expected: "test.gs:5:2: syntax error: `label` is declared as a field here and as a method on `P`",
+		},
+		{
+			name:     "a field here against a trait method",
+			input:    "trait T {\n\tlabel() { return 1 }\n}\nclass A {\n\tuse T\n\tlabel = 7\n}",
+			expected: "test.gs:6:2: syntax error: `label` is declared as a field here and as a method on `T`",
+		},
+		{
+			name:     "a method here against a superclass field",
+			input:    "class P {\n\tlabel = 7\n}\nclass C extends P {\n\tlabel() { return 1 }\n}",
+			expected: "test.gs:5:2: syntax error: `label` is declared as a method here and as a field on `P`",
+		},
+		{
+			name:     "a method here against a trait field",
+			input:    "trait T {\n\tlabel = 7\n}\nclass A {\n\tuse T\n\tlabel() { return 1 }\n}",
+			expected: "test.gs:6:2: syntax error: `label` is declared as a method here and as a field on `T`",
+		},
+		{
+			name:     "a grandparent's method is still found",
+			input:    "class A {\n\tlabel() { return 1 }\n}\nclass B extends A { }\nclass C extends B {\n\tlabel = 7\n}",
+			expected: "test.gs:6:2: syntax error: `label` is declared as a field here and as a method on `A`",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			isErrorObject(t, evaluate(test.input), test.expected)
+		})
+	}
+}
+
+// TestInheritedOverridingIsStillAllowed is the half that matters most for a
+// check that rejects code: replacing an inherited member with one of the same
+// kind is overriding, which is the point of `extends` and `use`.
+func TestInheritedOverridingIsStillAllowed(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected int64
+	}{
+		{
+			name:     "a method overriding an inherited method",
+			input:    "class P { speak() { return 1 } }\nclass C extends P { speak() { return 2 } }\nnew C().speak()",
+			expected: 2,
+		},
+		{
+			name:     "a field overriding an inherited field",
+			input:    "class P { size = 1 }\nclass C extends P { size = 2 }\nnew C().size",
+			expected: 2,
+		},
+		{
+			name:     "a class method overriding a trait method",
+			input:    "trait T { speak() { return 1 } }\nclass A { use T\n\tspeak() { return 2 } }\nnew A().speak()",
+			expected: 2,
+		},
+		{
+			name:     "a class field overriding a trait field",
+			input:    "trait T { size = 1 }\nclass A { use T\n\tsize = 2 }\nnew A().size",
+			expected: 2,
+		},
+		{
+			name:     "an unrelated class may reuse the name for the other kind",
+			input:    "class P { label() { return 1 } }\nclass Q { label = 2 }\nnew Q().label",
+			expected: 2,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			isNumberObject(t, evaluate(test.input), test.expected)
+		})
+	}
+}
+
 // TestAMethodDoesNotShadowAnImport is §13.22, resolved by scoping rather than
 // by a diagnostic (§14 decision 12). A method is a member, so it never enters
 // the lexical chain and cannot hide a name from its siblings: inside the class
