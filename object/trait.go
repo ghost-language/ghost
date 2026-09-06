@@ -29,8 +29,8 @@ func (trait *Trait) Method(method string, tok token.Token, args []Object) (Objec
 }
 
 // SetField records a field declaration on the trait.
-func (trait *Trait) SetField(name string, value ast.ExpressionNode) {
-	trait.Fields = setField(trait.Fields, name, value)
+func (trait *Trait) SetField(name string, tok token.Token, value ast.ExpressionNode) {
+	trait.Fields = setField(trait.Fields, name, tok, value)
 }
 
 // HasField reports whether this trait declares a field by that name (§13.18).
