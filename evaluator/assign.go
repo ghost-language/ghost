@@ -17,6 +17,14 @@ func evaluateAssign(node *ast.Assign, scope *object.Scope) object.Object {
 				return constructorFieldError(node)
 			}
 
+			// The same collision §13.18 describes, reached from the other
+			// side: the method was declared first and this field would sit
+			// silently beside it. Methods are the only members held in the
+			// body's own environment, so a local binding here is one.
+			if scope.Environment.HasLocal(identifier.Value) {
+				return memberCollisionError(identifier.Token, identifier.Value, "method")
+			}
+
 			declaration.SetField(identifier.Value, node.Value)
 
 			return nil

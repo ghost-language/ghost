@@ -121,7 +121,12 @@ func initializeFields(instance *object.Instance, class *object.Class, caller *ob
 }
 
 func initializeField(instance *object.Instance, class *object.Class, field object.Field, caller *object.Scope) object.Object {
-	scope := &object.Scope{Environment: class.Environment, Self: instance, Class: class, Depth: depthOf(caller)}
+	// A field initializer resolves exactly as a method body does: through the
+	// scope the class was declared in, not the class's member table (§14
+	// decision 12). Without this the same shadowing §13.22 describes would
+	// survive here - `size = math.floor(2.7)` beside a method named `math`
+	// would reach the method.
+	scope := &object.Scope{Environment: class.Scope.Environment, Self: instance, Class: class, Depth: depthOf(caller)}
 
 	result := Evaluate(field.Value, scope)
 

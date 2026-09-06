@@ -32,3 +32,14 @@ func (trait *Trait) Method(method string, tok token.Token, args []Object) (Objec
 func (trait *Trait) SetField(name string, value ast.ExpressionNode) {
 	trait.Fields = setField(trait.Fields, name, value)
 }
+
+// HasField reports whether this trait declares a field by that name (§13.18).
+func (trait *Trait) HasField(name string) bool {
+	return hasField(trait.Fields, name)
+}
+
+// DeclarationScope is the scope the trait was declared in, which its methods
+// close over for the same reason a class's do.
+func (trait *Trait) DeclarationScope() *Scope {
+	return trait.Scope
+}

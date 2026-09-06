@@ -33,6 +33,19 @@ func undefined(tok token.Token, name string, scope *object.Scope) *object.Error 
 		return raised
 	}
 
+	// A name that is a member of the class this code is running in is not a
+	// missing variable, it is a missing receiver. Methods are reached through
+	// `this` (§8.8, §14 decision 12) and deliberately do not sit in the
+	// lexical chain, so a bare sibling call lands here - and this is the one
+	// place that can say why (§13.17).
+	if scope != nil && scope.Class != nil {
+		if _, _, ok := object.LookupMember(scope.Class, name); ok {
+			raised.WithHelp("`%s` is a member of `%s`; reach it through `this.%s`", name, scope.Class.Name.Value, name)
+
+			return raised
+		}
+	}
+
 	if suggestion, ok := nearestName(name, visibleNames(scope)); ok {
 		raised.WithHelp("did you mean `%s`?", suggestion)
 
@@ -199,6 +212,16 @@ func logicalOperandError(tok token.Token, operator token.Type, operand object.Ob
 	}
 
 	return raised
+}
+
+// memberCollisionError rejects one name declared as both a field and a method
+// in the same class or trait body (§13.18). Both declarations are legal on
+// their own and neither lookup path knows the other exists - a property read
+// answers with the field, a call answers with the method - so the only place
+// the collision can be reported is where the second declaration creates it.
+func memberCollisionError(tok token.Token, name string, existing string) *object.Error {
+	return object.NewError(fault.Syntax, tok, "`%s` is already declared as a %s in this body", name, existing).
+		WithHelp("rename one of them; otherwise `%s` reads the field and `%s()` calls the method, which is not a difference a reader will predict", name, name)
 }
 
 // plural writes a type name as it reads when there is more than one of them.

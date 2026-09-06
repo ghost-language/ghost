@@ -7,15 +7,35 @@ import (
 )
 
 func evaluateFunction(node *ast.Function, scope *object.Scope) object.Object {
+	// A named function declared in a class or trait body is a method, and a
+	// method is a member rather than a lexical binding: it is reached through
+	// `this.name()` (§8.8, §14 decision 12). So it closes over the scope the
+	// class was *declared* in, not the class's own member table - which is
+	// what keeps a method named `math` from hiding an imported `math` from
+	// every method in the class (§13.22), and what makes a bare sibling call
+	// an honest "not defined" rather than a call with the wrong receiver
+	// (§13.17).
+	closure := scope
+
+	if node.Name != nil {
+		if declaration, ok := scope.Self.(object.FieldDeclarer); ok {
+			if result := checkMethodDeclaration(node, declaration); result != nil {
+				return result
+			}
+
+			closure = declaration.DeclarationScope()
+		}
+	}
+
 	// The function closes over this scope, so neither it nor anything
 	// enclosing it may be reused once this block ends.
-	scope.Environment.Capture()
+	closure.Environment.Capture()
 
 	function := &object.Function{
 		Parameters: node.Parameters,
 		Defaults:   node.Defaults,
 		Body:       node.Body,
-		Scope:      scope,
+		Scope:      closure,
 		Rest:       node.Rest,
 	}
 
@@ -29,6 +49,22 @@ func evaluateFunction(node *ast.Function, scope *object.Scope) object.Object {
 	}
 
 	return function
+}
+
+// checkMethodDeclaration reports a method colliding with a field of the same
+// name in the same body (§13.18). The two would otherwise coexist silently,
+// a property read answering with the field and a call answering with the
+// method, because neither lookup path knows the other exists.
+//
+// A method shadowing an imported module is deliberately *not* checked here:
+// since a method closes over the class's declaring scope rather than its
+// member table, there is no shadowing left to report (§13.22).
+func checkMethodDeclaration(node *ast.Function, declaration object.FieldDeclarer) object.Object {
+	if declaration.HasField(node.Name.Value) {
+		return memberCollisionError(node.Name.Token, node.Name.Value, "field")
+	}
+
+	return nil
 }
 
 // createFunctionEnvironment binds arguments to a user-defined function's

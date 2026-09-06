@@ -1333,11 +1333,15 @@ func TestClassMemberResolution(t *testing.T) {
 		expected int64
 	}{
 		{
-			name: "a method calls a sibling method by bare name",
+			// Was "a method calls a sibling method by bare name", which is no
+			// longer how a sibling is reached: a method is a member, not a
+			// lexical binding (§14 decision 12). The bare form now raises a
+			// name error, pinned in class_members_test.go.
+			name: "a method calls a sibling method through this",
 			input: `
 				class Math {
 					double(n) { return n * 2 }
-					quadruple(n) { return double(double(n)) }
+					quadruple(n) { return this.double(this.double(n)) }
 				}
 
 				new Math().quadruple(3)

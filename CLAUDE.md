@@ -94,8 +94,10 @@ new Dog("Fido").shout()
 
 Field declarations in a class or trait body are initializers, not shared class
 state: they are re-evaluated for each instance, ancestors first, before the
-constructor runs. A method body's scope is the class environment, so sibling
-methods resolve by bare name.
+constructor runs. A method is a *member*, not a name in scope: a method body —
+and a field initializer — resolves through the scope the class was declared in,
+so a sibling method is reached as `this.method()` and a method never shadows an
+import of the same name (§14 decision 12).
 
 ## Error handling
 
